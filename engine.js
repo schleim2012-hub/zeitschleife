@@ -184,7 +184,11 @@ function drawHUD(now,hover){
  if(DEBUG){ glass(24,H-60,560,40,10); text(`DEBUG ${S.node} · ${debugInfo} · aff ${S.v.affection} trust ${S.v.trust} chaos ${S.v.chaos}`,40,H-34,{s:20,w:600,c:'#0f0'}); }
 }
 function typedD(){ const cps=SPEEDS[SET.speed][1]; return cps?Math.min(dlg.t.length,Math.floor((performance.now()-dlg.t0)/1000*cps)):dlg.t.length; }
-function unlockAudio(){ if(audioOK){ if(curTrack&&curTrack.paused) curTrack.play().catch(()=>{}); return; } audioOK=true; music(); }
+function unlockAudio(){ audioOK=true; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state!=='running') actx.resume().catch(()=>{}); }catch(e){}
+ if(!curTrack) music(); const a=curTrack; if(a&&a.paused) a.play().then(()=>fade(a,mvol(),600)).catch(()=>{}); else if(a&&a.volume<mvol()*0.5&&!a._f) fade(a,mvol(),400); }
+function audioPlaying(){ return SET.music<=0||!MU||!musicKey()||(curTrack&&!curTrack.paused); }
+// Android/Chrome: touch-pointerdown ist KEINE User-Activation -> auf pointerup/touchend/click/keydown entsperren, bis Musik wirklich läuft
+['pointerup','touchend','click','keydown','mousedown'].forEach(ev=>addEventListener(ev,()=>{ if(!audioPlaying()||!audioOK) unlockAudio(); },{capture:true,passive:true}));
 function speakerName(s){ return s==='mara'?'MARA':s==='narrator'?'ERZÄHLER':''; }
 function typeLines(t,n,mw,s){ x.font=`500 ${s}px ${F}`; const ls=wrap(t,mw); let left=n; return ls.map(l=>{ const k=Math.max(0,Math.min(l.length,left)); left-=l.length+1; return l.slice(0,k); }); }
 function drawMsg(){ const col=msg.speaker==='mara'?'#ff8fd8':'#8fe9ff';
@@ -306,7 +310,7 @@ function drawClipSubs(){ const subs=(G.config.clipSubs||{})[clipV.label]; if(!su
  glass(W/2-w/2,H-130,w,56,28); text(l,W/2,H-101,{s:30,w:600,a:'center',b:'middle',c:cur[2]==='mara'?'#ffd0ee':'#fff'}); }
 function frame(now){ const dt=Math.min(0.1,(now-last)/1000); last=now; ui=[];
  if(G){ x.clearRect(0,0,W,H); let hover=null;
-  if(mode==='title'||mode==='press'){ drawTitle(now); }
+  if(mode==='title'||mode==='press'){ drawTitle(now); if(mode==='title'&&!audioPlaying()) text('🔇 Tippen für Ton',W-30,40,{s:22,w:600,a:'right',c:'#ffd27a'}); }
   else if(S){
    if(['play','msg','dlg','trans'].includes(mode)&&started&&!ending){ const before=S.time; S.time-=dt; idle+=dt;
     if(before>300&&S.time<=300) toast('⏱ Noch 5 Minuten! Die Röhren flackern.',4000);
