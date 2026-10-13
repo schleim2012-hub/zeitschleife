@@ -130,7 +130,7 @@ function go(sc,cb){ if(busy) return; const v=$('vortexvid'), vs=$('vsphere'), sk
 function maraTree(){ say('"Na, Zeitreisender?" Mara schiebt die Sonnenbrille ins Haar. "Was willst du wissen?"',[
  {t:'Wer bist du?',f:()=>say('"Mara. 1996 in einer Mall eingeschlafen, in den Backrooms aufgewacht. Seitdem springe ich durch die Zeit."',[{t:'Mehr fragen',f:maraTree},{t:'Tschüss',f:()=>{}}])},
  {t:'Wie kommen wir raus?',f:()=>say('"Drei Dinge halten die Schleife zusammen: ein Foto, ein Lied und eine Blume. Bring sie zur Lampe in den Backrooms."',[{t:'Mehr fragen',f:maraTree},{t:'Tschüss',f:()=>{}}])},
- {t:'Flirten',f:()=>{S.flags.flirt=(S.flags.flirt||0)+1; say(S.flags.flirt>1?'Sie lacht leise und tippt dir mit einem neonleuchtenden Finger auf die Brust. "Erst raus hier. Dann sehen wir weiter."':'"Charmeur." Sie spritzt dir Wasser ins Gesicht. "Gefällt mir trotzdem."',[{t:'Mehr fragen',f:maraTree},{t:'Tschüss',f:()=>{}}]);}}]);}
+ {t:'Flirten',f:()=>{S.flags.flirt=(S.flags.flirt||0)+1; say(S.flags.flirt>1?'Sie lacht leise und tippt dir mit einem neonleuchtenden Finger auf die Brust. "Erst raus hier. Dann sehen wir weiter."':'"Du bist mir ja ein Schmeichler." Sie spritzt dir Wasser ins Gesicht. "Gefällt mir trotzdem."',[{t:'Mehr fragen',f:maraTree},{t:'Tschüss',f:()=>{}}]);}}]);}
 function build(){ $('hs').innerHTML=''; closeVerbs(); const sky=$('sky');
  if(S.scene==='back'){ sky.setAttribute('src','#backrooms');
   if(!S.inv.includes('polaroid')) spot('Polaroid',0,-25,{look:()=>say('Ein Sofortbild auf dem Teppich. Eine Frau mit Föhnfrisur, verschwommen.'),take:()=>{give('polaroid');build();say('Hinten steht: "Finde mich – M." Du steckst das Foto ein.');}},'#fff');
@@ -144,7 +144,7 @@ function build(){ $('hs').innerHTML=''; closeVerbs(); const sky=$('sky');
   spot('Mara',0,-12,{look:()=>say('Mara liegt im Neon-Bikini auf einer Liege, Schwarzlicht-Bodypaint leuchtet auf Armen und Bauch. Sie beobachtet dich amüsiert.'),talk:maraTree,
    with:{polaroid:()=>say('Sie wird still. "Das bin ich. 1996. Woher hast du das?"'),krone:()=>say('"Für mich?" Sie setzt sie kurz auf und grinst. "Steht mir. Aber die brauchen wir noch."')}},'#ff8fd8');
   if(!S.inv.includes('walkman')) spot('Walkman',60,-20,{look:()=>say('Ein gelber Walkman. Die Kassette dreht sich, obwohl er aus ist.'),take:()=>{give('walkman');build();say('Du nimmst den Walkman. Das Lied läuft weiter, in deinem Kopf.');}},'#ffd27a');
-  spot('Cocktail',-60,-20,{look:()=>say('Pink, mit Schirmchen.'),use:()=>say('Schmeckt nach Erdbeere und ... Déjà-vu.'),take:()=>say('Mara: "Finger weg, der ist meiner."')});
+  spot('Cocktail',-60,-20,{look:()=>say('Pink, mit Schirmchen.'),use:()=>say('Schmeckt nach Erdbeere und ... als hätte ich das schon mal erlebt.'),take:()=>say('Mara: "Finger weg, der ist meiner."')});
   spot('Uhr',120,10,{look:()=>say('Die Uhr läuft rückwärts. 23:59 ... 23:58 ... Hier wird es nie Mitternacht.'),with:{walkman:()=>say('Du spulst die Kassette vor. Der Sekundenzeiger zuckt kurz vorwärts – und wieder zurück.')}});
   spot('Zurück',180,0,{use:()=>go('back')},'#aaa');
  } else { sky.setAttribute('src','#fest');
@@ -152,10 +152,10 @@ function build(){ $('hs').innerHTML=''; closeVerbs(); const sky=$('sky');
   spot('Mara',-35,-5,{look:()=>say('Mara im Häkeltop, Blumen im Haar, barfuß im Gras.'),talk:()=>say('"Komm, tanz mit mir! Keiner sieht hin, alle sind frei."',[{t:'Tanzen',f:()=>{S.flags.tanz=true; say('Ihr tanzt, bis die Sonne weg ist. Sie lehnt sich an dich. "Die Krone dort ... sie gehört zu uns."');}},{t:'Später',f:()=>{}}]),
    with:{walkman:()=>say('Sie setzt einen Kopfhörer auf. "Das ist unser Lied ... aus 1984?" Sie lacht ungläubig.')}},'#ff8fd8');
   if(!S.inv.includes('krone')) spot('Blumenkrone',40,-20,{look:()=>say('Gänseblümchen, die nicht welken.'),take:()=>{ if(!S.flags.tanz) return say('Ein Mädchen hält sie fest. "Nur für Tänzer, Mann."'); give('krone');build();say('Du nimmst die Blumenkrone. Zeit-Artefakt eingesammelt!');}},'#ffd27a');
-  spot('VW-Bus',90,-3,{look:()=>say('Ein türkiser VW-Bus mit Peace-Zeichen.'),use:()=>say('Im Radio: dasselbe Synthwave-Lied wie 1984. Seltsam.')});
+  spot('VW-Bus',90,-3,{look:()=>say('Ein türkiser VW-Bus mit Peace-Zeichen.'),use:()=>say('Im Radio: dasselbe alte Lied wie 1984. Seltsam.')});
   spot('Zurück',180,0,{use:()=>go('back')},'#aaa');
  }}
 function finale(){ say('Die Tür aus Licht öffnet sich. Mara steht neben dir. "Wenn wir gehen, gibt es kein Zurück. Kommst du mit?"',[
  {t:'mit Mara gehen',f:()=>say('Ihr geht Hand in Hand ins Licht. Du wachst auf – in einer echten Wohnung, Sonntagmorgen. Auf dem Tisch ein neues Polaroid: ihr beide. ENDE A – "Gemeinsam".',[{t:'Neu starten',f:()=>location.reload()}])},
- {t:'allein gehen',f:()=>say('Du gehst allein. Hinter dir summt eine Neonröhre: "Bis zum nächsten Loop ..." Du wachst auf – mit einem Polaroid in der Hand. ENDE B – "Schleife".',[{t:'Neu starten',f:()=>location.reload()}])}]);}
+ {t:'allein gehen',f:()=>say('Du gehst allein. Hinter dir summt eine Neonröhre: "Bis zur nächsten Schleife ..." Du wachst auf – mit einem Polaroid in der Hand. ENDE B – "Schleife".',[{t:'Neu starten',f:()=>location.reload()}])}]);}
 document.querySelector('a-scene').addEventListener('loaded',async()=>{try{await Promise.all(['500','600','700'].map(w=>document.fonts.load(w+' 40px Rajdhani')));}catch(e){} setupInv(); hud(); build();say('Du wachst auf. Gelbe Flure, summendes Licht, kein Ende. Auf dem Boden liegt etwas ...');});

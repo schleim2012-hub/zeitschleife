@@ -1,0 +1,386 @@
+{
+ "_keyFormat": "game.js has no keyed text data; texts are inline say() calls. Key = '<scene>.<hotspot>.<verb>[.<item|choice|variant>]#<segment>'. scene: intro (on load), back, pool, fest, finale. verb = look/take/use/talk/with (spot actions); with.<item> = item used on hotspot; talk.<choice> = dialog choice. Variants: lt2 = n()<2, done = n()===2 or flags.open, first/again = flirt count, notanz = take without flags.tanz; *.use.arrive = say() after go(). Each say() is split in order into narration (narrator) and quoted speech (mara) segments; play #0,#1,... sequentially. Generic fallback lines (\"Nichts Besonderes an: <label>\" etc.) and toasts are not voiced.",
+ "voices": {
+  "engine": "piper-tts 1.x offline (edge-tts 403)",
+  "narrator": "de_DE-thorsten-high, speaker 0, length_scale 1.12, noise_scale 0.6",
+  "mara": "de_DE-eva_k-x_low, speaker 0, length_scale 1.0, noise_scale 0.75",
+  "maraFilter": "aresample=24000,silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse,asetrate=24960,aresample=24000,atempo=0.9615,lowpass=f=7500,treble=g=-3:f=4000,aecho=0.8:0.7:60|120:0.25|0.15"
+ },
+ "lines": {
+  "intro#0": {
+   "file": "audio/narrator_intro.mp3",
+   "speaker": "narrator",
+   "text": "Du wachst auf. Gelbe Flure, summendes Licht, kein Ende. Auf dem Boden liegt etwas ...",
+   "duration": 5.4
+  },
+  "back.polaroid.look#0": {
+   "file": "audio/narrator_back_polaroid_look.mp3",
+   "speaker": "narrator",
+   "text": "Ein Sofortbild auf dem Teppich. Eine Frau mit Föhnfrisur, verschwommen.",
+   "duration": 4.08,
+   "ttsText": "Ein Sofortbild auf dem Teppich. Eine Frau mit Föön-Frisur, verschwommen."
+  },
+  "back.polaroid.take#0": {
+   "file": "audio/narrator_back_polaroid_take.mp3",
+   "speaker": "narrator",
+   "text": "Hinten steht: Finde mich – M. Du steckst das Foto ein.",
+   "duration": 3.79
+  },
+  "back.tuer1984.look#0": {
+   "file": "audio/narrator_back_tuer1984_look.mp3",
+   "speaker": "narrator",
+   "text": "Eine Tür, die hier nicht hingehört. Dahinter: Synthwave, gedämpft.",
+   "duration": 4.1,
+   "ttsText": "Eine Tür, die hier nicht hingehört. Dahinter: Sinswejv, gedämpft."
+  },
+  "back.tuer1984.use.arrive#0": {
+   "file": "audio/narrator_pool_arrive.mp3",
+   "speaker": "narrator",
+   "text": "Warme Nachtluft. Synthwave aus einem Kassettenrekorder. Irgendwo lacht jemand.",
+   "duration": 4.54,
+   "ttsText": "Warme Nachtluft. Sinswejv aus einem Kassettenrekorder. Irgendwo lacht jemand."
+  },
+  "back.tapetenriss.look#0": {
+   "file": "audio/narrator_back_tapetenriss_look.mp3",
+   "speaker": "narrator",
+   "text": "Unter der gelben Tapete blüht ein altes Rosenmuster. Es riecht nach Rauch.",
+   "duration": 4.2
+  },
+  "back.tapetenriss.use.arrive#0": {
+   "file": "audio/narrator_fest_arrive.mp3",
+   "speaker": "narrator",
+   "text": "Du fällst durch das Blumenmuster ... Rauch, Patschuli, Sommer. 1972.",
+   "duration": 5.69
+  },
+  "back.lampe.look#0": {
+   "file": "audio/narrator_back_lampe_look.mp3",
+   "speaker": "narrator",
+   "text": "Die Röhre summt. Zwischen dem Brummen: eine Frauenstimme.",
+   "duration": 3.17
+  },
+  "back.lampe.talk.lt2#0": {
+   "file": "audio/mara_back_lampe_a.mp3",
+   "speaker": "mara",
+   "text": "Du bist wach ... endlich. Bring mir ein Lied und eine Blume aus der Zeit. Das Foto hast du ja.",
+   "duration": 7.37,
+   "ttsText": "Du bist wach. Na endlich. Bring mir ein Lied und eine Blume aus der Zeit. Das Foto hast du ja."
+  },
+  "back.lampe.talk.done#0": {
+   "file": "audio/mara_back_lampe_b.mp3",
+   "speaker": "mara",
+   "text": "Du hast alles! Zeig mir das Foto.",
+   "duration": 2.81
+  },
+  "back.lampe.with.polaroid.lt2#0": {
+   "file": "audio/narrator_back_lampe_polaroid_lt2.mp3",
+   "speaker": "narrator",
+   "text": "Das Licht flackert über das Foto.",
+   "duration": 1.78
+  },
+  "back.lampe.with.polaroid.lt2#1": {
+   "file": "audio/mara_back_lampe_polaroid_lt2.mp3",
+   "speaker": "mara",
+   "text": "Noch nicht ... mir fehlen das Lied und die Blume.",
+   "duration": 2.81
+  },
+  "back.lampe.with.polaroid.done#0": {
+   "file": "audio/narrator_back_lampe_polaroid_done.mp3",
+   "speaker": "narrator",
+   "text": "Das Foto beginnt zu leuchten. Hinter dir öffnet sich eine Tür aus Licht.",
+   "duration": 3.67
+  },
+  "back.lampe.with.walkman#0": {
+   "file": "audio/narrator_back_lampe_walkman.mp3",
+   "speaker": "narrator",
+   "text": "Du hältst den Walkman ans Licht. Die Röhre flackert im Takt.",
+   "duration": 3.1,
+   "ttsText": "Du hältst den Wokmen ans Licht. Die Röhre flackert im Takt."
+  },
+  "back.lampe.with.krone#0": {
+   "file": "audio/narrator_back_lampe_krone.mp3",
+   "speaker": "narrator",
+   "text": "Die Blüten drehen sich zur Lampe wie zur Sonne.",
+   "duration": 2.14
+  },
+  "back.lichttuer.look#0": {
+   "file": "audio/narrator_back_lichttuer_look.mp3",
+   "speaker": "narrator",
+   "text": "Warmes, weißes Licht. Es fühlt sich an wie Sonntagmorgen.",
+   "duration": 3.31
+  },
+  "pool.mara.look#0": {
+   "file": "audio/narrator_pool_mara_look.mp3",
+   "speaker": "narrator",
+   "text": "Mara liegt im Neon-Bikini auf einer Liege, Schwarzlicht-Bodypaint leuchtet auf Armen und Bauch. Sie beobachtet dich amüsiert.",
+   "duration": 6.72,
+   "ttsText": "Mara liegt im Neon-Bikini auf einer Liege, Schwarzlicht-Boddiepejnt leuchtet auf Armen und Bauch. Sie beobachtet dich amüsiert."
+  },
+  "pool.mara.talk#0": {
+   "file": "audio/mara_pool_01.mp3",
+   "speaker": "mara",
+   "text": "Na, Zeitreisender?",
+   "duration": 2.33
+  },
+  "pool.mara.talk#1": {
+   "file": "audio/narrator_pool_mara_talk.mp3",
+   "speaker": "narrator",
+   "text": "Mara schiebt die Sonnenbrille ins Haar.",
+   "duration": 1.87
+  },
+  "pool.mara.talk#2": {
+   "file": "audio/mara_pool_talk_02.mp3",
+   "speaker": "mara",
+   "text": "Was willst du wissen?",
+   "duration": 1.54
+  },
+  "pool.mara.talk.werbistdu#0": {
+   "file": "audio/mara_pool_werbistdu.mp3",
+   "speaker": "mara",
+   "text": "Mara. 1996 in einer Mall eingeschlafen, in den Backrooms aufgewacht. Seitdem springe ich durch die Zeit.",
+   "duration": 9.17,
+   "ttsText": "Mara. 1996 in einer Mall eingeschlafen, in den Bäckrums aufgewacht. Seitdem springe ich durch die Zeit."
+  },
+  "pool.mara.talk.rauskommen#0": {
+   "file": "audio/mara_pool_rauskommen.mp3",
+   "speaker": "mara",
+   "text": "Drei Dinge halten die Schleife zusammen: ein Foto, ein Lied und eine Blume. Bring sie zur Lampe in den Backrooms.",
+   "duration": 7.15,
+   "ttsText": "Drei Dinge halten die Schleife zusammen: ein Foto, ein Lied und eine Blume. Bring sie zur Lampe in den Bäckrums."
+  },
+  "pool.mara.talk.flirten.first#0": {
+   "file": "audio/mara_pool_flirten_01.mp3",
+   "speaker": "mara",
+   "text": "Du bist mir ja ein Schmeichler.",
+   "duration": 2.47
+  },
+  "pool.mara.talk.flirten.first#1": {
+   "file": "audio/narrator_pool_flirten.mp3",
+   "speaker": "narrator",
+   "text": "Sie spritzt dir Wasser ins Gesicht.",
+   "duration": 1.82
+  },
+  "pool.mara.talk.flirten.first#2": {
+   "file": "audio/mara_pool_flirten_02.mp3",
+   "speaker": "mara",
+   "text": "Gefällt mir trotzdem.",
+   "duration": 1.82
+  },
+  "pool.mara.talk.flirten.again#0": {
+   "file": "audio/narrator_pool_flirten_again.mp3",
+   "speaker": "narrator",
+   "text": "Sie lacht leise und tippt dir mit einem neonleuchtenden Finger auf die Brust.",
+   "duration": 3.86
+  },
+  "pool.mara.talk.flirten.again#1": {
+   "file": "audio/mara_pool_flirten_again.mp3",
+   "speaker": "mara",
+   "text": "Erst raus hier. Dann sehen wir weiter.",
+   "duration": 2.88
+  },
+  "pool.mara.with.polaroid#0": {
+   "file": "audio/narrator_pool_mara_polaroid.mp3",
+   "speaker": "narrator",
+   "text": "Sie wird still.",
+   "duration": 0.74
+  },
+  "pool.mara.with.polaroid#1": {
+   "file": "audio/mara_pool_polaroid.mp3",
+   "speaker": "mara",
+   "text": "Das bin ich. 1996. Woher hast du das?",
+   "duration": 5.64,
+   "ttsText": "Das bin ich. Neunzehnhundertsechsundneunzig. Woher hast du das?"
+  },
+  "pool.mara.with.krone#0": {
+   "file": "audio/mara_pool_krone_01.mp3",
+   "speaker": "mara",
+   "text": "Für mich?",
+   "duration": 1.49
+  },
+  "pool.mara.with.krone#1": {
+   "file": "audio/narrator_pool_mara_krone.mp3",
+   "speaker": "narrator",
+   "text": "Sie setzt sie kurz auf und grinst.",
+   "duration": 2.11
+  },
+  "pool.mara.with.krone#2": {
+   "file": "audio/mara_pool_krone_02.mp3",
+   "speaker": "mara",
+   "text": "Steht mir. Aber die brauchen wir noch.",
+   "duration": 4.42
+  },
+  "pool.walkman.look#0": {
+   "file": "audio/narrator_pool_walkman_look.mp3",
+   "speaker": "narrator",
+   "text": "Ein gelber Walkman. Die Kassette dreht sich, obwohl er aus ist.",
+   "duration": 3.6,
+   "ttsText": "Ein gelber Wokmen. Die Kassette dreht sich, obwohl er aus ist."
+  },
+  "pool.walkman.take#0": {
+   "file": "audio/narrator_pool_walkman.mp3",
+   "speaker": "narrator",
+   "text": "Du nimmst den Walkman. Das Lied läuft weiter, in deinem Kopf.",
+   "duration": 3.26,
+   "ttsText": "Du nimmst den Wokmen. Das Lied läuft weiter, in deinem Kopf."
+  },
+  "pool.cocktail.look#0": {
+   "file": "audio/narrator_pool_cocktail_look.mp3",
+   "speaker": "narrator",
+   "text": "Pink, mit Schirmchen.",
+   "duration": 1.34
+  },
+  "pool.cocktail.use#0": {
+   "file": "audio/narrator_pool_cocktail.mp3",
+   "speaker": "narrator",
+   "text": "Schmeckt nach Erdbeere und ... als hätte ich das schon mal erlebt.",
+   "duration": 3.31
+  },
+  "pool.cocktail.take#0": {
+   "file": "audio/mara_pool_cocktail.mp3",
+   "speaker": "mara",
+   "text": "Finger weg, der ist meiner.",
+   "duration": 2.9
+  },
+  "pool.uhr.look#0": {
+   "file": "audio/narrator_pool_uhr.mp3",
+   "speaker": "narrator",
+   "text": "Die Uhr läuft rückwärts. 23:59 ... 23:58 ... Hier wird es nie Mitternacht.",
+   "duration": 7.42,
+   "ttsText": "Die Uhr läuft rückwärts. Dreiundzwanzig Uhr neunundfünfzig. Dreiundzwanzig Uhr achtundfünfzig. Hier wird es nie Mitternacht."
+  },
+  "pool.uhr.with.walkman#0": {
+   "file": "audio/narrator_pool_uhr_walkman.mp3",
+   "speaker": "narrator",
+   "text": "Du spulst die Kassette vor. Der Sekundenzeiger zuckt kurz vorwärts – und wieder zurück.",
+   "duration": 4.92
+  },
+  "fest.lagerfeuer.look#0": {
+   "file": "audio/narrator_fest_lagerfeuer.mp3",
+   "speaker": "narrator",
+   "text": "Frauen in Häkeltops werfen lachend ihre BHs ins Feuer. Freiheit! Die Flammen schlagen bunt hoch.",
+   "duration": 6.0,
+   "ttsText": "Frauen in Häkeltops werfen lachend ihre Be-Has ins Feuer. Freiheit! Die Flammen schlagen bunt hoch."
+  },
+  "fest.lagerfeuer.with.polaroid#0": {
+   "file": "audio/narrator_fest_lagerfeuer_polaroid.mp3",
+   "speaker": "narrator",
+   "text": "Lieber nicht. Ohne das Foto findet Mara nicht raus.",
+   "duration": 3.1
+  },
+  "fest.mara.look#0": {
+   "file": "audio/narrator_fest_mara_look.mp3",
+   "speaker": "narrator",
+   "text": "Mara im Häkeltop, Blumen im Haar, barfuß im Gras.",
+   "duration": 3.36
+  },
+  "fest.mara.talk#0": {
+   "file": "audio/mara_fest_01.mp3",
+   "speaker": "mara",
+   "text": "Komm, tanz mit mir! Keiner sieht hin, alle sind frei.",
+   "duration": 4.56
+  },
+  "fest.mara.talk.tanzen#0": {
+   "file": "audio/narrator_fest_tanzen.mp3",
+   "speaker": "narrator",
+   "text": "Ihr tanzt, bis die Sonne weg ist. Sie lehnt sich an dich.",
+   "duration": 3.07
+  },
+  "fest.mara.talk.tanzen#1": {
+   "file": "audio/mara_fest_tanzen.mp3",
+   "speaker": "mara",
+   "text": "Die Krone dort ... sie gehört zu uns.",
+   "duration": 2.64
+  },
+  "fest.mara.with.walkman#0": {
+   "file": "audio/narrator_fest_mara_walkman_01.mp3",
+   "speaker": "narrator",
+   "text": "Sie setzt einen Kopfhörer auf.",
+   "duration": 1.56
+  },
+  "fest.mara.with.walkman#1": {
+   "file": "audio/mara_fest_walkman.mp3",
+   "speaker": "mara",
+   "text": "Das ist unser Lied ... aus 1984?",
+   "duration": 3.58
+  },
+  "fest.mara.with.walkman#2": {
+   "file": "audio/narrator_fest_mara_walkman_02.mp3",
+   "speaker": "narrator",
+   "text": "Sie lacht ungläubig.",
+   "duration": 1.3
+  },
+  "fest.blumenkrone.look#0": {
+   "file": "audio/narrator_fest_blumenkrone_look.mp3",
+   "speaker": "narrator",
+   "text": "Gänseblümchen, die nicht welken.",
+   "duration": 1.94
+  },
+  "fest.blumenkrone.take.notanz#0": {
+   "file": "audio/narrator_fest_blumenkrone_notanz_01.mp3",
+   "speaker": "narrator",
+   "text": "Ein Mädchen hält sie fest.",
+   "duration": 1.61
+  },
+  "fest.blumenkrone.take.notanz#1": {
+   "file": "audio/narrator_fest_blumenkrone_notanz_02.mp3",
+   "speaker": "narrator",
+   "text": "Nur für Tänzer, Mann.",
+   "duration": 1.42
+  },
+  "fest.blumenkrone.take#0": {
+   "file": "audio/narrator_fest_blumenkrone.mp3",
+   "speaker": "narrator",
+   "text": "Du nimmst die Blumenkrone. Zeit-Artefakt eingesammelt!",
+   "duration": 3.14,
+   "ttsText": "Du nimmst die Blumenkrone. Zeit-Arte-fakt eingesammelt!"
+  },
+  "fest.vwbus.look#0": {
+   "file": "audio/narrator_fest_vwbus_look.mp3",
+   "speaker": "narrator",
+   "text": "Ein türkiser VW-Bus mit Peace-Zeichen.",
+   "duration": 2.52,
+   "ttsText": "Ein türkiser VW-Bus, mit Piis-Zeichen."
+  },
+  "fest.vwbus.use#0": {
+   "file": "audio/narrator_fest_vwbus.mp3",
+   "speaker": "narrator",
+   "text": "Im Radio: dasselbe alte Lied wie 1984. Seltsam.",
+   "duration": 5.62
+  },
+  "finale#0": {
+   "file": "audio/narrator_finale.mp3",
+   "speaker": "narrator",
+   "text": "Die Tür aus Licht öffnet sich. Mara steht neben dir.",
+   "duration": 2.71
+  },
+  "finale#1": {
+   "file": "audio/mara_finale.mp3",
+   "speaker": "mara",
+   "text": "Wenn wir gehen, gibt es kein Zurück. Kommst du mit?",
+   "duration": 3.6
+  },
+  "finale.mitmara#0": {
+   "file": "audio/narrator_ende_a.mp3",
+   "speaker": "narrator",
+   "text": "Ihr geht Hand in Hand ins Licht. Du wachst auf – in einer echten Wohnung, Sonntagmorgen. Auf dem Tisch ein neues Polaroid: ihr beide. Ende A. Gemeinsam.",
+   "duration": 9.24
+  },
+  "finale.allein#0": {
+   "file": "audio/narrator_ende_b_01.mp3",
+   "speaker": "narrator",
+   "text": "Du gehst allein. Hinter dir summt eine Neonröhre:",
+   "duration": 2.71
+  },
+  "finale.allein#1": {
+   "file": "audio/mara_ende_b.mp3",
+   "speaker": "mara",
+   "text": "Bis zur nächsten Schleife ...",
+   "duration": 1.7
+  },
+  "finale.allein#2": {
+   "file": "audio/narrator_ende_b_02.mp3",
+   "speaker": "narrator",
+   "text": "Du wachst auf – mit einem Polaroid in der Hand. Ende B. Schleife.",
+   "duration": 4.1
+  }
+ }
+}

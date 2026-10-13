@@ -1,0 +1,8 @@
+Mara-Stimmvergleich (Text: "Na, Zeitreisender? Du hast dir Zeit gelassen."), Ansagen: Piper de_DE-thorsten-high
+1 = Piper de_DE-eva_k-x_low, roh (length 1.0, noise 0.75)
+2 = Piper de_DE-kerstin-low, roh (length 1.0, noise 0.75)
+3 = Piper de_DE-ramona-low, roh (length 1.0, noise 0.75)
+4 = Piper de_DE-mls-medium Sprecher 120, roh (noise 0.4)
+5 = Piper de_DE-mls-medium Sprecher 12, roh (noise 0.4)
+Gewählte Version = de_DE-eva_k-x_low (length 1.0, noise 0.75) + Dreamy-Filter: asetrate=24960,aresample=24000,atempo=0.9615,lowpass=f=7500,treble=g=-3:f=4000,aecho=0.8:0.7:60|120:0.25|0.15
+(edge-tts nicht enthalten: Microsoft-Dienst liefert 403)
