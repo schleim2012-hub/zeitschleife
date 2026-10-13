@@ -79,7 +79,7 @@ async function talk(id){ const d=G.dialogs[id]; let key='start';
 function still(id){ if(img[id]) return img[id]; const i=new Image(); i.src=`${G.config.stillDir}/${id}.jpg`; i.onerror=()=>{ i.onerror=null; i.src=`${G.config.placeholderDir}/${id}.jpg`; }; img[id]=i; return i; }
 function imgReady(im){ return im.complete&&im.naturalWidth?Promise.resolve():new Promise(r=>{ im.addEventListener('load',r,{once:true}); im.addEventListener('error',r,{once:true}); setTimeout(r,4000); }); }
 function preloadNeighbours(id){ (G.nodes[id].hotspots||[]).forEach(h=>(h.on||[]).forEach(a=>{ if(a.go) still(a.go); if(a.epoch) still(a.epoch); })); }
-async function go(id,dir){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); const from=S.node; const nimg=still(id);
+async function go(id,dir){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); const from=S.node; const nimg=still(id); mode='trans';
  await imgReady(nimg); await imgReady(still(from));
  trans={from:still(from),to:nimg,dir,t0:performance.now(),dur:380}; mode='trans'; await sleep(400); trans=null;
  S.node=id; mode='play'; music(); preloadNeighbours(id); saveGame(true); await enter(); }
