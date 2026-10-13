@@ -88,10 +88,12 @@ async function enter(){ const n=G.nodes[S.node]; S.visited[n.epoch]=1; if(n.ente
 // ---------- Epochenwechsel: Vortex (360 in VR, flach am Desktop)
 async function epochJump(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); const v=$('vortexvid'), vs=$('vsphere'); mode='vortex'; S.sel=null;
  const target=still(id); sfx('whoosh');
- let ok=true; try{ v.muted=true; v.currentTime=0; await v.play(); }catch(e){ ok=false; }
- if(ok){ if(vrMode){ vs.setAttribute('visible',true); $('screen').setAttribute('visible',false); } clipV=v; clipV.label='vortex'; await new Promise(r=>{ v.onended=r; setTimeout(r,6500); }); v.pause(); clipV=null; vs.setAttribute('visible',false); $('screen').setAttribute('visible',true); }
+ const DUR=2.6; hyper={t0:performance.now(),st:{}};
+ if(vrMode&&window.ZSFX){ $('screen').setAttribute('visible',false); try{ await ZSFX.hyperspace(document.querySelector('a-scene'),{duration:DUR}); }catch(e){ console.warn(e); await sleep(DUR*1000); } $('screen').setAttribute('visible',true); }
+ else await sleep(DUR*1000);
+ hyper=null;
  await imgReady(target); S.node=id; flash=1; mode='play'; music(); preloadNeighbours(id); saveGame(true); await enter(); }
-let flash=0;
+let flash=0, hyper=null;
 
 // ---------- Story-Clips
 async function playClip(name){ const v=document.createElement('video'); v.src=`${G.config.clipDir}/${name}.mp4?v=${VER}`; v.playsInline=true; v.preload='auto'; v.volume=Math.min(1,SET.sfx); stopVoice();
@@ -156,7 +158,7 @@ function drawScene(now){
   else if(clipV.failed){ text('🎬 '+clipV.label,W/2,H/2,{s:40,w:700,a:'center',c:'rgba(255,255,255,0.6)'}); text('(Clip folgt)',W/2,H/2+44,{s:24,a:'center',c:'rgba(255,255,255,0.4)'}); }
   return; }
  cover(still(S.node));
- if(flash>0){ x.fillStyle=`rgba(255,255,255,${flash})`; x.fillRect(0,0,W,H); flash=Math.max(0,flash-0.025); }
+ if(flash>0){ if(window.ZSFX) ZSFX.vhs(x,W,H,1-flash); else { x.fillStyle=`rgba(0,0,0,${flash*0.5})`; x.fillRect(0,0,W,H); } flash=Math.max(0,flash-0.05); }
 }
 function drawHotspots(now){ const hs=hotspots(), hover=mode==='play'?hsAt(ptr):null, pulse=(Math.sin(now/300)+1)/2;
  hs.forEach(h=>{ const b=h.box.map((v,i)=>v*(i%2?H:W));
@@ -319,7 +321,7 @@ function frame(now,noRaf){ lastStepT=performance.now(); const dt=Math.min(0.1,(n
     if(before>60&&S.time<=60) toast('⏱ Noch 1 Minute!',4000);
     if(S.time<=0){ S.time=0; msg=null; dlg=null; stopVoice(); end('frozen'); } }
    if(SET.hints&&idle>90&&!hintShown&&mode==='play') hintNow();
-   drawScene(now);
+   drawScene(now); if(hyper&&!vrMode&&window.ZSFX) ZSFX.hyper2D(x,W,H,(now-hyper.t0)/1000,hyper.st);
    if(!clipV&&!trans&&mode!=='intro'&&mode!=='vortex'){ hover=drawHotspots(now); if(mode!=='ending') drawHUD(now,hover); if(mode==='msg'&&msg) drawMsg(); if(mode==='dlg'&&dlg) drawDlg(); if(mode==='wm') drawWM(now); if(mode==='ending'&&ending) drawEnding(); if(mode==='pause') drawPause(); }
    else if(clipV&&(mode==='clip')){ drawClipSubs(); button([W-230,24,200,48],'ÜBERSPRINGEN ▶',()=>clipSkip&&clipSkip(),{s:18}); }
   }

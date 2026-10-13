@@ -1204,8 +1204,33 @@
      "cursor": "use",
      "on": [
       {
-       "say": "\"Ausweis, bitte.\" Du hast keinen. Du hast nur ein hübsches Gesicht. Reicht nicht. Hat noch nie gereicht.",
-       "speaker": "narrator"
+       "if": "!flag.geld",
+       "then": [
+        {
+         "if": "flag.schalter1",
+         "then": [
+          {
+           "say": "Die Beamtin tippt ans Fenster: \"Irgendwat mit Ihrem Jesicht druff, junger Mann. Een Foto tut's zur Not ooch.\" Hattest du nicht irgendwo ein Foto von dir?",
+           "speaker": "narrator"
+          }
+         ],
+         "else": [
+          {
+           "set": "schalter1"
+          },
+          {
+           "say": "\"Begrüßungsgeld? Ausweis, bitte.\" Du hast keinen Ausweis. Nur ein hübsches Gesicht. Das reicht der Beamtin nicht.",
+           "speaker": "narrator"
+          }
+         ]
+        }
+       ],
+       "else": [
+        {
+         "say": "Das Begrüßungsgeld hast du schon. Die Beamtin hat dich jetzt im Blick.",
+         "speaker": "narrator"
+        }
+       ]
       }
      ],
      "hint": "!flag.geld",
@@ -1218,10 +1243,10 @@
           "set": "geld"
          },
          {
-          "give": "banane"
+          "give": "dm"
          },
          {
-          "say": "Die Beamtin schaut aufs Polaroid: \"Sieht aus wie'n Ausweis, wa? Jeht klar.\" Hundert Mark Begrüßungsgeld! Und du weißt sofort, was du damit machst: eine Banane. Prioritäten.",
+          "say": "Die Beamtin schaut aufs Polaroid: \"Sieht aus wie'n Ausweis, wa? Jeht klar.\" Hundert D-Mark Begrüßungsgeld! Und du weißt sofort, wofür: Bananen. Prioritäten.",
           "speaker": "narrator"
          }
         ],
@@ -1256,8 +1281,11 @@
        ],
        "else": [
         {
-         "if": "flag.geld",
+         "if": "has.dm||flag.geld",
          "then": [
+          {
+           "take": "dm"
+          },
           {
            "give": "banane"
           },
@@ -1277,32 +1305,38 @@
       }
      ],
      "with": {
-      "polaroid": [
+      "dm": [
        {
-        "if": "!flag.geld",
+        "if": "has.banane",
         "then": [
          {
-          "set": "geld"
-         },
-         {
-          "give": "banane"
-         },
-         {
-          "say": "Die Beamtin schaut aufs Polaroid: \"Sieht aus wie'n Ausweis, wa? Jeht klar.\" Hundert Mark Begrüßungsgeld! Und du weißt sofort, was du damit machst: eine Banane. Prioritäten.",
+          "say": "Eine Banane reicht. Gier ist sowas von 2041.",
           "speaker": "narrator"
          }
         ],
         "else": [
          {
-          "say": "\"Sie hatten schon, junger Mann. Auch mit Schnurrbart erkenn ick Sie.\"",
+          "take": "dm"
+         },
+         {
+          "give": "banane"
+         },
+         {
+          "say": "Du kaufst eine Banane. Sie leuchtet gelb wie ein Pokal. Hinter dir seufzen drei Leute neidisch.",
           "speaker": "narrator"
          }
         ]
        }
+      ],
+      "polaroid": [
+       {
+        "say": "Die Bananenfrau will Westgeld, keine Fotos. Der Schalter für Begrüßungsgeld nebenan ist da vielleicht weniger streng.",
+        "speaker": "narrator"
+       }
       ]
      },
      "when": "!has.hammer",
-     "hint": "!has.banane"
+     "hint": "has.dm"
     },
     {
      "id": "links",
@@ -1804,6 +1838,11 @@
    "name": "Blumenkrone",
    "icon": "🌼",
    "desc": "Bonus: Die Zeit läuft 2 Minuten langsamer."
+  },
+  "dm": {
+   "name": "100 D-Mark",
+   "icon": "💵",
+   "desc": "Begrüßungsgeld. Frisch aus dem Westen."
   }
  },
  "combos": {
