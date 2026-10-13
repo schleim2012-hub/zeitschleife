@@ -23,8 +23,22 @@ function spot(label,az,el,fn,color){ const r=8,a=az*Math.PI/180,e=el*Math.PI/180
  const t=document.createElement('a-text'); t.setAttribute('value',label); t.setAttribute('align','center'); t.setAttribute('width',5); t.setAttribute('position','0 0.7 0');
  g.appendChild(t); $('hs').appendChild(g);}
 AFRAME.registerComponent('look-at',{tick(){const c=this.el.sceneEl.camera; if(c){const v=new THREE.Vector3(); c.getWorldPosition(v); this.el.object3D.lookAt(v);}}});
-function go(sc,cb){ const f=$('fade'); f.setAttribute('animation','property:material.opacity;from:0;to:1;dur:600');
+function fadeGo(sc,cb){ const f=$('fade'); f.setAttribute('animation','property:material.opacity;from:0;to:1;dur:600');
  setTimeout(()=>{ S.scene=sc; build(); f.setAttribute('animation','property:material.opacity;from:1;to:0;dur:600'); cb&&cb();},650);}
+let busy=false;
+function go(sc,cb){ if(busy) return; const v=$('vortexvid'), vx=$('vortex'), w=$('vwhite');
+ if(!v||v.error){ fadeGo(sc,cb); return; }
+ busy=true; let done=false;
+ const finish=()=>{ if(done) return; done=true; v.pause(); vx.setAttribute('visible',false);
+  S.scene=sc; build(); w.setAttribute('material','opacity',1); w.setAttribute('visible',true);
+  w.setAttribute('animation','property:material.opacity;from:1;to:0;dur:900');
+  setTimeout(()=>{w.setAttribute('visible',false); busy=false;},950); cb&&cb(); };
+ const fail=()=>{ if(done) return; done=true; v.pause(); vx.setAttribute('visible',false); busy=false; fadeGo(sc,cb); };
+ v.muted=true; v.currentTime=0; v.onended=finish; v.onerror=fail;
+ let p; try{ p=v.play(); }catch(e){ fail(); return; }
+ if(p&&p.catch) p.catch(fail);
+ vx.setAttribute('visible',true);
+ setTimeout(finish,7500); }
 function build(){ $('hs').innerHTML=''; const sky=$('sky');
  if(S.scene==='back'){ sky.setAttribute('src','#backrooms');
   spot('Polaroid',0,-25,()=>{give('polaroid');say('Ein altes Polaroid. Darauf eine Frau mit Föhnfrisur, verschwommen. Hinten steht: "Finde mich – M."');},'#fff');
