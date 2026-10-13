@@ -106,7 +106,7 @@ const tracks={}; let curTrack=null, ducked=false, voiceA=null, started=false, au
 function musicKey(){ if(mode==='title'||mode==='press') return 'title'; if(mode==='intro') return null;
  if(ending) return MU.endings[ending.id]||'ending_good'; if(!S) return null;
  if(S.time<MU.tensionBelowSeconds) return 'tension'; return G.nodes[S.node].epoch; }
-function mvol(){ return MU.volume*SET.music*(ducked?0.35:1); }
+function mvol(){ return MU.volume*SET.music*(ducked?0.4:1); }
 function music(){ if(!audioOK||!MU) return; const k=musicKey(), src=k&&SET.music>0?MU.tracks[k]:null;
  if(curTrack&&curTrack.src0===src){ fade(curTrack,mvol(),400); return; } if(curTrack){ const o=curTrack; fade(o,0,MU.crossfadeMs,()=>o.pause()); }
  curTrack=null; if(!src) return; const a=tracks[src]||(tracks[src]=Object.assign(new Audio(src+'?v='+VER),{loop:true,volume:0,src0:src})); a.src0=src; curTrack=a;
@@ -128,7 +128,7 @@ function stopVoice(){ if(voiceA){voiceA.onended=null; voiceA.pause(); voiceA=nul
 function hotspots(){ return (G.nodes[S.node].hotspots||[]).filter(h=>cond(h.when)); }
 function hsAt(p){ const hs=hotspots(); for(let i=hs.length-1;i>=0;i--){ const b=hs[i].box; if(inR(p,[b[0]*W,b[1]*H,b[2]*W,b[3]*H])) return hs[i]; } return null; }
 async function clickHotspot(h){ progress(); if(S.sel){ const it=S.sel; S.sel=null; const w=h.with&&h.with[it];
-  if(w) return run(w); return say(`${G.items[it].name} mit ${h.label}? ${['Nö.','Das ergibt null Sinn. Selbst für 1984.','Mara würde lachen. Zu Recht.'][Math.floor(Math.random()*3)]}`); }
+  if(w) return run(w); const fl=G.config.failLines; if(fl&&fl.length) return run([fl[Math.floor(Math.random()*fl.length)]]); return say(`${G.items[it].name} mit ${h.label}? Nö.`); }
  return run(h.on); }
 let dragUI=null;
 function onClick(p){ unlockAudio();
@@ -218,7 +218,7 @@ function drawWM(now){ x.fillStyle='rgba(5,3,10,0.55)'; x.fillRect(0,0,W,H);
    rr(...r,12); const gr=x.createLinearGradient(0,r[1],0,r[1]+s); gr.addColorStop(0,'rgba(0,0,0,0.55)'); gr.addColorStop(1,'rgba(40,36,60,0.55)'); x.fillStyle=gr; x.fill();
    x.lineWidth=hv||S.sel===it&&it?3:1.5; x.strokeStyle=hv?'#ffd27a':it?(G.items[it].anchor?'rgba(255,210,122,0.9)':'rgba(180,170,220,0.6)'):'rgba(255,255,255,0.15)'; x.stroke();
    if(it){ text(G.items[it].icon,r[0]+s/2,r[1]+s/2+4,{s:54,a:'center',b:'middle'}); if(G.items[it].anchor) text('⚓',r[0]+s-16,r[1]+22,{s:18,a:'center'});
-    ui.push({r,fn:()=>{ if(S.sel&&S.sel!==it){ const c=G.combos[S.sel+'+'+it]||G.combos[it+'+'+S.sel]; S.sel=null; if(c){ openWM(false); run(c); } else toast('Lässt sich nicht kombinieren.'); } else { S.sel=it; openWM(false); toast(G.items[it].name+' ausgewählt'); } }}); } }
+    ui.push({r,fn:()=>{ if(S.sel&&S.sel!==it){ const c=G.combos[S.sel+'+'+it]||G.combos[it+'+'+S.sel]; S.sel=null; if(c){ openWM(false); run(c); } else { const cf=G.config.comboFail; if(cf&&cf.length){ openWM(false); run([cf[Math.floor(Math.random()*cf.length)]]); } else toast('Lässt sich nicht kombinieren.'); } } else { S.sel=it; openWM(false); toast(G.items[it].name+' ausgewählt'); } }}); } }
   const k=S.inv[wm.hover]; x.fillStyle='rgba(255,255,255,0.1)'; x.fillRect(cx,cy+130,cw,1.5);
   if(k){ const it=G.items[k]; text(it.name,cx,cy+190,{s:42,w:700,c:it.anchor?'#ffd27a':'#e8e4ff'}); text(it.anchor?'ZEIT-ANKER':'GEGENSTAND',cx,cy+226,{s:20,w:700,c:'#ff8fd8',ls:5});
    x.font=`500 28px ${F}`; wrap(it.desc,cw).forEach((l,i)=>text(l,cx,cy+272+i*34,{s:28,c:'#d8d4ee'})); }
@@ -394,4 +394,5 @@ async function boot(){ const J=async u=>(await fetch(u+'?v='+VER)).json(); const
 window.ZS={choose:i=>{ if(dlg){ const o=dlg.n.options.filter(o=>cond(o.cond))[i]; o&&dlg.res(o);} }, get S(){return S}, get G(){return G}, get mode(){return mode}, get ending(){return ending}, get msg(){return msg}, get dlg(){return dlg},
  run, go, epochJump, openWM, openPause, onClick, hsAt, ptr, newGame, toTitle, saveGame, loadGame, closeMsg, skip:()=>clipSkip&&clipSkip(), get clip(){return clipV&&clipV.label}, get track(){return curTrack&&curTrack.src0}, SET, unlockAudio, vrHitFrom, vrPoint, vrSelect, get vrMode(){return vrMode}, set vrMode(v){vrMode=v;}, get audioOK(){return audioOK}, get trackPlaying(){return !!curTrack&&!curTrack.paused}, setTime:t=>{S.time=t;}, get titleOpt(){return titleOpt}, set titleOpt(v){titleOpt=v;}};
 boot();
+if(DEBUG) window.__zs={get voiceMap(){return voiceMap},voice,stopVoice,run,get G(){return G},get voiceA(){return voiceA},get ducked(){return ducked},get curTrack(){return curTrack}};
 })();
