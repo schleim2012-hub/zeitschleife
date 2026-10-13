@@ -347,10 +347,10 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden&&S&&['play
 // ---------- VR: Leinwand + eigener XR-Laser (unabhängig vom Controller-Profil, auch Hand-Tracking-Pinch)
 // Alle UI (Titel, Menüs, Hotspots, Inventar, Optionen, Dialogwahl) wird aufs Canvas gezeichnet und ist so auch in VR auf der Leinwand.
 let screenTex=null, screenMesh=null;
-const vrRC=new THREE.Raycaster(), vrM=new THREE.Matrix4(), vrPads={}, lasers={};
+const vrRC=new THREE.Raycaster(), vrM=new THREE.Matrix4(), vrPads={}, lasers={}, vrHits={}; let activeSrc=null;
 function vrHitFrom(origin,dir){ if(!screenMesh) return null; vrRC.set(origin,dir.normalize()); vrRC.far=30; screenMesh.updateMatrixWorld(); const h=vrRC.intersectObject(screenMesh,false)[0]; return h&&h.uv?h:null; }
 function vrPoint(h,src){ ptr.x=h.uv.x*W; ptr.y=(1-h.uv.y)*H; ptr.on=true; ptr.src=src; }
-function vrSelect(down){ unlockAudio(); resumeAudio(); if(down){ ptr.down=true; if(ptr.on) onClick({...ptr}); } else { ptr.down=false; dragUI=null; } }
+function vrSelect(down,key){ try{ unlockAudio(); resumeAudio(); }catch(e){} if(key&&down){ activeSrc=key; const h=vrHits[key]; if(h) vrPoint(h,key); } if(down){ ptr.down=true; if(ptr.on) onClick({...ptr}); } else { ptr.down=false; dragUI=null; } }
 function laser(key,col){ if(lasers[key]) return lasers[key]; const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-1)]);
  const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.85,depthTest:false})); l.renderOrder=999; l.frustumCulled=false;
  const dot=new THREE.Mesh(new THREE.SphereGeometry(0.015,12,8),new THREE.MeshBasicMaterial({color:col,depthTest:false})); dot.renderOrder=1000;
@@ -358,16 +358,17 @@ function laser(key,col){ if(lasers[key]) return lasers[key]; const g=new THREE.B
 AFRAME.registerComponent('zs-vr',{ tick(){ const sc=this.el, r=sc.renderer, xr=r&&r.xr;
  const env=vrMode&&(mode==='title'||mode==='press'); $('titlesky').object3D.visible=env;
  if(!vrMode||!xr||!xr.isPresenting) return; const fr=xr.getFrame&&xr.getFrame(), ref=xr.getReferenceSpace&&xr.getReferenceSpace(), ses=xr.getSession();
- Object.values(lasers).forEach(o=>{o.l.visible=false;o.dot.visible=false;}); if(!fr||!ref||!ses) return; let hitAny=false;
+ Object.values(lasers).forEach(o=>{o.l.visible=false;o.dot.visible=false;}); for(const k in vrHits) vrHits[k]=null; if(!fr||!ref||!ses) return; let hitAny=false;
  for(const src of ses.inputSources){ const key=src.handedness||'none'; if(!src.targetRaySpace) continue; const pose=fr.getPose(src.targetRaySpace,ref); if(!pose) continue;
   vrM.fromArray(pose.transform.matrix); const o=new THREE.Vector3().setFromMatrixPosition(vrM), d=new THREE.Vector3(0,0,-1).transformDirection(vrM);
   const L=laser(key,key==='left'?0x8fe9ff:0xff8fd8), h=vrHitFrom(o,d.clone()), len=h?h.distance:4;
   L.l.position.copy(o); L.l.quaternion.setFromRotationMatrix(vrM); L.l.scale.set(1,1,len); L.l.visible=true;
-  if(h){ L.dot.position.copy(h.point); L.dot.visible=true; if(!hitAny&&(!ptr.src||ptr.src===key||!ptr.down)){ vrPoint(h,key); hitAny=true; if(dragUI&&ptr.down) dragUI.drag({...ptr}); } }
+  vrHits[key]=h||null;
+  if(h){ L.dot.position.copy(h.point); L.dot.visible=true; if(!activeSrc) activeSrc=key; if(key===activeSrc){ vrPoint(h,key); hitAny=true; if(dragUI&&ptr.down) dragUI.drag({...ptr}); } }
   // Tasten A/X (4) = Menü, B/Y (5) = Walkman, Flanke erkennen
   const gp=src.gamepad; if(gp){ const prev=vrPads[key]||[]; const now=gp.buttons.map(b=>b.pressed);
    if(now[4]&&!prev[4]) vrMenu(); if(now[5]&&!prev[5]){ if(S&&!['pause','title','press'].includes(mode)) openWM(!wm.open); } vrPads[key]=now; } }
- if(!hitAny) ptr.on=false; } });
+ if(!hitAny){ const k=Object.keys(vrHits).find(k=>vrHits[k]); if(k){ activeSrc=k; vrPoint(vrHits[k],k); } else ptr.on=false; } } });
 function vrMenu(){ if(!S||mode==='title'||mode==='press') return; if(wm.open) openWM(false); openPause(mode!=='pause'); }
 function resumeAudio(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state!=='running') actx.resume(); }catch(e){}
  if(curTrack&&curTrack.paused) curTrack.play().then(()=>fade(curTrack,mvol(),600)).catch(()=>{}); }
@@ -375,7 +376,7 @@ function setupVR(){ const sc=document.querySelector('a-scene'); const el=$('scre
  const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; screenTex=tex;
  screenMesh=new THREE.Mesh(new THREE.PlaneGeometry(4,2.25),new THREE.MeshBasicMaterial({map:tex,toneMapped:false})); el.setObject3D('mesh',screenMesh);
  sc.setAttribute('zs-vr','');
- let ses=null; const onSel=e=>vrSelect(e.type==='selectstart');
+ let ses=null; const onSel=e=>vrSelect(e.type==='selectstart',e.inputSource&&(e.inputSource.handedness||'none'));
  sc.addEventListener('enter-vr',()=>{ vrMode=true; unlockAudio(); resumeAudio(); if(mode==='press'){ mode='title'; music(); }
   ses=sc.renderer.xr.getSession(); if(ses){ ses.addEventListener('selectstart',onSel); ses.addEventListener('selectend',onSel); } });
  sc.addEventListener('exit-vr',()=>{ vrMode=false; ptr.on=false; ptr.down=false; if(ses){ ses.removeEventListener('selectstart',onSel); ses.removeEventListener('selectend',onSel); ses=null; } $('screen').setAttribute('visible',true); $('vsphere').setAttribute('visible',false); $('titlesky').object3D.visible=false; });
