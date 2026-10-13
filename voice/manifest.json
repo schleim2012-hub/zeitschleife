@@ -24,7 +24,8 @@
 "narrator_9034097e00.mp3"
 ],
 "aa44b0d8": [
-"narrator_a0b75e379f.mp3"
+"narrator_cb74ef86d0.mp3",
+"bademeister_9ee0852494.mp3"
 ],
 "5ed10619": [
 "narrator_e186783e1f.mp3"
@@ -72,7 +73,8 @@
 "narrator_e40341ef60.mp3"
 ],
 "f518baf4": [
-"narrator_27b716bbf2.mp3"
+"narrator_d58bd43734.mp3",
+"kitty_0b30ced935.mp3"
 ],
 "4cef3c56": [
 "narrator_0e253a67c5.mp3"
@@ -81,19 +83,23 @@
 "narrator_f8099325a4.mp3"
 ],
 "65bba40": [
-"narrator_e9161dd04c.mp3"
+"narrator_00f3624321.mp3",
+"grenzer_e0086fe944.mp3"
 ],
 "2e4e77f": [
 "narrator_1f281558d7.mp3"
 ],
 "227520fb": [
-"narrator_cb15b5bf4f.mp3"
+"mauertyp_2ddfcf2219.mp3",
+"narrator_49d742ff84.mp3"
 ],
 "61fe9d1": [
-"narrator_903c282f43.mp3"
+"mauertyp_3fe0a69bac.mp3"
 ],
 "b8693f59": [
-"narrator_22c7bf06d3.mp3"
+"narrator_797d5a0542.mp3",
+"mauertyp_2ddfcf2219.mp3",
+"narrator_7781288fbe.mp3"
 ],
 "501991ce": [
 "narrator_8668dc0157.mp3"
@@ -102,13 +108,16 @@
 "narrator_91aa745333.mp3"
 ],
 "c61a6787": [
-"narrator_6aae57648e.mp3"
+"beamtin_ac24b277a9.mp3",
+"narrator_bbcce39fba.mp3"
 ],
 "d41ad4a2": [
-"narrator_ea031016d1.mp3"
+"narrator_5fb75c1f51.mp3",
+"beamtin_3de2f2d808.mp3",
+"narrator_3a35640aac.mp3"
 ],
 "e254d260": [
-"narrator_f11cc2c2e6.mp3"
+"beamtin_f696d1fdf5.mp3"
 ],
 "86f7e54": [
 "narrator_3cf8dff149.mp3"
@@ -120,7 +129,8 @@
 "narrator_1ad85e1c02.mp3"
 ],
 "37769b1b": [
-"narrator_1a1e5d4ee1.mp3"
+"narrator_82dc770ed9.mp3",
+"patrouille_d56e66119f.mp3"
 ],
 "b23ead63": [
 "narrator_0039e435d9.mp3"
@@ -129,7 +139,7 @@
 "narrator_cc9a340b9b.mp3"
 ],
 "67eedd22": [
-"narrator_c8a0f4f51c.mp3"
+"patrouille_7e108de1e1.mp3"
 ],
 "3f1e3e19": [
 "narrator_e12c477bab.mp3"
@@ -138,16 +148,8 @@
 "narrator_53d2c3bb69.mp3"
 ],
 "f7c95fde": [
-"narrator_c43fa5dd91.mp3"
-],
-"4c335078": [
-"narrator_fa6c39cfea.mp3"
-],
-"268d29c1": [
-"narrator_94def7e620.mp3"
-],
-"e9fe63f9": [
-"narrator_d9a1567002.mp3"
+"narrator_0bfe8fc2eb.mp3",
+"patrouille_e09e918bb3.mp3"
 ],
 "b59a2747": [
 "narrator_0fd85e52bc.mp3"
@@ -165,7 +167,8 @@
 "narrator_d854fd2efd.mp3"
 ],
 "3eaa7eb7": [
-"narrator_c659e5fa24.mp3"
+"narrator_50cb591aab.mp3",
+"hippie_21d91a5fd6.mp3"
 ],
 "e6e66234": [
 "narrator_1433f532b9.mp3"
@@ -383,5 +386,19 @@
 ],
 "5aeff0bd": [
 "narrator_38912e3c8e.mp3"
+],
+"6eb698a0": [
+"narrator_66b4815e09.mp3",
+"kalle_e0d56129e3.mp3"
+],
+"136dbba6": [
+"narrator_0040d01b2c.mp3",
+"kalle_6910afee85.mp3",
+"narrator_54461a3f8f.mp3"
+],
+"14622903": [
+"narrator_c1ac033d48.mp3",
+"kalle_a3cbb80b4d.mp3",
+"narrator_6d8d44bd92.mp3"
 ]
 }

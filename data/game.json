@@ -1488,11 +1488,11 @@
   "D2": {
    "epoch": "2041",
    "title": "Schwarzmarkt",
-   "hint": "Der Händler liebt Analoges. Hast du was Buntes zum Drehen?",
+   "hint": "Kalle liebt Analoges. Hast du was Buntes zum Drehen?",
    "hotspots": [
     {
      "id": "haendler",
-     "label": "Händler (im Schatten)",
+     "label": "Kalle Grabowski (im Schatten)",
      "box": [
       0.15,
       0.2,
@@ -1502,7 +1502,7 @@
      "cursor": "talk",
      "on": [
       {
-       "say": "Der Schwarzhändler flüstert: \"Batterien, Salami, Kassetten. Alles verboten, alles da. Ich tausche nur Analoges. Keine Apps, keine Abos, keine Cookies.\"",
+       "say": "Aus dem Schatten tritt Kalle Grabowski. Lederjacke, Schnauzer, Goldkettchen. \"Hömma, Kollege! Batterien, Salami, Kassetten. Alles verboten, alles da. Ich tausch nur Analoges. Keine Apps, keine Abos, keine Cookies. Die Salami da is von 2012. Die hält länger als deine letzte Beziehung.\"",
        "speaker": "narrator"
       }
      ],
@@ -1519,7 +1519,7 @@
         "give": "batterien"
        },
        {
-        "say": "Der Händler starrt: \"Ein Rubix Cube! Mechanisch! Ohne App! Ohne Werbung!\" Er weint fast. Du bekommst vier AA-Batterien.",
+        "say": "Kalle starrt: \"Watt is datt denn? Ein Rubix Cube! Mechanisch! Ohne App! Ohne Werbung! Kollege, da krich ich Pippi inne Augen.\" Er weint fast. Du bekommst vier AA-Batterien und seine Visitenkarte. Darauf steht nur: Kalle.",
         "speaker": "narrator"
        }
       ],
@@ -1533,7 +1533,7 @@
         }
        },
        {
-        "say": "Der Händler zischt: \"Zucker?! Bist du wahnsinnig?\" Er nimmt sie trotzdem. Dafür gibt er dir… ein gutes Gefühl. Nur ein Gefühl. Inflation ist brutal.",
+        "say": "Kalle zischt: \"Zucker?! Bisse bekloppt? Datt is hier verbotener als gute Laune!\" Er nimmt sie trotzdem. Dafür gibt er dir… ein gutes Gefühl. Nur ein Gefühl. Inflation ist brutal.",
         "speaker": "narrator"
        }
       ]
