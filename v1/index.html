@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Zeitschleife</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<style>@font-face{font-family:Rajdhani;font-weight:500;src:url(fonts/Rajdhani-Medium.ttf?v=8)}@font-face{font-family:Rajdhani;font-weight:600;src:url(fonts/Rajdhani-SemiBold.ttf?v=8)}@font-face{font-family:Rajdhani;font-weight:700;src:url(fonts/Rajdhani-Bold.ttf?v=8)}
+body{margin:0;background:#000}
+#hud{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9;color:#e9e6ff;font:600 15px Rajdhani,sans-serif;letter-spacing:3px;text-transform:uppercase;
+background:linear-gradient(180deg,rgba(34,30,52,.6),rgba(12,10,22,.7));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:8px 22px;border-radius:999px;border:1px solid rgba(255,255,255,.14);box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);pointer-events:none;white-space:nowrap}
+#hud b{color:#ff8fd8;font-weight:700}
+#invbtn{position:fixed;bottom:18px;left:18px;z-index:9;width:58px;height:58px;border-radius:16px;cursor:pointer;color:#bff3ff;font:700 12px Rajdhani,sans-serif;letter-spacing:2px;
+background:linear-gradient(180deg,rgba(34,30,52,.65),rgba(12,10,22,.75));backdrop-filter:blur(14px);border:1px solid rgba(140,230,255,.45);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:all .2s}
+#invbtn:hover,#invbtn.on{border-color:#ffd27a;color:#ffd27a;transform:translateY(-2px)}#invbtn.pulse{box-shadow:0 0 0 6px rgba(255,210,122,.25),0 0 30px #ffd27a}
+#musicbtn{position:fixed;top:14px;right:18px;z-index:10;cursor:pointer;color:#e9e6ff;font:600 13px Rajdhani,sans-serif;letter-spacing:3px;padding:8px 16px;border-radius:999px;background:linear-gradient(180deg,rgba(34,30,52,.6),rgba(12,10,22,.7));backdrop-filter:blur(14px);border:1px solid rgba(255,143,216,.45);transition:all .2s}#voicebtn{position:fixed;top:56px;right:18px;z-index:10;cursor:pointer;color:#e9e6ff;font:600 13px Rajdhani,sans-serif;letter-spacing:3px;padding:8px 16px;border-radius:999px;background:linear-gradient(180deg,rgba(34,30,52,.6),rgba(12,10,22,.7));backdrop-filter:blur(14px);border:1px solid rgba(140,230,255,.45)}#voicebtn.off{color:#888;border-color:rgba(255,255,255,.14)}
+#musicbtn.off{color:#888;border-color:rgba(255,255,255,.14)}#musicbtn:hover{border-color:#ff8fd8}
+#invbtn svg{display:block;margin:6px auto 2px}</style></head>
+<body><div id="hud"><b>Zeitschleife</b> &nbsp;·&nbsp; Ziehen = umsehen &nbsp;·&nbsp; Klicken = interagieren &nbsp;·&nbsp; I = Inventar</div><button id="invbtn" onclick="toggleInv()"><svg width="26" height="22" viewBox="0 0 26 22" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="5" width="24" height="16" rx="3"/><path d="M8 5V3a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M1 11h24"/></svg>TASCHE</button>
+<a-scene renderer="colorManagement:true" cursor="rayOrigin:mouse" raycaster="objects:.click" vr-mode-ui="enabled:true">
+<a-assets timeout="15000"><img id="backrooms" src="img/backrooms.jpg"><img id="pool" src="img/pool1984.jpg"><img id="fest" src="img/festival1972.jpg">
+<video id="vortexvid" src="video/vortex.mp4?v=8" preload="auto" muted playsinline webkit-playsinline crossorigin="anonymous"></video></a-assets>
+<a-sky id="sky" src="#backrooms" radius="60"></a-sky>
+<a-videosphere id="vsphere" src="#vortexvid" radius="40" visible="false"></a-videosphere>
+<a-entity id="hs"></a-entity>
+<a-entity id="dlg" position="0 1.45 -2" visible="false">
+ <a-plane id="dlgbg" class="click" width="1.6" height="0.64" material="shader:flat;transparent:true"></a-plane>
+ <a-entity id="choices" position="0 -0.42 0.01"></a-entity>
+</a-entity>
+<a-entity id="verbs" visible="false"></a-entity>
+<a-entity id="invwrap" visible="false"><a-plane id="invpanel" width="1.1" height="0.56"></a-plane><a-plane id="invclose" width="0.16" height="0.0275" position="0.47 0.235 0.006" scale="1.4 1.4 1"></a-plane></a-entity>
+<a-entity id="fade" geometry="primitive:sphere;radius:0.5" material="shader:flat;color:#000;side:back;opacity:0;transparent:true" position="0 1.6 0"></a-entity>
+<a-entity id="cam" camera look-controls position="0 1.6 0">
+ <a-plane id="hovername" visible="false" position="0 -0.12 -1.2" width="0.5" height="0.086"></a-plane>
+ <a-plane id="toast" position="0 -0.28 -1.2" width="0.6" height="0.103" material="shader:flat;transparent:true;opacity:0"></a-plane>
+</a-entity>
+<a-entity laser-controls="hand:right" raycaster="objects:.click;far:80" line="color:#ff8fd8;opacity:0.6"></a-entity>
+<a-entity laser-controls="hand:left" raycaster="objects:.click;far:80" line="color:#ff8fd8;opacity:0.6"></a-entity>
+</a-scene>
+<script src="game.js?v=8"></script><script src="music.js?v=8"></script><script src="voice.js?v=8"></script></body></html>

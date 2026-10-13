@@ -1,0 +1,24 @@
+{
+ "_info": "Musik-Zuordnung. Neue Tracks einfach in music/ ablegen und hier den Pfad tauschen.",
+ "crossfadeMs": 1800,
+ "volume": 0.6,
+ "tracks": {
+  "title": "music/title.mp3",
+  "hub": "music/backrooms.mp3",
+  "1972": "music/festival1972.mp3",
+  "1984": "music/pool1984.mp3",
+  "1989": "music/mauerfall1989.mp3",
+  "2041": "music/dystopie2041.mp3",
+  "tension": "music/spannung.mp3",
+  "ending_good": "music/ende_gut.mp3",
+  "ending_trapped": "music/ende_gefangen.mp3"
+ },
+ "tensionBelowSeconds": 180,
+ "endings": {
+  "together": "ending_good",
+  "chaos": "ending_good",
+  "rejected": "ending_good",
+  "alone": "ending_trapped",
+  "frozen": "ending_trapped"
+ }
+}

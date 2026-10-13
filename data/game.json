@@ -1,0 +1,1968 @@
+{
+ "config": {
+  "timeLimit": 1200,
+  "start": "B1",
+  "stillDir": "stills",
+  "placeholderDir": "placeholder",
+  "clipDir": "clips",
+  "music": {
+   "hub": "../music/backrooms.mp3",
+   "1984": "../music/pool1984.mp3",
+   "1989": "../music/backrooms.mp3",
+   "2041": "../music/backrooms.mp3",
+   "1972": "../music/festival1972.mp3"
+  },
+  "epochs": {
+   "hub": "Backrooms",
+   "1984": "Pool 1984",
+   "1989": "Berlin 1989",
+   "2041": "Dystopie 2041",
+   "1972": "Festival 1972"
+  },
+  "epochEntry": {
+   "hub": "B2",
+   "1984": "P1",
+   "1989": "M1",
+   "2041": "D1",
+   "1972": "F1"
+  },
+  "clipSubs": {
+   "clip_mauer_bricht": [
+    [
+     4.0,
+     5.6,
+     "mara",
+     "Die Mauer fällt!"
+    ]
+   ],
+   "clip_bauchklatscher": [
+    [
+     0.0,
+     2.0,
+     "",
+     "„Jetzt kommt der Profi!“"
+    ],
+    [
+     3.8,
+     5.4,
+     "",
+     "„Aua!“"
+    ]
+   ]
+  }
+ },
+ "nodes": {
+  "B1": {
+   "epoch": "hub",
+   "title": "Backrooms – Aufwachen",
+   "hint": "Da liegt doch was auf dem Teppich. Und der Flur geht weiter.",
+   "enter": [
+    {
+     "if": "!flag.intro",
+     "then": [
+      {
+       "set": "intro"
+      },
+      {
+       "say": "Du wachst auf. Gelbe Flure, summendes Licht, kein Ende. Es riecht nach feuchtem Teppich und schlechten Entscheidungen.",
+       "speaker": "narrator"
+      },
+      {
+       "note": "Aufgewacht in den Backrooms. Keine Erinnerung. 20 Minuten, sagt mein Bauch."
+      }
+     ]
+    }
+   ],
+   "hotspots": [
+    {
+     "id": "polaroid",
+     "label": "Polaroid",
+     "box": [
+      0.42,
+      0.7,
+      0.16,
+      0.18
+     ],
+     "cursor": "take",
+     "on": [
+      {
+       "give": "polaroid"
+      },
+      {
+       "say": "Ein Sofortbild: eine Frau mit Föhnfrisur, verschwommen. Hinten: \"Finde mich – M.\" Endlich mal eine Frau, die dich finden will.",
+       "speaker": "narrator"
+      },
+      {
+       "note": "Polaroid: \"Finde mich – M.\""
+      }
+     ],
+     "when": "!has.polaroid",
+     "hint": "1"
+    },
+    {
+     "id": "flur",
+     "label": "Flur entlang",
+     "box": [
+      0.4,
+      0.3,
+      0.2,
+      0.32
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "go": "B2",
+       "dir": "forward"
+      }
+     ]
+    },
+    {
+     "id": "rechts",
+     "label": "Nach rechts",
+     "box": [
+      0.93,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "right",
+     "on": [
+      {
+       "go": "B3",
+       "dir": "right"
+      }
+     ]
+    }
+   ]
+  },
+  "B2": {
+   "epoch": "hub",
+   "title": "Backrooms – Kreuzung",
+   "hint": "Drei Türen. Die Lampe weiß mehr, als sie zugibt.",
+   "hotspots": [
+    {
+     "id": "t1984",
+     "label": "Tür \"1984\"",
+     "box": [
+      0.08,
+      0.22,
+      0.22,
+      0.62
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "epoch": "P1"
+      }
+     ],
+     "hint": "!has.walkman"
+    },
+    {
+     "id": "t1989",
+     "label": "Tür \"1989\"",
+     "box": [
+      0.39,
+      0.22,
+      0.22,
+      0.62
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "if": "has.walkman",
+       "then": [
+        {
+         "epoch": "M1"
+        }
+       ],
+       "else": [
+        {
+         "say": "Abgeschlossen. Auf dem Schild klebt ein Zettel: \"Erst die Musik, dann die Mauer.\"",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "has.walkman&&!has.mauer"
+    },
+    {
+     "id": "t2041",
+     "label": "Tür \"2041\"",
+     "box": [
+      0.7,
+      0.22,
+      0.22,
+      0.62
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "if": "has.mauer",
+       "then": [
+        {
+         "epoch": "D1"
+        }
+       ],
+       "else": [
+        {
+         "say": "Grünes Notlicht. Ein Display: \"Zutritt nur mit historischem Nachweis von Freiheit.\" Klingt nach Beton.",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "has.mauer&&!has.birne"
+    },
+    {
+     "id": "lampe",
+     "label": "Flackernde Lampe",
+     "box": [
+      0.4,
+      0.02,
+      0.2,
+      0.12
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "talk": "lampe"
+      }
+     ],
+     "hint": "anchors>=3",
+     "with": {
+      "polaroid": [
+       {
+        "if": "anchors>=3",
+        "then": [
+         {
+          "set": "lichttuer"
+         },
+         {
+          "clip": "clip_tuer_licht_oeffnet"
+         },
+         {
+          "say": "Das Foto glüht auf. Hinter dir öffnet sich eine Tür aus Licht.",
+          "speaker": "narrator"
+         }
+        ],
+        "else": [
+         {
+          "say": "Noch nicht ... mir fehlen noch Anker. Beeil dich, Süßer.",
+          "speaker": "mara"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "licht",
+     "label": "Zum Licht",
+     "box": [
+      0.45,
+      0.25,
+      0.1,
+      0.55
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "go": "B4",
+       "dir": "forward"
+      }
+     ],
+     "when": "flag.lichttuer"
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "B1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "B3": {
+   "epoch": "hub",
+   "title": "Backrooms – Ecke",
+   "hint": "Automaten nehmen Münzen. Tapeten nehmen ... Zeitreisende?",
+   "hotspots": [
+    {
+     "id": "automat",
+     "label": "Backrooms-Cola-Automat",
+     "box": [
+      0.1,
+      0.18,
+      0.25,
+      0.7
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "say": "\"Backrooms Cola – seit 1993 nicht gewartet\". Braucht 25 Cent.",
+       "speaker": "narrator"
+      }
+     ],
+     "with": {
+      "muenze": [
+       {
+        "take": "muenze"
+       },
+       {
+        "give": "cola"
+       },
+       {
+        "say": "Klonk. Eine Dose fällt raus. Haltbar bis: \"ja\".",
+        "speaker": "narrator"
+       }
+      ]
+     }
+    },
+    {
+     "id": "riss",
+     "label": "Tapetenriss mit Rosen",
+     "box": [
+      0.6,
+      0.25,
+      0.18,
+      0.45
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "epoch": "F1"
+      }
+     ]
+    },
+    {
+     "id": "links",
+     "label": "Zurück zum Flur",
+     "box": [
+      0,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "left",
+     "on": [
+      {
+       "go": "B1",
+       "dir": "left"
+      }
+     ]
+    }
+   ]
+  },
+  "B4": {
+   "epoch": "hub",
+   "title": "Die Tür aus Licht",
+   "hotspots": [
+    {
+     "id": "tuer",
+     "label": "Tür aus Licht",
+     "box": [
+      0.35,
+      0.1,
+      0.3,
+      0.8
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "talk": "finale"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "B2",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "P1": {
+   "epoch": "1984",
+   "title": "Paradise Motel – Pool",
+   "hint": "Mara liegt da hinten. Und unter Liegen findet man immer Kleingeld.",
+   "enter": [
+    {
+     "if": "!flag.p1",
+     "then": [
+      {
+       "set": "p1"
+      },
+      {
+       "say": "Warme Nachtluft, Neon, Synthwave. Ein Bademeister mustert dich. \"Versicherung? Wir haben schon eine.\"",
+       "speaker": "narrator"
+      }
+     ]
+    }
+   ],
+   "hotspots": [
+    {
+     "id": "mara",
+     "label": "Mara (in der Ferne)",
+     "box": [
+      0.62,
+      0.42,
+      0.1,
+      0.14
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "if": "!flag.metmara84",
+       "then": [
+        {
+         "set": "metmara84"
+        },
+        {
+         "clip": "clip_mara_1984_zwinkern"
+        }
+       ]
+      },
+      {
+       "go": "P3",
+       "dir": "forward"
+      }
+     ]
+    },
+    {
+     "id": "rand",
+     "label": "Am Pool entlang",
+     "box": [
+      0.05,
+      0.4,
+      0.18,
+      0.3
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "go": "P2",
+       "dir": "forward"
+      }
+     ]
+    },
+    {
+     "id": "sofa",
+     "label": "Sonnenliege",
+     "box": [
+      0.3,
+      0.62,
+      0.18,
+      0.18
+     ],
+     "cursor": "take",
+     "on": [
+      {
+       "if": "!flag.muenze",
+       "then": [
+        {
+         "set": "muenze"
+        },
+        {
+         "give": "muenze"
+        },
+        {
+         "say": "In der Ritze der Sonnenliege: 25 Cent, ein Kamm und Reste von 1983. Du nimmst nur die Münze.",
+         "speaker": "narrator"
+        }
+       ],
+       "else": [
+        {
+         "say": "Nur noch der Kamm. Du hast Würde. Etwas.",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "!flag.muenze"
+    },
+    {
+     "id": "brett",
+     "label": "Pool (Sprung wagen)",
+     "box": [
+      0.48,
+      0.5,
+      0.12,
+      0.12
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "clip": "clip_bauchklatscher"
+      },
+      {
+       "add": {
+        "affection": 1,
+        "chaos": 1
+       }
+      },
+      {
+       "say": "Du springst elegant. Also, du hast es versucht. Bauchklatscher. Irgendwo hinten lacht Mara laut.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "schild",
+     "label": "\"Paradise Motel\"",
+     "box": [
+      0.7,
+      0.05,
+      0.25,
+      0.15
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "\"Paradise Motel – Zimmer ab 19 Dollar, Moral ab 5.\" Jemand hat die 5 durchgestrichen.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "rechts",
+     "label": "Zum Parkplatz",
+     "box": [
+      0.93,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "right",
+     "on": [
+      {
+       "go": "P4",
+       "dir": "right"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück in die Backrooms",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "epoch": "B2"
+      }
+     ]
+    }
+   ]
+  },
+  "P2": {
+   "epoch": "1984",
+   "title": "Arcade-Ecke",
+   "hint": "Der Automat will Geld. Der Highscore verrät eine Farbfolge.",
+   "hotspots": [
+    {
+     "id": "arcade",
+     "label": "PAC-DUDE-Automat",
+     "box": [
+      0.08,
+      0.1,
+      0.28,
+      0.8
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "say": "\"INSERT COIN\". Der Automat schaut dich an wie ein Türsteher.",
+       "speaker": "narrator"
+      }
+     ],
+     "hint": "has.muenze&&!flag.arcade",
+     "with": {
+      "muenze": [
+       {
+        "take": "muenze"
+       },
+       {
+        "set": "arcade"
+       },
+       {
+        "say": "Du spielst. Game Over nach 9 Sekunden. Highscore-Liste: 1. LARRY – 69. 2. RGBY. 3. MOM. \"RGBY\"? Rot, Grün, Blau, Gelb?",
+        "speaker": "narrator"
+       },
+       {
+        "note": "Arcade-Highscore: \"RGBY\" – Farbfolge für den Würfel?"
+       }
+      ]
+     }
+    },
+    {
+     "id": "wuerfel",
+     "label": "Zauberwürfel",
+     "box": [
+      0.45,
+      0.58,
+      0.1,
+      0.12
+     ],
+     "cursor": "take",
+     "on": [
+      {
+       "give": "cube"
+      },
+      {
+       "say": "Ein \"Rubix Cube\". Total verdreht. Wie dein Liebesleben.",
+       "speaker": "narrator"
+      }
+     ],
+     "when": "!has.cube&&!flag.cubegone",
+     "hint": "1"
+    },
+    {
+     "id": "poster",
+     "label": "Poster \"GHOSTBUSTLERS\"",
+     "box": [
+      0.65,
+      0.08,
+      0.25,
+      0.55
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "\"GHOSTBUSTLERS – Who you gonna call?\" Darunter in Kuli: \"Nicht deinen Ex.\"",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück zum Pool",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "P1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "P3": {
+   "epoch": "1984",
+   "title": "Maras Liege",
+   "hint": "Mara will beeindruckt werden. Charme oder ein gelöster Würfel.",
+   "hotspots": [
+    {
+     "id": "mara",
+     "label": "Mara",
+     "box": [
+      0.3,
+      0.15,
+      0.35,
+      0.7
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "talk": "mara84"
+      }
+     ],
+     "hint": "!has.walkman",
+     "with": {
+      "cube": [
+       {
+        "if": "flag.arcade",
+        "then": [
+         {
+          "set": "cubesolved"
+         },
+         {
+          "add": {
+           "affection": 2
+          }
+         },
+         {
+          "say": "Rot, Grün, Blau, Gelb. Klick, klick, fertig. Mara schiebt die Brille hoch: \"Okay. Das war ... heiß. Für einen Nerd.\"",
+          "speaker": "narrator"
+         }
+        ],
+        "else": [
+         {
+          "say": "\"Du drehst da seit zwei Minuten dran. Süß, aber sinnlos.\"",
+          "speaker": "mara"
+         }
+        ]
+       }
+      ],
+      "polaroid": [
+       {
+        "add": {
+         "trust": 1
+        }
+       },
+       {
+        "say": "\"Das ... bin ich. 1996. Wo hast du das her?\" Sie wird kurz ganz still.",
+        "speaker": "mara"
+       }
+      ]
+     }
+    },
+    {
+     "id": "walkman",
+     "label": "Walkman",
+     "box": [
+      0.75,
+      0.55,
+      0.12,
+      0.12
+     ],
+     "cursor": "take",
+     "on": [
+      {
+       "if": "affection>=2||flag.cubesolved",
+       "then": [
+        {
+         "give": "walkman"
+        },
+        {
+         "anchor": "walkman"
+        },
+        {
+         "say": "\"Nimm ihn. Aber pass drauf auf, da ist unser Lied drauf.\"",
+         "speaker": "mara"
+        },
+        {
+         "note": "Anker 1/3: Walkman (1984)"
+        }
+       ],
+       "else": [
+        {
+         "say": "\"Finger weg. Den gibt es nicht für Fremde. Beeindruck mich erst.\"",
+         "speaker": "mara"
+        }
+       ]
+      }
+     ],
+     "when": "!has.walkman",
+     "hint": "affection>=2||flag.cubesolved"
+    },
+    {
+     "id": "cocktail",
+     "label": "Cocktail",
+     "box": [
+      0.68,
+      0.4,
+      0.07,
+      0.14
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "Pink, mit Schirmchen. Riecht nach Erdbeere und Déjà-vu.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "P1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "P4": {
+   "epoch": "1984",
+   "title": "Motel-Parkplatz",
+   "hint": "K.I.T.T.Y. redet gern. Sehr gern.",
+   "hotspots": [
+    {
+     "id": "auto",
+     "label": "K.I.T.T.Y.",
+     "box": [
+      0.2,
+      0.4,
+      0.6,
+      0.4
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "clip": "clip_kitty_lauflicht"
+      },
+      {
+       "say": "\"Guten Abend, Michael. Ach, du bist nicht Michael. Egal. Mara mag Leute, die Rätsel lösen. Oder die sich lächerlich machen. Du kannst beides.\", sagt das Auto.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "kofferraum",
+     "label": "Kofferraum",
+     "box": [
+      0.7,
+      0.5,
+      0.15,
+      0.2
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "Ein Föhn, Haarspray und eine Kassette \"Best of Synthwave Vol. 3\". 1984 in einem Kofferraum.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "links",
+     "label": "Zurück zum Pool",
+     "box": [
+      0,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "left",
+     "on": [
+      {
+       "go": "P1",
+       "dir": "left"
+      }
+     ]
+    }
+   ]
+  },
+  "M1": {
+   "epoch": "1989",
+   "title": "Grenzübergang, 9. November 1989",
+   "hint": "Die Menge will zur Mauer. Mara war doch irgendwo bei den Trabis?",
+   "enter": [
+    {
+     "if": "!flag.m1",
+     "then": [
+      {
+       "set": "m1"
+      },
+      {
+       "say": "Berlin, 9. November 1989. Tausende Menschen, Trabis, Scheinwerfer. Jemand ruft \"Wahnsinn!\".",
+       "speaker": "narrator"
+      },
+      {
+       "note": "Berlin 1989: Ein Mauerstück könnte der zweite Anker sein."
+      }
+     ]
+    }
+   ],
+   "hotspots": [
+    {
+     "id": "grenzer",
+     "label": "Grenzposten",
+     "box": [
+      0.4,
+      0.3,
+      0.12,
+      0.45
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "say": "\"Ick hab keene Anweisung. Ick hab nur noch Feierabend.\" Er zuckt mit den Schultern.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "trabi",
+     "label": "Trabi",
+     "box": [
+      0.05,
+      0.5,
+      0.25,
+      0.3
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "add": {
+        "chaos": 1
+       }
+      },
+      {
+       "say": "Du hupst. Der Trabi hupt zurück. Du bist nicht sicher, wer hier wen erschreckt hat.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "menge",
+     "label": "Mit der Menge zur Mauer",
+     "box": [
+      0.55,
+      0.3,
+      0.25,
+      0.4
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "go": "M2",
+       "dir": "forward"
+      }
+     ]
+    },
+    {
+     "id": "rechts",
+     "label": "Zur Trabi-Schlange",
+     "box": [
+      0.93,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "right",
+     "on": [
+      {
+       "go": "M3",
+       "dir": "right"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück in die Backrooms",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "epoch": "B2"
+      }
+     ]
+    }
+   ]
+  },
+  "M2": {
+   "epoch": "1989",
+   "title": "An der Mauer",
+   "hint": "Ohne Hammer kein Mauerstück. Der Typ mit dem Hammer hat Hunger.",
+   "hotspots": [
+    {
+     "id": "typ",
+     "label": "Typ mit Hammer",
+     "box": [
+      0.1,
+      0.2,
+      0.2,
+      0.65
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "if": "has.hammer",
+       "then": [
+        {
+         "say": "\"Wahnsinn!\", ruft er. Wieder.",
+         "speaker": "narrator"
+        }
+       ],
+       "else": [
+        {
+         "say": "\"Den Hammer? Nur gegen ne Banane, Kumpel. Seit 28 Jahren keine jesehen.\"",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "has.banane",
+     "with": {
+      "banane": [
+       {
+        "take": "banane"
+       },
+       {
+        "give": "hammer"
+       },
+       {
+        "say": "Er nimmt die Banane wie einen Pokal. \"Wahnsinn!\" Du kriegst Hammer und Meißel.",
+        "speaker": "narrator"
+       }
+      ]
+     }
+    },
+    {
+     "id": "mauer",
+     "label": "Mauer mit Graffiti",
+     "box": [
+      0.4,
+      0.15,
+      0.5,
+      0.55
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "say": "Mit bloßen Händen? Du bist kein Bagger.",
+       "speaker": "narrator"
+      }
+     ],
+     "when": "!has.mauer",
+     "hint": "has.hammer",
+     "with": {
+      "hammer": [
+       {
+        "give": "mauer"
+       },
+       {
+        "anchor": "mauer"
+       },
+       {
+        "clip": "clip_mauer_bricht"
+       },
+       {
+        "say": "Klonk, klonk, KRACK. Ein bemaltes Stück fällt dir in die Hand. Die Menge jubelt, als hättest du es allein gemacht.",
+        "speaker": "narrator"
+       },
+       {
+        "note": "Anker 2/3: Mauerstück (1989)"
+       }
+      ]
+     }
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "M1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "M3": {
+   "epoch": "1989",
+   "title": "Trabi-Schlange",
+   "hint": "Begrüßungsgeld gibt es nur mit Ausweis. Ein Foto tut es vielleicht auch.",
+   "hotspots": [
+    {
+     "id": "mara",
+     "label": "Mara auf dem Trabi",
+     "box": [
+      0.45,
+      0.15,
+      0.2,
+      0.4
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "if": "!flag.metmara89",
+       "then": [
+        {
+         "set": "metmara89"
+        },
+        {
+         "clip": "clip_mara_1989_trabi_sprung"
+        }
+       ]
+      },
+      {
+       "talk": "mara89"
+      }
+     ]
+    },
+    {
+     "id": "schalter",
+     "label": "Schalter \"Begrüßungsgeld\"",
+     "box": [
+      0.05,
+      0.25,
+      0.3,
+      0.55
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "say": "\"Ausweis, bitte.\" Du hast keinen. Du hast nur ein hübsches Gesicht. Reicht nicht.",
+       "speaker": "narrator"
+      }
+     ],
+     "hint": "!flag.geld",
+     "with": {
+      "polaroid": [
+       {
+        "if": "!flag.geld",
+        "then": [
+         {
+          "set": "geld"
+         },
+         {
+          "give": "banane"
+         },
+         {
+          "say": "\"Sieht aus wie'n Ausweis, wa? Jeht klar.\" 100 Mark. Du kaufst sofort eine Banane. Prioritäten.",
+          "speaker": "narrator"
+         }
+        ],
+        "else": [
+         {
+          "say": "\"Sie hatten schon, junger Mann.\"",
+          "speaker": "narrator"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "links",
+     "label": "Zurück",
+     "box": [
+      0,
+      0.12,
+      0.07,
+      0.76
+     ],
+     "cursor": "left",
+     "on": [
+      {
+       "go": "M1",
+       "dir": "left"
+      }
+     ]
+    }
+   ]
+  },
+  "D1": {
+   "epoch": "2041",
+   "title": "Platz der Zufriedenheit, 2041",
+   "hint": "Die Patrouille lässt dich nicht durch. Vielleicht mögen sie Musik?",
+   "enter": [
+    {
+     "if": "!flag.d1",
+     "then": [
+      {
+       "set": "d1"
+      },
+      {
+       "say": "2041. Kein Strom, nur Kerzen. Ein Lautsprecher ohne Strom wird von einem Mann mit Megafon ersetzt: \"Ausgangssperre in fünf Minuten! Glück ist Pflicht!\"",
+       "speaker": "narrator"
+      },
+      {
+       "note": "2041: Die Stadt hat eine letzte Glühbirne. Anker 3?"
+      }
+     ]
+    }
+   ],
+   "hotspots": [
+    {
+     "id": "plakat",
+     "label": "Plakat",
+     "box": [
+      0.05,
+      0.1,
+      0.25,
+      0.45
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "\"DU WIRST NICHTS BESITZEN – UND DU WIRST ES LIEBEN (VERPFLICHTEND)\". Unterschrieben: Weltwirtschaftsforum für Glück und Verzicht.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "patrouille",
+     "label": "Lastenrad-Patrouille",
+     "box": [
+      0.4,
+      0.35,
+      0.25,
+      0.45
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "if": "flag.tanz",
+       "then": [
+        {
+         "say": "Die Patrouille tanzt immer noch. Einer weint vor Glück. Freiwillig.",
+         "speaker": "narrator"
+        }
+       ],
+       "else": [
+        {
+         "say": "\"Bürger! Ihr CO2-Konto ist überzogen. Zurück in Ihre Wohnwabe!\"",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "flag.batt&&!flag.tanz",
+     "with": {
+      "walkman": [
+       {
+        "if": "flag.batt",
+        "then": [
+         {
+          "set": "tanz"
+         },
+         {
+          "clip": "clip_patrouille_tanzt"
+         },
+         {
+          "add": {
+           "chaos": 1
+          }
+         },
+         {
+          "say": "Du drückst Play. Synthwave aus 1984. Die Patrouille erstarrt ... und tanzt. Verbotene Gefühle überall.",
+          "speaker": "narrator"
+         }
+        ],
+        "else": [
+         {
+          "say": "Der Walkman ist tot. Keine Batterien. 2041 sowieso.",
+          "speaker": "narrator"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "gasse",
+     "label": "Dunkle Gasse",
+     "box": [
+      0.75,
+      0.3,
+      0.15,
+      0.45
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "go": "D2",
+       "dir": "forward"
+      }
+     ]
+    },
+    {
+     "id": "zentrale",
+     "label": "Zur Zentrale",
+     "box": [
+      0.33,
+      0.15,
+      0.1,
+      0.18
+     ],
+     "cursor": "forward",
+     "on": [
+      {
+       "if": "flag.tanz",
+       "then": [
+        {
+         "go": "D3",
+         "dir": "forward"
+        }
+       ],
+       "else": [
+        {
+         "say": "\"Halt! Zutritt nur für Glücksbeauftragte!\" Die Patrouille versperrt den Weg.",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "hint": "flag.tanz"
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück in die Backrooms",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "epoch": "B2"
+      }
+     ]
+    }
+   ]
+  },
+  "D2": {
+   "epoch": "2041",
+   "title": "Schwarzmarkt",
+   "hint": "Der Händler liebt Analoges. Hast du was Buntes zum Drehen?",
+   "hotspots": [
+    {
+     "id": "haendler",
+     "label": "Händler (im Schatten)",
+     "box": [
+      0.15,
+      0.2,
+      0.25,
+      0.65
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "say": "\"Batterien, Salami, Kassetten. Alles verboten, alles da. Ich tausche nur Analoges.\"",
+       "speaker": "narrator"
+      }
+     ],
+     "hint": "has.cube&&!has.batterien",
+     "with": {
+      "cube": [
+       {
+        "take": "cube"
+       },
+       {
+        "set": "cubegone"
+       },
+       {
+        "give": "batterien"
+       },
+       {
+        "say": "\"Ein Rubix Cube! Mechanisch! Ohne App!\" Er weint fast. Du bekommst vier AA-Batterien.",
+        "speaker": "narrator"
+       }
+      ],
+      "cola": [
+       {
+        "take": "cola"
+       },
+       {
+        "add": {
+         "chaos": 1
+        }
+       },
+       {
+        "say": "\"Zucker?! Bist du wahnsinnig?\" Er nimmt sie trotzdem. Er gibt dir dafür ein gutes Gefühl. Nur ein Gefühl.",
+        "speaker": "narrator"
+       }
+      ]
+     }
+    },
+    {
+     "id": "regal",
+     "label": "Regal",
+     "box": [
+      0.55,
+      0.15,
+      0.35,
+      0.6
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "Batterien, Kassetten, eine Salami unter Glas wie ein Kunstwerk.",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "D1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "D3": {
+   "epoch": "2041",
+   "title": "WWFGV-Zentrale",
+   "hint": "Die Glühbirne braucht Strom. Du hast welchen in der Tasche.",
+   "hotspots": [
+    {
+     "id": "mara",
+     "label": "Mara (Glücksbeauftragte)",
+     "box": [
+      0.1,
+      0.15,
+      0.25,
+      0.75
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "talk": "mara41"
+      }
+     ]
+    },
+    {
+     "id": "birne",
+     "label": "Die letzte Glühbirne",
+     "box": [
+      0.55,
+      0.3,
+      0.12,
+      0.3
+     ],
+     "cursor": "use",
+     "on": [
+      {
+       "say": "Die letzte Glühbirne der Stadt. Dunkel. Wie dein Humor, sagt Mara.",
+       "speaker": "narrator"
+      }
+     ],
+     "when": "!has.birne",
+     "hint": "has.batterien",
+     "with": {
+      "batterien": [
+       {
+        "give": "birne"
+       },
+       {
+        "anchor": "birne"
+       },
+       {
+        "clip": "clip_gluehbirne_an"
+       },
+       {
+        "say": "Du hältst die Batterien an die Kontakte. Die Birne geht an. Die ganze Stadt starrt hoch. Anker 3!",
+        "speaker": "narrator"
+       },
+       {
+        "note": "Anker 3/3: Glühbirne (2041). Zurück zur Lampe in den Backrooms!"
+       }
+      ]
+     }
+    },
+    {
+     "id": "leser",
+     "label": "Kartenleser",
+     "box": [
+      0.78,
+      0.4,
+      0.1,
+      0.15
+     ],
+     "cursor": "look",
+     "on": [
+      {
+       "say": "\"Bitte Glückskarte einlesen.\" Deine Glücksstufe: \"Zeitreisender – nicht vorgesehen\".",
+       "speaker": "narrator"
+      }
+     ]
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "go": "D1",
+       "dir": "back"
+      }
+     ]
+    }
+   ]
+  },
+  "F1": {
+   "epoch": "1972",
+   "title": "Festival 1972 (Bonus)",
+   "hint": "Tanzen macht frei. Und Blumen machen Zeit.",
+   "hotspots": [
+    {
+     "id": "mara",
+     "label": "Mara im Häkeltop",
+     "box": [
+      0.3,
+      0.25,
+      0.18,
+      0.55
+     ],
+     "cursor": "talk",
+     "on": [
+      {
+       "talk": "mara72"
+      }
+     ]
+    },
+    {
+     "id": "krone",
+     "label": "Blumenkrone",
+     "box": [
+      0.65,
+      0.6,
+      0.1,
+      0.1
+     ],
+     "cursor": "take",
+     "on": [
+      {
+       "if": "flag.tanz72",
+       "then": [
+        {
+         "give": "krone"
+        },
+        {
+         "time": 120
+        },
+        {
+         "say": "Gänseblümchen, die nicht welken. Du spürst, wie die Zeit langsamer wird: +2 Minuten.",
+         "speaker": "narrator"
+        }
+       ],
+       "else": [
+        {
+         "say": "\"Nur für Tänzer, Mann\", sagt ein Mädchen mit Stirnband.",
+         "speaker": "narrator"
+        }
+       ]
+      }
+     ],
+     "when": "!has.krone"
+    },
+    {
+     "id": "zurueck",
+     "label": "Zurück in die Backrooms",
+     "box": [
+      0.3,
+      0.9,
+      0.4,
+      0.1
+     ],
+     "cursor": "back",
+     "on": [
+      {
+       "epoch": "B3"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "items": {
+  "polaroid": {
+   "name": "Polaroid",
+   "icon": "📷",
+   "desc": "\"Finde mich – M.\" Sieht fast aus wie ein Ausweis."
+  },
+  "muenze": {
+   "name": "25 Cent (1984)",
+   "icon": "🪙",
+   "desc": "Eine Münze aus einer Sofaritze. Warm. Lieber nicht fragen."
+  },
+  "cube": {
+   "name": "Rubix Cube",
+   "icon": "🧊",
+   "desc": "Total verdreht. Irgendwer kennt die Farbfolge."
+  },
+  "walkman": {
+   "name": "Walkman",
+   "icon": "📼",
+   "desc": "Anker 1. Maras Lied ist drauf.",
+   "anchor": true
+  },
+  "cola": {
+   "name": "Backrooms Cola",
+   "icon": "🥤",
+   "desc": "Haltbar bis: \"ja\"."
+  },
+  "banane": {
+   "name": "Banane",
+   "icon": "🍌",
+   "desc": "Begrüßungsbanane. Wertvoller als Gold, 1989."
+  },
+  "hammer": {
+   "name": "Hammer & Meißel",
+   "icon": "🔨",
+   "desc": "Für Mauern. Nur für Mauern."
+  },
+  "mauer": {
+   "name": "Mauerstück",
+   "icon": "🧱",
+   "desc": "Anker 2. Bunt bemalt, historisch, schwer.",
+   "anchor": true
+  },
+  "batterien": {
+   "name": "Batterien (AA)",
+   "icon": "🔋",
+   "desc": "Verbotene Energie aus dem Schwarzmarkt."
+  },
+  "birne": {
+   "name": "Glühbirne",
+   "icon": "💡",
+   "desc": "Anker 3. Die letzte der Stadt.",
+   "anchor": true
+  },
+  "krone": {
+   "name": "Blumenkrone",
+   "icon": "🌼",
+   "desc": "Bonus: Die Zeit läuft 2 Minuten langsamer."
+  }
+ },
+ "combos": {
+  "walkman+batterien": [
+   {
+    "set": "batt"
+   },
+   {
+    "say": "Zwei Batterien in den Walkman, zwei bleiben übrig. Das Lied läuft wieder.",
+    "speaker": "narrator"
+   }
+  ]
+ },
+ "dialogs": {
+  "lampe": {
+   "start": {
+    "speaker": "mara",
+    "text": "Zwischen dem Brummen: eine Frauenstimme. \"Du bist wach ... endlich. Drei Anker halten die Schleife: ein Lied aus 1984, ein Stück Freiheit aus 1989, und Licht aus 2041. Du hast zwanzig Minuten.\"",
+    "options": [
+     {
+      "label": "😏",
+      "next": "start2",
+      "tone": "charm",
+      "good": "\"Schmeichler. Beeil dich lieber.\"",
+      "bad": "\"Spar dir das, Zeit läuft.\""
+     },
+     {
+      "label": "😜",
+      "next": "start2",
+      "tone": "cheeky",
+      "good": "\"Frech. Gefällt mir. Jetzt los.\"",
+      "bad": "\"Witzig. Nicht.\""
+     },
+     {
+      "label": "😐",
+      "next": "start2",
+      "tone": "serious",
+      "good": "\"Ich bin Mara. Ich hänge seit 1996 fest. Bitte beeil dich.\"",
+      "bad": "\"Ich bin Mara. Bitte beeil dich.\""
+     }
+    ]
+   },
+   "start2": {
+    "speaker": "mara",
+    "text": "\"Bring die Anker zu mir. Zeig mir dann das Foto.\"",
+    "options": [
+     {
+      "label": "Tschüss"
+     }
+    ]
+   }
+  },
+  "mara84": {
+   "start": {
+    "speaker": "mara",
+    "text": "\"Na, Zeitreisender? Du hast dir ja Zeit gelassen.\" Sie schiebt die Sonnenbrille ins Haar.",
+    "options": [
+     {
+      "label": "😏 Charmant",
+      "next": "themen",
+      "tone": "charm",
+      "good": "\"Charmeur.\" Sie lächelt. \"Mach weiter so.\"",
+      "bad": "\"Wow. Hat das jemals funktioniert?\""
+     },
+     {
+      "label": "😜 Frech",
+      "next": "themen",
+      "tone": "cheeky",
+      "good": "Sie spritzt dir lachend Wasser ins Gesicht. \"Frecher Kerl.\"",
+      "bad": "\"Ich hab schon bessere Sprüche von Bademeistern gehört.\""
+     },
+     {
+      "label": "😐 Ernst",
+      "next": "themen",
+      "tone": "serious",
+      "good": "\"Okay, ernst: Ich bin Mara. Ich bin 1996 in einer Mall eingeschlafen. Seitdem bin ich hier.\"",
+      "bad": "\"Ernst? Hier? Na gut. Ich bin Mara.\""
+     }
+    ]
+   },
+   "themen": {
+    "speaker": "mara",
+    "text": "\"Also, was willst du?\"",
+    "options": [
+     {
+      "label": "Der Walkman",
+      "next": "themen",
+      "good": "\"Der hält diese Nacht fest. Den gibt es nur für Leute, die mich beeindrucken.\"",
+      "bad": "\"Finger weg.\""
+     },
+     {
+      "label": "Die Schleife",
+      "next": "themen",
+      "good": "\"Drei Anker. Einer davon ist mein Walkman. Die anderen findest du in 1989 und 2041.\"",
+      "bad": "\"Die Lampe in den Backrooms erklärt das besser als ich.\""
+     },
+     {
+      "label": "😏 Kompliment",
+      "next": "themen",
+      "tone": "charm",
+      "good": "\"Hör auf ... oder nicht.\" Sie wird ein bisschen rot unter dem Neon.",
+      "bad": "\"Übertreib es nicht.\""
+     },
+     {
+      "label": "Tschüss"
+     }
+    ]
+   }
+  },
+  "mara89": {
+   "start": {
+    "speaker": "mara",
+    "text": "Mara springt vom Trabi, Jeansjacke, Föhnfrisur. \"Du schon wieder! Hast du meinen Walkman?\"",
+    "options": [
+     {
+      "label": "😏 Charmant",
+      "next": "themen",
+      "tone": "charm",
+      "good": "\"Du bist echt hartnäckig. Ich mag das.\"",
+      "bad": "\"Charme hilft dir hier nicht, nur ein Hammer.\""
+     },
+     {
+      "label": "😜 Frech",
+      "next": "themen",
+      "tone": "cheeky",
+      "good": "\"Wahnsinn!\", ruft sie und lacht. \"Den Spruch hab ich heute schon 100 Mal gehört.\"",
+      "bad": "\"Frech sein kann jeder. Mauer klopfen nicht.\""
+     },
+     {
+      "label": "😐 Ernst",
+      "next": "themen",
+      "tone": "serious",
+      "good": "\"Der zweite Anker ist ein Stück dieser Mauer. Ohne Werkzeug wird das nichts.\"",
+      "bad": "\"Wir brauchen ein Mauerstück. Mehr sag ich nicht.\""
+     }
+    ]
+   },
+   "themen": {
+    "speaker": "mara",
+    "text": "\"Und jetzt?\"",
+    "options": [
+     {
+      "label": "Werkzeug?",
+      "next": "themen",
+      "good": "\"Der Typ an der Mauer hat einen Hammer. Er hat aber seit Jahren Hunger auf Südfrüchte.\"",
+      "bad": "\"Frag den Typen an der Mauer.\""
+     },
+     {
+      "label": "Tschüss"
+     }
+    ]
+   }
+  },
+  "mara41": {
+   "start": {
+    "speaker": "mara",
+    "text": "Mara in grauer Einheitskleidung. \"Glücksbeauftragte Mara. Ich soll dich glücklich machen. Pflicht.\" Sie zwinkert heimlich.",
+    "options": [
+     {
+      "label": "😏 Charmant",
+      "next": "end",
+      "tone": "charm",
+      "good": "\"Pst. Sonst gibt es Punktabzug. Aber danke.\"",
+      "bad": "\"Charme ist hier rationiert.\""
+     },
+     {
+      "label": "😜 Frech",
+      "next": "end",
+      "tone": "cheeky",
+      "good": "Sie prustet los, und eine Kamera piept. \"Schnell, bevor sie uns melden!\"",
+      "bad": "\"Nicht hier, die Wände haben Ohren. Und Solarzellen.\""
+     },
+     {
+      "label": "😐 Ernst",
+      "next": "end",
+      "tone": "serious",
+      "good": "\"Die Glühbirne ist der letzte Anker. Sie braucht Strom. Hast du was?\"",
+      "bad": "\"Glühbirne. Strom. Los.\""
+     }
+    ]
+   },
+   "end": {
+    "speaker": "mara",
+    "text": "\"Und dann ab zur Lampe. Wir haben nicht ewig. Haha. Wortwitz.\"",
+    "options": [
+     {
+      "label": "Tschüss"
+     }
+    ]
+   }
+  },
+  "mara72": {
+   "start": {
+    "speaker": "mara",
+    "text": "\"Hey, Zeitreisender! Tanz mit mir, keiner sieht hin!\"",
+    "options": [
+     {
+      "label": "😜 Tanzen",
+      "tone": "cheeky",
+      "do": [
+       {
+        "set": "tanz72"
+       },
+       {
+        "add": {
+         "affection": 2
+        }
+       }
+      ],
+      "good": "Ihr tanzt ums Feuer, bis die Sonne weg ist. Sie lehnt sich an dich.",
+      "bad": "Ihr tanzt. Du trittst ihr dreimal auf den Fuß. Sie lacht trotzdem."
+     },
+     {
+      "label": "😐 Später",
+      "tone": "serious",
+      "good": "\"Spießer.\"",
+      "bad": "\"Spießer.\""
+     }
+    ]
+   }
+  },
+  "finale": {
+   "start": {
+    "speaker": "mara",
+    "text": "Mara steht neben dir im Licht. \"Wenn wir gehen, gibt es kein Zurück. Kommst du mit, oder gehst du allein?\"",
+    "options": [
+     {
+      "label": "Mit Mara gehen",
+      "do": [
+       {
+        "if": "chaos>=5",
+        "then": [
+         {
+          "ending": "chaos"
+         }
+        ],
+        "else": [
+         {
+          "if": "affection>=5",
+          "then": [
+           {
+            "ending": "together"
+           }
+          ],
+          "else": [
+           {
+            "ending": "rejected"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "label": "Allein gehen",
+      "do": [
+       {
+        "ending": "alone"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "endings": {
+  "together": {
+   "title": "ENDE: Gemeinsam",
+   "clip": "clip_ende_wohnung_polaroid",
+   "speaker": "narrator",
+   "text": "Ihr geht Hand in Hand ins Licht. Sonntagmorgen, eine echte Wohnung, Kaffee. Auf dem Tisch ein neues Polaroid: ihr beide."
+  },
+  "rejected": {
+   "title": "ENDE: Abfuhr",
+   "clip": "clip_ende_mara_allein",
+   "speaker": "narrator",
+   "text": "Mara geht durchs Licht, dreht sich um und grinst: \"Danke, Zeitreisender. Aber ich hab ein Date. 1996.\" Tür zu."
+  },
+  "alone": {
+   "title": "ENDE: Allein",
+   "clip": "clip_ende_polaroid_leer",
+   "speaker": "narrator",
+   "text": "Du gehst allein. Du wachst auf, mit einem Polaroid in der Hand. Es ist leer."
+  },
+  "frozen": {
+   "title": "ENDE: Eingefroren",
+   "clip": "clip_ende_roehren_aus",
+   "speaker": "narrator",
+   "text": "Die Röhren gehen aus. Du sitzt auf Maras Liege und wartest. Irgendwann findet jemand ein Polaroid von dir auf dem Teppich."
+  },
+  "chaos": {
+   "title": "ENDE: Zeitchaos",
+   "clip": "clip_ende_wohnung_polaroid",
+   "speaker": "narrator",
+   "text": "Ihr geht ins Licht, aber die Zeitlinie ist verbogen: Der Trabi hat Lauflicht, die Patrouille tanzt Synthwave, und K.I.T.T.Y. ist Bundeskanzler."
+  }
+ }
+}

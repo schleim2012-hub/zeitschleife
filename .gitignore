@@ -1,4 +1,6 @@
 raw/
-img/old/
+v1/img/old/
 game.js.bak-*
-audio/old/
+v1/audio/old/
+v2/
+DESIGN_V2.md
