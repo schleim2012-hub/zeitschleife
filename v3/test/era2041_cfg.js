@@ -5,7 +5,8 @@ window.ERA={
  lights:[[0x40ff90,2.2,7,-1.8,2.8,-1.4],[0xff40c0,1.6,6,1.9,2.6,-1.0],[0x40ff90,0.7,8,0,3,2]],
  glows:[[-2.0,2.6,-3.3,1.6,0x40ff90,0.35],[1.9,2.3,-3.3,1.2,0xff40c0,0.3],[0,3.4,-3.4,2.6,0x30c070,0.15]],
  props:[['../assets/props/plastic_crate_01.glb',-1.8,0,-1.3,1,15]],
- boxes:[[0.8,0.78,0.5,0x0d1210,2.3,0.39,0.95]],
+ boxes:[[0.8,0.78,0.5,0x6a706a,2.3,0.39,0.95,'metal']],
+ pools:[[2.3,1.2,0.95,0.7,1.2]],
  surfaces:[[-1.8,-1.3,0.6,0.45,0.26],[2.3,0.95,0.8,0.5,0.78]],
  items:[['../assets/items/2041/gruenriegel_0.glb',-1.85,0.26,-1.3,1,20,['Erzähler','Ein Grünriegel. Schmeckt nach Algen und Gehorsam.']],['../assets/items/2041/gruenriegel_1.glb',-1.7,0.26,-1.25,1,-10,['Mara','„Noch einer? Du sammelst die doch nicht etwa?“']],['../assets/items/2041/gruenriegel_2.glb',-1.95,0.26,-1.4,1,35,['Mara','„Leg den zurück. Der guckt mich an.“']]],
  people:{who:['Frau','Mann'], img:['../assets/era2041/passer_1.png','../assets/era2041/passer_0.png'], height:1.75, pos:[1.0,0,-1.75], radius:2.8, stillSec:2.0, lines:[

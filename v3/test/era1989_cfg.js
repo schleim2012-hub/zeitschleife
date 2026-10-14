@@ -1,4 +1,4 @@
-window.ERA={
+window.ERA={ pools:[[-1.35,0.85,-1.0,0.6,1.3]],
  backdrop:{url:'../assets/era1989/street_backdrop.jpg', px:0.02, r:6.5, front:3.6, horizonRow:236}, // Perchance e1989_street_023 (Pete)
  wall:0x14171b, wallEm:0x030405, floor:0xb0b0b0, floorRough:0.35, floorTex:'../assets/era1989/floor_photo.jpg', floorRep:2, floorFade:[0.5,0.85,0.12,0.62],
  room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false,noWalls:true},
@@ -10,7 +10,7 @@ window.ERA={
  enter:['Erzähler','Ost-Berlin, Novembernacht. Irgendwo jubelt jemand. Hier nur Kopfsteinpflaster und ein Trabi mit Hoffnung.'],
  floorFront:-3.0, bounds:[-2.9,2.9,-1.7,2.2]
 };
-window.ERAX={
+window.ERAX={ standMat:'wood',
  stands:[[-2.6,0.5,70,0.95,2.0,0x2a2018,[['p5',0.9,1.35,0,['Mara','„Mars-Reisen, nur für Millionäre. Hier drüben wäre man schon mit Mallorca zufrieden.“']]],0xffc890,1.0]],
  covers:[['c7','paper',-1.1,0,-0.55,25,['Mara','„Die Mauer ist weg. Steht da, als hätte sie jemand verlegt.“']],['c12','book',-1.5,0.34,-1.35,-15,['Mara','„Der kleine Trabi-Trainer. Kapitel eins: Warten. Kapitel zwei: weiter warten.“']]],
  decoys:[['../assets/items/polaroid.glb',1.75,0.27,-1.3,1,40,['Mara','„Ein Polaroid. Wenn man wedelt, wird es schneller fertig. Stimmt nicht. Machen trotzdem alle.“']]]

@@ -3,7 +3,8 @@
 // line = [wer, text, mp3?]  (Untertitel; Stimme nur wenn mp3 angegeben)
 (function(){
 const X=window.ERAX||{}, T=THREE, S=document.querySelector('a-scene'), PW='../assets/posters_web/';
-function say(l){ if(!l) return; if(window.eraSay) return window.eraSay(l[0],l[1],l[2],Math.max(3000,l[1].length*65));
+let VO={}; fetch('../assets/vo/erax.json').then(r=>r.json()).then(j=>VO=j).catch(()=>{});
+function say(l){ if(!l) return; if(!l[2]&&VO[l[1]]) l=[l[0],l[1],'../assets/vo/'+VO[l[1]]]; if(window.eraSay) return window.eraSay(l[0],l[1],l[2],Math.max(3000,l[1].length*65));
  const sb=document.getElementById('sub'); sb.textContent=(l[0]?l[0]+': ':'')+l[1]; sb.style.display='block'; clearTimeout(say.t);
  const end=()=>{ say.t=setTimeout(()=>sb.style.display='none',600); };
  if(l[2]){ const a=new Audio(l[2]); a.volume=0.9; a.onended=a.onerror=end; a.play().catch(()=>setTimeout(end,3500)); } else say.t=setTimeout(()=>sb.style.display='none',Math.max(3200,l[1].length*65)); }
@@ -19,7 +20,7 @@ function go(){
  const clickables=[];
  (X.stands||[]).forEach(([x,z,ry,w,h,col,posters,lc,li])=>{ const g=new T.Group(); g.position.set(x,0,z); g.rotation.y=R(ry); G.add(g);
   if(lc){ const L=new T.PointLight(lc,li||0.9,2.4,2); L.position.set(0,h-0.15,0.55); g.add(L); const lamp=new T.Mesh(new T.BoxGeometry(w*0.7,0.03,0.06),new T.MeshBasicMaterial({color:new T.Color(lc).multiplyScalar(0.6),fog:false})); lamp.position.set(0,h-0.02,0.12); g.add(lamp); const arm=new T.Mesh(new T.BoxGeometry(0.02,0.02,0.12),new T.MeshStandardMaterial({color:0x111111})); arm.position.set(0,h-0.02,0.06); g.add(arm); }
-  const sm=new T.MeshStandardMaterial({color:col||0x141414,roughness:0.8,metalness:0.3}); const b=new T.Mesh(new T.BoxGeometry(w,h,0.1),sm); b.position.y=h/2; g.add(b);
+  const sm=window.eraPBR?window.eraPBR(X.standMat||'metal',1,col?new T.Color(col).lerp(new T.Color(0x8a8378),0.45):0x555048):new T.MeshStandardMaterial({color:col||0x141414,roughness:0.8,metalness:0.3}); const b=new T.Mesh(new T.BoxGeometry(w,h,0.1),sm); b.position.y=h/2; g.add(b);
   (posters||[]).forEach(([img,ph,py,pdx,line])=>{ const pw=ph*2/3;
    const fr=new T.Mesh(new T.BoxGeometry(pw+0.05,ph+0.05,0.02),new T.MeshStandardMaterial({color:0x0c0c0c,roughness:0.5,metalness:0.6})); fr.position.set(pdx,py,0.06); g.add(fr);
    const m=new T.MeshStandardMaterial({color:0xb8aca8,roughness:0.55,metalness:0,aoMap:aged,aoMapIntensity:1}); m.lightMap=null; tex(PW+img+'.jpg',m);
