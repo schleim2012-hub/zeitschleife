@@ -70,7 +70,7 @@ S.addEventListener('loaded',()=>{
   const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
  item('c1',0.105,0.19,0.025,-1.5,0.66,-0.78,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.36,0.66,-0.86,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.62,0.66,-0.74,-0.35,0xd8d0c0,0xd8d0c0,true);
- item('c4',0.15,0.22,0.035,1.85,1.13,-1.38,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.75,0.62,-1.32,-0.4,0xd8c070);
+ item('c4',0.15,0.22,0.035,1.85,1.13,-1.38,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.75,0.21,-1.32,-0.4,0xd8c070);
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }
   const hand=(src&&src.id&&src.id!=='')?src:null; const par=(hand&&(hand.id==='hl'||hand.id==='hr'))?hand.object3D:document.getElementById('cam').object3D;
