@@ -12,7 +12,7 @@
 - [ ] Blumenkrone gibt +2:00 min (Priorität Muss)
 - [ ] Easter Egg (Zeitreise-Anspielung) gefunden: +30 s + Rückspul-Sound, 1× pro Spielstand (Priorität Muss)
 - [ ] Klassiker-Hommage gefunden: +20 s, 1× pro Spielstand (Priorität Muss)
-- [ ] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss)
+- [x] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss) — opt.trap: Abzug 1×/Falle/Schleife, danach Spruch
 - [x] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss) — engine glitchPenaltyFrom 5
 - [ ] Baum fällen: −60 s (Priorität Muss)
 - [x] Hinweis Stufe 3: 0 s, nur Spott-Spruch (Priorität Muss) — kein Zeitabzug, Spott-Spruch (larry)
@@ -143,7 +143,7 @@
 - [ ] Stempel-Zwischenschritt vor Begrüßungsgeld (3 Wege: Walkman-Ablenkung, Münze-Souvenir, Beleidigungs-Duell) (Priorität Muss)
 - [ ] Kette: Stempel → Begrüßungsgeld → Banane → Hammer → Mauerstück (Priorität Muss)
 - [ ] Beleidigungs-Duell: Sprüche vorher bei NPCs aufschnappen (Priorität Soll)
-- [ ] Falle: „Gibt es dafür ein Formular?“ → Vortrag, −20 s (Priorität Muss)
+- [x] Falle: „Gibt es dafür ein Formular?“ → Vortrag, −20 s (Priorität Muss) — game3 grenzer_formular 20 s
 - [ ] Easter Egg: Karton „Zeitreise-Kram – nicht öffnen“ im Grenzerhäuschen (Priorität Soll)
 - [ ] Hommage: Gummihuhn mit Seilrolle als Köder (Priorität Soll)
 - [ ] Köder: leere Akte, Trabi-Radkappe (Priorität Soll)
