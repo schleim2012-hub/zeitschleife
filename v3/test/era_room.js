@@ -19,6 +19,15 @@ S.addEventListener('loaded',()=>{
  tex(B.url,t=>{bm.map=t;bm.needsUpdate=true;});
  const bd=new T.Mesh(new T.CylinderGeometry(R,R,H,64,1,true,Math.PI-ang/2,ang),bm); bd.scale.x=-1;
  bd.position.set(0,1.6+(256-B.horizonRow)*PX,R-B.front); G.add(bd);
+ if(B.fadeBottom){ const fc=document.createElement('canvas'); fc.width=4; fc.height=256; const fx=fc.getContext('2d'); const fg=fx.createLinearGradient(0,256,0,0); fg.addColorStop(0,'#000'); fg.addColorStop(B.fadeBottom,'#fff'); fg.addColorStop(1-(B.fadeTop||0),'#fff'); fg.addColorStop(1,B.fadeTop?'#000':'#fff'); fx.fillStyle=fg; fx.fillRect(0,0,4,256);
+  bm.alphaMap=new T.CanvasTexture(fc); bm.transparent=true; bm.depthWrite=false; bm.needsUpdate=true; }
+ // animated water shimmer over photo region
+ let shim=null;
+ if(C.shimmer){ const [sx,sy,sz,sw,sh,scol,sop]=C.shimmer; const sc=document.createElement('canvas'); sc.width=sc.height=128; const sxc=sc.getContext('2d'); const st=new T.CanvasTexture(sc);
+  const sm=new T.Mesh(new T.PlaneGeometry(sw,sh),new T.MeshBasicMaterial({map:st,color:scol,transparent:true,opacity:sop,depthWrite:false,blending:T.AdditiveBlending,fog:false,toneMapped:false})); sm.position.set(sx,sy,sz); sm.renderOrder=1; G.add(sm);
+  const id=sxc.createImageData(128,128);
+  shim=t=>{ const k=t*0.0012; for(let y=0;y<128;y++){ const ny=(y-64)/64; for(let x=0;x<128;x++){ const nx=(x-64)/64, e=1-(nx*nx+ny*ny); let v=0; if(e>0){ const w=Math.sin(x*0.31+k*2.1+Math.sin(y*0.17+k)*2.0)+Math.sin(y*0.43-k*1.7+Math.sin(x*0.13-k*0.8)*2.4); v=Math.pow(Math.max(0,w*0.5),3)*255*Math.min(1,e*2.5); } const i=(y*128+x)*4; id.data[i]=id.data[i+1]=id.data[i+2]=v; id.data[i+3]=255; } } sxc.putImageData(id,0,0); st.needsUpdate=true; };
+  shim(0); }
  // shell
  const wallM=std({color:C.wall,roughness:0.95,emissive:C.wallEm||0x000000}), floorM=std({color:C.floor,roughness:C.floorRough||0.6,metalness:0.1});
  if(C.floorTex) tex(C.floorTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(C.floorRep||5,C.floorRep||5);floorM.map=t;floorM.needsUpdate=true;});
@@ -70,6 +79,17 @@ S.addEventListener('loaded',()=>{
    if(!convDone && dist<ppl.radius && (still>ppl.stillSec || convI>=0)){ if(t>convNext && !subBusy){ convI++; if(convI>=ppl.lines.length){ convDone=true; if(ppl.after) setTimeout(()=>say('',ppl.after),800); } else { const [w,txt,f]=ppl.lines[convI]; say(w,txt,f,Math.max(2600,txt.length*70)); convNext=t+Math.max(2900,txt.length*70+400); } } }
    if(dist>ppl.radius+1.5 && convI>=0 && !convDone){ convI=-1; } } }}); S.setAttribute('era-tick','');
  if(C.enter) setTimeout(()=>say(C.enter[0],C.enter[1],C.enter[2]),2500);
+ if(C.mara) setTimeout(()=>say(C.mara[0],C.mara[1],C.mara[2]),C.mara[3]||15000);
+ if(C.water){ let started=false; const start=()=>{ if(started) return; started=true; const ac=new (window.AudioContext||window.webkitAudioContext)(); const n=ac.sampleRate*3, buf=ac.createBuffer(1,n,ac.sampleRate), d=buf.getChannelData(0); let l=0; for(let i=0;i<n;i++){ const w=Math.random()*2-1; l=(l+0.04*w)/1.04; d[i]=w*0.35+l*3; }
+   const src=ac.createBufferSource(); src.buffer=buf; src.loop=true; const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1400; bp.Q.value=0.6; const hs=ac.createBiquadFilter(); hs.type='lowpass'; hs.frequency.value=5200;
+   const g=ac.createGain(); g.gain.value=C.water.vol||0.5; const lfo=ac.createOscillator(), lg=ac.createGain(); lfo.frequency.value=0.23; lg.gain.value=(C.water.vol||0.5)*0.25; lfo.connect(lg); lg.connect(g.gain); lfo.start();
+   const pn=ac.createPanner(); pn.panningModel='HRTF'; pn.distanceModel='inverse'; pn.refDistance=1.5; pn.rolloffFactor=1; const [px,py,pz]=C.water.pos; pn.positionX.value=px; pn.positionY.value=py; pn.positionZ.value=pz;
+   src.connect(bp); bp.connect(hs); hs.connect(g); g.connect(pn); pn.connect(ac.destination); src.start();
+   const L=ac.listener, cam=document.getElementById('cam').object3D, v=new T.Vector3(), f=new T.Vector3(), q=new T.Quaternion();
+   setInterval(()=>{ cam.getWorldPosition(v); cam.getWorldQuaternion(q); f.set(0,0,-1).applyQuaternion(q); if(L.positionX){ L.positionX.value=v.x; L.positionY.value=v.y; L.positionZ.value=v.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=0; L.upY.value=1; L.upZ.value=0; } else { L.setPosition(v.x,v.y,v.z); L.setOrientation(f.x,f.y,f.z,0,1,0); } },50); window.eraWater=ac; };
+  ['click','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,start,{once:false})); S.addEventListener('enter-vr',start); ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',start)); }
+ (C.ph||[]).forEach(([n,x,y,z,ry,sc])=>{ const e=document.createElement('a-entity'); e.setAttribute('gltf-model','../assets/props/ph/'+n+'/'+n+'.gltf'); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('rotation','0 '+ry+' 0'); e.setAttribute('scale',sc+' '+sc+' '+sc); S.appendChild(e); });
+ let shimT=0; if(shim) setInterval(()=>{ shimT+=80; shim(shimT); },80);
 });
 AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ document.getElementById('hl').addEventListener('thumbstickmoved',e=>{this.ax=[e.detail.x,e.detail.y];}); document.getElementById('hr').addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
  tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
