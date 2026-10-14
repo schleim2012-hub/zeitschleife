@@ -28,3 +28,7 @@
 
 ## Software
 - A-Frame 1.7.1 / three.js (MIT), gltf-transform (MIT).
+
+## Hybrid-Raum (V3j)
+- Teppich-Detailtextur: ambientCG "Carpet012" (CC0), https://ambientcg.com/view?id=Carpet012
+- Tiefenschätzung für die Raum-Proxy-Geometrie: Depth Anything V2 Small (Apache-2.0), offline auf dem Build-Rechner, nicht im Spiel

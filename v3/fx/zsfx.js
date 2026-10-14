@@ -66,7 +66,7 @@ function hyperspace(sceneEl,o={}){ const dur=o.duration||2.6; if(!G3) build3D(o.
    const len=Math.min(10,0.5+speed*0.05);
    for(let i=0;i<st.length;i++){ const s=st[i]; s.z+=speed*dt; if(s.z>2){ s.z=-55+Math.random()*8; }
     pos[i*6]=s.x; pos[i*6+1]=s.y; pos[i*6+2]=s.z-len; pos[i*6+3]=s.x; pos[i*6+4]=s.y; pos[i*6+5]=s.z; }
-   geo.attributes.position.needsUpdate=true;
+   geo.attributes.position.needsUpdate=true; if(video&&video.readyState>=2&&tun.material.map){ tun.material.map.needsUpdate=true; if(cap.material.map) cap.material.map.needsUpdate=true; }
    if(t>=dur){ grp.visible=false; sceneEl.object3D.remove(grp); G3.tick=null; if(video) video.pause(); res(); } }
   G3.tick=step; }); }
 // tick wird vom A-Frame-Loop (oder einem eigenen rAF) aufgerufen – funktioniert auch in XR

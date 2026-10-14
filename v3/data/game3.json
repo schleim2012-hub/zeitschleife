@@ -1057,7 +1057,8 @@
       -1.9,
       -1.6,
       3.45
-     ]
+     ],
+     "onWall": true
     },
     {
      "id": "rissd",
@@ -1067,7 +1068,8 @@
       -3.4,
       -0.8,
       -1.2
-     ]
+     ],
+     "onWall": true
     },
     {
      "id": "plate",
@@ -1077,7 +1079,8 @@
       3.4,
       0.0,
       -2.6
-     ]
+     ],
+     "onWall": true
     }
    ],
    "hotspots": [
@@ -1202,7 +1205,8 @@
       "size": [
        1.0,
        1.9
-      ]
+      ],
+      "onWall": true
      },
      "on": [
       {
@@ -1223,7 +1227,8 @@
       "size": [
        0.9,
        1.6
-      ]
+      ],
+      "onWall": true
      },
      "on": [
       {
@@ -1244,7 +1249,8 @@
       "size": [
        0.9,
        0.5
-      ]
+      ],
+      "onWall": true
      },
      "on": [
       {
@@ -1304,7 +1310,12 @@
     }
    ],
    "ff": true,
-   "skyYaw": 28
+   "skyYaw": 28,
+   "proxy": {
+    "floor": -1.6,
+    "ceil": 2.2,
+    "dist": "sky/BR_pano_dist.json"
+   }
   },
   "B2": {
    "epoch": "hub",
@@ -1526,7 +1537,12 @@
    "hum": "lampe",
    "ff": true,
    "skyYaw": 0,
-   "skyTint": "#e6ddd0"
+   "skyTint": "#e6ddd0",
+   "proxy": {
+    "floor": -1.6,
+    "ceil": 2.2,
+    "dist": "sky/BR_pano_b2_dist.json"
+   }
   },
   "M1": {
    "epoch": "1989",

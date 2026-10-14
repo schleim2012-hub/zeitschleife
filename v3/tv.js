@@ -83,7 +83,7 @@ AFRAME.registerComponent('crt-tv',{
   else { const v=this.video; v.src=this.data.base+this.data.channels[ch-1]; v.load(); this.U.hasTex.value=0; v.onloadedmetadata=()=>{ this.U.aspect.value=v.videoWidth/v.videoHeight; }; v.onplaying=()=>{ this.U.map.value=this.vtex; this.U.hasTex.value=1; }; v.play().catch(()=>{}); } },
  toggle(){ this.on=!this.on; this.audio(); if(this.on){ this.hum(); this.pAnim=0.0001; this.show(); this.led.material.color.set(0xff2020); this.duck(true); } else { this.tone(false); this.video.pause(); this.video.removeAttribute('src'); this.video.load(); this.U.power.value=0; this.pAnim=0; this.led.material.color.set(0x330000); this.duck(false); this.noise(0.12,0.05); } },
  next(){ this.ch=(this.ch+1)%(this.data.channels.length+1); this.knob.rotation.y-=Math.PI*2/14; this.zap=0.45; this.noise(0.4,0.12); setTimeout(()=>this.on&&this.show(),180); },
- tick(t,dt){ const U=this.U; U.t.value=t/1000; if(this.on&&this.pAnim<1){ this.pAnim=Math.min(1,this.pAnim+dt/700); U.power.value=this.pAnim; }
+ tick(t,dt){ const U=this.U; U.t.value=t/1000; if(this.on&&this.video&&this.video.readyState>=2&&this.vtex) this.vtex.needsUpdate=true; if(this.on&&this.pAnim<1){ this.pAnim=Math.min(1,this.pAnim+dt/700); U.power.value=this.pAnim; }
   if(this.zap>0){ this.zap=Math.max(0,this.zap-dt/1000); const k=this.zap/0.45; U.stat.value=Math.min(1,k*1.6); U.roll.value=(1-k)*1.0%1*(k>0.02?1:0); } else { U.stat.value=this.on&&U.hasTex.value<0.5?0.85:0.0; U.roll.value=0; } }
 });
 })();
