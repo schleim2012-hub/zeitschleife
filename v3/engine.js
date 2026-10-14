@@ -437,10 +437,12 @@ function audioPlaying(){ return SET.music<=0||!MU||!musicKey()||(curTrack&&!curT
 ['pointerup','touchend','click','keydown','mousedown'].forEach(ev=>addEventListener(ev,()=>{ if(!audioPlaying()||!audioOK) unlockAudio(); },{capture:true,passive:true}));
 // ---------- Hinweise in 3 Stufen (Erzähler vage -> Mara Ort -> Mara Lösung), nichts leuchtet
 let larryDone=false;
-async function hintNow(auto){ const L=G.hints[S.node]||[]; const i=L.findIndex(e=>cond(e.if)); if(i<0) return; const e=L[i], key=S.node+'#'+i; let tier=S.hint[key]||0;
+let hint3Ask=0, hHeld=0, vrHintT={};
+async function hintNow(auto,full){ const L=G.hints[S.node]||[]; const i=L.findIndex(e=>cond(e.if)); if(i<0) return; const e=L[i], key=S.node+'#'+i; let tier=S.hint[key]||0;
  if(auto){ if(tier>0) return; S.hint[key]=1; return say(e.t[0],'narrator'); }
  if(tier===0){ S.hint[key]=1; return say(e.t[0],'narrator'); }
  if(tier===1){ if(sceneT<TM.hintTier2After&&(S.fails[S.node]||0)<TM.hintTier2Fails) return act(G.config.lines.tooEarly); S.hint[key]=2; return say(e.t[1],'mara'); }
+ if(!full&&performance.now()-hint3Ask>6000){ hint3Ask=performance.now(); return say(pick(['Die Lösung? Echt jetzt? Halt den Hinweis-Knopf gedrückt, wenn du dir sicher bist.','Ich könnte es dir sagen. Halt den Knopf gedrückt – oder frag gleich nochmal, dann geb ich auf.']),'mara'); }
  S.hint[key]=3; await say(e.t[2],'mara'); if(!larryDone){ larryDone=true; await act(G.config.lines.larry); } }
 // ---------- Klick-Logik
 async function clickHotspot(h){ progress(); if(h.when!==undefined&&!cond(h.when)) return;
@@ -599,9 +601,10 @@ cv.addEventListener('pointermove',e=>{ Object.assign(ptr,toCv(e),{on:true}); set
 cv.addEventListener('pointerup',e=>{ if(dragUI){ dragUI=null; return; } if(drag&&!drag.moved){ Object.assign(ptr,toCv(e),{on:true}); setDesk(e); if(mode==='play') pick3D(); onClick({...ptr}); } drag=null; });
 cv.addEventListener('pointerleave',()=>{ ptr.on=false; desk.on=false; dragUI=null; });
 cv.addEventListener('contextmenu',e=>{ e.preventDefault(); if(S) S.sel=null; });
+addEventListener('keyup',e=>{ if((e.key==='h'||e.key==='H')&&hHeld&&S&&mode==='play'){ const long=performance.now()-hHeld>1100; hHeld=0; hintNow(false,long); } });
 addEventListener('keydown',e=>{ unlockAudio(); const k=e.key; if(mode==='press'){ mode='title'; music(); return; }
  if(k===' '&&clipSkip){ e.preventDefault(); return clipSkip(); } if(!S||mode==='title') return;
- if((k==='w'||k==='W'||k==='i'||k==='I')&&mode!=='pause') openWM(!wm.open); if(k==='h'||k==='H') { if(mode==='play') hintNow(); }
+ if((k==='w'||k==='W'||k==='i'||k==='I')&&mode!=='pause') openWM(!wm.open); if((k==='h'||k==='H')&&!e.repeat){ hHeld=performance.now(); }
  if(k==='ArrowLeft'||k==='ArrowRight'){ yawD+=(k==='ArrowLeft'?1:-1)*0.3; camEl.object3D.rotation.set(pitchD,yawD,0); }
  if(k==='Escape'||k==='p'||k==='P'){ if(S.sel){ S.sel=null; return; } if(wm.open){ openWM(false); return; } openPause(mode!=='pause'); } });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&S&&mode==='play') openPause(true); });
@@ -638,7 +641,7 @@ AFRAME.registerComponent('zs-vr',{ tick(){ const sc=this.el, r=sc.renderer, xr=r
   holdUpdate(key,o,d); L.l.position.copy(o); L.l.quaternion.setFromRotationMatrix(vrM); L.l.scale.set(1,1,len); L.l.visible=true; L.dot.visible=onUI||!!hs; L.dot.scale.setScalar(onUI||hs?1.4:1);
   const gp=src.gamepad; if(gp){ const prev=vrPads[key]||[]; const nw=gp.buttons.map(b=>b.pressed);
    if(!gotSelEvt&&gp.buttons[0]){ if(nw[0]&&!prev[0]) vrSelect(true,key); else if(!nw[0]&&prev[0]) vrSelect(false,key); }
-   if(nw[1]&&!prev[1]) grabStart(key); if(!nw[1]&&prev[1]) grabEnd(key); if(nw[3]&&!prev[3]&&S&&mode==='play') hintNow();
+   if(nw[1]&&!prev[1]) grabStart(key); if(!nw[1]&&prev[1]) grabEnd(key); if(nw[3]&&!prev[3]) vrHintT[key]=performance.now(); if(!nw[3]&&prev[3]&&vrHintT[key]&&S&&mode==='play'){ const long=performance.now()-vrHintT[key]>1100; vrHintT[key]=0; hintNow(false,long); }
    if(nw[4]&&!prev[4]&&S){ if(wm.open) openWM(false); openPause(mode!=='pause'); }
    if(nw[5]&&!prev[5]&&S&&['play','wm'].includes(mode)) openWM(!wm.open); vrPads[key]=nw;
    if(key==='right'&&['play','msg','dlg','clip','intro'].includes(mode)){ const tn=performance.now(); stickTurn(gp,Math.min(0.05,(tn-(lastTurnT||tn))/1000)); lastTurnT=tn; } } }

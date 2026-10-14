@@ -15,7 +15,7 @@
 - [ ] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss)
 - [x] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss) — engine glitchPenaltyFrom 5
 - [ ] Baum fällen: −60 s (Priorität Muss)
-- [ ] Hinweis Stufe 3: 0 s, nur Spott-Spruch (Priorität Muss)
+- [x] Hinweis Stufe 3: 0 s, nur Spott-Spruch (Priorität Muss) — kein Zeitabzug, Spott-Spruch (larry)
 - [x] Game Over: Schleife neu, Wissen/Tagebuch/Easter-Egg-Bonus bleiben (Priorität Muss) — V3n: Notizen, MEM.know, Bonus-Keys+Bonuszeit bleiben; Neues Spiel setzt zurück
 - [x] Bonuszeit gesamt max. +5 min (Priorität Muss) — V3n: Deckel 5:00, Hinweis „Bonuszeit voll“
 - [x] Countdown nie unter 1 min nur durch Abzüge (letzte Minute nur echte Zeit) (Priorität Muss) — V3n getestet
@@ -34,7 +34,7 @@
 
 - [ ] Hinweistexte in Nodes entschärfen (feste hints auf Stufe 1) (Priorität Muss)
 - [x] 3-Stufen-Hinweise: Erzähler vage → Mara Ort → Mara Lösung (kein Leuchten) (Priorität Muss) — hintNow Stufen 1–3
-- [ ] Stufe 2 erst nach 60–90 s oder 3 Fehlversuchen; Stufe 3 nur auf Wunsch (Walkman-Taste halten) (Priorität Muss)
+- [x] Stufe 2 erst nach 60–90 s oder 3 Fehlversuchen; Stufe 3 nur auf Wunsch (Walkman-Taste halten) (Priorität Muss) — V3n: Stufe 3 nur per Halten (H/Stick ≥1,1 s) oder zweitem Druck nach Mara-Rückfrage
 - [ ] Kein Hotspot-Leuchten, keine Hotspot-Anzeige; Trefferflächen groß aber unsichtbar (Priorität Muss)
 - [ ] Typische falsche Ideen bekommen eigene Fail-Sprüche (Priorität Soll)
 - [ ] Jede Lösung vorher irgendwo angedeutet, nie verraten (Priorität Muss)
