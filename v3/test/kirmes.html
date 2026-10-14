@@ -4,9 +4,9 @@
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
 <div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick = Wurf/Schuss in Blickrichtung, Ziehen = Umsehen</small></div>
-<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#0b0712; density:0.06">
- <a-sky color="#0b0712"></a-sky>
- <a-entity light="type:ambient; intensity:0.35; color:#b9a6ff"></a-entity>
+<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#1a0e14; density:0.075">
+ <a-sky color="#140a10"></a-sky>
+ <a-entity light="type:ambient; intensity:0.18; color:#9a86d0"></a-entity>
  <a-entity light="type:hemisphere; intensity:0.4; color:#ffd9a8; groundColor:#1a1020"></a-entity>
  <a-entity id="cam" camera look-controls position="0 1.6 0.4"></a-entity>
 </a-scene>
@@ -23,23 +23,42 @@ const SND={ clank:v=>{ noise(0.25,2400,6,0.35*v); tone(820+Math.random()*300,0.1
 // ---------- Hilfen
 const cv=(w,h,fn)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; fn(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; return t; };
 const std=(o)=>new T.MeshStandardMaterial(Object.assign({roughness:0.6},o));
+const TL=new T.TextureLoader(); const TX='../assets/tex/kirmes/';
+function pbr(name,base,rep,o={}){ const m=std(o); const ld=(suf,srgb)=>TL.load(TX+name+'/'+base+'_1K-JPG_'+suf+'.jpg',t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep[0],rep[1]);t.anisotropy=8;if(srgb)t.colorSpace=T.SRGBColorSpace;m.needsUpdate=true;});
+ m.map=ld('Color',true); m.roughnessMap=ld('Roughness'); m.normalMap=ld('NormalGL'); m.normalScale=new T.Vector2(0.8,0.8); return m; }
+// Glühbirnen mit Glow + Plüsch
+const bulbGeo=new T.SphereGeometry(0.03,12,10); const BC=[0xffd27a,0xff7fb8,0x8ff0ff,0xffb35a];
+const glowTex=cv(64,64,(x,w,h)=>{ const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,240,200,1)'); g.addColorStop(0.25,'rgba(255,200,120,0.5)'); g.addColorStop(1,'rgba(255,160,80,0)'); x.fillStyle=g; x.fillRect(0,0,w,h); });
+const bulbMat=i=>new T.MeshBasicMaterial({color:new T.Color(BC[i%4]).multiplyScalar(2.2),toneMapped:false});
+const glows=[]; function glow(parent,pos,col,sz=0.32){ const sp=new T.Sprite(new T.SpriteMaterial({map:glowTex,color:col,transparent:true,blending:T.AdditiveBlending,depthWrite:false,opacity:0.7})); sp.scale.set(sz,sz,1); sp.position.copy(pos); parent.add(sp); glows.push(sp); return sp; }
+function plush(col,s=1){ const g=new T.Group(); const m=std({color:col,roughness:1}); const sp=(r,x,y,z)=>{ const o=new T.Mesh(new T.SphereGeometry(r*s,14,10),m); o.position.set(x*s,y*s,z*s); g.add(o); return o; };
+ sp(0.09,0,0,0).scale.set(1,1.1,0.9); sp(0.07,0,0.14,0.01); sp(0.028,-0.05,0.2,0); sp(0.028,0.05,0.2,0); sp(0.03,-0.08,0.02,0.03); sp(0.03,0.08,0.02,0.03);
+ const e=new T.MeshBasicMaterial({color:0x111111}); [-0.025,0.025].forEach(x=>{ const o=new T.Mesh(new T.SphereGeometry(0.009*s,8,6),e); o.position.set(x*s,0.15*s,0.065*s); g.add(o); }); return g; }
 const box=(w,h,d,m,x,y,z,p=S)=>{ const o=new T.Mesh(new T.BoxGeometry(w,h,d),m); o.position.set(x,y,z); p.add(o); return o; };
 // Boden + Lichterketten + Umgebung
 const asph=cv(512,512,(x,w,h)=>{ x.fillStyle='#1b1a1f'; x.fillRect(0,0,w,h); for(let i=0;i<9000;i++){ const v=20+Math.random()*40; x.fillStyle=`rgb(${v},${v},${v+4})`; x.fillRect(Math.random()*w,Math.random()*h,2,2); } }); asph.wrapS=asph.wrapT=T.RepeatWrapping; asph.repeat.set(10,10);
-const fl=new T.Mesh(new T.PlaneGeometry(40,40),std({map:asph,roughness:0.35,metalness:0.1})); fl.rotation.x=-Math.PI/2; S.add(fl);
-const bulbs=[]; for(let k=0;k<3;k++){ for(let i=0;i<26;i++){ const t=i/25, x=-4.5+9*t, y=3.1-Math.sin(t*Math.PI)*0.45+(k?0.15:0), z=-1.0-k*1.6; const b=new T.Mesh(new T.SphereGeometry(0.035,10,8),new T.MeshBasicMaterial({color:[0xffd27a,0xff6fb3,0x7ff0ff][i%3]})); b.position.set(x,y,z); S.add(b); bulbs.push(b); } }
+const fl=new T.Mesh(new T.PlaneGeometry(40,40),pbr('Asphalt','Asphalt025B',[14,14],{roughness:0.5,color:0x9a94a0})); fl.rotation.x=-Math.PI/2; S.add(fl);
+const bulbs=[]; for(let k=0;k<3;k++){ for(let i=0;i<26;i++){ const t=i/25, x=-4.5+9*t, y=3.1-Math.sin(t*Math.PI)*0.45+(k?0.15:0), z=-1.0-k*1.6; const b=new T.Mesh(bulbGeo,bulbMat(i)); b.position.set(x,y,z); S.add(b); bulbs.push(b); if(i%2===0) glow(S,b.position,BC[i%4],0.4); } }
 [[-2.6,-2.2],[0,-3.0],[2.6,-2.2]].forEach(([x,z])=>{ const L=new T.PointLight(0xffc98a,2.2,5.5,2); L.position.set(x,2.5,z+0.8); S.add(L); });
 // Bude
 function stall(cx,cz,yaw,title,col){ const g=new T.Group(); g.position.set(cx,0,cz); g.rotation.y=yaw; S.add(g);
- const wood=std({color:0x6b4a2e,roughness:0.75}), dark=std({color:0x241a14});
+ const wood=pbr('WoodFloor','WoodFloor051',[0.6,1.6],{color:0xc8a07a}), dark=pbr('WoodFloor','WoodFloor051',[2,2],{color:0x4a3426}), paint=pbr('Painted','PaintedPlaster017',[2,1],{color:col});
  [[-1.05,0],[1.05,0]].forEach(([x])=>box(0.08,2.6,0.08,wood,x,1.3,0.35,g)); [[-1.05],[1.05]].forEach(([x])=>box(0.08,2.6,0.08,wood,x,1.3,-0.9,g));
- box(2.2,2.6,0.05,dark,0,1.3,-0.92,g); box(2.2,0.08,1.3,wood,0,0.95,-0.3,g).position.set(0,0.95,0.3); box(2.2,0.95,0.06,std({color:col,roughness:0.5}),0,0.47,0.35,g);
+ box(2.2,2.6,0.05,dark,0,1.3,-0.92,g); box(2.2,0.08,1.3,wood,0,0.95,-0.3,g).position.set(0,0.95,0.3); box(2.2,0.95,0.06,paint,0,0.47,0.35,g); const trim=std({color:0xd8b25a,metalness:0.8,roughness:0.3}); box(2.24,0.04,0.08,trim,0,0.96,0.38,g); box(2.24,0.04,0.08,trim,0,0.02,0.38,g);
  const aw=cv(512,128,(x,w,h)=>{ for(let i=0;i<16;i++){ x.fillStyle=i%2?'#f4ead8':'#'+col.toString(16).padStart(6,'0'); x.fillRect(i*32,0,32,h); } x.fillStyle='rgba(0,0,0,0.25)'; x.fillRect(0,h-14,w,14); });
- const a=new T.Mesh(new T.PlaneGeometry(2.3,0.7),std({map:aw,side:T.DoubleSide,roughness:0.8})); a.position.set(0,2.75,0.25); a.rotation.x=-0.9; g.add(a);
+ const a=new T.Mesh(new T.PlaneGeometry(2.3,0.7),(()=>{const m=std({map:aw,side:T.DoubleSide,roughness:0.85}); TL.load(TX+'Fabric/Fabric045_1K-JPG_NormalGL.jpg',t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(4,1);m.normalMap=t;m.needsUpdate=true;}); return m;})()); a.position.set(0,2.75,0.25); a.rotation.x=-0.9; g.add(a);
  const sg=cv(1024,192,(x,w,h)=>{ x.fillStyle='#14080c'; x.fillRect(0,0,w,h); x.strokeStyle='#ffd27a'; x.lineWidth=8; x.strokeRect(8,8,w-16,h-16); x.font='bold 96px Georgia,serif'; x.textAlign='center'; x.fillStyle='#ffe6a8'; x.shadowColor='#ff9a3c'; x.shadowBlur=24; x.fillText(title,w/2,128); });
  const s=new T.Mesh(new T.PlaneGeometry(1.8,0.34),new T.MeshBasicMaterial({map:sg,toneMapped:false})); s.position.set(0,2.35,0.38); g.add(s);
+ for(let i=0;i<9;i++){ const bb=new T.Mesh(bulbGeo,bulbMat(i)); bb.position.set(-1.0+i*0.25,2.55,0.42); g.add(bb); if(i%2===0) glow(g,bb.position,BC[i%4],0.3); }
+ const pc=[0xff8fb8,0x8fd8ff,0xffe08a,0xb48aff,0x9ff0a8];
+ for(let i=0;i<5;i++){ const pl=plush(pc[(i+title.length)%5]); pl.position.set(-0.9+i*0.45,2.05,-0.84); pl.rotation.y=(i-2)*0.12; g.add(pl); }
+ for(let i=0;i<2;i++){ const pl=plush(pc[(i+2)%5],1.6); pl.position.set(i?0.98:-0.98,1.75,0.36); pl.rotation.z=i?-0.2:0.2; g.add(pl); }
+ const SL=new T.SpotLight(0xffc27a,7,4.5,0.95,0.6,1.5); SL.position.set(0,2.5,0.55); SL.target.position.set(0,1.0,-0.5); g.add(SL); g.add(SL.target);
  return g; }
 const G1=stall(-2.5,-2.0,0.55,'DOSENWERFEN',0xb3202a), G2=stall(0,-2.7,0,'SCHIESSBUDE',0x1f5fa8), G3=stall(2.5,-2.0,-0.55,'PFERDERENNEN',0x2a8a3a);
+// Staub/Dunst im Licht
+const dustG=new T.BufferGeometry(), DN=600, dp=new Float32Array(DN*3); for(let i=0;i<DN;i++){ dp[i*3]=(Math.random()-0.5)*8; dp[i*3+1]=Math.random()*3.2; dp[i*3+2]=-0.5-Math.random()*3.5; } dustG.setAttribute('position',new T.BufferAttribute(dp,3));
+const dustP=new T.Points(dustG,new T.PointsMaterial({map:glowTex,size:0.025,color:0xffd6a0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending})); S.add(dustP);
 // ---------- Physik
 const GRAV=-9.81, balls=[], cans=[], colliders=[]; // colliders: {box:Box3}
 function wcol(g,w,h,d,x,y,z){ const m=box(w,h,d,new T.MeshBasicMaterial({visible:false}),x,y,z,g); g.updateMatrixWorld(true); colliders.push({o:m,inv:m.matrixWorld.clone().invert(),mw:m.matrixWorld.clone(),h:new T.Vector3(w/2,h/2,d/2)}); }
@@ -110,9 +129,15 @@ function stepBall(b,dt){ if(b.held){ b.held.c.getWorldPosition(b.m.position); re
  // Dosen treffen
  for(const c of cans){ const d=P.distanceTo(c.m.position); if(d<0.075){ const n=c.m.position.clone().sub(P).normalize(); c.v.copy(b.v).multiplyScalar(0.55).addScaledVector(n,0.8); c.v.y=Math.abs(c.v.y)+0.6; c.w.set(Math.random()*8-4,Math.random()*4,Math.random()*8-4); if(!c.down){ c.down=true; SND.clank(1); } b.v.multiplyScalar(0.5); } }
  // Pferderennen-Brett
- if(b.kind==='h'){ const l=board.worldToLocal(P.clone()); if(Math.abs(l.x)<0.6&&Math.abs(l.z)<0.4&&l.y<r+0.01&&l.y>-0.08){ // auf dem Brett: Rollen
-   const nW=new T.Vector3(0,1,0).applyQuaternion(board.getWorldQuaternion(new T.Quaternion())); P.copy(board.localToWorld(new T.Vector3(l.x,r,l.z))); const vn=b.v.dot(nW); if(vn<0) b.v.addScaledVector(nW,-vn*1.3); b.v.multiplyScalar(1-1.2*dt);
-   for(const [hx,hz,pts] of holes){ if(Math.hypot(l.x-hx,l.z-hz)<0.05&&b.v.length()<1.6){ score(pts); b.m.position.copy(b.home); b.v.set(0,0,0); b.rest=true; b.thrown=false; SND.ding(); break; } } } }
+ if(b.kind==='h'){ const l=board.worldToLocal(P.clone()); if(Math.abs(l.x)<0.62&&Math.abs(l.z)<0.45&&l.y<r+0.06&&l.y>-0.12){ // auf dem Brett: Rollen bergauf
+   const nW=new T.Vector3(0,1,0).applyQuaternion(board.getWorldQuaternion(new T.Quaternion()));
+   const down=new T.Vector3(0,0,1).applyQuaternion(board.getWorldQuaternion(new T.Quaternion())); // +z = downhill on tilted board
+   P.copy(board.localToWorld(new T.Vector3(l.x,r+0.001,l.z))); const vn=b.v.dot(nW); if(vn<0) b.v.addScaledVector(nW,-vn*1.05);
+   // gravity along board: pull toward +z (downhill) but keep momentum for roll-up shots
+   b.v.addScaledVector(down, 2.2*dt); b.v.multiplyScalar(1-0.55*dt);
+   // soft walls on board edges
+   if(Math.abs(l.x)>0.55) b.v.x*=-0.4;
+   for(const [hx,hz,pts] of holes){ if(Math.hypot(l.x-hx,l.z-hz)<0.06&&b.v.length()<2.4){ score(pts); b.m.position.copy(b.home); b.v.set(0,0,0); b.rest=true; b.thrown=false; SND.ding(); break; } } } }
  if(b.t>6||P.y<-1||P.length()>12){ b.m.position.copy(b.home); b.v.set(0,0,0); b.rest=true; b.t=0; b.thrown=false; } }
 function stepCans(dt){ for(const c of cans){ if(!c.down){ // Stütze prüfen
    if(c.r>0){ const below=cans.filter(o=>o.r===c.r-1&&!o.down&&Math.abs(o.base.x-c.base.x)<0.08&&Math.abs(o.base.z-c.base.z)<0.08); if(below.length<1){ c.down=true; c.v.set((Math.random()-0.5)*0.4,0,(Math.random()-0.5)*0.4); c.w.set(Math.random()*4-2,0,Math.random()*4-2); } } continue; }
@@ -128,7 +153,7 @@ function stepDucks(t){ for(const d of ducks){ const sp=d.row?0.12:-0.16; let u=(
 function tick(){ const now=performance.now(), dt=Math.min(0.033,(now-last)/1000); last=now; const t=now/1000;
  const pres=R.xr.isPresenting; for(const st of ctr){ const p=new T.Vector3(); st.c.getWorldPosition(p); st.hist.push({p:p.clone(),t:now}); while(st.hist.length>6) st.hist.shift(); st.rifle.visible=pres&&nearG2(p)&&!st.held&&isAimingAt(st); st.ln.visible=pres&&st.rifle.visible; }
  const sub=3; for(let k=0;k<sub;k++){ balls.forEach(b=>stepBall(b,dt/sub)); stepCans(dt/sub); }
- stepDucks(t); stepRace(dt,t); bulbs.forEach((b,i)=>b.material.color.offsetHSL(0,0,0)); }
+ stepDucks(t); stepRace(dt,t); dustP.rotation.y+=dt*0.01; const da=dustP.geometry.attributes.position; for(let i=0;i<da.count;i++){ let y=da.getY(i)+dt*0.02; if(y>3.2) y=0.2; da.setY(i,y);} da.needsUpdate=true; glows.forEach((g,i)=>g.material.opacity=0.6+0.12*Math.sin(t*3+i)); bulbs.forEach((b,i)=>b.material.color.offsetHSL(0,0,0)); }
 function isAimingAt(st){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q); const d=new T.Vector3(0,0,-1).applyQuaternion(q); const p=new T.Vector3(); st.c.getWorldPosition(p); const to=new T.Vector3(); G2.getWorldPosition(to); to.y=1.6; to.sub(p).normalize(); return d.dot(to)>0.9; }
 AFRAME.registerComponent('kirmes-tick',{tick}); sc.setAttribute('kirmes-tick','');
 });
