@@ -45,6 +45,10 @@ function go(){
   for(let i=0;i<900;i++){ tx.fillStyle=`rgba(40,50,45,${Math.random()*0.25})`; tx.fillRect(Math.random()*256,Math.random()*64,2,2); }
   const tt=new T.CanvasTexture(tc); tt.colorSpace=T.SRGBColorSpace; tt.wrapS=T.RepeatWrapping; tt.repeat.set(W/1.2,1);
   const edge=new T.Mesh(new T.BoxGeometry(W,0.06,0.32),new T.MeshStandardMaterial({map:tt,roughness:0.35,color:0x8a9890})); edge.position.set((x0+x1)/2,0.03,ze+0.16); G.add(edge);
+  const dc2=document.createElement('canvas'); dc2.width=dc2.height=256; const d2=dc2.getContext('2d'); d2.fillStyle='#7d8a84'; d2.fillRect(0,0,256,256); d2.strokeStyle='#3c4844'; d2.lineWidth=3; for(let i=0;i<=256;i+=32){d2.beginPath();d2.moveTo(i,0);d2.lineTo(i,256);d2.stroke();d2.beginPath();d2.moveTo(0,i);d2.lineTo(256,i);d2.stroke();}
+  for(let i=0;i<3000;i++){ d2.fillStyle=`rgba(20,30,25,${Math.random()*0.3})`; d2.fillRect(Math.random()*256,Math.random()*256,2+Math.random()*3,2); }
+  const dt=new T.CanvasTexture(dc2); dt.colorSpace=T.SRGBColorSpace; dt.wrapS=dt.wrapT=T.RepeatWrapping; const DD=3.2; dt.repeat.set(W/1.0,DD/1.0);
+  const deck=new T.Mesh(new T.PlaneGeometry(W,DD),new T.MeshStandardMaterial({map:dt,roughness:0.3,metalness:0.1,color:0x6a7670})); deck.rotation.x=-Math.PI/2; deck.position.set((x0+x1)/2,0.008,ze+0.32+DD/2); G.add(deck);
   const lip=new T.Mesh(new T.BoxGeometry(W,0.25,0.03),new T.MeshStandardMaterial({color:0x26403a,roughness:0.4})); lip.position.set((x0+x1)/2,-0.1,ze); /* lip off: photo already has the basin wall */
   const nc=document.createElement('canvas'); nc.width=nc.height=128; const nx=nc.getContext('2d'); for(let i=0;i<400;i++){ const r=4+Math.random()*14; const g=nx.createRadialGradient(0,0,0,0,0,r); const X0=Math.random()*128,Y0=Math.random()*128; nx.save(); nx.translate(X0,Y0); g.addColorStop(0,'rgba(255,255,255,0.12)'); g.addColorStop(1,'rgba(255,255,255,0)'); nx.fillStyle=g; nx.fillRect(-r,-r,2*r,2*r); nx.restore(); }
   const nt=new T.CanvasTexture(nc); nt.wrapS=nt.wrapT=T.RepeatWrapping; nt.repeat.set(W/1.5,D/1.5);
