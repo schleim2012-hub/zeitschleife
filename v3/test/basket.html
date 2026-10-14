@@ -10,8 +10,8 @@
 <div id="score">0</div><div id="prize"></div><div id="tp">Teleport: Controller zeigen + Trigger</div>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
  fog="type:exponential; color:#0c1018; density:0.038" background="color:#070a12">
- <a-entity light="type:ambient; intensity:0.16; color:#6a7a9a"></a-entity>
- <a-entity light="type:hemisphere; intensity:0.28; color:#b8c4e0; groundColor:#1a1510"></a-entity>
+ <a-entity light="type:ambient; intensity:0.22; color:#8a7a6a"></a-entity>
+ <a-entity light="type:hemisphere; intensity:0.38; color:#ffd8b0; groundColor:#2a1a10"></a-entity>
  <a-entity id="rig" position="0 0 2.2">
   <a-entity id="cam" camera look-controls wasd-controls="acceleration:22" position="0 1.6 0"></a-entity>
  </a-entity>
@@ -43,27 +43,12 @@ brick.wrapS=brick.wrapT=T.RepeatWrapping;brick.repeat.set(3,2.2);
 const metal=std({color:0x6a7078,metalness:0.85,roughness:0.35});
 const wood=std({color:0x5a3a22,roughness:0.8});
 const ground=new T.Mesh(new T.PlaneGeometry(28,28),std({map:asphalt,roughness:0.55,metalness:0.08,color:0x9a9aa5}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;S.add(ground);
-const wall=new T.Mesh(new T.BoxGeometry(12,5.2,0.4),std({map:brick,roughness:0.9}));wall.position.set(0,2.6,-4.3);S.add(wall);
-// wet puddles
-const puddle=new T.Mesh(new T.CircleGeometry(1.1,32),std({color:0x1a2230,roughness:0.08,metalness:0.85,transparent:true,opacity:0.75}));
-puddle.rotation.x=-Math.PI/2;puddle.position.set(0.6,0.01,0.4);S.add(puddle);
-const puddle2=puddle.clone();puddle2.scale.set(0.55,0.55,0.55);puddle2.position.set(-1.8,0.01,-1.2);S.add(puddle2);
+const wall=new T.Mesh(new T.BoxGeometry(12,5.2,0.4),std({map:brick,roughness:0.85,color:0xd8b8a0}));wall.position.set(0,2.6,-4.3);S.add(wall);
+// wet look via ground roughness only
 // spray graffiti texture
-const graf=cv(1024,640,(x,w,h)=>{
- x.clearRect(0,0,w,h);
- // spray base
- for(let i=0;i<18000;i++){ const px=80+Math.random()*860, py=60+Math.random()*520; const a=0.04+Math.random()*0.1;
-  x.fillStyle=`rgba(${180+Math.random()*60},${40+Math.random()*80},${200+Math.random()*55},${a})`; x.beginPath(); x.arc(px,py,1+Math.random()*3,0,7); x.fill(); }
- x.globalCompositeOperation='source-over';
- x.font='bold 140px Impact,sans-serif'; x.fillStyle='#d24dff'; x.shadowColor='#7a00aa'; x.shadowBlur=18; x.fillText('REWIND',90,260);
- x.font='bold 90px Impact,sans-serif'; x.fillStyle='#6ef0ff'; x.fillText('89',520,380);
- x.strokeStyle='#ff6fb3'; x.lineWidth=10; x.beginPath(); x.moveTo(100,420); x.bezierCurveTo(280,300,520,500,780,360); x.stroke();
- x.shadowBlur=0; x.fillStyle='rgba(255,224,100,0.85)'; x.font='bold 48px sans-serif'; x.fillText('Mauer ist weg',100,500);
- // drip
- x.strokeStyle='rgba(210,80,255,0.5)'; x.lineWidth=3; for(let i=0;i<12;i++){ const xx=120+i*55; x.beginPath(); x.moveTo(xx,270); x.lineTo(xx+Math.random()*6,270+40+Math.random()*80); x.stroke(); }
-});
-const grafM=new T.Mesh(new T.PlaneGeometry(4.2,2.5),new T.MeshStandardMaterial({map:graf,transparent:true,roughness:0.95,metalness:0,depthWrite:false,emissive:0x220033,emissiveIntensity:0.15}));
+const grafM=new T.Mesh(new T.PlaneGeometry(4.2,2.5),new T.MeshStandardMaterial({transparent:true,roughness:0.9,metalness:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,color:0xffffff}));
 grafM.position.set(-1.6,2.15,-4.08);S.add(grafM);
+loader.load('../assets/tex/kirmes/graffiti_spray.png',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;grafM.material.map=t;grafM.material.needsUpdate=true;});
 (async()=>{
   const brickT=await loadTex('../assets/tex/kirmes/Brick/Bricks076A_1K-JPG_Color.jpg',2.5);
   const aspT=await loadTex('../assets/tex/kirmes/Asphalt/Asphalt025B_1K-JPG_Color.jpg',5);
@@ -97,19 +82,25 @@ const city=cv(1024,256,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.add
   for(let k=0;k<8;k++){ x.fillStyle=`rgba(255,${180+Math.random()*60},${80},${0.3+Math.random()*0.5})`; x.fillRect(bx+2+Math.random()*(bw-4), h-bh+4+Math.random()*(bh-10), 2, 2);} }
  x.fillStyle='rgba(255,160,80,0.25)'; x.fillRect(0,h*0.7,w,h*0.3); });
 const cityM=new T.Mesh(new T.PlaneGeometry(40,8),new T.MeshBasicMaterial({map:city,toneMapped:false,transparent:true,opacity:0.85})); cityM.position.set(0,3.2,-18); S.add(cityM);
+const wallWarm=new T.PointLight(0xffa860,2.2,7,2); wallWarm.position.set(-1.2,3.0,-2.6); S.add(wallWarm); const wallFill=new T.PointLight(0xffb070,3.2,10,2); wallFill.position.set(0.3,2.6,-2.0); S.add(wallFill); const hoopFill=new T.PointLight(0xffd0a0,1.8,8,2); hoopFill.position.set(0,3.0,-2.5); S.add(hoopFill);
 const cityGlow=new T.PointLight(0xff8a40,1.2,40,2); cityGlow.position.set(0,2.5,-12); S.add(cityGlow);
 // streetlight with cone + moths/dust
-const pole=new T.Mesh(new T.CylinderGeometry(0.07,0.09,4.4,10),metal);pole.position.set(2.5,2.2,1.1);S.add(pole);
-const arm=new T.Mesh(new T.BoxGeometry(1.35,0.07,0.07),metal);arm.position.set(1.95,4.35,1.1);S.add(arm);
-const lamp=new T.Mesh(new T.SphereGeometry(0.14,12,10),new T.MeshBasicMaterial({color:0xffe6b0,toneMapped:false}));lamp.position.set(1.35,4.2,1.1);S.add(lamp);
-const lampL=new T.SpotLight(0xffd9a0,8,14,0.55,0.65,1.4); lampL.position.copy(lamp.position); lampL.target.position.set(0.2,0,0.5); S.add(lampL); S.add(lampL.target);
-const cone=new T.Mesh(new T.ConeGeometry(2.4,4.2,24,1,true), new T.MeshBasicMaterial({color:0xffd9a0,transparent:true,opacity:0.07,side:T.DoubleSide,depthWrite:false}));
-cone.position.set(1.35,2.1,1.1); cone.rotation.x=Math.PI; S.add(cone);
+const pole=new T.Mesh(new T.CylinderGeometry(0.07,0.09,4.4,10),metal);pole.position.set(3.3,2.2,-3.6);S.add(pole);
+const arm=new T.Mesh(new T.BoxGeometry(1.35,0.07,0.07),metal);arm.position.set(2.75,4.35,-3.6);S.add(arm);
+const lamp=new T.Mesh(new T.SphereGeometry(0.07,12,10),std({color:0xffe0a8,emissive:0xffb060,emissiveIntensity:1.2,roughness:0.4,metalness:0.2}));lamp.position.set(2.15,4.2,-3.6);S.add(lamp);
+const lampL=new T.PointLight(0xffc080,7.5,10,1.8); lampL.position.copy(lamp.position); S.add(lampL);
+const lampGround=new T.PointLight(0xffb070,4.5,8,1.8); lampGround.position.set(1.6,1.2,-3.0); S.add(lampGround);
+// soft volumetric fake: single large additive glow sprite at lamp (radial only — no cone planes)
+const beamTex=cv(256,256,(x,w,h)=>{const g=x.createRadialGradient(128,128,0,128,128,128);g.addColorStop(0,'rgba(255,210,140,0.45)');g.addColorStop(0.25,'rgba(255,180,100,0.18)');g.addColorStop(0.55,'rgba(255,150,70,0.05)');g.addColorStop(1,'rgba(255,140,60,0)');x.fillStyle=g;x.fillRect(0,0,w,h);});
+const glowSp=new T.Sprite(new T.SpriteMaterial({map:beamTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0.55}));
+glowSp.position.copy(lamp.position); glowSp.scale.set(1.8,1.8,1); S.add(glowSp);
+const glowDown=new T.Sprite(new T.SpriteMaterial({map:beamTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0.22}));
+glowDown.position.set(1.85,2.2,-3.3); glowDown.scale.set(3.6,4.5,1); S.add(glowDown);
 // moths / dust in light
-const dustN=220, dustPos=new Float32Array(dustN*3); for(let i=0;i<dustN;i++){ dustPos[i*3]=(Math.random()-0.5)*4; dustPos[i*3+1]=0.3+Math.random()*3.5; dustPos[i*3+2]=(Math.random()-0.5)*4; }
+const dustN=90, dustPos=new Float32Array(dustN*3); for(let i=0;i<dustN;i++){ dustPos[i*3]=(Math.random()-0.5)*4; dustPos[i*3+1]=0.3+Math.random()*3.5; dustPos[i*3+2]=(Math.random()-0.5)*4; }
 const dustG=new T.BufferGeometry(); dustG.setAttribute('position',new T.BufferAttribute(dustPos,3));
 const dustGlow=cv(32,32,(x,w,h)=>{const g=x.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'rgba(255,240,200,1)');g.addColorStop(1,'rgba(255,200,100,0)');x.fillStyle=g;x.fillRect(0,0,w,h);});
-const dust=new T.Points(dustG,new T.PointsMaterial({map:dustGlow,size:0.04,transparent:true,opacity:0.55,depthWrite:false,blending:T.AdditiveBlending,color:0xffe0a8})); dust.position.set(1.2,0,0.8); S.add(dust);
+const dust=new T.Points(dustG,new T.PointsMaterial({map:dustGlow,size:0.028,transparent:true,opacity:0.55,depthWrite:false,blending:T.AdditiveBlending,color:0xffe0a8})); dust.position.set(1.9,0,-3.0); dust.scale.set(0.6,1,0.6); S.add(dust);
 // backboard + rim
 const boardG=new T.Group();boardG.position.set(0,3.15,-3.95);S.add(boardG);
 const board=new T.Mesh(new T.BoxGeometry(1.85,1.1,0.07),std({color:0xf2f2f0,roughness:0.4,metalness:0.08}));boardG.add(board);
