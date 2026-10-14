@@ -8,10 +8,12 @@
 </head><body>
 <div id="hud">Basketball-Hinterhof (1989)<br><small>VR: L-Stick bewegen · Zielen+Trigger = Teleport · R-Stick = Snap-Drehen · Grip = Ball<br>Desktop: WASD + Klick werfen</small></div>
 <div id="score">0</div><div id="prize"></div><div id="tp">Teleport: Controller zeigen + Trigger</div>
+<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.16;mix-blend-mode:overlay"></canvas>
+<script>(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();</script>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
- fog="type:exponential; color:#120e18; density:0.012" background="color:#070a12">
- <a-entity light="type:ambient; intensity:0.35; color:#a09080"></a-entity>
- <a-entity light="type:hemisphere; intensity:0.25; color:#ffd8b0; groundColor:#2a1a10"></a-entity>
+ fog="type:exponential; color:#06050a; density:0.06" background="color:#020204">
+ <a-entity light="type:ambient; intensity:0.05; color:#a09080"></a-entity>
+ <a-entity light="type:hemisphere; intensity:0.08; color:#ffd8b0; groundColor:#2a1a10"></a-entity>
  <a-entity id="rig" position="0 0 2.2">
   <a-entity id="cam" camera look-controls wasd-controls="acceleration:22" position="0 1.6 0"></a-entity>
  </a-entity>
@@ -44,9 +46,9 @@ const metal=std({color:0x6a7078,metalness:0.85,roughness:0.35});
 const wood=std({color:0x5a3a22,roughness:0.8});
 
 // === X-Files / FMV hybrid (Pete): real photos = world; 3D only for grabbables (hoop, ball) ===
-const photoMat=(url,opts={})=>{const m=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:true,...opts});loader.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
+const photoMat=(url,opts={})=>{const m=new T.MeshStandardMaterial({color:0xffffff,roughness:0.92,metalness:0,fog:true,...opts});loader.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
 // far sphere (Poly Haven courtyard night CC0)
-(()=>{const pt=new T.TextureLoader().load('../assets/pano/basket_courtyard_night_4k.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
+(()=>{const pt=new T.TextureLoader().load('../assets/pano/basket_courtyard_night_4k_dark.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
 const sph=new T.Mesh(new T.SphereGeometry(40,96,48),new T.MeshBasicMaterial({map:pt,side:T.BackSide,fog:false,toneMapped:false,depthWrite:false}));
 sph.position.y=1.4; sph.rotation.y=Math.PI*1.15; sph.renderOrder=-20; S.add(sph);})();
 // photo floor (no tiling — one photograph)
@@ -91,8 +93,8 @@ const city=cv(1024,256,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.add
   for(let k=0;k<8;k++){ x.fillStyle=`rgba(255,${180+Math.random()*60},${80},${0.3+Math.random()*0.5})`; x.fillRect(bx+2+Math.random()*(bw-4), h-bh+4+Math.random()*(bh-10), 2, 2);} }
  x.fillStyle='rgba(255,160,80,0.25)'; x.fillRect(0,h*0.7,w,h*0.3); });
 const cityM=new T.Mesh(new T.PlaneGeometry(40,8),new T.MeshBasicMaterial({map:city,toneMapped:false,transparent:true,opacity:0.85})); cityM.position.set(0,3.2,-18); /* old procedural skyline removed — photo sphere */
-const wallWarm=new T.PointLight(0xffa860,0.6,7,2); wallWarm.position.set(-1.2,3.0,-2.6); S.add(wallWarm); const wallFill=new T.PointLight(0xffb070,0.8,10,2); wallFill.position.set(0.3,2.6,-2.0); S.add(wallFill); const hoopFill=new T.PointLight(0xffd0a0,1.0,8,2); hoopFill.position.set(0,3.0,-2.5); S.add(hoopFill);
-const cityGlow=new T.PointLight(0xff8a40,1.2,40,2); cityGlow.position.set(0,2.5,-12); S.add(cityGlow);
+const wallWarm=new T.PointLight(0xffa860,1.1,5,2); wallWarm.position.set(-2.4,3.2,-3.6); S.add(wallWarm); const wallFill=new T.PointLight(0xffb070,0.0,10,2); wallFill.position.set(0.3,2.6,-2.0); S.add(wallFill); const hoopFill=new T.PointLight(0xffd0a0,0.9,7,2); hoopFill.position.set(0,3.0,-2.5); S.add(hoopFill);
+const cityGlow=new T.PointLight(0xff8a40,0.0,40,2); cityGlow.position.set(0,2.5,-12); S.add(cityGlow);
 // streetlight with cone + moths/dust
 const pole=new T.Mesh(new T.CylinderGeometry(0.07,0.09,4.4,10),metal);pole.position.set(4.2,2.2,-4.6);S.add(pole);
 const arm=new T.Mesh(new T.BoxGeometry(1.35,0.07,0.07),metal);arm.position.set(2.75,4.35,-3.6);S.add(arm);
@@ -192,7 +194,7 @@ AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=M
   const dir=new T.Vector3(0,0,-1).applyQuaternion(q); const hit=new T.Raycaster(o,dir,0.2,10).intersectObject(ground)[0];
   if(hit){ tpMarker.position.copy(hit.point); tpMarker.position.y=0.02; tpMarker.visible=true; break; } else tpMarker.visible=false; }
  for(let k=0;k<3;k++) step(dt/3);
- lampL.intensity=2.0+Math.sin(now*0.008)*0.15+Math.random()*0.05;
+ lampL.intensity=4.5+Math.sin(now*0.008)*0.15+Math.random()*0.05;
  // moths swirl
  const da=dust.geometry.attributes.position; for(let i=0;i<da.count;i++){ let x=da.getX(i)+Math.sin(now*0.002+i)*0.004; let y=da.getY(i)+Math.sin(now*0.003+i*1.7)*0.006; let z=da.getZ(i)+Math.cos(now*0.0025+i)*0.004;
   if(y>3.8) y=0.4; da.setXYZ(i,x,y,z);} da.needsUpdate=true;
@@ -200,4 +202,10 @@ AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=M
 sc.setAttribute('basket-tick','');
 window.__b={B,get score(){return score},streak:()=>streak,get clock(){return window.__loopClock},setScore};
 });
+
+// found-footage grain in VR (head-locked, very subtle)
+(()=>{const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gd=gx.createImageData(128,128);const gt=new THREE.CanvasTexture(gc);
+const gm=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),new THREE.MeshBasicMaterial({map:gt,transparent:true,opacity:0.07,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));gm.position.set(0,0,-0.12);gm.renderOrder=999;
+const cam=document.getElementById('cam'); const add=()=>cam.object3D.add(gm); cam.object3D?add():cam.addEventListener('loaded',add);
+setInterval(()=>{for(let i=0;i<gd.data.length;i+=4){const v=Math.random()*255;gd.data[i]=gd.data[i+1]=gd.data[i+2]=v;gd.data[i+3]=255;}gx.putImageData(gd,0,0);gt.needsUpdate=true;},70);})();
 </script></body></html>

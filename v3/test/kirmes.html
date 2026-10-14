@@ -6,10 +6,12 @@
 <div id="fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .25s"></div>
 <div id="prize" style="display:none;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:15;text-align:center;color:#ffe6a8;font:700 28px sans-serif;text-shadow:0 0 18px #000;background:rgba(0,0,0,.55);padding:18px 28px;border-radius:16px"></div>
 <div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick auf Bude = davor stellen · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
-<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#140c14; density:0.01">
+<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.16;mix-blend-mode:overlay"></canvas>
+<script>(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();</script>
+<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#06050a; density:0.075">
  <a-sky color="#140a10"></a-sky>
- <a-entity light="type:ambient; intensity:0.18; color:#9a86d0"></a-entity>
- <a-entity light="type:hemisphere; intensity:0.4; color:#ffd9a8; groundColor:#1a1020"></a-entity>
+ <a-entity light="type:ambient; intensity:0.05; color:#9a86d0"></a-entity>
+ <a-entity light="type:hemisphere; intensity:0.08; color:#ffd9a8; groundColor:#1a1020"></a-entity>
  <a-entity id="cam" camera look-controls position="0 1.6 0.4"></a-entity>
 </a-scene>
 <script>
@@ -42,16 +44,16 @@ const asph=cv(512,512,(x,w,h)=>{ x.fillStyle='#1b1a1f'; x.fillRect(0,0,w,h); for
 
 // === X-Files / FMV hybrid: photo world; 3D for cans/balls/plush/board only ===
 const TL2=new T.TextureLoader();
-const photoMat=(url,opts={})=>{const m=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:true,...opts});TL2.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
-(()=>{const pt=TL2.load('../assets/pano/kirmes_vignaioli_4k.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
+const photoMat=(url,opts={})=>{const m=new T.MeshBasicMaterial({color:0x6a625a,fog:true,toneMapped:true,...opts});TL2.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
+(()=>{const pt=TL2.load('../assets/pano/kirmes_vignaioli_4k_dark.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
 const sph=new T.Mesh(new T.SphereGeometry(42,96,48),new T.MeshBasicMaterial({map:pt,side:T.BackSide,fog:false,toneMapped:false,depthWrite:false}));
 sph.position.y=1.5; sph.rotation.y=Math.PI*1.15; sph.renderOrder=-20; S.add(sph);})();
-(()=>{const cyl=new T.Mesh(new T.CylinderGeometry(20,20,8,64,1,true),photoMat('../assets/pano/kirmes_backdrop_strip.jpg'));
+(()=>{const cyl=new T.Mesh(new T.CylinderGeometry(20,20,8,64,1,true),photoMat('../assets/pano/kirmes_backdrop_strip_dark.jpg'));
 cyl.position.y=3.0; cyl.rotation.y=Math.PI*1.15; cyl.renderOrder=-15; S.add(cyl);})();
 const fl=new T.Mesh(new T.CircleGeometry(14,72),photoMat('../assets/pano/kirmes_floor_photo.jpg')); fl.rotation.x=-Math.PI/2; fl.renderOrder=-5; S.add(fl);
 // large photo backdrop plane behind stalls (FMV set wall)
-const setWall=new T.Mesh(new T.PlaneGeometry(28,10),photoMat('../assets/pano/kirmes_backdrop_strip.jpg'));
-setWall.position.set(0,4.2,-8.5); S.add(setWall);
+const setWall=new T.Mesh(new T.PlaneGeometry(28,10),photoMat('../assets/pano/kirmes_backdrop_strip_dark.jpg'));
+setWall.position.set(0,4.2,-8.5); S.add(setWall); setWall.material.color.set(0x2a2622);
 
 const bulbs=[]; for(let k=0;k<3;k++){ for(let i=0;i<26;i++){ const t=i/25, x=-4.5+9*t, y=3.1-Math.sin(t*Math.PI)*0.45+(k?0.15:0), z=-1.0-k*1.6; const b=new T.Mesh(bulbGeo,bulbMat(i)); b.position.set(x,y,z); S.add(b); bulbs.push(b); if(i%2===0) glow(S,b.position,BC[i%4],0.4); } }
 [[-2.6,-2.2],[0,-3.0],[2.6,-2.2]].forEach(([x,z])=>{ const L=new T.PointLight(0xffc98a,2.2,5.5,2); L.position.set(x,2.5,z+0.8); S.add(L); });
@@ -72,8 +74,13 @@ function stall(cx,cz,yaw,title,col){ const g=new T.Group(); g.position.set(cx,0,
  return g; }
 const G1=stall(-2.5,-2.0,0.55,'DOSENWERFEN',0xb3202a), G2=stall(0,-2.7,0,'SCHIESSBUDE',0x1f5fa8), G3=stall(2.5,-2.0,-0.55,'PFERDERENNEN',0x2a8a3a); G1.userData.stall=G1; G2.userData.stall=G2; G3.userData.stall=G3; [G1,G2,G3].forEach(g=>g.traverse(o=>o.userData.stall=g));
 // photo wallpaper on booth back walls + front skirts (FMV look, real photographed surfaces)
-[[G1,0],[G2,1],[G3,2]].forEach(([g,i])=>{ const bw=new T.Mesh(new T.PlaneGeometry(2.16,1.55),photoMat('../assets/pano/kirmes_booth_front_'+i+'.jpg')); bw.position.set(0,1.75,-0.89); g.add(bw);
+[[G1,0],[G2,1],[G3,2]].forEach(([g,i])=>{ const bw=new T.Mesh(new T.PlaneGeometry(2.16,1.55),std({color:0x2a1c14,roughness:0.95})); bw.position.set(0,1.75,-0.89); g.add(bw);
   const cols=[0xffb0a8,0xa8c4ff,0xa8f0b8]; const fs=new T.Mesh(new T.PlaneGeometry(2.18,0.9),photoMat('../assets/pano/kirmes_booth_skirt.jpg',{color:cols[i]})); fs.position.set(0,0.47,0.385); g.add(fs); });
+// closed booth sides + warm booth spots (practical lights only)
+[G1,G2,G3].forEach(g=>{ const sm=std({color:0x3a2a1e,roughness:0.9}); [-1.08,1.08].forEach(x=>{const w=new T.Mesh(new T.BoxGeometry(0.04,2.6,1.3),sm); w.position.set(x,1.3,-0.27); g.add(w);});
+ const top=new T.Mesh(new T.BoxGeometry(2.2,0.04,1.3),sm); top.position.set(0,2.6,-0.27); g.add(top);
+ const sp=new T.SpotLight(0xffc888,6,5,0.75,0.9,1.6); sp.position.set(0,2.5,0.1); g.add(sp); sp.target.position.set(0,0.9,-0.4); g.add(sp.target); });
+
 
 // Staub/Dunst im Licht
 const dustG=new T.BufferGeometry(), DN=600, dp=new Float32Array(DN*3); for(let i=0;i<DN;i++){ dp[i*3]=(Math.random()-0.5)*8; dp[i*3+1]=Math.random()*3.2; dp[i*3+2]=-0.5-Math.random()*3.5; } dustG.setAttribute('position',new T.BufferAttribute(dp,3));
@@ -231,4 +238,10 @@ function tick(){ const now=performance.now(), dt=Math.min(0.033,(now-last)/1000)
 function isAimingAt(st){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q); const d=new T.Vector3(0,0,-1).applyQuaternion(q); const p=new T.Vector3(); st.c.getWorldPosition(p); const to=new T.Vector3(); G2.getWorldPosition(to); to.y=1.6; to.sub(p).normalize(); return d.dot(to)>0.9; }
 AFRAME.registerComponent('kirmes-tick',{tick}); sc.setAttribute('kirmes-tick','');
 });
+
+// found-footage grain in VR (head-locked, very subtle)
+(()=>{const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gd=gx.createImageData(128,128);const gt=new THREE.CanvasTexture(gc);
+const gm=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),new THREE.MeshBasicMaterial({map:gt,transparent:true,opacity:0.07,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));gm.position.set(0,0,-0.12);gm.renderOrder=999;
+const cam=document.getElementById('cam'); const add=()=>cam.object3D.add(gm); cam.object3D?add():cam.addEventListener('loaded',add);
+setInterval(()=>{for(let i=0;i<gd.data.length;i+=4){const v=Math.random()*255;gd.data[i]=gd.data[i+1]=gd.data[i+2]=v;gd.data[i+3]=255;}gx.putImageData(gd,0,0);gt.needsUpdate=true;},70);})();
 </script></body></html>
