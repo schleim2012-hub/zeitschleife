@@ -21,17 +21,20 @@ S.addEventListener('loaded',()=>{
  bd.position.set(0,1.6+(256-B.horizonRow)*PX,R-B.front); G.add(bd);
  // shell
  const wallM=std({color:C.wall,roughness:0.95,emissive:C.wallEm||0x000000}), floorM=std({color:C.floor,roughness:C.floorRough||0.6,metalness:0.1});
- if(C.floorTex) tex(C.floorTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(5,5);floorM.map=t;floorM.needsUpdate=true;});
+ if(C.floorTex) tex(C.floorTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(C.floorRep||5,C.floorRep||5);floorM.map=t;floorM.needsUpdate=true;});
  if(C.wallTex) tex(C.wallTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(3,2);wallM.map=t;wallM.needsUpdate=true;});
  const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);G.add(o);return o;};
- const W=C.room; box(0.1,W.h,W.d,wallM,-W.w/2,W.h/2,W.cz); box(0.1,W.h,W.d,wallM,W.w/2,W.h/2,W.cz); box(W.w,W.h,0.1,wallM,0,W.h/2,W.cz+W.d/2);
+ const W=C.room; if(!W.noWalls){ box(0.1,W.h,W.d,wallM,-W.w/2,W.h/2,W.cz); box(0.1,W.h,W.d,wallM,W.w/2,W.h/2,W.cz); box(W.w,W.h,0.1,wallM,0,W.h/2,W.cz+W.d/2); }
  if(W.ceiling) box(W.w,0.1,W.d+4,wallM,0,W.h,W.cz-1);
  const flD=C.floorFront!=null?(W.cz+W.d/2-C.floorFront):W.d+6; const fl=new T.Mesh(new T.PlaneGeometry(W.w,flD),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,W.cz+W.d/2-flD/2); G.add(fl);
+ if(C.floorFade){ const ac=document.createElement('canvas'); ac.width=ac.height=256; const ax=ac.getContext('2d'); const [cx,cy,r0,r1]=C.floorFade; const g=ax.createRadialGradient(cx*256,cy*256,r0*256,cx*256,cy*256,r1*256); g.addColorStop(0,'#fff'); g.addColorStop(1,'#000'); ax.fillStyle=g; ax.fillRect(0,0,256,256);
+  floorM.alphaMap=new T.CanvasTexture(ac); floorM.transparent=true; floorM.depthWrite=false; floorM.needsUpdate=true; fl.renderOrder=2; }
  // glows
  const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gr=gx.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.3,'rgba(255,255,255,0.25)');gr.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gr;gx.fillRect(0,0,128,128);
  const gt=new T.CanvasTexture(gc); const glows=[];
  (C.glows||[]).forEach(([x,y,z,s,col,op])=>{const sp=new T.Sprite(new T.SpriteMaterial({map:gt,color:col,transparent:true,opacity:op,depthWrite:false,blending:T.AdditiveBlending,fog:false}));sp.position.set(x,y,z);sp.scale.set(s,s*0.7,1);G.add(sp);glows.push([sp,op]);});
  (C.lights||[]).forEach(([col,int,dist,x,y,z])=>{const L=new T.PointLight(col,int,dist,2);L.position.set(x,y,z);G.add(L);});
+ (C.props||[]).forEach(([glb,x,y,z,sc,ry])=>{ const e=document.createElement('a-entity'); e.setAttribute('gltf-model',glb); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('scale',sc+' '+sc+' '+sc); e.setAttribute('rotation','0 '+ry+' 0'); S.appendChild(e); });
  (C.boxes||[]).forEach(([w,h,d,col,x,y,z])=>box(w,h,d,std({color:col,roughness:0.85}),x,y,z));
  // grabbables (GLB)
  const items=[]; let held=null, grabs=0;
