@@ -63,20 +63,20 @@ S.addEventListener('loaded',()=>{
  [['p1',-2.69,1.65,0.2,1],['p2',-2.69,1.6,1.4,1],['p3',2.69,1.7,0.4,-1],['p4',2.69,1.6,1.5,-1]].forEach(([n,x,y,z,s])=>{const m=std({color:0x9a8090,roughness:0.85});tex('../assets/era1984/'+n+'.jpg?v=2',t=>{m.map=t;m.needsUpdate=true;});const p=new T.Mesh(new T.PlaneGeometry(0.5,0.75),m);p.position.set(x,y,z);p.rotation.y=s*Math.PI/2;G.add(p);});
  // ---------- grabbables: VHS (c1-c3), book (c4), cereal (c5) ----------
  const items=[];
- function item(n,w,h,d,x,y,z,ry,spine,page){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg?v=2',t=>{fm.map=t;fm.needsUpdate=true;});
+ function item(n,w,h,d,x,y,z,ry,spine,page,flat){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg?v=2',t=>{fm.map=t;fm.needsUpdate=true;});
   const sm=std({color:spine,roughness:0.7}); const pm=page?std({color:page,roughness:0.9}):sm; const mats=[pm,sm,pm,pm,fm,sm];
   const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el);
-  el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; });
-  const it={el,n,h,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
+  el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); if(flat){ el.object3D.position.set(x,y+d/2,z); el.object3D.rotation.set(-Math.PI/2,0,0); el.object3D.rotateOnWorldAxis(new T.Vector3(0,1,0),ry); } else { el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; } });
+  const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
- item('c1',0.105,0.19,0.025,-1.72,0.66,-0.95,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.58,0.66,-1.0,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.38,0.66,-0.93,-0.15,0xd8d0c0,0xd8d0c0);
+ item('c1',0.105,0.19,0.025,-1.72,0.66,-0.95,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.58,0.66,-1.0,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.36,0.66,-0.88,-0.35,0xd8d0c0,0xd8d0c0,true);
  item('c4',0.15,0.22,0.035,1.62,1.13,-1.3,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.86,1.13,-1.32,-0.4,0xd8c070);
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }
   const hand=(src&&src.id&&src.id!=='')?src:null; const par=(hand&&(hand.id==='hl'||hand.id==='hr'))?hand.object3D:document.getElementById('cam').object3D;
   par.attach(it.el.object3D); if(par===document.getElementById('cam').object3D){ it.el.object3D.position.set(0.12,-0.18,-0.45); } else { it.el.object3D.position.set(0,0,-0.12); }
   it.el.object3D.rotation.set(-0.3,0,0); held=it; it.vy=0; grabs++; mara(grabs===1?'grab':(grabs===4?'odd':(grabs===7?'nope':'grab')), true); }
- function drop(){ if(!held) return; G.attach(held.el.object3D); held.el.object3D.rotation.set(0,held.el.object3D.rotation.y,0); held.falling=true; held=null; }
+ function drop(){ if(!held) return; G.attach(held.el.object3D); if(held.flat) held.el.object3D.rotation.set(-Math.PI/2,0,held.el.object3D.rotation.z); else held.el.object3D.rotation.set(0,held.el.object3D.rotation.y,0); held.falling=true; held=null; }
  window.addEventListener('mousedown',e=>{ setTimeout(()=>{ if(held && !e.__used) {} },0); });
  S.addEventListener('click',e=>{ if(held && e.target===S) drop(); });
  ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',()=>{ const rc=document.getElementById(id).components.raycaster; if(held && (!rc||!rc.intersectedEls.length)) drop(); }));
@@ -102,4 +102,4 @@ AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0;
   const c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; o.position.x+=Math.max(-1.8,Math.min(1.8,wx))-wx; o.position.z+=Math.max(-1.4,Math.min(1.7,wz))-wz; }});
 </script><script>window.ERAX={covers:[['c6','book',1.38,1.13,-1.22,-25,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
  decoys:[['../assets/items/diddl.glb',-1.33,0.66,-1.02,1,25,['Mara','„Eine Diddl-Maus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
-<script src="era_extras.js?v=2"></script></body></html>
+<script src="era_extras.js?v=3"></script></body></html>

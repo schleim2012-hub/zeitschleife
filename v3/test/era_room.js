@@ -3,10 +3,13 @@
 const C=window.ERA, T=THREE, S=document.querySelector('a-scene');
 const sub=document.getElementById('sub');
 let subBusy=false;
-function say(who,text,file,ms){ sub.textContent=(who?who+': ':'')+text; sub.style.display='block'; subBusy=true;
+let VOX={}; fetch('../assets/vo/erax.json').then(r=>r.json()).then(j=>VOX=j).catch(()=>{});
+function say(who,text,file,ms){ if(!file&&VOX[text]) file='../assets/vo/'+VOX[text]; sub.textContent=(who?who+': ':'')+text; sub.style.display='block'; subBusy=true;
  const done=()=>{ subBusy=false; setTimeout(()=>{ if(!subBusy) sub.style.display='none'; },500); };
  if(file){ const a=new Audio(file); a.volume=0.9; a.onended=a.onerror=done; a.play().catch(()=>setTimeout(done,ms||3500)); } else setTimeout(done,ms||3500); }
 window.eraSay=say;
+// room ambience (CC0 BigSoundBank mixes), starts on first gesture
+if(C.amb){ const A=new Audio(C.amb); A.loop=true; A.volume=C.ambVol||0.35; const go=()=>{ A.play().catch(()=>{}); }; ['click','keydown','touchstart'].forEach(e=>window.addEventListener(e,go,{once:true})); document.querySelector('a-scene').addEventListener('enter-vr',go); window.eraAmb=A; }
 // Poly Haven PBR (CC0): wood_table_001 / painted_metal_shutter, 512px
 window.eraPBR=function(kind,rep,tint){ const n=kind==='wood'?'wood_table_001':'painted_metal_shutter', L=new THREE.TextureLoader(), P='../assets/tex/ph/'+n+'_';
  const m=new THREE.MeshStandardMaterial({color:tint||0x9a948c,roughness:1,metalness:kind==='wood'?0:0.55});
