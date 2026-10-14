@@ -9,7 +9,7 @@ function say(who,text,file,ms){ if(!file&&VOX[text]) file='../assets/vo/'+VOX[te
  if(file){ const a=new Audio(file); a.volume=0.9; a.onended=a.onerror=done; a.play().catch(()=>setTimeout(done,ms||3500)); } else setTimeout(done,ms||3500); }
 window.eraSay=say;
 // room ambience (CC0 BigSoundBank mixes), starts on first gesture
-if(C.amb){ const A=new Audio(C.amb); A.loop=true; A.volume=C.ambVol||0.35; const go=()=>{ A.play().catch(()=>{}); }; ['click','keydown','touchstart'].forEach(e=>window.addEventListener(e,go,{once:true})); document.querySelector('a-scene').addEventListener('enter-vr',go); window.eraAmb=A; }
+if(C.amb) window.eraAmbStart(C.amb,C.ambVol);
 // Poly Haven PBR (CC0): wood_table_001 / painted_metal_shutter, 512px
 window.eraPBR=function(kind,rep,tint){ const n=kind==='wood'?'wood_table_001':'painted_metal_shutter', L=new THREE.TextureLoader(), P='../assets/tex/ph/'+n+'_';
  const m=new THREE.MeshStandardMaterial({color:tint||0x9a948c,roughness:1,metalness:kind==='wood'?0:0.55});

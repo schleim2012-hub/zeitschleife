@@ -38,6 +38,23 @@ function go(){
   const lamp=new T.Mesh(new T.BoxGeometry(w*0.6,0.015,0.04),new T.MeshBasicMaterial({color:0xc89a60,fog:false})); lamp.position.set(0,h+1.14,-d/2+0.25); g.add(lamp);
   const sp=new T.SpotLight(0xffc285,1.6,2.2,0.9,0.6,2); sp.position.set(0,h+1.12,-d/2+0.25); sp.target.position.set(0,0,d*0.6); g.add(sp); g.add(sp.target);
   const fill=new T.PointLight(0x9affd0,0.35,2.0,2); fill.position.set(0,h*0.5,d/2+0.6); g.add(fill); }
+ const E=window.ERA||{};
+ // pool: tiled edge + shimmering water surface beyond it
+ if(E.water){ const [x0,x1,ze,zf]=E.water, W=x1-x0, D=ze-zf;
+  const tc=document.createElement('canvas'); tc.width=256; tc.height=64; const tx=tc.getContext('2d'); tx.fillStyle='#b8c4bc'; tx.fillRect(0,0,256,64); tx.strokeStyle='#5a6660'; tx.lineWidth=2; for(let i=0;i<=256;i+=32){tx.beginPath();tx.moveTo(i,0);tx.lineTo(i,64);tx.stroke();} tx.beginPath();tx.moveTo(0,32);tx.lineTo(256,32);tx.stroke();
+  for(let i=0;i<900;i++){ tx.fillStyle=`rgba(40,50,45,${Math.random()*0.25})`; tx.fillRect(Math.random()*256,Math.random()*64,2,2); }
+  const tt=new T.CanvasTexture(tc); tt.colorSpace=T.SRGBColorSpace; tt.wrapS=T.RepeatWrapping; tt.repeat.set(W/1.2,1);
+  const edge=new T.Mesh(new T.BoxGeometry(W,0.06,0.32),new T.MeshStandardMaterial({map:tt,roughness:0.35,color:0x8a9890})); edge.position.set((x0+x1)/2,0.03,ze+0.16); G.add(edge);
+  const lip=new T.Mesh(new T.BoxGeometry(W,0.25,0.03),new T.MeshStandardMaterial({color:0x26403a,roughness:0.4})); lip.position.set((x0+x1)/2,-0.1,ze); /* lip off: photo already has the basin wall */
+  const nc=document.createElement('canvas'); nc.width=nc.height=128; const nx=nc.getContext('2d'); for(let i=0;i<400;i++){ const r=4+Math.random()*14; const g=nx.createRadialGradient(0,0,0,0,0,r); const X0=Math.random()*128,Y0=Math.random()*128; nx.save(); nx.translate(X0,Y0); g.addColorStop(0,'rgba(255,255,255,0.12)'); g.addColorStop(1,'rgba(255,255,255,0)'); nx.fillStyle=g; nx.fillRect(-r,-r,2*r,2*r); nx.restore(); }
+  const nt=new T.CanvasTexture(nc); nt.wrapS=nt.wrapT=T.RepeatWrapping; nt.repeat.set(W/1.5,D/1.5);
+  const wm=new T.MeshStandardMaterial({color:0x0d3a36,roughness:0.08,metalness:0.6,transparent:true,opacity:0.32,emissive:0x0a3a34,emissiveIntensity:0.35,emissiveMap:nt,bumpMap:nt,bumpScale:0.02});
+  const water=new T.Mesh(new T.PlaneGeometry(W,Math.min(D,1.4)),wm); water.rotation.x=-Math.PI/2; water.position.set((x0+x1)/2,0.012,ze-Math.min(D,1.4)/2); G.add(water);
+  const wl=new T.PointLight(0x60ffd0,0.5,3,2); wl.position.set(0,0.4,ze-0.5); G.add(wl);
+  AFRAME.registerComponent('erax-water',{tick(t){ nt.offset.set(Math.sin(t/4100)*0.08,t/52000); wm.emissiveIntensity=0.3+0.08*Math.sin(t/900); wl.intensity=0.45+0.1*Math.sin(t/700); }}); S.setAttribute('erax-water',''); }
+ // side veils: hide photo-wall edges with dark gradient planes
+ if(E.sideVeil){ const vc=document.createElement('canvas'); vc.width=64; vc.height=4; const vx=vc.getContext('2d'); const vg=vx.createLinearGradient(0,0,64,0); vg.addColorStop(0,'rgba(2,3,3,1)'); vg.addColorStop(1,'rgba(2,3,3,0)'); vx.fillStyle=vg; vx.fillRect(0,0,64,4);
+  const vt=new T.CanvasTexture(vc); [-1,1].forEach(sd=>{ const m=new T.MeshBasicMaterial({map:vt,transparent:true,depthWrite:false,fog:false,side:T.DoubleSide}); const p=new T.Mesh(new T.PlaneGeometry(2.6,6),m); p.position.set(sd*3.4,2.5,-2.9); p.scale.x=-sd; p.renderOrder=5; G.add(p); }); }
  // covers: VHS / book / mag / paper, lying flat; pick up -> flips to show cover
  const K={vhs:[0.105,0.19,0.026,0x0a0a0a],book:[0.15,0.22,0.035,0x3a1d12],mag:[0.21,0.28,0.006,0xd8d0c0],paper:[0.28,0.4,0.004,0xcfc6b0],box:[0.13,0.13,0.045,0x202020]};
  const held={it:null}; const all=[];
