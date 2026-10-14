@@ -1,0 +1,147 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Basketball-Hinterhof – Rewind V3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8f0ff;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:440px}
+#score{position:fixed;right:14px;top:12px;z-index:5;color:#ffd27a;font:700 28px sans-serif;text-shadow:0 0 12px #000}</style>
+</head><body>
+<div id="hud">Basketball-Hinterhof (1989)<br><small>VR: Grip/Trigger = Ball greifen &amp; werfen · Desktop: Klick = Wurf in Blickrichtung, Ziehen = Umsehen</small></div>
+<div id="score">0</div>
+<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
+ fog="type:exponential; color:#0a0c14; density:0.045" background="color:#0a0c14">
+ <a-entity light="type:ambient; intensity:0.22; color:#6a7a9a"></a-entity>
+ <a-entity light="type:hemisphere; intensity:0.35; color:#b8c4e0; groundColor:#1a1510"></a-entity>
+ <a-entity id="street" light="type:spot; intensity:3.2; color:#ffd9a0; angle:48; penumbra:0.55; decay:1.2; distance:18" position="0.4 5.2 1.2" rotation="-55 10 0"></a-entity>
+ <a-entity id="fill" light="type:point; intensity:0.55; color:#88a0ff; distance:10" position="-2.2 2.4 1.5"></a-entity>
+ <a-entity id="cam" camera look-controls wasd-controls="acceleration:18" position="0 1.6 2.2"></a-entity>
+</a-scene>
+<script>
+const sc=document.querySelector('a-scene');
+sc.addEventListener('loaded',()=>{
+const T=THREE,S=sc.object3D,R=sc.renderer; R.xr.setFramebufferScaleFactor&&R.xr.setFramebufferScaleFactor(1.4);
+let AC=null; const ac=()=>{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)(); if(AC.state!=='running')AC.resume(); return AC;};
+function noise(dur,f,q,g,type='bandpass'){const a=ac(),n=a.createBuffer(1,a.sampleRate*dur,a.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2);
+ const s=a.createBufferSource();s.buffer=n;const bf=a.createBiquadFilter();bf.type=type;bf.frequency.value=f;bf.Q.value=q;const gn=a.createGain();gn.gain.value=g;s.connect(bf);bf.connect(gn);gn.connect(a.destination);s.start();}
+function tone(f,dur,g,type='sine',f2){const a=ac(),o=a.createOscillator(),gn=a.createGain(),t=a.currentTime;o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);gn.gain.setValueAtTime(g,t);gn.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(gn);gn.connect(a.destination);o.start(t);o.stop(t+dur);}
+const SND={bounce:v=>{noise(0.1,220+Math.random()*80,0.9,0.35*v,'lowpass');tone(90,0.08,0.08*v,'sine',40);},
+ swish:()=>{noise(0.35,2400,0.6,0.22,'bandpass');tone(880,0.25,0.05,'sine',1400);},
+ rim:()=>{noise(0.08,900,3,0.4);tone(420,0.12,0.1,'triangle',180);},
+ thud:v=>noise(0.12,180,1.2,0.3*v,'lowpass')};
+const cv=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;return t;};
+const std=o=>new T.MeshStandardMaterial(Object.assign({roughness:0.7},o));
+const loader=new T.TextureLoader();
+function loadTex(url,rep=1){return new Promise(res=>{loader.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep,rep);t.anisotropy=8;res(t);},undefined,()=>res(null));});}
+// procedural fallbacks
+const asphalt=cv(512,512,(x,w,h)=>{x.fillStyle='#2a2b30';x.fillRect(0,0,w,h);for(let i=0;i<12000;i++){const v=30+Math.random()*50;x.fillStyle=`rgb(${v},${v},${v+3})`;x.fillRect(Math.random()*w,Math.random()*h,2,2);}
+ x.strokeStyle='rgba(200,180,80,0.35)';x.lineWidth=6;x.beginPath();x.moveTo(40,h*0.55);x.lineTo(w-40,h*0.55);x.stroke();});
+asphalt.wrapS=asphalt.wrapT=T.RepeatWrapping;asphalt.repeat.set(6,6);
+const brick=cv(512,512,(x,w,h)=>{x.fillStyle='#3a2a24';x.fillRect(0,0,w,h);const bw=64,bh=28;for(let y=0,row=0;y<h;y+=bh+4,row++){for(let col=0;col<10;col++){const ox=(row%2)*(bw/2);const xx=col*bw+ox;
+ const r=90+Math.random()*40,g=45+Math.random()*25,b=35+Math.random()*20;x.fillStyle=`rgb(${r},${g},${b})`;x.fillRect(xx%w,y,bw-3,bh);}}});
+brick.wrapS=brick.wrapT=T.RepeatWrapping;brick.repeat.set(3,2.2);
+const metal=std({color:0x6a7078,metalness:0.85,roughness:0.35});
+const wood=std({color:0x5a3a22,roughness:0.8});
+// Ground
+const ground=new T.Mesh(new T.PlaneGeometry(24,24),std({map:asphalt,roughness:0.85,metalness:0.05}));ground.rotation.x=-Math.PI/2;S.add(ground);
+// Brick wall back
+const wall=new T.Mesh(new T.BoxGeometry(10,5,0.35),std({map:brick,roughness:0.9}));wall.position.set(0,2.5,-4.2);S.add(wall);
+// Side fence / bins
+function bin(x,z,col){const g=new T.Group();g.position.set(x,0,z);S.add(g);
+ const body=new T.Mesh(new T.CylinderGeometry(0.28,0.32,0.85,16),std({color:col,roughness:0.55,metalness:0.4}));body.position.y=0.45;g.add(body);
+ const lid=new T.Mesh(new T.CylinderGeometry(0.3,0.3,0.05,16),std({color:0x222226,roughness:0.6}));lid.position.y=0.9;g.add(lid);return g;}
+bin(-2.6,-2.8,0x2d6b3a);bin(-3.2,-2.5,0x3a3a42);bin(3.0,-3.0,0x5a2a2a);
+// Graffiti
+const graf=cv(1024,512,(x,w,h)=>{x.clearRect(0,0,w,h);
+ x.font='bold 120px Impact,sans-serif';x.fillStyle='#c84dff';x.globalAlpha=0.85;x.fillText('REWIND',80,220);
+ x.font='bold 70px Impact,sans-serif';x.fillStyle='#7ff0ff';x.fillText('89',420,320);
+ x.strokeStyle='#ff6fb3';x.lineWidth=8;x.beginPath();x.moveTo(100,360);x.bezierCurveTo(300,280,500,420,700,340);x.stroke();
+ x.globalAlpha=0.5;x.fillStyle='#ffe06a';x.font='bold 40px sans-serif';x.fillText('Mauer ist weg',90,420);});
+const grafM=new T.Mesh(new T.PlaneGeometry(3.2,1.6),new T.MeshBasicMaterial({map:graf,transparent:true,depthWrite:false,toneMapped:false}));
+grafM.position.set(-2.2,2.0,-4.0);S.add(grafM);
+
+// try real ambientCG textures
+(async()=>{
+  const brickT=await loadTex('../assets/tex/kirmes/Brick/Bricks076A_1K-JPG_Color.jpg',2.5);
+  const aspT=await loadTex('../assets/tex/kirmes/Asphalt/Asphalt025B_1K-JPG_Color.jpg',5);
+  if(brickT){ wall.material.map=brickT; wall.material.needsUpdate=true; }
+  if(aspT){ ground.material.map=aspT; ground.material.needsUpdate=true; }
+})();
+
+// Streetlight
+const pole=new T.Mesh(new T.CylinderGeometry(0.06,0.08,4.2,10),metal);pole.position.set(2.4,2.1,1.0);S.add(pole);
+const arm=new T.Mesh(new T.BoxGeometry(1.2,0.06,0.06),metal);arm.position.set(1.9,4.15,1.0);S.add(arm);
+const lamp=new T.Mesh(new T.SphereGeometry(0.12,12,10),new T.MeshBasicMaterial({color:0xffe0a8}));lamp.position.set(1.4,4.05,1.0);S.add(lamp);
+const lampL=new T.PointLight(0xffd9a0,2.8,9,2);lampL.position.copy(lamp.position);S.add(lampL);
+// Backboard + rim
+const boardG=new T.Group();boardG.position.set(0,3.05,-3.85);S.add(boardG);
+const board=new T.Mesh(new T.BoxGeometry(1.8,1.05,0.06),std({color:0xf2f2f0,roughness:0.45,metalness:0.05}));boardG.add(board);
+const sq=new T.Mesh(new T.PlaneGeometry(0.55,0.42),new T.MeshBasicMaterial({color:0xd82028}));sq.position.set(0, -0.08, 0.032);boardG.add(sq);
+const rimY=2.55, rimZ=-3.55, rimR=0.225;
+const rim=new T.Mesh(new T.TorusGeometry(rimR,0.022,10,36),std({color:0xd84020,metalness:0.7,roughness:0.35}));
+rim.rotation.x=Math.PI/2;rim.position.set(0,rimY,rimZ);S.add(rim);
+// net (simple lines)
+const netMat=new T.LineBasicMaterial({color:0xeeeeee,transparent:true,opacity:0.7});
+for(let i=0;i<12;i++){const a=i/12*Math.PI*2, pts=[]; for(let k=0;k<6;k++){const t=k/5, rr=rimR*(1-t*0.55); pts.push(new T.Vector3(Math.cos(a)*rr, rimY-t*0.42, rimZ+Math.sin(a)*rr));}
+ const geo=new T.BufferGeometry().setFromPoints(pts); S.add(new T.Line(geo,netMat));}
+// Basketball
+const ballR=0.12;
+const ballTex=cv(512,256,(x,w,h)=>{x.fillStyle='#c45a18';x.fillRect(0,0,w,h);
+ x.strokeStyle='#1a120c';x.lineWidth=10;x.beginPath();x.moveTo(w/2,0);x.lineTo(w/2,h);x.stroke();
+ x.beginPath();x.ellipse(w/2,h/2,w*0.42,h*0.48,0,0,7);x.stroke();
+ x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();
+ for(let i=0;i<800;i++){x.fillStyle=`rgba(0,0,0,${0.05+Math.random()*0.08})`;x.fillRect(Math.random()*w,Math.random()*h,2,2);}});
+const ball=new T.Mesh(new T.SphereGeometry(ballR,28,20),std({map:ballTex,roughness:0.55,metalness:0.05}));
+ball.position.set(0.3,ballR,1.2);S.add(ball);
+const B={m:ball,v:new T.Vector3(),held:null,rest:true,t:0,scored:false};
+let score=0, maraT=0;
+const maraLines=['Netter Wurf. Fast wie 89.','Swish. Die Straße hat es gehört.','Noch einer – dann glaub ich dir die Zeitreise.','Nicht schlecht für jemanden aus der Zukunft.'];
+function mara(){const el=document.getElementById('hud'); const line=maraLines[score%maraLines.length]; el.innerHTML=`Basketball-Hinterhof (1989)<br><small style="color:#ffb0d8">Mara: „${line}“</small>`; setTimeout(()=>{el.innerHTML='Basketball-Hinterhof (1989)<br><small>VR: Grip/Trigger = Ball greifen &amp; werfen · Desktop: Klick = Wurf in Blickrichtung</small>';},4200);}
+function setScore(n){score=n; document.getElementById('score').textContent=score; if(score>0) mara();}
+// Controllers
+const ctr=[{},{ }];
+['left','right'].forEach((hand,i)=>{
+ const c=document.createElement('a-entity'); c.setAttribute('laser-controls',`hand:${hand}`); c.setAttribute('raycaster','enabled:false');
+ sc.appendChild(c); ctr[i]={c:c.object3D, hist:[], held:null};
+ c.addEventListener('squeezestart',()=>grab(ctr[i])); c.addEventListener('squeezeend',()=>release(ctr[i]));
+ c.addEventListener('triggerdown',()=>{ if(ctr[i].held) release(ctr[i]); else grab(ctr[i]); });
+});
+function grab(st){ if(B.held||!B.rest&&B.v.length()>0.5) return; const p=new T.Vector3(); st.c.getWorldPosition(p);
+ if(p.distanceTo(B.m.position)<0.28){ B.held=st; st.held=B; B.rest=false; B.scored=false; }}
+function release(st){ if(st.held!==B) return; const hist=st.hist; let v=new T.Vector3();
+ if(hist.length>=2){ const a=hist[hist.length-1], b=hist[0]; const dt=Math.max(0.016,(a.t-b.t)/1000); v.copy(a.p).sub(b.p).multiplyScalar(1.25/dt); }
+ B.v.copy(v); if(B.v.length()<0.4) B.v.set(0,0,0); B.held=null; st.held=null; B.t=0; }
+// Desktop throw
+const cam=document.getElementById('cam').object3D;
+sc.canvas.addEventListener('click',()=>{ if(B.held) return; const o=new T.Vector3(); cam.getWorldPosition(o); const dir=new T.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new T.Quaternion()));
+ B.m.position.copy(o).addScaledVector(dir,0.45); B.v.copy(dir).multiplyScalar(6.2).add(new T.Vector3(0,2.8,0)); B.rest=false; B.scored=false; B.t=0; });
+// Physics
+const GRAV=-9.81, tmp=new T.Vector3(); let last=performance.now();
+function step(dt){
+ if(B.held){ B.held.c.getWorldPosition(B.m.position); B.m.position.y-=0.05; return; }
+ if(B.rest && B.v.length()<0.05){ B.v.set(0,0,0); return; }
+ B.t+=dt; B.v.y+=GRAV*dt; B.m.position.addScaledVector(B.v,dt); const P=B.m.position,r=ballR;
+ // floor
+ if(P.y<r){ P.y=r; if(B.v.y<0){ if(Math.abs(B.v.y)>0.8) SND.bounce(Math.min(1,-B.v.y/6)); B.v.y*=-0.72; B.v.x*=0.92; B.v.z*=0.92; } if(B.v.length()<0.35){ B.rest=true; B.v.set(0,0,0);} }
+ // wall
+ if(P.z < -4.0+r && Math.abs(P.x)<5){ P.z=-4.0+r; if(B.v.z<0){ B.v.z*=-0.55; SND.thud(0.5);} }
+ // backboard
+ const bx=Math.abs(P.x), by=P.y, bz=P.z;
+ if(bz<-3.82+r && bz>-3.95 && bx<0.92 && by>2.5 && by<3.6){ P.z=-3.82+r; if(B.v.z<0){ B.v.z*=-0.45; SND.rim(); }}
+ // rim collision (torus approx as circle)
+ const dx=P.x-0, dy=P.y-rimY, dz=P.z-rimZ; const horiz=Math.hypot(dx,dz);
+ if(Math.abs(dy)<0.08 && Math.abs(horiz-rimR)<0.05){ // hit rim tube
+   const n=new T.Vector3(dx,0,dz).normalize(); B.v.reflect(n).multiplyScalar(0.55); B.v.y=Math.abs(B.v.y)*0.4+0.2; SND.rim(); P.addScaledVector(n,0.03);
+ }
+ // score: through hoop downward
+ if(!B.scored && horiz<rimR*0.72 && P.y<rimY && P.y>rimY-0.35 && B.v.y<0){ B.scored=true; setScore(score+1); SND.swish(); }
+ // reset if far
+ if(B.t>10 || P.y<-1 || P.length()>16){ B.m.position.set(0.3,ballR,1.2); B.v.set(0,0,0); B.rest=true; B.t=0; B.scored=false; }
+}
+AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=Math.min(0.033,(now-last)/1000); last=now;
+ for(const st of ctr){ const p=new T.Vector3(); st.c.getWorldPosition(p); st.hist.push({p:p.clone(),t:now}); while(st.hist.length>6) st.hist.shift(); }
+ const sub=3; for(let k=0;k<sub;k++) step(dt/sub);
+ // subtle lamp flicker
+ lampL.intensity=2.6+Math.sin(now*0.008)*0.25+Math.random()*0.08;
+}});
+sc.setAttribute('basket-tick','');
+window.__b={B,get score(){return score},setScore};
+});
+</script></body></html>

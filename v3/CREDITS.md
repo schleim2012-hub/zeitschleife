@@ -42,3 +42,7 @@
 
 ## 2041-Requisit Grünriegel (V3l)
 - Eigenes Blender-Modell (3 Varianten, halb aufgerissene Folie, markenfreies Etikett). Eine Anspielung, kein Original-Logo.
+
+## Kirmes / Basketball (Tests)
+- Texturen ambientCG (CC0): Bricks076A, Asphalt025B, WoodFloor051, PaintedPlaster017, Fabric045 – https://ambientcg.com
+- Sounds prozedural (WebAudio), keine Fremdaufnahmen.
