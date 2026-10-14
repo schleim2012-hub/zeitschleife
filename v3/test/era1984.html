@@ -8,12 +8,12 @@
 <div id="sub"></div>
 <canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.17;mix-blend-mode:overlay"></canvas>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
- fog="type:exponential; color:#12061a; density:0.09" background="color:#05020a" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
+ fog="type:exponential; color:#1e0a1c; density:0.08" background="color:#05020a" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
  <a-entity light="type:ambient; color:#5a3070; intensity:0.18"></a-entity>
  <a-entity light="type:point; color:#ff4fb0; intensity:2.2; distance:5; decay:2" position="0.6 2.2 -1.6"></a-entity>
  <a-entity light="type:point; color:#ff9a4c; intensity:1.6; distance:4; decay:2" position="-1.5 1.2 -1.4"></a-entity>
  <a-entity light="type:point; color:#7a5cff; intensity:0.8; distance:5; decay:2" position="0 2.4 1.2"></a-entity>
- <a-entity id="tv" position="0 0.72 -1.85" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:1.45"></a-entity>
+ <a-entity id="tv" position="0.28 0.72 -1.9" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:1.75"></a-entity>
  <a-entity id="rig" room-move>
   <a-camera id="cam" position="0 1.6 0" wasd-controls="acceleration:18"></a-camera>
   <a-entity id="hl" laser-controls="hand:left" raycaster="objects:.clickable; far:6"></a-entity>
@@ -40,25 +40,25 @@ S.addEventListener('loaded',()=>{
  const bm=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide});
  tex('../assets/era1984/placeholder.jpg',t=>{ if(!bm.map){bm.map=t;bm.needsUpdate=true;} });
  tex(BACKDROP,t=>{bm.map=t;bm.needsUpdate=true;});
- const R=3.6, H=512*0.0063, ang=768*0.0063/R;
+ const PX=0.0085, R=3.6, H=512*PX, ang=768*PX/R;
  const bd=new T.Mesh(new T.CylinderGeometry(R,R,H,48,1,true,Math.PI-ang/2,ang),bm); bd.scale.x=-1;
- bd.position.set(0.34,0.95+(256-268)*0.0063*-1,1.4); G.add(bd);
+ bd.position.set(0.34+54*PX-0.12,1.0+(268-256)*PX,1.4); G.add(bd);
  // dark room shell (sides/back/ceiling/floor) — closes the world, hides edges
- const wallM=std({color:0x2a1430,roughness:0.95}); const floorM=std({color:0x3a1c34,roughness:1});
+ const wallM=std({color:0x3a1a30,roughness:0.95,emissive:0x12060e}); const floorM=std({color:0x3a1c34,roughness:1});
  tex('../assets/tex/kirmes/Fabric/Fabric045_1K-JPG_Color.jpg',t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(6,6);floorM.map=t;floorM.needsUpdate=true;});
  const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);G.add(o);return o;};
- box(0.1,3,3.6,wallM,-2.15,1.5,0.25); box(0.1,3,3.6,wallM,2.15,1.5,0.25); box(5,3,0.1,wallM,0,1.5,2.05); box(5,0.1,4.4,wallM,0,2.95,-0.1);
- const fl=new T.Mesh(new T.PlaneGeometry(5,4.4),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,-0.1); G.add(fl);
+ box(0.1,3.4,2.6,wallM,-2.75,1.7,0.75); box(0.1,3.4,2.6,wallM,2.75,1.7,0.75); box(5.6,3.4,0.1,wallM,0,1.7,2.05); box(5.6,0.1,4.6,wallM,0,3.35,-0.2);
+ const fl=new T.Mesh(new T.PlaneGeometry(5.6,4.6),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,-0.1); G.add(fl);
  // 3D furniture in front of the photo (TV dresser + side shelf)
  const wood=std({color:0x4a2a1c,roughness:0.75}); tex('../assets/tex/kirmes/WoodFloor/WoodFloor051_1K-JPG_Color.jpg',t=>{wood.map=t;wood.needsUpdate=true;});
- box(1.2,0.72,0.6,wood,0,0.36,-1.85); const shelf=box(0.9,0.75,0.4,wood,-1.6,0.375,-0.9); box(0.6,0.9,0.4,wood,1.7,0.45,-1.1);
+ box(1.3,0.72,0.65,wood,0.28,0.36,-1.9); const shelf=box(0.9,0.75,0.4,wood,-1.6,0.375,-0.9); box(0.6,0.9,0.4,wood,1.7,0.45,-1.1);
  // glow around lights (photo neon sign + lamp) — additive soft sprites
  const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gr=gx.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.3,'rgba(255,255,255,0.25)');gr.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gr;gx.fillRect(0,0,128,128);
  const gt=new T.CanvasTexture(gc);
  const glow=(x,y,z,s,col,op)=>{const sp=new T.Sprite(new T.SpriteMaterial({map:gt,color:col,transparent:true,opacity:op,depthWrite:false,blending:T.AdditiveBlending,fog:false}));sp.position.set(x,y,z);sp.scale.set(s,s*0.6,1);G.add(sp);return sp;};
- const g1=glow(0.63,2.1,-2.1,1.8,0xff4fd0,0.35), g2=glow(-1.45,1.15,-1.65,0.7,0xffa040,0.45), g3=glow(1.05,1.45,-2.1,1.0,0x60e0ff,0.18);
+ const g1=glow(0.61,2.55,-2.0,2.2,0xff4fd0,0.35), g2=glow(-1.9,1.3,-1.25,0.8,0xffa040,0.45), g3=glow(0.95,1.58,-2.0,1.3,0x60e0ff,0.18);
  // parody posters (subtle, side walls)
- [['p1',-2.09,1.65,-0.9,1],['p2',-2.09,1.6,0.6,1],['p3',2.09,1.7,-0.4,-1],['p4',2.09,1.6,1.0,-1]].forEach(([n,x,y,z,s])=>{const m=std({color:0x9a8090,roughness:0.85});tex('../assets/era1984/'+n+'.jpg',t=>{m.map=t;m.needsUpdate=true;});const p=new T.Mesh(new T.PlaneGeometry(0.5,0.75),m);p.position.set(x,y,z);p.rotation.y=s*Math.PI/2;G.add(p);});
+ [['p1',-2.69,1.65,0.2,1],['p2',-2.69,1.6,1.4,1],['p3',2.69,1.7,0.4,-1],['p4',2.69,1.6,1.5,-1]].forEach(([n,x,y,z,s])=>{const m=std({color:0x9a8090,roughness:0.85});tex('../assets/era1984/'+n+'.jpg',t=>{m.map=t;m.needsUpdate=true;});const p=new T.Mesh(new T.PlaneGeometry(0.5,0.75),m);p.position.set(x,y,z);p.rotation.y=s*Math.PI/2;G.add(p);});
  // ---------- grabbables: VHS (c1-c3), book (c4), cereal (c5) ----------
  const items=[];
  function item(n,w,h,d,x,y,z,ry,spine){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg',t=>{fm.map=t;fm.needsUpdate=true;});
@@ -79,7 +79,7 @@ S.addEventListener('loaded',()=>{
  S.addEventListener('click',e=>{ if(held && e.target===S) drop(); });
  ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',()=>{ const rc=document.getElementById(id).components.raycaster; if(held && (!rc||!rc.intersectedEls.length)) drop(); }));
  // surfaces for falling items
- const surf=[[-1.6,-0.9,0.9,0.4,0.75],[0,-1.85,1.2,0.6,0.72],[1.7,-1.1,0.6,0.4,0.9]];
+ const surf=[[-1.6,-0.9,0.9,0.4,0.75],[0.28,-1.9,1.3,0.65,0.72],[1.7,-1.1,0.6,0.4,0.9]];
  AFRAME.registerComponent('era-tick',{tick(t,dt){ const d=Math.min(dt,50)/1000; items.forEach(it=>{ if(!it.falling) return; const o=it.el.object3D; it.vy-=9.8*d; o.position.y+=it.vy*d;
    let fy=0; surf.forEach(([x,z,w,dd,h])=>{ if(Math.abs(o.position.x-x)<w/2&&Math.abs(o.position.z-z)<dd/2) fy=Math.max(fy,h); });
    if(o.position.y<fy+it.h/2){ o.position.y=fy+it.h/2; it.vy=0; it.falling=false; } });
