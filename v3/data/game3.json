@@ -865,7 +865,7 @@
   "B1": {
    "epoch": "hub",
    "title": "Backrooms – Aufwachen",
-   "sky": "B1",
+   "sky": "BR_pano",
    "enter": [
     {
      "if": "!flag.intro",
@@ -1048,6 +1048,36 @@
       3.2
      ],
      "rot": -20
+    },
+    {
+     "id": "vend",
+     "type": "decor",
+     "kind": "vending",
+     "pos": [
+      -1.9,
+      -1.6,
+      3.45
+     ]
+    },
+    {
+     "id": "rissd",
+     "type": "decor",
+     "kind": "riss",
+     "pos": [
+      -3.4,
+      -0.8,
+      -1.2
+     ]
+    },
+    {
+     "id": "plate",
+     "type": "decor",
+     "kind": "plate",
+     "pos": [
+      3.4,
+      0.0,
+      -2.6
+     ]
     }
    ],
    "hotspots": [
@@ -1272,12 +1302,14 @@
       }
      ]
     }
-   ]
+   ],
+   "ff": true,
+   "skyYaw": 28
   },
   "B2": {
    "epoch": "hub",
    "title": "Backrooms – Kreuzung",
-   "sky": "B2",
+   "sky": "BR_pano_b2",
    "enter": [
     {
      "if": "has.mauer&&!flag.sliceend",
@@ -1306,6 +1338,46 @@
       0,
       1.08,
       -1.9
+     ]
+    },
+    {
+     "id": "d1989",
+     "type": "decor",
+     "kind": "door",
+     "label": "1989",
+     "style": "graffiti",
+     "color": "#7a7f86",
+     "pos": [
+      0,
+      -1.6,
+      -4.45
+     ]
+    },
+    {
+     "id": "d1984",
+     "type": "decor",
+     "kind": "door",
+     "label": "1984",
+     "style": "brass",
+     "color": "#6a3a22",
+     "pos": [
+      -2.95,
+      -1.6,
+      -1.0
+     ]
+    },
+    {
+     "id": "d2041",
+     "type": "decor",
+     "kind": "door",
+     "label": "2041",
+     "style": "steel",
+     "color": "#5a6268",
+     "glow": "#3cff8a",
+     "pos": [
+      2.95,
+      -1.6,
+      -1.0
      ]
     }
    ],
@@ -1451,7 +1523,10 @@
      ]
     }
    ],
-   "hum": "lampe"
+   "hum": "lampe",
+   "ff": true,
+   "skyYaw": 0,
+   "skyTint": "#e6ddd0"
   },
   "M1": {
    "epoch": "1989",
