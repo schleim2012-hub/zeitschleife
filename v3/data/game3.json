@@ -941,6 +941,101 @@
       3.1
      ],
      "when": "!flag.egg_murmel"
+    },
+    {
+     "id": "minitv",
+     "type": "tv",
+     "pos": [
+      -3.35,
+      -1.6,
+      -2.2
+     ],
+     "rot": 40,
+     "tv": "model:assets/props/television_02.glb; base:tv/; channels:ch13.mp4; scale:0.55; start:1"
+    },
+    {
+     "id": "desk",
+     "type": "model",
+     "url": "assets/props/metal_office_desk.glb",
+     "h": 0.76,
+     "pos": [
+      -2.4,
+      -1.6,
+      -0.4
+     ],
+     "rot": 90,
+     "light": {
+      "c": 16756832,
+      "i": 1.6,
+      "d": 3.5,
+      "at": [
+       0.35,
+       1.1,
+       0
+      ]
+     }
+    },
+    {
+     "id": "lamp",
+     "type": "model",
+     "url": "assets/props/desk_lamp_arm_01.glb",
+     "h": 0.6,
+     "pos": [
+      -2.4,
+      -0.84,
+      -0.75
+     ],
+     "rot": 60,
+     "shadow": false
+    },
+    {
+     "id": "phone",
+     "type": "model",
+     "url": "assets/props/vintage_telephone_wall_clock.glb",
+     "h": 0.12,
+     "pos": [
+      -2.45,
+      -0.84,
+      -0.1
+     ],
+     "rot": 100,
+     "shadow": false
+    },
+    {
+     "id": "chair",
+     "type": "model",
+     "url": "assets/props/plastic_monobloc_chair_01.glb",
+     "h": 0.8,
+     "pos": [
+      -1.7,
+      -1.6,
+      -0.5
+     ],
+     "rot": -70
+    },
+    {
+     "id": "crate1",
+     "type": "model",
+     "url": "assets/props/plastic_crate_01.glb",
+     "h": 0.3,
+     "pos": [
+      2.2,
+      -1.6,
+      2.9
+     ],
+     "rot": 15
+    },
+    {
+     "id": "crate2",
+     "type": "model",
+     "url": "assets/props/wooden_crate_01.glb",
+     "h": 0.45,
+     "pos": [
+      1.7,
+      -1.6,
+      3.2
+     ],
+     "rot": -20
     }
    ],
    "hotspots": [
@@ -1151,6 +1246,17 @@
      "on": [
       {
        "go": "B2"
+      }
+     ]
+    },
+    {
+     "id": "minitv",
+     "label": "Kleiner Fernseher",
+     "prop": "minitv",
+     "grab": false,
+     "on": [
+      {
+       "tv": "minitv"
       }
      ]
     }
@@ -1520,6 +1626,32 @@
        "epoch": "B2"
       }
      ]
+    }
+   ],
+   "props": [
+    {
+     "id": "mcrate",
+     "type": "model",
+     "url": "assets/props/old_military_crate.glb",
+     "h": 0.4,
+     "pos": [
+      -1.4,
+      -1.6,
+      1.2
+     ],
+     "rot": 30
+    },
+    {
+     "id": "mchair",
+     "type": "model",
+     "url": "assets/props/painted_wooden_chair_01.glb",
+     "h": 0.85,
+     "pos": [
+      1.5,
+      -1.6,
+      1.4
+     ],
+     "rot": 200
     }
    ]
   },

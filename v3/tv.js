@@ -1,6 +1,6 @@
 // Rewind V3 – Röhrenfernseher 1984 (A-Frame-Komponente, eigene Arbeit)
 (function(){
-let AC=null; function ac(){ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended') AC.resume(); return AC; }
+let AC=null; function ac(){ if(!AC&&window.__zsActx&&window.__zsActx()) AC=window.__zsActx(); if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended') AC.resume(); return AC; }
 function testcard(){ const c=document.createElement('canvas'); c.width=640; c.height=480; const x=c.getContext('2d');
  x.fillStyle='#777'; x.fillRect(0,0,640,480); x.strokeStyle='#fff'; x.lineWidth=2; for(let i=0;i<=640;i+=40){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,480); x.stroke(); } for(let j=0;j<=480;j+=40){ x.beginPath(); x.moveTo(0,j); x.lineTo(640,j); x.stroke(); }
  x.save(); x.beginPath(); x.arc(320,240,200,0,7); x.clip(); x.fillStyle='#202020'; x.fillRect(0,0,640,480);
@@ -38,7 +38,7 @@ void main(){ vec2 uv=vUv*2.-1.; uv*=1.+0.08*dot(uv,uv); vec2 p=uv*0.5+0.5;      
  #include <colorspace_fragment>
 }`;
 AFRAME.registerComponent('crt-tv',{
- schema:{channels:{type:'array',default:[]}, scale:{default:1}, base:{default:''}, start:{default:0}, music:{default:''}},
+ schema:{channels:{type:'array',default:[]}, model:{default:''}, scr:{type:'vec4',default:{x:0.0,y:0.243,z:0.315,w:0.245}}, scrZ:{default:0.112}, scale:{default:1}, base:{default:''}, start:{default:0}, music:{default:''}},
  init(){ const T=THREE, g=new T.Group(), s=this.data.scale; this.el.setObject3D('tv',g); g.scale.setScalar(s);
   const wood=new T.MeshStandardMaterial({map:woodTex(),roughness:0.55}), dark=new T.MeshStandardMaterial({color:0x1b1b1d,roughness:0.5}), chrome=new T.MeshStandardMaterial({color:0xcfcfd4,metalness:0.9,roughness:0.25});
   const W=0.66,H=0.5,D=0.46; const caseM=new T.Mesh(new T.BoxGeometry(W,H,D),wood); caseM.position.y=H/2; g.add(caseM);
@@ -56,6 +56,14 @@ AFRAME.registerComponent('crt-tv',{
   const gr=new T.Mesh(new T.BoxGeometry(0.1,0.08,0.002),new T.MeshStandardMaterial({color:0x111111,roughness:0.9})); gr.position.set(0.25,H/2-0.01,D/2+0.016); g.add(gr);
   for(const lx of [-0.26,0.26]) for(const lz of [-0.17,0.17]){ const l=new T.Mesh(new T.CylinderGeometry(0.012,0.016,0.05,10),dark); l.position.set(lx,-0.025,lz); g.add(l); }
   const kh=new T.Mesh(new T.SphereGeometry(0.06,8,6),new T.MeshBasicMaterial({visible:false})); kh.position.copy(knob.position); g.add(kh); this.knobHit=kh; const bh=new T.Mesh(new T.BoxGeometry(0.09,0.06,0.05),new T.MeshBasicMaterial({visible:false})); bh.position.copy(btn.position); g.add(bh); this.btnHit=bh; this.el.classList.add('clickable');
+  if(this.data.model){ // fotorealistisches Gehäuse (Poly Haven Television 02, CC0); eigene Teile ausblenden
+   const own=[]; g.children.forEach(o=>{ if(o!==scr&&o!==glass&&o!==kh&&o!==bh) own.push(o); }); own.forEach(o=>o.visible=false);
+   const D2=this.data.scr; const sg2=new T.PlaneGeometry(D2.z,D2.w,32,24); const q=sg2.attributes.position; for(let i=0;i<q.count;i++){ const x=q.getX(i)/(D2.z/2), y=q.getY(i)/(D2.w/2); q.setZ(i,0.012*(1-0.5*(x*x+y*y))); } sg2.computeVertexNormals();
+   scr.geometry=sg2; glass.geometry=sg2; scr.position.set(D2.x,D2.y,this.data.scrZ); glass.position.set(D2.x,D2.y,this.data.scrZ+0.002);
+   kh.geometry=new T.BoxGeometry(0.1,0.03,0.04); kh.position.set(0.04,0.079,0.125); bh.geometry=new T.BoxGeometry(0.04,0.03,0.04); bh.position.set(0.135,0.079,0.125);
+   this.led.visible=true; this.led.position.set(0.17,0.079,0.124); this.led.scale.setScalar(0.7);
+   new THREE.GLTFLoader().load(this.data.model,gl=>{ const m=gl.scene; m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); g.add(m); });
+  }
   this.on=false; this.ch=this.data.start; this.card=testcard(); this.video=document.createElement('video'); Object.assign(this.video,{preload:'none',playsInline:true,loop:true,crossOrigin:'anonymous'}); this.video.setAttribute('playsinline','');
   this.vtex=new T.VideoTexture(this.video); this.vtex.colorSpace=T.SRGBColorSpace; this.pAnim=0; this.zap=0;
   this.hit=o=>{ if(performance.now()-(this.lastHit||0)<350) return; if(o===this.knob||o===this.knobHit){ this.lastHit=performance.now(); if(this.on) this.next(); } else if(o===this.btn||o===this.btnHit||o===this.screen){ this.lastHit=performance.now(); this.toggle(); } };

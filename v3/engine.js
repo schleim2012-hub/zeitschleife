@@ -70,6 +70,7 @@ async function act(a){
  if(a.penalty){ addTime(a.penalty,a.key,'pen'); return; }
  if(a.undrop){ for(const k in S.dropped) S.dropped[k]=S.dropped[k].filter(d=>d.k!==a.undrop); const g=props['dr_'+a.undrop]; if(g){ g.visible=false; g.userData.gone=true; } return; }
  if(a.radio){ clockRadio(); return; }
+ if(a.tv){ const pg=props[a.tv]; const c=pg&&pg.userData.tv&&pg.userData.tv.components['crt-tv']; if(c){ unlockAudio&&unlockAudio(); c.toggle(); } return; }
  if(a.config_line) return act(G.config.lines[a.config_line]);
  if(a.clip) return playClip(a.clip);
  if(a.go) return go(a.go);
@@ -109,6 +110,10 @@ function setupScene(){ const T=T3(); sceneEl=document.querySelector('a-scene'); 
  plate=new T.Mesh(curvedGeo(T,P),new T.MeshBasicMaterial({transparent:true,alphaMap:fm,toneMapped:false,depthWrite:false})); plate.position.z=0; plate.renderOrder=2; roomG.add(plate);
  clipPlate=new T.Mesh(curvedGeo(T,P),new T.MeshBasicMaterial({transparent:true,alphaMap:fm,opacity:0,toneMapped:false,depthWrite:false})); clipPlate.position.z=0; clipPlate.scale.setScalar(0.995); clipPlate.renderOrder=3; clipPlate.visible=false; roomG.add(clipPlate);
  hitG=new T.Group(); roomG.add(hitG); propG=new T.Group(); roomG.add(propG);
+ { const N=420, pos=new Float32Array(N*3); for(let i=0;i<N;i++){ pos[i*3]=(Math.random()-0.5)*7; pos[i*3+1]=Math.random()*2.6-1.6; pos[i*3+2]=(Math.random()-0.5)*7; } const dg=new T.BufferGeometry(); dg.setAttribute('position',new T.BufferAttribute(pos,3));
+   const dt=cvTex(32,32,(x)=>{ const gr=x.createRadialGradient(16,16,0,16,16,16); gr.addColorStop(0,'rgba(255,235,200,0.9)'); gr.addColorStop(1,'rgba(255,235,200,0)'); x.fillStyle=gr; x.fillRect(0,0,32,32); });
+   const dm=new T.PointsMaterial({size:0.012,map:dt,transparent:true,opacity:0.35,depthWrite:false,sizeAttenuation:true}); const dust=new T.Points(dg,dm); dust.renderOrder=4; roomG.add(dust);
+   dust.onBeforeRender=()=>{ const t=performance.now()/1000, a=dg.attributes.position; for(let i=0;i<N;i+=7){ a.array[i*3+1]+=Math.sin(t*0.3+i)*0.0004-0.00015; if(a.array[i*3+1]<-1.6) a.array[i*3+1]=1.0; a.array[i*3]+=Math.cos(t*0.2+i)*0.0003; } a.needsUpdate=true; }; }
  // UI-Panel (nur VR): Canvas als Textur, folgt dem Blick träge
  panelTex=new T.CanvasTexture(cv); panelTex.colorSpace=T.SRGBColorSpace;
  panel=new T.Mesh(new T.PlaneGeometry(2.4,1.35),new T.MeshBasicMaterial({map:panelTex,transparent:true,toneMapped:false,depthTest:false})); panel.renderOrder=900; panel.visible=false; sceneEl.object3D.add(panel);
@@ -118,6 +123,9 @@ function eyePos(){ return window.ZSFX?ZSFX.headPos(sceneEl):new (T3().Vector3)(0
 const GLB={eimer:{url:'assets/metal_trash_can.glb',h:0.62,keep:n=>n.startsWith('metal_trash_can_rust')&&!n.includes('lid')}};
 function glbSwap(p,g){ const c=GLB[p.id]; if(!c||!THREE.GLTFLoader) return; new THREE.GLTFLoader().load(c.url,gl=>{ const m=gl.scene; if(c.keep){ const rm=[]; m.traverse(o=>{ if(o!==m&&o.parent===m&&!c.keep(o.name||'')) rm.push(o); }); rm.forEach(o=>m.remove(o)); } const ctr=new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()); m.children.forEach(o=>{ o.position.x-=ctr.x; o.position.z-=ctr.z; }); const b=new THREE.Box3().setFromObject(m), sz=b.getSize(new THREE.Vector3()); const s=c.h/sz.y; m.scale.setScalar(s); m.position.y=-b.min.y*s; const pre=[]; g.traverse(o=>{ if(o.isMesh) pre.push(o); }); pre.forEach(o=>{ (Array.isArray(o.material)?o.material:[o.material]).forEach(mm=>{ mm.visible=false; }); }); m.traverse(o=>{ if(o.isMesh) o.userData.glb=1; }); g.add(m); },undefined,()=>{}); }
 function mkProp(p){ const T=T3(), g=new T.Group(); const M=(c,o={})=>new T.MeshStandardMaterial({color:c,roughness:0.7,...o});
+ if(p.type==='model'){ ensureEnv(); new THREE.GLTFLoader().load(p.url+'?v='+VER,gl=>{ const m=gl.scene; const b=new THREE.Box3().setFromObject(m), sz=b.getSize(new THREE.Vector3()), c=b.getCenter(new THREE.Vector3()); const k=(p.h||sz.y)/sz.y; m.scale.setScalar(k); m.position.set(-c.x*k,-b.min.y*k,-c.z*k); m.traverse(o=>{ if(o.isMesh&&o.material) o.material.envMapIntensity=0.7; }); g.add(m); if(p.shadow!==false) contactShadow(g,sz.x*k,sz.z*k); if(p.light){ const L=new THREE.PointLight(p.light.c||0xffb070,p.light.i||1.2,p.light.d||4,2); L.position.set(...(p.light.at||[0,sz.y*k,0])); g.add(L); } }); g.userData.prop=p; if(p.rot) g.rotation.y=p.rot*Math.PI/180; g.position.set(...p.pos); return g; }
+ if(p.type==='tv'){ const el=document.createElement('a-entity'); el.setAttribute('crt-tv',p.tv||''); sceneEl.appendChild(el); const grab=()=>{ g.add(el.object3D); el.object3D.position.set(0,0,0); el.object3D.rotation.set(0,0,0); }; if(el.hasLoaded) grab(); else el.addEventListener('loaded',grab); g.userData.tv=el;
+  const hb=new T.Mesh(new T.BoxGeometry(0.3,0.28,0.26),new T.MeshBasicMaterial({visible:false})); hb.position.set(0,0.14,0); g.add(hb); g.userData.prop=p; if(p.rot) g.rotation.y=p.rot*Math.PI/180; g.position.set(...p.pos); return g; }
  if(p.type==='trash'){ const m=new T.Mesh(new T.CylinderGeometry(0.24,0.2,0.62,24,1,true),M(0x4a4d52,{metalness:0.6,side:T.DoubleSide})); m.position.y=0.31; g.add(m);
   const b=new T.Mesh(new T.CircleGeometry(0.2,24),M(0x1a1a1a)); b.rotation.x=-Math.PI/2; b.position.y=0.02; g.add(b);
   const r=new T.Mesh(new T.TorusGeometry(0.24,0.012,8,32),M(0x777a80,{metalness:0.8})); r.rotation.x=Math.PI/2; r.position.y=0.62; g.add(r); }
@@ -228,7 +236,8 @@ function hitPlane(def){ const T=T3(); const m=new T.Mesh(new T.PlaneGeometry(def
  m.position.set(...def.pos); m.lookAt(0,def.pos[1],0); return m; }
 async function buildRoom(id,yaw){ const T=T3(), n=G.nodes[id], P=G.config.plate;
  const [sk,st]=await Promise.all([loadTex(`${G.config.skyDir}/${n.sky}.jpg?v=${VER}`), n.still?loadTex(`${G.config.stillDir}/${n.still}.jpg?v=${VER}`):Promise.resolve(null)]);
- skyEl.material.map=sk; skyEl.material.needsUpdate=true; plate.visible=!!st; if(st){ plate.material.map=st; plate.material.needsUpdate=true; }
+ skyEl.material.map=sk; skyEl.material.color.set(n.epoch==='hub'?0xcfc2a2:0xffffff); skyEl.material.needsUpdate=true; plate.visible=!!st; if(st){ plate.material.map=st; plate.material.needsUpdate=true; }
+ for(const k in props){ const tv=props[k]&&props[k].userData&&props[k].userData.tv; if(tv){ const c=tv.components['crt-tv']; if(c&&c.on) c.toggle(); tv.parentNode&&tv.parentNode.removeChild(tv); } }
  while(hitG.children.length) hitG.remove(hitG.children[0]); while(propG.children.length) propG.remove(propG.children[0]); props={}; hitMeshes=[];
  for(const p of n.props||[]){ const g=mkProp(p); propG.add(g); props[p.id]=g; glbSwap(p,g); }
  const hsl=n.hotspots.slice();
@@ -300,7 +309,7 @@ function music(){ if(!audioOK||!MU) return; const k=musicKey(), src=k&&SET.music
  curTrack=null; if(!src) return; const a=tracks[src]||(tracks[src]=Object.assign(new Audio(src+'?v='+VER),{loop:true,volume:0,src0:src})); curTrack=a;
  a.play().then(()=>afade(a,mvol(),MU.crossfadeMs)).catch(()=>{}); }
 function afade(a,to,ms,done){ clearInterval(a._f); const f=a.volume,t0=performance.now(); a._f=setInterval(()=>{const p=Math.min(1,(performance.now()-t0)/ms); a.volume=Math.max(0,Math.min(1,f+(to-f)*p)); if(p>=1){clearInterval(a._f); done&&done();}},40); }
-function duck(on){ ducked=on; if(curTrack) afade(curTrack,mvol(),400); }
+let tvDuck=false; function duck(on){ ducked=on||tvDuck; if(curTrack) afade(curTrack,mvol(),400); }
 function applyVolumes(){ if(curTrack) afade(curTrack,mvol(),150); if(SET.music<=0||!curTrack) music(); if(voiceA) voiceA.volume=Math.min(1,SET.voice); }
 const SFXN=['pickup','drop','throw','trash_hit','bounce','inv_open','inv_close','ui_hover','ui_click','slinky_boing','slinky_hop','clock_click','radio_static','step_carpet0','step_carpet1','step_carpet2','step_street0','step_street1','step_street2','coin','paper','error','bonus','penalty','glitch','whoosh','banana','zip','amb_backrooms','amb_1989'], SFXB={}; let sfxLoading=false, ambNode=null, ambName=null;
 function sfxLoad(){ if(sfxLoading||!actx) return; sfxLoading=true; for(const n of SFXN) fetch(`sfx/${n}.mp3?v=${VER}`).then(r=>r.arrayBuffer()).then(b=>actx.decodeAudioData(b)).then(b=>{ SFXB[n]=b; if(n.startsWith('amb_')) roomAmb(); }).catch(()=>{}); }
@@ -588,5 +597,6 @@ async function boot(){ const J=async u=>(await fetch(u+'?v='+VER)).json(); G=awa
 window.ZS={get S(){return S}, get G(){return G}, get mode(){return mode}, get msg(){return msg}, get dlg(){return dlg}, get hover(){return hover3}, run, go, epochJump, openWM, openPause, onClick, newGame, toTitle, closeMsg, hintNow, useSlinky, clickHotspot, grabStart, grabEnd, grabPocket, get held(){return held}, get phys(){return phys}, get props(){return props}, mkProp, get propG(){return propG},
  choose:i=>{ if(dlg){ const f=dlg.n.options.filter(o=>cond(o.cond)); const o=f[Math.min(i,f.length-1)]; o&&dlg.res(o);} }, get dlgOpts(){ return dlg?dlg.n.options.filter(o=>cond(o.cond)).map(o=>o.label):null }, skip:()=>clipSkip&&clipSkip(), get clip(){return clipV&&clipV.label}, SET, unlockAudio, get vrMode(){return vrMode}, get audioOK(){return audioOK},
  get trackPlaying(){return !!curTrack&&!curTrack.paused}, get track(){return curTrack&&curTrack.src0}, setTime:t=>{S.time=t;}, eyeYaw, get roomYaw(){return roomYaw}, get lastVortexYaw(){return lastVortexYaw}, get hitMeshes(){return hitMeshes}, get MEM(){return MEM}, get voiceMap(){return voiceMap}, hash, get credits(){return credits}};
+document.querySelector('a-scene').addEventListener('tv-duck',e=>{ tvDuck=!!e.detail.on; duck(tvDuck); }); window.__zsActx=()=>actx;
 boot();
 })();
