@@ -10,3 +10,8 @@ window.ERA={
  enter:['Erzähler','Ost-Berlin, Novembernacht. Irgendwo jubelt jemand. Hier nur Kopfsteinpflaster und ein Trabi mit Hoffnung.'],
  floorFront:-3.0, bounds:[-2.9,2.9,-1.7,2.2]
 };
+window.ERAX={
+ stands:[[-2.6,0.5,70,0.95,2.0,0x2a2018,[['p5',0.9,1.35,0,['Mara','„Mars-Reisen, nur für Millionäre. Hier drüben wäre man schon mit Mallorca zufrieden.“']]],0xffc890,1.0]],
+ covers:[['c7','paper',-1.1,0,-0.55,25,['Mara','„Die Mauer ist weg. Steht da, als hätte sie jemand verlegt.“']],['c12','book',-1.5,0.34,-1.35,-15,['Mara','„Der kleine Trabi-Trainer. Kapitel eins: Warten. Kapitel zwei: weiter warten.“']]],
+ decoys:[['../assets/items/polaroid.glb',1.75,0.27,-1.3,1,40,['Mara','„Ein Polaroid. Wenn man wedelt, wird es schneller fertig. Stimmt nicht. Machen trotzdem alle.“']]]
+};
