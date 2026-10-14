@@ -3,7 +3,9 @@
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
-<div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick = Wurf/Schuss in Blickrichtung, Ziehen = Umsehen</small></div>
+<div id="fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .25s"></div>
+<div id="prize" style="display:none;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:15;text-align:center;color:#ffe6a8;font:700 28px sans-serif;text-shadow:0 0 18px #000;background:rgba(0,0,0,.55);padding:18px 28px;border-radius:16px"></div>
+<div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick auf Bude = davor stellen · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#1a0e14; density:0.075">
  <a-sky color="#140a10"></a-sky>
  <a-entity light="type:ambient; intensity:0.18; color:#9a86d0"></a-entity>
@@ -55,7 +57,7 @@ function stall(cx,cz,yaw,title,col){ const g=new T.Group(); g.position.set(cx,0,
  for(let i=0;i<2;i++){ const pl=plush(pc[(i+2)%5],1.6); pl.position.set(i?0.98:-0.98,1.75,0.36); pl.rotation.z=i?-0.2:0.2; g.add(pl); }
  const SL=new T.SpotLight(0xffc27a,7,4.5,0.95,0.6,1.5); SL.position.set(0,2.5,0.55); SL.target.position.set(0,1.0,-0.5); g.add(SL); g.add(SL.target);
  return g; }
-const G1=stall(-2.5,-2.0,0.55,'DOSENWERFEN',0xb3202a), G2=stall(0,-2.7,0,'SCHIESSBUDE',0x1f5fa8), G3=stall(2.5,-2.0,-0.55,'PFERDERENNEN',0x2a8a3a);
+const G1=stall(-2.5,-2.0,0.55,'DOSENWERFEN',0xb3202a), G2=stall(0,-2.7,0,'SCHIESSBUDE',0x1f5fa8), G3=stall(2.5,-2.0,-0.55,'PFERDERENNEN',0x2a8a3a); G1.userData.stall=G1; G2.userData.stall=G2; G3.userData.stall=G3; [G1,G2,G3].forEach(g=>g.traverse(o=>o.userData.stall=g));
 // Staub/Dunst im Licht
 const dustG=new T.BufferGeometry(), DN=600, dp=new Float32Array(DN*3); for(let i=0;i<DN;i++){ dp[i*3]=(Math.random()-0.5)*8; dp[i*3+1]=Math.random()*3.2; dp[i*3+2]=-0.5-Math.random()*3.5; } dustG.setAttribute('position',new T.BufferAttribute(dp,3));
 const dustP=new T.Points(dustG,new T.PointsMaterial({map:glowTex,size:0.025,color:0xffd6a0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending})); S.add(dustP);
@@ -95,6 +97,48 @@ box(2.0,0.04,0.04,std({color:0x777777,metalness:0.8,roughness:0.3}),0,1.45,-0.6,
 let shots=0, hitsD=0, dosenScore=0;
 // ---------- Anzeigetafel
 const boardTex=cv(1024,256,()=>{}); const sb=new T.Mesh(new T.PlaneGeometry(2.4,0.6),new T.MeshBasicMaterial({map:boardTex,transparent:true,toneMapped:false})); sb.position.set(0,3.6,-3.4); S.add(sb);
+
+// ---------- Zeitbonus (Stub für V3-Countdown) + Preise
+window.__loopClock={sec:20*60,bonusUsed:false,add(s){ if(this.bonusUsed) return false; this.bonusUsed=true; this.sec+=s; return true; }};
+let prizesWon={dosen:false,enten:false,pferd:false}; const awarded=[];
+function softTick(sec=3){ const a=ac(), t0=a.currentTime; const n=Math.floor(sec/0.45);
+  for(let i=0;i<n;i++){ const t=t0+i*0.45; const o=a.createOscillator(), g=a.createGain(), f=a.createBiquadFilter();
+    o.type='square'; o.frequency.value=i%2?920:780; f.type='bandpass'; f.frequency.value=1100; f.Q.value=4;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.035,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(f); f.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.09); } }
+function clockTick(){ softTick(3); }
+function maraSay(t){ const el=document.getElementById('hud'); el.innerHTML=`Kirmes-Test<br><small style="color:#ffb0d8">Mara: „${t}“</small>`; setTimeout(()=>{ el.innerHTML='Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>Klick auf Bude = hingestellt = davor stellen · VR: greifen/werfen/schießen</small>'; },5000); }
+function grantPrize(kind,title,bonusMin){
+  if(prizesWon[kind]) return; prizesWon[kind]=true;
+  const pl=plush([0xff8fb8,0x8fd8ff,0xffe08a][Object.keys(prizesWon).indexOf(kind)%3],2.4);
+  const cam=document.getElementById('cam').object3D; const o=new T.Vector3(); cam.getWorldPosition(o);
+  const q=new T.Quaternion(); cam.getWorldQuaternion(q); const fwd=new T.Vector3(0,0,-1).applyQuaternion(q);
+  pl.position.copy(o).addScaledVector(fwd,0.7).add(new T.Vector3(0,-0.15,0)); S.add(pl); awarded.push(pl);
+  setTimeout(()=>{ S.remove(pl); },4500);
+  SND.bell();
+  const got=window.__loopClock.add(bonusMin*60);
+  if(got) clockTick();
+  const bonusTxt=got?` +${bonusMin}:00 auf die Schleife!`:' (Zeitbonus schon verbraucht)';
+  document.getElementById('prize').style.display='block'; document.getElementById('prize').textContent=`🧸 ${title}${bonusTxt}`;
+  maraSay(got?`Schön! ${title} – und ${bonusMin} Minuten extra.`:`Schön! ${title}. Mehr Zeit gibt's diesmal nicht.`);
+  setTimeout(()=>{ document.getElementById('prize').style.display='none'; },4200);
+  drawBoard();
+}
+function goToStall(g){
+  const fade=document.getElementById('fade'); fade.style.opacity='1';
+  setTimeout(()=>{
+    const front=g.localToWorld(new T.Vector3(0,0,1.55));
+    const camEl=document.getElementById('cam'); const cam=camEl.object3D;
+    cam.position.set(front.x,1.6,front.z);
+    // face stall center
+    const c=g.localToWorld(new T.Vector3(0,1.4,-0.2));
+    const dx=c.x-cam.position.x, dz=c.z-cam.position.z;
+    cam.rotation.set(0,Math.atan2(-dx,-dz),0);
+    camEl.setAttribute('look-controls','enabled',true);
+    fade.style.opacity='0';
+  },260);
+}
+
 function drawBoard(){ const c=boardTex.image, x=c.getContext('2d'); x.clearRect(0,0,1024,256); x.fillStyle='rgba(10,5,15,0.8)'; x.fillRect(0,0,1024,256); x.fillStyle='#ffe6a8'; x.font='bold 46px sans-serif';
  x.fillText(`Dosen: ${dosenScore} · Würfe ${dosenThrows}`,30,70); x.fillText(`Enten: ${hitsD} / Schüsse ${shots}`,30,135); x.fillStyle='#ffb0d8'; x.fillText(raceMsg||'Pferderennen: Ball in die Löcher rollen!',30,200); boardTex.needsUpdate=true; }
 drawBoard();
@@ -112,13 +156,26 @@ function release(st){ const b=st.held; if(!b) return; st.held=null; b.held=null;
 // Schuss (VR: Controller-Ray; Desktop: Kamera)
 const rc=new T.Raycaster();
 function shoot(src){ shots++; SND.pop(); const o=new T.Vector3(), q=new T.Quaternion(); src.getWorldPosition(o); src.getWorldQuaternion(q); rc.set(o,new T.Vector3(0,0,-1).applyQuaternion(q)); const hit=rc.intersectObjects(ducks.filter(d=>!d.down).map(d=>d.m),false)[0];
- if(hit){ const d=ducks.find(dd=>dd.m===hit.object); d.down=1; hitsD++; SND.clank(1); setTimeout(()=>{ d.down=0; },4000); } drawBoard(); }
+ if(hit){ const d=ducks.find(dd=>dd.m===hit.object); d.down=1; hitsD++; SND.clank(1); setTimeout(()=>{ d.down=0; },4000); if(hitsD>=5) grantPrize('enten','Plüsch von der Schießbude',1); } drawBoard(); }
 // Desktop: Klick
 const camEl=document.getElementById('cam');
+const stalls=[{g:G1,kind:'d'},{g:G2,kind:'s'},{g:G3,kind:'h'}];
+function nearestStall(o){ let best=null,bd=9; for(const st of stalls){ const p=new T.Vector3(); st.g.getWorldPosition(p); const d=o.distanceTo(p); if(d<bd){bd=d;best=st;} } return {st:best,d:bd}; }
 sc.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting) return; ac(); const cam=camEl.object3D; const o=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(o); cam.getWorldQuaternion(q); const dir=new T.Vector3(0,0,-1).applyQuaternion(q);
- const yaw=Math.atan2(-dir.x,-dir.z)*57.3; if(Math.abs(yaw)<12){ shoot(cam); return; }
- const kind=yaw>0?'d':'h'; const b=balls.find(x=>x.kind===kind&&!x.held&&x.rest); if(!b) return; b.m.position.copy(o).addScaledVector(dir,0.3); b.v.copy(dir).multiplyScalar(kind==='d'?7:4.2).add(new T.Vector3(0,1.4,0)); b.rest=false; b.thrown=true; if(kind==='d'){ dosenThrows++; drawBoard(); } });
-window.__k={balls,cans,ducks,horses,shoot,board,holes,G2,get score(){return {dosenScore,hitsD,shots,raceMsg}}};
+ // Raycast booth approach: if looking at a stall from afar, move there
+ const rc2=new T.Raycaster(o,dir,0.2,12); const hits=rc2.intersectObjects([G1,G2,G3],true);
+ if(hits.length){ const gg=hits[0].object.userData.stall; if(!gg) return; const st=stalls.find(x=>x.g===gg);
+   const dist=o.distanceTo(gg.getWorldPosition(new T.Vector3()));
+   if(dist>2.2){ goToStall(gg); return; }
+ }
+ const {st,d}=nearestStall(o);
+ if(st&&d<2.4){ if(st.kind==='s'){ shoot(cam); return; }
+   const b=balls.find(x=>x.kind===st.kind&&!x.held&&x.rest); if(!b) return;
+   b.m.position.copy(o).addScaledVector(dir,0.3); b.v.copy(dir).multiplyScalar(st.kind==='d'?7:4.2).add(new T.Vector3(0,1.4,0)); b.rest=false; b.thrown=true; if(st.kind==='d'){ dosenThrows++; drawBoard(); } return; }
+ // fallback: approach nearest in look cone
+ for(const st of stalls){ const p=st.g.getWorldPosition(new T.Vector3()); p.y=o.y; const to=p.clone().sub(o).normalize(); if(dir.dot(to)>0.85&&o.distanceTo(p)>2.2){ goToStall(st.g); return; } }
+});
+window.__k={balls,cans,ducks,horses,shoot,board,holes,G1,G2,G3,goToStall,grantPrize,get score(){return {dosenScore,hitsD,shots,raceMsg,prizesWon:{...prizesWon},clock:window.__loopClock.sec,bonusUsed:window.__loopClock.bonusUsed}}};
 // ---------- Simulation
 const tmp=new T.Vector3(); let last=performance.now();
 function stepBall(b,dt){ if(b.held){ b.held.c.getWorldPosition(b.m.position); return; } if(b.rest) return; b.t+=dt;
@@ -145,10 +202,10 @@ function stepCans(dt){ for(const c of cans){ if(!c.down){ // Stütze prüfen
   const shelfTop=local(G1,0,shelfY,-0.55).y, onShelf=G1.worldToLocal(P.clone()); const floorY=(Math.abs(onShelf.x)<1.0&&onShelf.z>-0.9&&onShelf.z<0.95)?(onShelf.z<-0.35&&Math.abs(onShelf.x)<0.45?shelfTop:0.99):0;
   if(P.y<floorY+0.035){ P.y=floorY+0.035; if(c.v.y<-0.5) SND.clank(0.35); c.v.y*=-0.25; c.v.x*=0.7; c.v.z*=0.7; c.w.multiplyScalar(0.6); c.m.rotation.x=Math.round(c.m.rotation.x/(Math.PI/2))*(Math.PI/2)*0.0+(Math.abs(c.m.rotation.x)>0.6?Math.PI/2:c.m.rotation.x); } }
  const cnt=cans.filter(c=>c.down&&G1.worldToLocal(c.m.position.clone()).y<shelfY-0.01||c.down&&c.m.position.distanceTo(c.base)>0.25).length;
- if(cnt!==dosenScore){ dosenScore=cnt; drawBoard(); if(cnt===cans.length){ SND.bell(); setTimeout(()=>{ stackCans(); dosenScore=0; dosenThrows=0; drawBoard(); },3500); } } }
+ if(cnt!==dosenScore){ dosenScore=cnt; drawBoard(); if(cnt===cans.length){ SND.bell(); grantPrize('dosen','Plüsch vom Dosenwerfen',2); setTimeout(()=>{ stackCans(); dosenScore=0; dosenThrows=0; drawBoard(); },3500); } } }
 function score(p){ if(!raceOn) return; horses[0].x+=p*0.06; }
 function stepRace(dt,t){ if(!raceOn) return; for(const h of horses){ if(!h.me) h.x+=dt*(0.012+0.02*Math.max(0,Math.sin(t*0.7+horses.indexOf(h)*2))); h.g.position.x=-0.85+Math.min(1.7,h.x*1.7); h.g.position.y=h.g.position.y+Math.sin(t*12+h.x*30)*0.0006; }
- const w=horses.find(h=>h.x>=1); if(w){ raceOn=false; raceMsg=w.me?'Dein Pferd gewinnt! 🏆':'Verloren – nochmal!'; if(w.me) SND.bell(); drawBoard(); setTimeout(()=>{ horses.forEach(h=>h.x=0); raceOn=true; raceMsg=''; drawBoard(); },5000); } }
+ const w=horses.find(h=>h.x>=1); if(w){ raceOn=false; raceMsg=w.me?'Dein Pferd gewinnt! 🏆':'Verloren – nochmal!'; if(w.me){ SND.bell(); grantPrize('pferd','Plüsch vom Pferderennen',2); } drawBoard(); setTimeout(()=>{ horses.forEach(h=>h.x=0); raceOn=true; raceMsg=''; drawBoard(); },5000); } }
 function stepDucks(t){ for(const d of ducks){ const sp=d.row?0.12:-0.16; let u=((d.ph+t*sp)%1+1)%1; const x=-0.95+u*1.9; d.g.position.set(x,d.row?1.87:1.47,d.row?-0.75:-0.6); d.g.rotation.x=d.down?-1.4:0; } }
 function tick(){ const now=performance.now(), dt=Math.min(0.033,(now-last)/1000); last=now; const t=now/1000;
  const pres=R.xr.isPresenting; for(const st of ctr){ const p=new T.Vector3(); st.c.getWorldPosition(p); st.hist.push({p:p.clone(),t:now}); while(st.hist.length>6) st.hist.shift(); st.rifle.visible=pres&&nearG2(p)&&!st.held&&isAimingAt(st); st.ln.visible=pres&&st.rifle.visible; }
