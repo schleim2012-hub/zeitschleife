@@ -536,7 +536,9 @@
       "say": "Leg das weg. Wir haben keine Zeit für Klötzchen.",
       "speaker": "mara"
      }
-    ]
+    ],
+    "glb": "assets/items/gameboy.glb",
+    "glbSize": 0.148
    },
    "wuerfel": {
     "name": "Zauberwürfel",
@@ -546,7 +548,9 @@
     "line": {
      "say": "Ein Zauberwürfel. Verdreht. Wie dein Lebenslauf.",
      "speaker": "narrator"
-    }
+    },
+    "glb": "assets/items/cube.glb",
+    "glbSize": 0.057
    },
    "brause": {
     "name": "Brausepulver",
@@ -750,7 +754,9 @@
    "name": "Polaroid",
    "icon": "📷",
    "desc": "„Finde mich – M.“ Sieht fast aus wie ein Ausweis.",
-   "model": "polaroid"
+   "model": "polaroid",
+   "glb": "assets/items/polaroid.glb",
+   "glbSize": 0.107
   },
   "dm": {
    "name": "100 D-Mark",
