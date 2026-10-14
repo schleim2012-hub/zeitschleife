@@ -47,13 +47,14 @@ const TL2=new T.TextureLoader();
 const photoMat=(url,opts={})=>{const m=new T.MeshBasicMaterial({color:0x6a625a,fog:true,toneMapped:true,...opts});TL2.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
 (()=>{const pt=TL2.load('../assets/pano/kirmes_vignaioli_4k_dark.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
 const sph=new T.Mesh(new T.SphereGeometry(42,96,48),new T.MeshBasicMaterial({map:pt,side:T.BackSide,fog:false,toneMapped:false,depthWrite:false}));
-sph.position.y=1.5; sph.rotation.y=Math.PI*1.15; sph.renderOrder=-20; S.add(sph);})();
+sph.position.y=1.5; sph.rotation.y=Math.PI*1.15; sph.renderOrder=-20; /* sphere off */})();
 (()=>{const cyl=new T.Mesh(new T.CylinderGeometry(20,20,8,64,1,true),photoMat('../assets/pano/kirmes_backdrop_strip_dark.jpg'));
-cyl.position.y=3.0; cyl.rotation.y=Math.PI*1.15; cyl.renderOrder=-15; S.add(cyl);})();
+cyl.position.y=3.0; cyl.rotation.y=Math.PI*1.15; cyl.renderOrder=-15;})();
 const fl=new T.Mesh(new T.CircleGeometry(14,72),photoMat('../assets/pano/kirmes_floor_photo.jpg')); fl.rotation.x=-Math.PI/2; fl.renderOrder=-5; S.add(fl);
 // large photo backdrop plane behind stalls (FMV set wall)
-const setWall=new T.Mesh(new T.PlaneGeometry(28,10),photoMat('../assets/pano/kirmes_backdrop_strip_dark.jpg'));
-setWall.position.set(0,4.2,-8.5); S.add(setWall); setWall.material.color.set(0x2a2622);
+const setWall=new T.Mesh(new T.CylinderGeometry(10,10,12,48,1,true,Math.PI-0.95,1.9),new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide}));
+TL2.load('../assets/pano/kirmes_backdrop_B.jpg',t=>{t.colorSpace=T.SRGBColorSpace;setWall.material.map=t;setWall.material.needsUpdate=true;});
+setWall.scale.x=-1; setWall.position.set(0,1.6+(300-256)*(12/512),1.5); S.add(setWall);
 
 const bulbs=[]; for(let k=0;k<3;k++){ for(let i=0;i<26;i++){ const t=i/25, x=-4.5+9*t, y=3.1-Math.sin(t*Math.PI)*0.45+(k?0.15:0), z=-1.0-k*1.6; const b=new T.Mesh(bulbGeo,bulbMat(i)); b.position.set(x,y,z); S.add(b); bulbs.push(b); if(i%2===0) glow(S,b.position,BC[i%4],0.4); } }
 [[-2.6,-2.2],[0,-3.0],[2.6,-2.2]].forEach(([x,z])=>{ const L=new T.PointLight(0xffc98a,2.2,5.5,2); L.position.set(x,2.5,z+0.8); S.add(L); });
