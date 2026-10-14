@@ -1,0 +1,30 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zeitschleife – Fernseher</title><style>
+body{margin:0;background:#120814;color:#ddd;font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+.tv{margin-top:4vh;width:94vw;max-width:640px;background:linear-gradient(#6b3a2a,#3b1e14);border-radius:22px;padding:18px;box-shadow:0 0 40px #000}
+.scr{position:relative;background:#000;border-radius:40px/30px;overflow:hidden;aspect-ratio:4/3}
+video{width:100%;height:100%;object-fit:cover;filter:contrast(1.1) saturate(.85)}
+.scr:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px),radial-gradient(ellipse,transparent 55%,rgba(0,0,0,.7))}
+#noise{position:absolute;inset:0;width:100%;height:100%;display:none}
+#osd{position:absolute;top:10px;right:18px;font:bold 28px monospace;color:#3f3;text-shadow:0 0 6px #0f0;display:none}
+.ctl{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+button{background:#222;color:#eee;border:2px solid #555;border-radius:50%;width:56px;height:56px;font-size:20px}
+#start{position:absolute;inset:0;background:rgba(0,0,0,.75);color:#fff;font-size:22px;border:0;border-radius:0;width:100%;height:100%}
+small{opacity:.6;margin-top:10px}
+</style></head><body>
+<div class="tv"><div class="scr"><video id="v" playsinline></video><canvas id="noise" width="160" height="120"></canvas><div id="osd"></div>
+<button id="start">▶ Fernseher einschalten</button></div>
+<div class="ctl"><button id="dn">◀</button><span id="lbl">Kanal 1</span><button id="up">▶</button><button id="pw">⏻</button></div></div>
+<small>Kanal 2 ist live: Die Nacht der lebenden Toten</small>
+<script>
+const base='tv/',chans=['ch01.mp4','LIVE','ch02.mp4','ch03.mp4','ch04.mp4','ch05.mp4','ch06.mp4','ch07.mp4','ch08.mp4','ch09.mp4','ch10.mp4','ch11.mp4','ch12.mp4','ch13.mp4'];
+const v=document.getElementById('v'),osd=document.getElementById('osd'),nz=document.getElementById('noise'),lbl=document.getElementById('lbl');let i=0,on=false,t;
+function noise(ms){nz.style.display='block';const x=nz.getContext('2d'),d=x.createImageData(160,120);let end=Date.now()+ms;(function f(){for(let k=0;k<d.data.length;k+=4){const c=Math.random()*255;d.data[k]=d.data[k+1]=d.data[k+2]=c;d.data[k+3]=255}x.putImageData(d,0,0);if(Date.now()<end)requestAnimationFrame(f);else nz.style.display='none'})()}
+function live(){const L=720,s=Math.floor(Date.now()/1000)%(L*8);return{src:base+'nl_'+String(Math.floor(s/L)).padStart(2,'0')+'.mp4',off:s%L}}
+function tune(){noise(400);osd.textContent=String(i+1).padStart(2,'0');osd.style.display='block';clearTimeout(t);t=setTimeout(()=>osd.style.display='none',2000);lbl.textContent='Kanal '+(i+1);
+ const c=chans[i];v.onended=null;if(c==='LIVE'){const l=live();v.loop=false;v.src=l.src;v.onloadedmetadata=()=>{v.currentTime=l.off};v.onended=tune}else{v.loop=true;v.src=base+c;v.onloadedmetadata=null}v.play().catch(()=>{})}
+document.getElementById('start').onclick=e=>{e.target.remove();on=true;tune()};
+document.getElementById('up').onclick=()=>{if(!on)return;i=(i+1)%chans.length;tune()};
+document.getElementById('dn').onclick=()=>{if(!on)return;i=(i-1+chans.length)%chans.length;tune()};
+document.getElementById('pw').onclick=()=>{on=!on;if(on)tune();else{v.pause();v.removeAttribute('src');v.load();osd.style.display='none'}};
+</script></body></html>
