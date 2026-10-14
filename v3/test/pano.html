@@ -1,7 +1,33 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Rewind V3 – Panorama-Test Backrooms</title>
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script></head><body>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script>
+// Found-footage look, world-locked on the sphere (nothing head-locked)
+AFRAME.registerShader('ff',{
+ schema:{src:{type:'map',is:'uniform'},t:{type:'time',is:'uniform'},on:{type:'number',default:1,is:'uniform'}},
+ vertexShader:`varying vec2 vUv; varying vec3 vDir; void main(){vUv=uv; vDir=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+ fragmentShader:`precision mediump float; uniform sampler2D src; uniform float t; uniform float on; varying vec2 vUv; varying vec3 vDir;
+ float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+ void main(){
+  vec2 uv=vUv; float ca=0.0006*on;
+  vec3 c=vec3(texture2D(src,uv+vec2(ca,0.)).r, texture2D(src,uv).g, texture2D(src,uv-vec2(ca,0.)).b);
+  float l=dot(c,vec3(.299,.587,.114));
+  c=mix(c,vec3(l),0.14*on);                       // desaturate
+  c*=mix(vec3(1.),vec3(1.03,1.04,0.92),on);       // warm/greenish tint
+  float fr=floor(t/41.7);                          // grain at 24 fps
+  float g=h(floor(uv*vec2(3072.,1536.))+fr)-0.5;
+  c+=g*0.035*on*(1.2-l);                           // fine grain, less in highlights
+  float e=1.0+0.025*sin(t*0.00078)*on;             // slow exposure breathing (~8 s)
+  float pole=smoothstep(0.55,1.0,abs(vDir.y));     // world-locked vignette: darker toward ceiling/floor
+  c*=e*(1.0-0.28*pole*on);
+  gl_FragColor=vec4(pow(max(c,0.),vec3(2.2)),1.);
+  #include <colorspace_fragment>
+ }`
+});
+</script></head><body>
 <a-scene renderer="colorManagement:true" vr-mode-ui="enabled:true">
 <a-assets><img id="p" src="backrooms_pano_4k.jpg?v=1" crossorigin="anonymous"></a-assets>
-<a-sky src="#p" rotation="0 -90 0"></a-sky>
+<a-sky id="sky" radius="500" material="shader:ff; src:#p" rotation="0 -90 0"></a-sky>
 <a-entity id="rig"><a-camera look-controls="magicWindowTrackingEnabled:true"></a-camera></a-entity>
-</a-scene></body></html>
+</a-scene>
+<script>if(location.search.includes('raw'))document.querySelector('#sky').setAttribute('material','on',0)</script>
+</body></html>

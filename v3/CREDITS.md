@@ -5,7 +5,13 @@
 
 ## 3D-Modelle
 - "Metal Trash Can", **Poly Haven** (https://polyhaven.com/a/metal_trash_can), CC0. Optimiert mit gltf-transform (webp 512, quantize).
-- Alle übrigen Props: prozedural im Engine-Code (eigene Arbeit).
+- Items von **Poly Haven**, CC0, optimiert mit gltf-transform (webp 256–512, quantize, simplify):
+  - Banane: "Bananas" (https://polyhaven.com/a/bananas)
+  - Hammer: "Cross Pein Hammer" (https://polyhaven.com/a/cross_pein_hammer)
+  - Trabi-Radkappe: "Rusted Wheel Rim 01" (https://polyhaven.com/a/rusted_wheel_rim_01)
+  - Leere Akte: "Binder Notebook" (https://polyhaven.com/a/binder_notebook)
+- Alle übrigen Props (Polaroid, D-Mark, Münze, Schnur, Kaugummi-Angel, Slinky, Pool-Items): prozedural im Engine-Code (eigene Arbeit).
+- Panorama-Test (v3/test): Grok Imagine (grok.com), nachbearbeitet mit OpenCV.
 
 ## Audio
 - Stimmen: ElevenLabs (eleven_multilingual_v2), eigene Texte.

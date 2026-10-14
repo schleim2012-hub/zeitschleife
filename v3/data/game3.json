@@ -762,13 +762,17 @@
    "name": "Banane",
    "icon": "🍌",
    "desc": "Begrüßungsbanane. Wertvoller als Gold, 1989.",
-   "model": "banana"
+   "model": "banana",
+   "glb": "assets/items/bananas.glb",
+   "glbSize": 0.2
   },
   "hammer": {
    "name": "Hammer & Meißel",
    "icon": "🔨",
    "desc": "Für Mauern. Nur für Mauern.",
-   "model": "hammer"
+   "model": "hammer",
+   "glb": "assets/items/cross_pein_hammer.glb",
+   "glbSize": 0.3
   },
   "mauer": {
    "name": "Mauerstück",
@@ -798,7 +802,9 @@
    "fail": {
     "say": "Die Akte ist leer. Sie hat dir nichts zu sagen. Und du ihr offenbar auch nicht.",
     "speaker": "narrator"
-   }
+   },
+   "glb": "assets/items/binder_notebook.glb",
+   "glbSize": 0.28
   },
   "huhn": {
    "name": "Gummihuhn mit Seilrolle",
@@ -816,7 +822,9 @@
    "fail": {
     "say": "Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.",
     "speaker": "narrator"
-   }
+   },
+   "glb": "assets/items/rusted_wheel_rim_01.glb",
+   "glbSize": 0.26
   },
   "schnur": {
    "name": "Paketschnur",
