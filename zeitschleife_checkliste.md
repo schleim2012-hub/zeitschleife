@@ -10,8 +10,8 @@
 
 - [x] Basis-Countdown 20:00 min (Priorität Muss) — V3 timing.timeLimit 1200
 - [ ] Blumenkrone gibt +2:00 min (Priorität Muss)
-- [ ] Easter Egg (Zeitreise-Anspielung) gefunden: +30 s + Rückspul-Sound, 1× pro Spielstand (Priorität Muss)
-- [ ] Klassiker-Hommage gefunden: +20 s, 1× pro Spielstand (Priorität Muss)
+- [x] Easter Egg (Zeitreise-Anspielung) gefunden: +30 s + Rückspul-Sound, 1× pro Spielstand (Priorität Muss) — 3× bonus 30 in game3, V3n 1×/Spielstand via MEM.bonusKeys
+- [x] Klassiker-Hommage gefunden: +20 s, 1× pro Spielstand (Priorität Muss) — 2× bonus 20, 1×/Spielstand
 - [x] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss) — opt.trap: Abzug 1×/Falle/Schleife, danach Spruch
 - [x] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss) — engine glitchPenaltyFrom 5
 - [ ] Baum fällen: −60 s (Priorität Muss)
