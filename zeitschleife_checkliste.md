@@ -8,12 +8,12 @@
 
 ## Systeme – Countdown
 
-- [ ] Basis-Countdown 20:00 min (Priorität Muss)
+- [x] Basis-Countdown 20:00 min (Priorität Muss) — V3 timing.timeLimit 1200
 - [ ] Blumenkrone gibt +2:00 min (Priorität Muss)
 - [ ] Easter Egg (Zeitreise-Anspielung) gefunden: +30 s + Rückspul-Sound, 1× pro Spielstand (Priorität Muss)
 - [ ] Klassiker-Hommage gefunden: +20 s, 1× pro Spielstand (Priorität Muss)
 - [ ] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss)
-- [ ] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss)
+- [x] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss) — engine glitchPenaltyFrom 5
 - [ ] Baum fällen: −60 s (Priorität Muss)
 - [ ] Hinweis Stufe 3: 0 s, nur Spott-Spruch (Priorität Muss)
 - [x] Game Over: Schleife neu, Wissen/Tagebuch/Easter-Egg-Bonus bleiben (Priorität Muss) — V3n: Notizen, MEM.know, Bonus-Keys+Bonuszeit bleiben; Neues Spiel setzt zurück
@@ -23,8 +23,8 @@
 
 ## Systeme – Inventar
 
-- [ ] Inventar-Limit 6 Plätze (Priorität Muss)
-- [ ] Anker-Items (Walkman, Mauerstück, Glühbirne) zählen nicht mit (Priorität Muss)
+- [x] Inventar-Limit 6 Plätze (Priorität Muss) — invLimit 6
+- [x] Anker-Items (Walkman, Mauerstück, Glühbirne) zählen nicht mit (Priorität Muss) — invCount ohne anchor
 - [ ] Köder-Items mit eigenen Benutz-Sprüchen (Priorität Muss)
 - [ ] Köder klar von Pflicht-Items unterscheidbar (Priorität Muss)
 - [ ] Zufälliger Gegenstands-Pool pro Schleife: Schlüssel-Items fest, Köder/Extras zufällig (Tamagotchi, Kassette mit Bleistift, Gameboy, Furby, Wählscheibentelefon …), je eigener Spruch (Priorität Soll)
@@ -33,7 +33,7 @@
 ## Systeme – Hints
 
 - [ ] Hinweistexte in Nodes entschärfen (feste hints auf Stufe 1) (Priorität Muss)
-- [ ] 3-Stufen-Hinweise: Erzähler vage → Mara Ort → Mara Lösung (kein Leuchten) (Priorität Muss)
+- [x] 3-Stufen-Hinweise: Erzähler vage → Mara Ort → Mara Lösung (kein Leuchten) (Priorität Muss) — hintNow Stufen 1–3
 - [ ] Stufe 2 erst nach 60–90 s oder 3 Fehlversuchen; Stufe 3 nur auf Wunsch (Walkman-Taste halten) (Priorität Muss)
 - [ ] Kein Hotspot-Leuchten, keine Hotspot-Anzeige; Trefferflächen groß aber unsichtbar (Priorität Muss)
 - [ ] Typische falsche Ideen bekommen eigene Fail-Sprüche (Priorität Soll)
@@ -46,7 +46,7 @@
 - [ ] Steigerung über Ton, Erzähler-Sprüche und Zeitkosten statt visuelle Stärke (Priorität Muss)
 - [ ] Besuch 1 normal; ab 2+ VHS/Ton/Sprüche; ab 5+ Zeitkosten, nie sperren (Priorität Muss)
 - [ ] Glitches können Geheimnisse kurz andeuten (Easter Eggs, Hinweise) (Priorität Soll)
-- [ ] Optionsschalter „Glitch-Intensität“; keine Kamerabewegung, keine harten Blitze (Priorität Muss)
+- [x] Optionsschalter „Glitch-Intensität“; keine Kamerabewegung, keine harten Blitze (Priorität Muss) — V3n: AUS/LEISE/NORMAL in Optionen
 - [ ] Glitch-Zähler in Backrooms als wachsender Wandriss (Overlay) (Priorität Soll)
 - [ ] Szenenübergang: kurzer VHS-Rückspul-Glitch (0,5 s) beim Ärenwechsel (Priorität Soll)
 
@@ -84,7 +84,7 @@
 - [ ] Quellen: Freesound (Ambient, UI, Alltagsgeräusche) UND ElevenLabs Sound Effects (Priorität Muss)
 - [ ] ElevenLabs Sound Effects für Geräusche, die es so nicht gibt: Vortex, lebendiger Slinky, Glitch (Priorität Muss)
 - [ ] Raumklang / Ambience-Loops je Ära + positionierte Geräusche (Priorität Soll)
-- [ ] Rückspul-Sound bei Easter-Egg-Bonuszeit (Priorität Muss)
+- [x] Rückspul-Sound bei Easter-Egg-Bonuszeit (Priorität Muss) — addTime bonus → rewind
 - [ ] Slinky-Klack-Sound pro Aufsetzen (Priorität Soll)
 - [ ] Voice-Linien Mara/Erzähler/NPCs (ElevenLabs TTS), Ducking aus V2 (Priorität Muss)
 - [ ] Musik nur eigene Stücke „im Stil von“, keine Originalmusik (Priorität Muss)
