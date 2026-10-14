@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Rewind V3 – Röhren-TV Test (1984)</title>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script src="../tv.js?v=3"></script></head><body>
+<a-scene renderer="colorManagement:true; antialias:true" fog="type:exponential; color:#2a1030; density:0.09" background="color:#1a0a22" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
+ <!-- 1984 Traum-Neon: Pink/Orange/Violett + Türkis, Dunst -->
+ <a-entity light="type:ambient; color:#a070c0; intensity:0.6"></a-entity>
+ <a-entity light="type:point; color:#ff4fa0; intensity:3; distance:6" position="-1.6 2.2 -1.2"></a-entity>
+ <a-entity light="type:point; color:#ff9a3c; intensity:2; distance:5" position="1.6 1.8 -1.5"></a-entity>
+ <a-entity light="type:point; color:#3ce0d0; intensity:1.5; distance:5" position="0 2.6 0.5"></a-entity>
+ <a-plane rotation="-90 0 0" width="12" height="12" material="color:#2b1638; roughness:0.4; metalness:0.2"></a-plane>
+ <a-box position="0 1.5 -3" width="8" height="3" depth="0.1" material="color:#3a1a48"></a-box>
+ <a-box position="-1.6 2.6 -2.9" width="2.2" height="0.04" depth="0.04" material="color:#ff4fa0; emissive:#ff4fa0; emissiveIntensity:2"></a-box>
+ <a-box position="1.6 2.3 -2.9" width="1.6" height="0.04" depth="0.04" material="color:#3ce0d0; emissive:#3ce0d0; emissiveIntensity:2"></a-box>
+ <a-box position="0 0.35 -1.15" width="1.2" height="0.7" depth="0.55" material="color:#6b3a2a; roughness:0.7"></a-box>
+ <a-entity id="tv" position="0 0.7 -1.15" crt-tv="base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4"></a-entity>
+ <!-- Easter-Egg-Vorschau: kleiner Backrooms-Fernseher mit dem Läufer-Clip -->
+ <a-entity id="tvsmall" position="1.7 0 -1.2" rotation="0 -35 0" crt-tv="base:../tv/; channels:ch13.mp4; scale:0.45; start:1"></a-entity>
+ <a-entity id="rig"><a-camera position="0 1.6 0"></a-camera>
+  <a-entity laser-controls="hand:right" raycaster="objects:.clickable; far:6"></a-entity><a-entity laser-controls="hand:left" raycaster="objects:.clickable; far:6"></a-entity></a-entity>
+</a-scene></body></html>
