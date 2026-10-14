@@ -47,9 +47,11 @@ function cond(c){ if(c===undefined||c===null||c==='1'||c===true) return true; tr
 function progress(){ idle=0; }
 function toast(t,ms=2600){ toasts.push({t,until:performance.now()+ms}); }
 function invCount(){ return S.inv.filter(i=>!G.items[i].anchor).length; }
-function addTime(sec,key,kind){ sfxF(kind==='bonus'?'bonus':'penalty'); // kind: 'pen' oder 'bonus'
- if(kind==='bonus'){ if(key&&S.pen['b_'+key]) return; const s=Math.min(sec,TM.maxBonus-S.bonus); if(s<=0) return; S.bonus+=s; S.time+=s; if(key) S.pen['b_'+key]=1; toast('⏱ +'+fmt(s)); sfx('rewind'); return; }
- if(key&&S.pen[key]) return; if(key) S.pen[key]=1; const floor=Math.min(S.time,TM.minTimeAfterPenalty); S.time=Math.max(floor,S.time-sec); toast('⏱ −'+fmt(sec)); }
+let tDelta=null; // kurze „+0:30“/„−0:20“-Anzeige direkt am Walkman-Zeitdisplay (kein Extra-Zähler)
+function flashDelta(sec,plus){ tDelta={t:(plus?'+':'−')+fmt(sec),c:plus?'#7dffb0':'#ff6a6a',t0:performance.now()}; }
+function addTime(sec,key,kind){ // kind: 'pen' oder 'bonus'; Ostereier/Bonus bleiben 1× pro Spielstand (MEM.bonusKeys)
+ if(kind==='bonus'){ MEM.bonusKeys=MEM.bonusKeys||{}; if(key&&(S.pen['b_'+key]||MEM.bonusKeys[key])) return; const s=Math.min(sec,TM.maxBonus-S.bonus); if(key){ S.pen['b_'+key]=1; MEM.bonusKeys[key]=Math.max(0,s); saveMem(); } if(s<=0){ toast('⏱ Bonuszeit voll ('+fmt(TM.maxBonus)+')'); return; } S.bonus+=s; S.time+=s; sfxF('bonus'); flashDelta(s,true); sfx('rewind'); return; }
+ if(key&&S.pen[key]) return; if(key) S.pen[key]=1; const floor=Math.min(S.time,TM.minTimeAfterPenalty); const before=S.time; S.time=Math.max(floor,S.time-sec); const lost=Math.round(before-S.time); if(lost>0){ sfxF('penalty'); flashDelta(lost,false); } }
 // ---------- Aktionen
 async function run(list){ for(const a of list||[]){ if(mode==='credits') return; const r=await act(a); if(r==='abort') return 'abort'; } }
 async function act(a){
@@ -458,12 +460,13 @@ function onClick(p){ unlockAudio();
 // ---------- Zeichnen (UI-Ebene)
 function spk(s){ return (G.config.speakers[s]||['',''])[0]; } function spc(s){ return (G.config.speakers[s]||['','#8fe9ff'])[1]; }
 function drawHUD(now){ const warn=S.time<=60; glass(24,20,170,58,16,warn?'rgba(255,60,60,0.9)':undefined);
- text(fmt(S.time),109,51,{s:40,w:700,a:'center',b:'middle',c:warn&&(now%1000<500)?'#ff5a5a':'#ff8fd8',ls:3});
+ text(fmt(S.time),109,51,{s:40,w:700,a:'center',b:'middle',c:warn&&(now%1000<500)?'#ff5a5a':'#ff8fd8',ls:3}); drawDelta(now,109,96,30);
  for(let i=0;i<3;i++){ x.beginPath(); x.arc(220+i*26,49,8,0,7); x.fillStyle=i<S.anchors.length?'#ffd27a':'rgba(255,255,255,0.15)'; x.fill(); }
  button([W-430,20,140,58],'💭 HINWEIS',()=>hintNow(),{s:18}); button([W-280,20,186,58],'📼 ZEIT-WALKMAN',()=>openWM(!wm.open),{s:20,active:wm.open}); button([W-82,20,58,58],'❚❚',()=>openPause(true),{s:20,ls:0});
  if(S.sel){ glass(W/2-220,20,440,50,25,'rgba(255,210,122,0.8)'); text(`${G.items[S.sel].icon}  ${G.items[S.sel].name} benutzen mit …`,W/2,46,{s:24,w:600,a:'center',b:'middle'}); }
  if(hover3&&mode==='play'){ const l=S.sel?`${G.items[S.sel].name} → ${hover3.label}`:hover3.label; x.font=`600 26px ${F}`; const w=x.measureText(l).width+50; glass(W/2-w/2,H-78,w,46,23); text(l,W/2,H-55,{s:26,w:600,a:'center',b:'middle'}); }
  drawToasts(now,96); if(DEBUG){ glass(24,H-60,700,40,10); text(`DEBUG ${S.node} · visits ${JSON.stringify(S.visits)} · loop ${S.loop} · slinky ${S.slinky.uses} · yaw ${(eyeYaw()*57.3).toFixed(0)}°`,40,H-34,{s:20,w:600,c:'#0f0'}); } }
+function drawDelta(now,cx,cy,sz){ if(!tDelta) return; const k=(now-tDelta.t0)/1800; if(k>1){ tDelta=null; return; } x.save(); x.globalAlpha=k<0.15?k/0.15:Math.min(1,(1-k)/0.35); text(tDelta.t,cx,cy-k*14,{s:sz,w:700,a:'center',b:'middle',c:tDelta.c,ls:3}); x.restore(); }
 function drawToasts(now,y0){ toasts=toasts.filter(q=>q.until>now); toasts.forEach((q,i)=>{ x.font=`600 24px ${F}`; const w=x.measureText(q.t).width+44; const a=Math.min(1,(q.until-now)/400);
  x.save(); x.globalAlpha=a; glass(W/2-w/2,y0+i*52,w,42,21,'rgba(255,210,122,0.8)'); text(q.t,W/2,y0+21+i*52,{s:24,w:600,a:'center',b:'middle'}); x.restore(); }); }
 function typedD(){ const cps=SPEEDS[SET.speed][1]; return cps?Math.min(dlg.t.length,Math.floor((performance.now()-dlg.t0)/1000*cps)):dlg.t.length; }
@@ -484,7 +487,7 @@ function openWM(v){ if(v&&mode!=='play'&&mode!=='wm') return; if(v!==wm.open) sf
 function drawWM(now){ x.fillStyle='rgba(5,3,10,0.55)'; x.fillRect(0,0,W,H);
  const X=230,Y=100,w=W-460,h=700; glass(X,Y,w,h,30,'rgba(120,220,255,0.9)');
  x.save(); rr(X+30,Y+26,w-60,90,18); x.fillStyle='rgba(0,0,0,0.45)'; x.fill(); x.restore();
- text('ZEIT-WALKMAN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8}); text(fmt(S.time),X+w-60,Y+84,{s:48,w:700,a:'right',c:'#ff8fd8',ls:4});
+ text('ZEIT-WALKMAN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8}); text(fmt(S.time),X+w-60,Y+84,{s:48,w:700,a:'right',c:'#ff8fd8',ls:4}); drawDelta(now,X+w-120,Y+130,34);
  TABS.forEach(([k,l],i)=>button([X+40+i*200,Y+140,184,48],l,()=>{wm.tab=k;},{s:20,active:wm.tab===k})); button([X+w-110,Y+140,70,48],'✕',()=>openWM(false),{s:24});
  const cx=X+40,cy=Y+220,cw=w-80;
  if(wm.tab==='inv'){ const inv=S.inv.filter(i=>!G.items[i].anchor), N=G.config.invLimit, s=118,g=16; wm.hover=-1;
@@ -551,11 +554,11 @@ function drawTitle(now){ if(!vrMode){ if(titleImg&&titleImg.complete&&titleImg.n
  if(!audioPlaying()) text('🔇 Tippen für Ton',W-30,40,{s:22,w:600,a:'right',c:'#ffd27a'}); drawToasts(now,40); }
 function toTitle(){ pauseOpen=false; wm.open=false; msg=null; dlg=null; stopVoice(); S=null; mode='title'; titleOpt=false; roomG.visible=false; $('titlesky').object3D.visible=vrMode; music(); }
 async function startAt(node){ await buildRoom(node,eyeYaw()); roomG.visible=true; S.node=node; vhsT=1; mode='play'; music(); await enter(); }
-async function newGame(){ localStorage.removeItem('zs3_save'); S=fresh(); S.notes=[]; mode='intro'; music(); $('titlesky').object3D.visible=false;
+async function newGame(){ localStorage.removeItem('zs3_save'); MEM.bonusKeys={}; saveMem(); S=fresh(); S.notes=[]; mode='intro'; music(); $('titlesky').object3D.visible=false;
  { const e=eyePos(); roomG.position.set(e.x,EYE,e.z); roomG.rotation.set(0,eyeYaw(),0); skyEl.visible=false; propG.visible=false; hitG.visible=false; plate.visible=false; roomG.visible=true; }
  if(!/[?&]nointro=1/.test(Q)) await playClip('intro_komplett'); skyEl.visible=true; propG.visible=true; hitG.visible=true; await startAt(S.node); }
 async function continueGame(){ let d; try{ d=JSON.parse(localStorage.zs3_save); }catch(e){} if(!d) return; S=Object.assign(fresh(),d.S); $('titlesky').object3D.visible=false; await startAt(S.node); }
-async function newLoop(){ MEM.loops++; saveMem(); msg=null; dlg=null; stopVoice(); wm.open=false; const notes=S.notes; S=fresh(); S.notes=notes; mode='play';
+async function newLoop(){ MEM.loops++; saveMem(); msg=null; dlg=null; stopVoice(); wm.open=false; const notes=S.notes; S=fresh(); S.notes=notes; { const bk=MEM.bonusKeys||{}; let b=0; for(const k in bk){ S.pen['b_'+k]=1; b+=bk[k]; } b=Math.min(b,TM.maxBonus); S.bonus=b; S.time+=b; } mode='play';
  await act(G.config.lines.newLoop); if(MEM.loops===2) setTimeout(()=>bark('loop2',true),2500); if(MEM.loops===3) setTimeout(()=>bark('loop3',true),2500); await buildRoom(S.node,eyeYaw()); vhsT=1; await enter(); }
 // ---------- Frame
 let lastStepT=0;
@@ -706,7 +709,7 @@ async function boot(){ const J=async u=>(await fetch(u+'?v='+VER)).json(); G=awa
  mode='press'; }
 window.ZS={get S(){return S}, get G(){return G}, get mode(){return mode}, get msg(){return msg}, get dlg(){return dlg}, get hover(){return hover3}, run, go, epochJump, openWM, openPause, onClick, newGame, toTitle, closeMsg, hintNow, useSlinky, clickHotspot, grabStart, grabEnd, grabPocket, get held(){return held}, get phys(){return phys}, get props(){return props}, mkProp, get propG(){return propG},
  choose:i=>{ if(dlg){ const f=dlg.n.options.filter(o=>cond(o.cond)); const o=f[Math.min(i,f.length-1)]; o&&dlg.res(o);} }, get dlgOpts(){ return dlg?dlg.n.options.filter(o=>cond(o.cond)).map(o=>o.label):null }, skip:()=>clipSkip&&clipSkip(), get clip(){return clipV&&clipV.label}, SET, unlockAudio, get vrMode(){return vrMode}, get audioOK(){return audioOK},
- get trackPlaying(){return !!curTrack&&!curTrack.paused}, get track(){return curTrack&&curTrack.src0}, setTime:t=>{S.time=t;}, eyeYaw, get roomYaw(){return roomYaw}, get lastVortexYaw(){return lastVortexYaw}, get hitMeshes(){return hitMeshes}, get MEM(){return MEM}, get voiceMap(){return voiceMap}, hash, get credits(){return credits}};
+ get trackPlaying(){return !!curTrack&&!curTrack.paused}, get track(){return curTrack&&curTrack.src0}, setTime:t=>{S.time=t;}, addTime, newLoop, eyeYaw, get roomYaw(){return roomYaw}, get lastVortexYaw(){return lastVortexYaw}, get hitMeshes(){return hitMeshes}, get MEM(){return MEM}, get voiceMap(){return voiceMap}, hash, get credits(){return credits}};
 document.querySelector('a-scene').addEventListener('tv-duck',e=>{ tvDuck=!!e.detail.on; duck(tvDuck); }); window.__zsActx=()=>actx;
 boot();
 })();
