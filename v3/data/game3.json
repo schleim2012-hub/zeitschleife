@@ -948,9 +948,9 @@
      "id": "murmel",
      "type": "marmot",
      "pos": [
-      3.15,
+      -0.7,
       -1.6,
-      3.1
+      1.3
      ],
      "when": "!flag.egg_murmel"
     },
@@ -1031,9 +1031,9 @@
      "url": "assets/props/plastic_crate_01.glb",
      "h": 0.3,
      "pos": [
-      2.2,
+      1.45,
       -1.6,
-      2.9
+      1.45
      ],
      "rot": 15
     },
@@ -1043,9 +1043,9 @@
      "url": "assets/props/wooden_crate_01.glb",
      "h": 0.45,
      "pos": [
-      1.7,
+      1.85,
       -1.6,
-      3.2
+      1.05
      ],
      "rot": -20
     },
@@ -1058,7 +1058,9 @@
       -1.6,
       3.45
      ],
-     "onWall": true
+     "onWall": true,
+     "wallOff": 0.4,
+     "wallSpan": 12
     },
     {
      "id": "rissd",
@@ -1069,7 +1071,8 @@
       -0.8,
       -1.2
      ],
-     "onWall": true
+     "onWall": true,
+     "wallOff": 0.12
     },
     {
      "id": "plate",
@@ -1080,7 +1083,8 @@
       0.0,
       -2.6
      ],
-     "onWall": true
+     "onWall": true,
+     "wallOff": 0.12
     }
    ],
    "hotspots": [
@@ -1206,7 +1210,8 @@
        1.0,
        1.9
       ],
-      "onWall": true
+      "onWall": true,
+      "wallOff": 0.8
      },
      "on": [
       {
@@ -1313,7 +1318,7 @@
    "skyYaw": 28,
    "proxy": {
     "floor": -1.6,
-    "ceil": 2.2,
+    "ceil": 2.35,
     "dist": "sky/BR_pano_dist.json"
    }
   },
@@ -1390,6 +1395,18 @@
       -1.6,
       -1.0
      ]
+    },
+    {
+     "id": "exitz",
+     "type": "decor",
+     "kind": "exit",
+     "pos": [
+      0,
+      0.6,
+      2.95
+     ],
+     "onWall": true,
+     "wallOff": 0.12
     }
    ],
    "hotspots": [
@@ -1525,7 +1542,8 @@
       "size": [
        2.0,
        2.3
-      ]
+      ],
+      "onWall": true
      },
      "on": [
       {
@@ -1540,7 +1558,7 @@
    "skyTint": "#e6ddd0",
    "proxy": {
     "floor": -1.6,
-    "ceil": 2.2,
+    "ceil": 2.35,
     "dist": "sky/BR_pano_b2_dist.json"
    }
   },
