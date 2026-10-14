@@ -13,7 +13,7 @@
  <a-entity light="type:point; color:#ff4fb0; intensity:2.2; distance:5; decay:2" position="0.6 2.2 -1.6"></a-entity>
  <a-entity light="type:point; color:#ff9a4c; intensity:1.6; distance:4; decay:2" position="-1.5 1.2 -1.4"></a-entity>
  <a-entity light="type:point; color:#7a5cff; intensity:0.8; distance:5; decay:2" position="0 2.4 1.2"></a-entity>
- <a-entity id="tv" position="0.28 0.72 -1.9" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:1.75"></a-entity>
+ <a-entity id="tv" position="-1.66 0.66 -1.08" rotation="0 35 0" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:0.85"></a-entity>
  <a-entity id="rig" room-move>
   <a-camera id="cam" position="0 1.6 0" wasd-controls="acceleration:18"></a-camera>
   <a-entity id="hl" laser-controls="hand:left" raycaster="objects:.clickable; far:6"></a-entity>
@@ -22,7 +22,7 @@
 </a-scene>
 <script>
 const T=THREE, S=document.querySelector('a-scene');
-const BACKDROP='../assets/era1984/room_backdrop.jpg'; // Perchance e1984_room_1 (Pete); Platzhalter: ../assets/era1984/placeholder.jpg
+const BACKDROP='../assets/era1984/room_backdrop.jpg?v=3'; // Perchance e1984_room_1 (Pete); Platzhalter: ../assets/era1984/placeholder.jpg
 const VOICE='../voice/';
 const MARA={enter:'mara_1c118614fc.mp3', tv:'mara_05a784cf86.mp3', grab:'mara_ea27a247ba.mp3', odd:'mara_dc24b624ed.mp3', nope:'mara_bed5c765e6.mp3', look:'mara_1a29c41923.mp3'};
 const SUB={enter:'„Süß. Aber die Uhr tickt, Casanova.“', tv:'„Du drehst da seit zwei Minuten dran. Süß. Aber sinnlos. Vielleicht verrät dir ja der Highscore was?“', grab:'„Was soll das werden, ein Kunstprojekt?“', odd:'„Süßer… das ist nicht, wie man das benutzt.“', nope:'„Haha, nein. Aber ich liebe deine Kreativität.“', look:'„Und jetzt? Schau nicht mich an!“'};
@@ -53,7 +53,7 @@ S.addEventListener('loaded',()=>{
  const wood=std({color:0x4a2a1c,roughness:0.75}); tex('../assets/tex/kirmes/WoodFloor/WoodFloor051_1K-JPG_Color.jpg',t=>{wood.map=t;wood.needsUpdate=true;});
  // real furniture: Poly Haven CC0 (vintage_wooden_drawer_01, painted_wooden_nightstand, painted_wooden_shelves), PBR
  const ph=(n,x,y,z,ry,sc)=>{ const e=document.createElement('a-entity'); e.setAttribute('gltf-model','../assets/props/ph/'+n+'/'+n+'.gltf'); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('rotation','0 '+ry+' 0'); e.setAttribute('scale',sc+' '+sc+' '+sc); S.appendChild(e); return e; };
- ph('ClassicConsole_01',0.28,0,-1.95,0,0.76); ph('painted_wooden_nightstand',-1.6,0.04,-0.95,15,1); ph('painted_wooden_shelves',1.75,0,-1.45,-20,1);
+  ph('painted_wooden_nightstand',-1.6,0.04,-0.95,15,1); ph('painted_wooden_shelves',1.75,0,-1.45,-20,1);
  // glow around lights (photo neon sign + lamp) — additive soft sprites
  const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gr=gx.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.3,'rgba(255,255,255,0.25)');gr.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gr;gx.fillRect(0,0,128,128);
  const gt=new T.CanvasTexture(gc);
@@ -69,8 +69,8 @@ S.addEventListener('loaded',()=>{
   el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); if(flat){ el.object3D.position.set(x,y+d/2,z); el.object3D.rotation.set(-Math.PI/2,0,0); el.object3D.rotateOnWorldAxis(new T.Vector3(0,1,0),ry); } else { el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; } });
   const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
- item('c1',0.105,0.19,0.025,-1.72,0.66,-0.95,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.58,0.66,-1.0,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.36,0.66,-0.88,-0.35,0xd8d0c0,0xd8d0c0,true);
- item('c4',0.15,0.22,0.035,1.62,1.13,-1.3,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.86,1.13,-1.32,-0.4,0xd8c070);
+ item('c1',0.105,0.19,0.025,-1.5,0.66,-0.78,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.36,0.66,-0.86,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.62,0.66,-0.74,-0.35,0xd8d0c0,0xd8d0c0,true);
+ item('c4',0.15,0.22,0.035,1.85,1.13,-1.38,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.75,0.62,-1.32,-0.4,0xd8c070);
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }
   const hand=(src&&src.id&&src.id!=='')?src:null; const par=(hand&&(hand.id==='hl'||hand.id==='hr'))?hand.object3D:document.getElementById('cam').object3D;
@@ -81,7 +81,7 @@ S.addEventListener('loaded',()=>{
  S.addEventListener('click',e=>{ if(held && e.target===S) drop(); });
  ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',()=>{ const rc=document.getElementById(id).components.raycaster; if(held && (!rc||!rc.intersectedEls.length)) drop(); }));
  // surfaces for falling items
- const surf=[[-1.6,-0.95,0.5,0.6,0.66],[0.28,-1.95,1.13,0.6,0.72],[1.75,-1.3,0.55,0.4,1.13]];
+ const surf=[[-1.6,-0.95,0.5,0.6,0.66],[-1.6,-0.95,0.01,0.01,0],[1.75,-1.3,0.55,0.4,1.13]];
  AFRAME.registerComponent('era-tick',{tick(t,dt){ const d=Math.min(dt,50)/1000; items.forEach(it=>{ if(!it.falling) return; const o=it.el.object3D; it.vy-=9.8*d; o.position.y+=it.vy*d;
    let fy=0; surf.forEach(([x,z,w,dd,h])=>{ if(Math.abs(o.position.x-x)<w/2&&Math.abs(o.position.z-z)<dd/2) fy=Math.max(fy,h); });
    if(o.position.y<fy+it.h/2){ o.position.y=fy+it.h/2; it.vy=0; it.falling=false; } });
@@ -100,6 +100,6 @@ AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0;
  setTimeout(()=>{ L().addEventListener('thumbstickmoved',e=>{this.ax=[e.detail.x,e.detail.y];}); Rr().addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
  tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
   const c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; o.position.x+=Math.max(-1.8,Math.min(1.8,wx))-wx; o.position.z+=Math.max(-1.4,Math.min(1.7,wz))-wz; }});
-</script><script>window.ERAX={covers:[['c6','book',1.38,1.13,-1.22,-25,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
+</script><script>window.ERAX={covers:[['c6','book',1.6,1.13,-1.3,-25,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
  decoys:[['../assets/items/diddl.glb',-1.33,0.66,-1.02,1,25,['Mara','„Eine Diddl-Maus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
 <script src="era_amb.js?v=1"></script><script>eraAmbStart("../assets/sfx/amb_1984.mp3",0.3)</script><script src="era_extras.js?v=5"></script></body></html>

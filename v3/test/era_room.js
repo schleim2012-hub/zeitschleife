@@ -53,7 +53,7 @@ S.addEventListener('loaded',()=>{
  (C.lights||[]).forEach(([col,int,dist,x,y,z])=>{const L=new T.PointLight(col,int,dist,2);L.position.set(x,y,z);G.add(L);});
  (C.props||[]).forEach(([glb,x,y,z,sc,ry])=>{ const e=document.createElement('a-entity'); e.setAttribute('gltf-model',glb); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('scale',sc+' '+sc+' '+sc); e.setAttribute('rotation','0 '+ry+' 0'); S.appendChild(e); });
  (C.boxes||[]).forEach(([w,h,d,col,x,y,z,pbr])=>box(w,h,d,pbr?window.eraPBR(pbr,1,col):std({color:col,roughness:0.85}),x,y,z));
- (C.pools||[]).forEach(([x,y,z,i,dist])=>{ const L=new T.PointLight(0xffc285,i||0.6,dist||1.3,2); L.position.set(x,y,z); G.add(L); });
+ (C.pools||[]).forEach(([x,y,z,i,dist,col,flick])=>{ const L=new T.PointLight(col||0xffc285,i||0.6,dist||1.3,2); L.position.set(x,y,z); G.add(L); if(flick){ const b=i||0.6; setInterval(()=>{ L.intensity=b*(0.6+Math.random()*0.5); },90); } });
  // grabbables (GLB)
  const items=[]; let held=null, grabs=0;
  (C.items||[]).forEach(([glb,x,y,z,sc,ry,line])=>{ const el=document.createElement('a-entity'); el.classList.add('clickable'); el.setAttribute('gltf-model',glb); el.setAttribute('scale',`${sc} ${sc} ${sc}`); el.setAttribute('position',`${x} ${y} ${z}`); el.setAttribute('rotation',`0 ${ry} 0`); S.appendChild(el);
