@@ -6,7 +6,7 @@
 <div id="fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .25s"></div>
 <div id="prize" style="display:none;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:15;text-align:center;color:#ffe6a8;font:700 28px sans-serif;text-shadow:0 0 18px #000;background:rgba(0,0,0,.55);padding:18px 28px;border-radius:16px"></div>
 <div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick auf Bude = davor stellen · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
-<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#1a0e14; density:0.075">
+<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#140c14; density:0.01">
  <a-sky color="#140a10"></a-sky>
  <a-entity light="type:ambient; intensity:0.18; color:#9a86d0"></a-entity>
  <a-entity light="type:hemisphere; intensity:0.4; color:#ffd9a8; groundColor:#1a1020"></a-entity>
@@ -39,7 +39,20 @@ function plush(col,s=1){ const g=new T.Group(); const m=std({color:col,roughness
 const box=(w,h,d,m,x,y,z,p=S)=>{ const o=new T.Mesh(new T.BoxGeometry(w,h,d),m); o.position.set(x,y,z); p.add(o); return o; };
 // Boden + Lichterketten + Umgebung
 const asph=cv(512,512,(x,w,h)=>{ x.fillStyle='#1b1a1f'; x.fillRect(0,0,w,h); for(let i=0;i<9000;i++){ const v=20+Math.random()*40; x.fillStyle=`rgb(${v},${v},${v+4})`; x.fillRect(Math.random()*w,Math.random()*h,2,2); } }); asph.wrapS=asph.wrapT=T.RepeatWrapping; asph.repeat.set(10,10);
-const fl=new T.Mesh(new T.PlaneGeometry(40,40),pbr('Asphalt','Asphalt025B',[14,14],{roughness:0.5,color:0x9a94a0})); fl.rotation.x=-Math.PI/2; S.add(fl);
+
+// === X-Files / FMV hybrid: photo world; 3D for cans/balls/plush/board only ===
+const TL2=new T.TextureLoader();
+const photoMat=(url,opts={})=>{const m=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:true,...opts});TL2.load(url,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;m.map=t;m.needsUpdate=true;});return m;};
+(()=>{const pt=TL2.load('../assets/pano/kirmes_vignaioli_4k.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;});
+const sph=new T.Mesh(new T.SphereGeometry(42,96,48),new T.MeshBasicMaterial({map:pt,side:T.BackSide,fog:false,toneMapped:false,depthWrite:false}));
+sph.position.y=1.5; sph.rotation.y=Math.PI*1.15; sph.renderOrder=-20; S.add(sph);})();
+(()=>{const cyl=new T.Mesh(new T.CylinderGeometry(20,20,8,64,1,true),photoMat('../assets/pano/kirmes_backdrop_strip.jpg'));
+cyl.position.y=3.0; cyl.rotation.y=Math.PI*1.15; cyl.renderOrder=-15; S.add(cyl);})();
+const fl=new T.Mesh(new T.CircleGeometry(14,72),photoMat('../assets/pano/kirmes_floor_photo.jpg')); fl.rotation.x=-Math.PI/2; fl.renderOrder=-5; S.add(fl);
+// large photo backdrop plane behind stalls (FMV set wall)
+const setWall=new T.Mesh(new T.PlaneGeometry(28,10),photoMat('../assets/pano/kirmes_backdrop_strip.jpg'));
+setWall.position.set(0,4.2,-8.5); S.add(setWall);
+
 const bulbs=[]; for(let k=0;k<3;k++){ for(let i=0;i<26;i++){ const t=i/25, x=-4.5+9*t, y=3.1-Math.sin(t*Math.PI)*0.45+(k?0.15:0), z=-1.0-k*1.6; const b=new T.Mesh(bulbGeo,bulbMat(i)); b.position.set(x,y,z); S.add(b); bulbs.push(b); if(i%2===0) glow(S,b.position,BC[i%4],0.4); } }
 [[-2.6,-2.2],[0,-3.0],[2.6,-2.2]].forEach(([x,z])=>{ const L=new T.PointLight(0xffc98a,2.2,5.5,2); L.position.set(x,2.5,z+0.8); S.add(L); });
 // Bude
@@ -58,6 +71,10 @@ function stall(cx,cz,yaw,title,col){ const g=new T.Group(); g.position.set(cx,0,
  const SL=new T.SpotLight(0xffc27a,7,4.5,0.95,0.6,1.5); SL.position.set(0,2.5,0.55); SL.target.position.set(0,1.0,-0.5); g.add(SL); g.add(SL.target);
  return g; }
 const G1=stall(-2.5,-2.0,0.55,'DOSENWERFEN',0xb3202a), G2=stall(0,-2.7,0,'SCHIESSBUDE',0x1f5fa8), G3=stall(2.5,-2.0,-0.55,'PFERDERENNEN',0x2a8a3a); G1.userData.stall=G1; G2.userData.stall=G2; G3.userData.stall=G3; [G1,G2,G3].forEach(g=>g.traverse(o=>o.userData.stall=g));
+// photo wallpaper on booth back walls + front skirts (FMV look, real photographed surfaces)
+[[G1,0],[G2,1],[G3,2]].forEach(([g,i])=>{ const bw=new T.Mesh(new T.PlaneGeometry(2.16,1.55),photoMat('../assets/pano/kirmes_booth_front_'+i+'.jpg')); bw.position.set(0,1.75,-0.89); g.add(bw);
+  const cols=[0xffb0a8,0xa8c4ff,0xa8f0b8]; const fs=new T.Mesh(new T.PlaneGeometry(2.18,0.9),photoMat('../assets/pano/kirmes_booth_skirt.jpg',{color:cols[i]})); fs.position.set(0,0.47,0.385); g.add(fs); });
+
 // Staub/Dunst im Licht
 const dustG=new T.BufferGeometry(), DN=600, dp=new Float32Array(DN*3); for(let i=0;i<DN;i++){ dp[i*3]=(Math.random()-0.5)*8; dp[i*3+1]=Math.random()*3.2; dp[i*3+2]=-0.5-Math.random()*3.5; } dustG.setAttribute('position',new T.BufferAttribute(dp,3));
 const dustP=new T.Points(dustG,new T.PointsMaterial({map:glowTex,size:0.025,color:0xffd6a0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending})); S.add(dustP);
