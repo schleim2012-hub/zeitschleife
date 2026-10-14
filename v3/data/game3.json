@@ -963,7 +963,7 @@
       -2.2
      ],
      "rot": 40,
-     "tv": "model:assets/props/television_02.glb; base:tv/; channels:ch13.mp4; scale:0.55; start:1"
+     "tv": "model:assets/props/television_02.glb; base:tv/; channels:ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:0.55; start:1"
     },
     {
      "id": "desk",
@@ -1059,7 +1059,7 @@
       3.45
      ],
      "onWall": true,
-     "wallOff": 0.4,
+     "wallOff": 0.42,
      "wallSpan": 12
     },
     {

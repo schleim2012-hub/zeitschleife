@@ -80,7 +80,13 @@ AFRAME.registerComponent('crt-tv',{
  duck(on){ this.el.sceneEl.emit('tv-duck',{on}); const m=this.data.music&&document.querySelector(this.data.music); if(m) m.volume=on?0.25:1; },
  show(){ const ch=this.ch; this.tone(false); this.video.pause();
   if(ch===0){ this.U.map.value=this.card; this.U.aspect.value=4/3; this.U.hasTex.value=1; this.tone(true); }
-  else { const v=this.video; v.src=this.data.base+this.data.channels[ch-1]; v.load(); this.U.hasTex.value=0; v.onloadedmetadata=()=>{ this.U.aspect.value=v.videoWidth/v.videoHeight; }; v.onplaying=()=>{ this.U.map.value=this.vtex; this.U.hasTex.value=1; }; v.play().catch(()=>{}); } },
+  else { const v=this.video, c=this.data.channels[ch-1]; this.U.hasTex.value=0; v.onended=null;
+   const lv=/^live:(.+):(\d+):(\d+)$/.exec(c);
+   if(lv){ // "Live"-Sender: Segmente nacheinander, Einstieg nach Uhrzeit
+     const pat=lv[1], n=+lv[2], len=+lv[3]; const seg=i=>this.data.base+pat.replace('%02d',String(i).padStart(2,'0'));
+     const go=(i,off)=>{ if(this.video!==v||!this.on) return; v.loop=false; v.src=seg(i); v.load(); v.onloadedmetadata=()=>{ this.U.aspect.value=v.videoWidth/v.videoHeight; if(off>0) try{ v.currentTime=Math.min(off,(v.duration||len)-1); }catch(e){} }; v.onended=()=>go((i+1)%n,0); v.play().catch(()=>{}); };
+     const t=(Date.now()/1000)%(n*len); go(Math.floor(t/len),t%len); }
+   else { v.loop=true; v.src=this.data.base+c; v.load(); } v.onplaying=()=>{ this.U.map.value=this.vtex; this.U.hasTex.value=1; }; if(!lv) v.onloadedmetadata=()=>{ this.U.aspect.value=v.videoWidth/v.videoHeight; }; v.play().catch(()=>{}); } },
  toggle(){ this.on=!this.on; this.audio(); if(this.on){ this.hum(); this.pAnim=0.0001; this.show(); this.led.material.color.set(0xff2020); this.duck(true); } else { this.tone(false); this.video.pause(); this.video.removeAttribute('src'); this.video.load(); this.U.power.value=0; this.pAnim=0; this.led.material.color.set(0x330000); this.duck(false); this.noise(0.12,0.05); } },
  next(){ this.ch=(this.ch+1)%(this.data.channels.length+1); this.knob.rotation.y-=Math.PI*2/14; this.zap=0.45; this.noise(0.4,0.12); setTimeout(()=>this.on&&this.show(),180); },
  tick(t,dt){ const U=this.U; U.t.value=t/1000; if(this.on&&this.video&&this.video.readyState>=2&&this.vtex) this.vtex.needsUpdate=true; if(this.on&&this.pAnim<1){ this.pAnim=Math.min(1,this.pAnim+dt/700); U.power.value=this.pAnim; }

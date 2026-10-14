@@ -131,14 +131,18 @@ const GLB={eimer:{url:'assets/metal_trash_can.glb',h:0.62,keep:n=>n.startsWith('
 function glbSwap(p,g){ const c=GLB[p.id]; if(!c||!THREE.GLTFLoader) return; new THREE.GLTFLoader().load(c.url,gl=>{ const m=gl.scene; if(c.keep){ const rm=[]; m.traverse(o=>{ if(o!==m&&o.parent===m&&!c.keep(o.name||'')) rm.push(o); }); rm.forEach(o=>m.remove(o)); } const ctr=new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()); m.children.forEach(o=>{ o.position.x-=ctr.x; o.position.z-=ctr.z; }); const b=new THREE.Box3().setFromObject(m), sz=b.getSize(new THREE.Vector3()); const s=c.h/sz.y; m.scale.setScalar(s); m.position.y=-b.min.y*s; const pre=[]; g.traverse(o=>{ if(o.isMesh) pre.push(o); }); pre.forEach(o=>{ (Array.isArray(o.material)?o.material:[o.material]).forEach(mm=>{ mm.visible=false; }); }); m.traverse(o=>{ if(o.isMesh) o.userData.glb=1; }); g.add(m); },undefined,()=>{}); }
 function mkProp(p){ const T=T3(), g=new T.Group(); const M=(c,o={})=>new T.MeshStandardMaterial({color:c,roughness:0.7,...o});
  if(p.type==='decor'){ const k=p.kind; const SM=(map,o={})=>new T.MeshStandardMaterial({map,roughness:0.55,...o}); g.userData.prop=p; g.position.set(...p.pos); g.rotation.y=(p.wallYaw!==undefined?p.wallYaw:Math.atan2(-p.pos[0],-p.pos[2]))+(p.rot||0)*Math.PI/180;
-  if(k==='vending'){ const front=cvTex(512,1024,(x,w,h)=>{ const gr=x.createLinearGradient(0,0,w,0); gr.addColorStop(0,'#8e1414'); gr.addColorStop(0.5,'#c62020'); gr.addColorStop(1,'#7a1010'); x.fillStyle=gr; x.fillRect(0,0,w,h);
-     x.fillStyle='#f4efe6'; x.font='bold 74px Arial'; x.textAlign='center'; x.fillText('BACKROOMS',w/2-30,170); x.font='bold 120px Arial'; x.fillText('COLA',w/2-30,290);
-     x.fillStyle='#111'; x.fillRect(40,360,330,470); for(let r=0;r<5;r++) for(let c=0;c<4;c++){ x.fillStyle=['#c62020','#e8e0d0','#2a6bd0','#e0b020'][c]; x.fillRect(60+c*78,380+r*88,52,70); x.fillStyle='rgba(255,255,255,0.15)'; x.fillRect(60+c*78,380+r*88,10,70); }
-     x.fillStyle='#2a2a2a'; x.fillRect(395,380,90,200); x.fillStyle='#d6c060'; x.fillRect(415,400,50,16); x.fillStyle='#111'; x.fillRect(420,450,40,60); x.fillStyle='#202020'; x.fillRect(60,870,320,90);
-     for(let i=0;i<900;i++){ x.fillStyle=`rgba(40,20,10,${Math.random()*0.25})`; x.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*3,1+Math.random()*3); } });
-    const side=new T.MeshStandardMaterial({color:0x7a1414,roughness:0.5,metalness:0.2}); const mats=[side,side,side,side,SM(front,{roughness:0.35,emissive:new T.Color(0x220404),emissiveIntensity:0.6}),side];
-    const b=new T.Mesh(new T.BoxGeometry(0.9,1.85,0.75),mats); b.position.y=0.925; g.add(b); const gl=new T.Mesh(new T.PlaneGeometry(0.6,0.85),new T.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:0.12,roughness:0.05,clearcoat:1})); gl.position.set(-0.04,1.0,0.377); g.add(gl);
-    const L=new T.PointLight(0xffd0c0,0.6,2.2,2); L.position.set(0,1.2,0.6); g.add(L); contactShadow(g,0.9,0.75); }
+  if(k==='vending'){ // Blender-PBR-Automat (eigene Modellierung, gebacken), flackerndes Backlight + leises Brummen
+    contactShadow(g,1.0,0.85); const L=new T.PointLight(0xdfe8ff,0.0,2.6,2); L.position.set(-0.13,1.0,0.75); g.add(L);
+    new THREE.GLTFLoader().load('assets/props/vending_machine.glb?v='+VER,gl=>{ const m=gl.scene; ensureEnv(); const env=null; const fl=[];
+     m.traverse(o=>{ if(!o.isMesh) return; const mt=o.material; if(env&&mt){ mt.envMap=env; mt.envMapIntensity=1.0; }
+      if(/glass/.test(mt.name)){ o.material=new T.MeshPhysicalMaterial({color:0xffffff,roughness:0.03,metalness:0,transparent:true,opacity:0.14,envMap:env,envMapIntensity:1.6,clearcoat:1,clearcoatRoughness:0.04,depthWrite:false}); o.renderOrder=5; }
+      if(/backlight|header|display/.test(mt.name)){ mt.toneMapped=false; fl.push([mt,mt.emissiveIntensity||1]); } });
+     g.add(m); g.userData.flick=fl; g.userData.vlight=L; });
+    g.userData.tickFx=(t)=>{ const fl=g.userData.flick; if(!fl) return; let f=1; const ph=(t*0.37)%9; if(ph>8.6) f=0.55+0.45*Math.abs(Math.sin(t*41))*(Math.sin(t*13)>0?1:0.3); else f=0.96+0.04*Math.sin(t*7.3); for(const [mt,b] of fl) mt.emissiveIntensity=b*f; if(g.userData.vlight) g.userData.vlight.intensity=0.55*f; if(g.userData.humG) g.userData.humG.gain.value=0.010*(0.7+0.3*f); };
+    g.userData.startHum=()=>{ const ac=window.__zsActx&&window.__zsActx(); if(!ac||g.userData.humG) return; const o1=ac.createOscillator(), o2=ac.createOscillator(), lp=ac.createBiquadFilter(), gn=ac.createGain(), pn=ac.createPanner();
+     o1.type='sawtooth'; o1.frequency.value=50; o2.type='sine'; o2.frequency.value=100; lp.type='lowpass'; lp.frequency.value=320; gn.gain.value=0.01; pn.panningModel='HRTF'; pn.distanceModel='inverse'; pn.refDistance=0.8; pn.rolloffFactor=1.4;
+     o1.connect(lp); o2.connect(lp); lp.connect(gn); gn.connect(pn); pn.connect(ac.destination); o1.start(); o2.start(); g.userData.humG=gn; g.userData.humP=pn; g.userData.stopFx=()=>{ try{ o1.stop(); o2.stop(); pn.disconnect(); }catch(e){} }; };
+  }
   else if(k==='riss'){ const R=(()=>{ let z=7; return ()=>((z=(z*16807)%2147483647)/2147483647); })();
     const pts=[]; const cx=256, cy=300; for(let i=0;i<64;i++){ const t=i/64*Math.PI*2; const rx=170+R()*14, ry=240+R()*16; const j=(R()-0.5)*(i%3?18:46); pts.push([cx+Math.cos(t)*(rx+j)*(0.9+0.1*Math.sin(t*2.3)),cy+Math.sin(t)*(ry+j)]); }
     const path=x=>{ x.beginPath(); pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])); x.closePath(); };
@@ -322,7 +326,7 @@ async function buildProxy(n,sk){ const T=T3(); if(proxyM){ proxyM.parent&&proxyM
 async function buildRoom(id,yaw){ const T=T3(), n=G.nodes[id], P=G.config.plate;
  const [sk,st]=await Promise.all([loadTex(`${G.config.skyDir}/${n.sky}.jpg?v=${VER}`), n.still?loadTex(`${G.config.stillDir}/${n.still}.jpg?v=${VER}`):Promise.resolve(null)]);
  skyEl.material.map=sk; skyFF.uFF.value=n.ff?1:0; skyEl.rotation.y=-Math.PI/2+(n.skyYaw||0)*Math.PI/180; skyEl.material.color.set(n.ff?(n.skyTint?parseInt(n.skyTint.slice(1),16):0xffffff):(n.epoch==='hub'?0xcfc2a2:0xffffff)); skyEl.material.needsUpdate=true; await buildProxy(n,sk); plate.visible=!!st; if(st){ plate.material.map=st; plate.material.needsUpdate=true; }
- for(const k in props){ const tv=props[k]&&props[k].userData&&props[k].userData.tv; if(tv){ const c=tv.components['crt-tv']; if(c&&c.on) c.toggle(); tv.parentNode&&tv.parentNode.removeChild(tv); } }
+ for(const k in props){ const sf=props[k]&&props[k].userData&&props[k].userData.stopFx; if(sf) sf(); } for(const k in props){ const tv=props[k]&&props[k].userData&&props[k].userData.tv; if(tv){ const c=tv.components['crt-tv']; if(c&&c.on) c.toggle(); tv.parentNode&&tv.parentNode.removeChild(tv); } }
  while(hitG.children.length) hitG.remove(hitG.children[0]); while(propG.children.length) propG.remove(propG.children[0]); props={}; hitMeshes=[];
  for(const p0 of n.props||[]){ let p=p0; if(proxyDist&&!p0.noFit){ const fp=fitPos(p0.pos,p0.onWall?{wall:true,off:p0.wallOff||0.02,span:p0.wallSpan}:{margin:p0.margin}); p={...p0,pos:fp}; if(fp.yaw!==undefined) p.wallYaw=fp.yaw; } const g=mkProp(p); propG.add(g); props[p.id]=g; glbSwap(p,g); }
  const hsl=n.hotspots.slice();
@@ -335,7 +339,7 @@ async function buildRoom(id,yaw){ const T=T3(), n=G.nodes[id], P=G.config.plate;
   else if(h.hit){ const fp=proxyDist&&!h.hit.noFit?fitPos(h.hit.pos,h.hit.onWall?{wall:true,off:h.hit.wallOff||0.06}:{margin:0.12}):null; m=hitPlane(fp?{...h.hit,pos:fp}:h.hit); if(fp&&fp.yaw!==undefined){ m.rotation.set(0,fp.yaw,0); } } else continue;
   m.userData.hs=h; hitG.add(m); hitMeshes.push(m); }
  const e=eyePos(); roomG.position.set(e.x,EYE,e.z); roomYaw=yaw; roomG.rotation.set(0,yaw,0); for(const k in held){ delete held[k]; } phys.length=0; setTimeout(roomHum,50); setTimeout(roomAmb,60); }
-function syncRoom(now){ if(skyFF) skyFF.uT.value=now/1000; if(!S||!G.nodes[S.node]) return; for(const k in props){ const g=props[k], p=g.userData.prop; if(g.userData.held||g.userData.flying) continue; g.visible=!g.userData.gone&&!g.userData.held&&!g.userData.flying&&cond(p.when);
+function syncRoom(now){ if(skyFF) skyFF.uT.value=now/1000; for(const k in props){ const u=props[k]&&props[k].userData; if(u&&u.tickFx){ u.tickFx(now/1000); if(u.startHum&&!u.humG&&actx&&actx.state==='running') u.startHum(); if(u.humP){ const w=new THREE.Vector3(); props[k].getWorldPosition(w); w.y+=1.1; const P=u.humP; if(P.positionX){ P.positionX.value=w.x; P.positionY.value=w.y; P.positionZ.value=w.z; } else P.setPosition(w.x,w.y,w.z); } } } if(!S||!G.nodes[S.node]) return; for(const k in props){ const g=props[k], p=g.userData.prop; if(g.userData.held||g.userData.flying) continue; g.visible=!g.userData.gone&&!g.userData.held&&!g.userData.flying&&cond(p.when);
   if(g.userData.flicker){ const f=0.75+0.12*Math.sin(now/900)+0.08*Math.sin(now/337+1.3); g.userData.flicker.opacity=f; } } }
 // ---------- Navigation: Raum wechseln (weiche Blende, Raum wird auf den Blick ausgerichtet)
 let fadeA=0;

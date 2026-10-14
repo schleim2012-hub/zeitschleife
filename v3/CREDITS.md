@@ -32,3 +32,13 @@
 ## Hybrid-Raum (V3j)
 - Teppich-Detailtextur: ambientCG "Carpet012" (CC0), https://ambientcg.com/view?id=Carpet012
 - Tiefenschätzung für die Raum-Proxy-Geometrie: Depth Anything V2 Small (Apache-2.0), offline auf dem Build-Rechner, nicht im Spiel
+
+## Getränkeautomat (V3l)
+- Eigenes Modell, in Blender 4.2 modelliert und gebacken (Cycles: Farbe/AO/Rauheit/Normal, Kantenabrieb, Kratzer, Schmutz, Staub). Etiketten und Schilder markenfrei, eigene Gestaltung. Kein fremdes Asset.
+- Brummen prozedural (WebAudio), keine Sounddatei.
+
+## TV-Sender „Live-Film“ (V3l)
+- "Night of the Living Dead" (1968, George A. Romero), gemeinfrei (Public Domain in den USA, weil 1968 der Copyright-Hinweis fehlte). Neu kodiert auf 480×360 H.264 mit ca. 230 kbps und Mono-AAC, in 8 Segmente zu 12 Minuten geteilt.
+
+## 2041-Requisit Grünriegel (V3l)
+- Eigenes Blender-Modell (3 Varianten, halb aufgerissene Folie, markenfreies Etikett). Eine Anspielung, kein Original-Logo.
