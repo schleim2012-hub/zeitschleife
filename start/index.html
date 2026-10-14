@@ -1,0 +1,21 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<title>Rewind – Start</title><style>
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 20%,#2a1238,#0a0610 70%);color:#f3e9ff;font-family:system-ui,Arial,sans-serif;display:flex;flex-direction:column;align-items:center}
+h1{font-size:56px;margin:40px 0 4px;letter-spacing:6px;color:#ff4fa0;text-shadow:0 0 18px #ff4fa088}
+.sub{color:#9fe8e0;font-size:22px;margin-bottom:28px}
+a.b{display:block;width:min(820px,92vw);margin:14px 0;padding:34px 30px;border-radius:22px;background:#1b1026;border:3px solid #5b2d7a;color:#fff;text-decoration:none;font-size:40px;font-weight:700;box-sizing:border-box}
+a.b small{display:block;font-size:22px;font-weight:400;color:#c9b8dc;margin-top:8px}
+a.b:hover,a.b:focus{background:#36174d;border-color:#ff4fa0;outline:none}
+a.main{border-color:#ff9a3c;background:#2a1418}
+.ft{margin:30px 0 40px;color:#8d7aa3;font-size:20px}
+</style></head><body>
+<h1>REWIND</h1><div class="sub">Zeitschleife · Testzentrale</div>
+<a class="b main" href="../v3/">▶ V3 – Spiel<small>Neuester Stand (VR zuerst)</small></a>
+<a class="b" href="../v3/test/tv.html">📺 TV-Test 1984<small>Röhren-TV, Testbild, Zappen, Musikvideos</small></a>
+<a class="b" href="../v3/test/pano.html">🎞 Panorama-Test<small>Backrooms 360° mit Found-Footage-Look</small></a>
+<a class="b" href="../v2/">V2 – Spiel<small>Vorversion</small></a>
+<a class="b" href="../v1/">V1 – Spiel<small>Erste Version</small></a>
+<div class="ft">Zuletzt aktualisiert: 14.10.2026, 13:11 Uhr (Berlin)</div>
+<script>document.querySelectorAll('a.b').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const u=new URL(a.getAttribute('href'),location.href);u.searchParams.set('t',Date.now());location.href=u.href;}));</script>
+</body></html>
