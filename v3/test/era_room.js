@@ -50,7 +50,10 @@ S.addEventListener('loaded',()=>{
  const surf=C.surfaces||[];
  // ambient people (silhouettes) + overheard dialogue
  const people=[]; const ppl=C.people;
- if(ppl){ const sm=new T.MeshBasicMaterial({color:0x020403}); ppl.who.forEach((w,i)=>{ const g=new T.Group(); const body=new T.Mesh(new T.CapsuleGeometry(0.2,1.05,4,10),sm); body.position.y=0.78; g.add(body); const head=new T.Mesh(new T.SphereGeometry(0.12,12,10),sm); head.position.y=1.58; g.add(head); g.position.set(ppl.pos[0]+i*0.7,0,ppl.pos[2]); g.rotation.y=i?-1.2:1.2; G.add(g); people.push(g); }); }
+ if(ppl){ ppl.who.forEach((w,i)=>{ const g=new T.Group(); const pm=new T.MeshBasicMaterial({transparent:true,alphaTest:0.3,depthWrite:true,fog:false,side:T.DoubleSide});
+   const hgt=ppl.height||1.78; const pl=new T.Mesh(new T.PlaneGeometry(1,1),pm); pl.position.y=hgt/2-0.06; g.add(pl);
+   tex(ppl.img[i],t=>{ pm.map=t; pm.needsUpdate=true; const ar=t.image.width/t.image.height; pl.scale.set(hgt*ar,hgt,1); });
+   g.position.set(ppl.pos[0]+i*0.75,0,ppl.pos[2]-i*0.15); G.add(g); people.push(g); }); }
  let listenT=0, convI=-1, convNext=0, convDone=false;
  // VR grain
  const nc=document.createElement('canvas');nc.width=nc.height=128;const nx=nc.getContext('2d');const nd=nx.createImageData(128,128);const nt=new T.CanvasTexture(nc);
@@ -60,7 +63,7 @@ S.addEventListener('loaded',()=>{
  AFRAME.registerComponent('era-tick',{tick(t,dt){ const d=Math.min(dt,50)/1000;
   items.forEach(it=>{ if(!it.falling) return; const o=it.el.object3D; it.vy-=9.8*d; o.position.y+=it.vy*d; let fy=0; surf.forEach(([x,z,w,dd,h])=>{ if(Math.abs(o.position.x-x)<w/2&&Math.abs(o.position.z-z)<dd/2) fy=Math.max(fy,h); }); if(o.position.y<fy){ o.position.y=fy; it.vy=0; it.falling=false; } });
   glows.forEach(([sp,op],i)=>{ sp.material.opacity=op*(0.85+0.15*Math.sin(t*0.0011+i*1.7)); });
-  if(ppl){ people.forEach((g,i)=>{ g.position.y=Math.abs(Math.sin(t*0.002+i))*0.01; g.children[1].rotation.y=Math.sin(t*0.0007+i)*0.3; });
+  if(ppl){ people.forEach((g,i)=>{ const cam0=document.getElementById('cam').object3D, cp=new T.Vector3(); cam0.getWorldPosition(cp); g.rotation.y=Math.atan2(cp.x-g.position.x,cp.z-g.position.z); g.children[0].rotation.z=Math.sin(t*0.0011+i*2.1)*0.025; g.children[0].position.x=Math.sin(t*0.0007+i)*0.01; });
    const cam=document.getElementById('cam').object3D, p=new T.Vector3(); cam.getWorldPosition(p);
    still = p.distanceTo(lastP)<0.004 ? still+d : 0; lastP.copy(p);
    const mid=people[0].position.clone().lerp(people[1].position,0.5); const dist=Math.hypot(p.x-mid.x,p.z-mid.z);
