@@ -1240,7 +1240,8 @@
        "say": "Ein Riss in der Tapete, dahinter Rosenmuster und ein Hauch Patschuli. Noch zu schmal. Irgendwann reißt er weiter auf. Versprochen.",
        "speaker": "narrator"
       }
-     ]
+     ],
+     "snd": "wind"
     },
     {
      "id": "kennzeichen",
@@ -1280,7 +1281,9 @@
         }
        ]
       }
-     ]
+     ],
+     "snd": "tick",
+     "sndWhen": "!flag.egg_plate"
     },
     {
      "id": "flur",
@@ -1895,7 +1898,9 @@
        "say": "Ein Gummihuhn mit einer Seilrolle in der Mitte. Wer lässt so was an der Mauer liegen? Und warum fühlt es sich so wichtig an?",
        "speaker": "narrator"
       }
-     ]
+     ],
+     "snd": "squeak",
+     "sndWhen": "!flag.huhn"
     },
     {
      "id": "zurueck",
@@ -2205,7 +2210,9 @@
         "speaker": "narrator"
        }
       ]
-     }
+     },
+     "snd": "drip",
+     "sndWhen": "!flag.gully"
     },
     {
      "id": "radkappe",

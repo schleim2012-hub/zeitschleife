@@ -5,7 +5,7 @@ const W=1600,H=900,cv=document.getElementById('cv'),x=cv.getContext('2d');
 const F='Rajdhani, "Noto Color Emoji", sans-serif';
 const Q=location.search, DEBUG=/[?&]debug=1/.test(Q);
 let G,S,MU,TM,MEM,mode='load',ptr={x:W/2,y:H/2,on:false},ui=[],toasts=[],clipV=null,clipSkip=null;
-let msg=null,dlg=null,wm={open:false,tab:'inv',hover:-1},idle=0,sceneT=0,last=performance.now(),voiceMap={},vrMode=false,hover3=null,vhsT=0,credits=null;
+let msg=null,dlg=null,wm={open:false,tab:'inv',hover:-1},idle=0,sceneT=0,last=performance.now(),voiceMap={},vrMode=false,hover3=null,vhsT=0,vhsRW=false,credits=null;
 const $=id=>document.getElementById(id), T3=()=>window.THREE;
 // ---------- Helfer (aus V2)
 function rr(X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
@@ -350,7 +350,7 @@ async function enter(){ const n=G.nodes[S.node]; sceneT=0; S.visited[n.epoch]=1;
 async function epochJump(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode='vortex'; S.sel=null; const ep=G.nodes[id].epoch; sfx('whoosh');
  const yaw=eyeYaw(); lastVortexYaw=yaw; roomG.visible=false; const DUR=2.8;
  try{ await ZSFX.hyperspace(sceneEl,{duration:DUR,yaw,video:$('vortexvid')}); }catch(e){ console.warn(e); await sleep(DUR*1000); }
- await buildRoom(id,eyeYaw()); roomG.visible=true; S.node=id; vhsT=1; mode='play'; music(); saveGame();
+ await buildRoom(id,eyeYaw()); roomG.visible=true; S.node=id; vhsT=1; vhsRW=true; rewindSnd(); mode='play'; music(); saveGame();
  // Glitch-Stufen je Rückkehr: Ton, Sprüche, Zeit (Bild nur dezentes VHS)
  if(ep!=='hub'){ const v=S.visits[ep]=(S.visits[ep]||0)+1; const gl=(G.glitch[ep]||{}), lvl=Math.min(5,v);
   if(v===1&&S.loop>=2&&MEM.seen['era_'+ep]&&G.glitch.remember[ep]) await act(G.glitch.remember[ep]);
@@ -412,6 +412,8 @@ function bark(cat,force){ const B=G.config.barks||{}; let L=typeof cat==='string
  const i=(barkIx[cat]=(barkIx[cat]===undefined?Math.floor(Math.random()*L.length):barkIx[cat]+1))%L.length, l=L[i]; barkT=now;
  const nm=(G.config.speakers&&G.config.speakers[l.speaker])||l.speaker; toast((l.speaker==='narrator'?'':nm+': ')+l.say,4200); voice(l.say); return true; }
 const SFXMAP={click:'ui_click',item:'pickup',whoosh:'whoosh',clack:'clock_click',warble:'glitch'};
+// 0,5 s Kassetten-Rückspulton beim Ärenwechsel (leise, kurz)
+function rewindSnd(){ try{ if(!audioOK||SET.sfx<=0) return; actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain(), f=actx.createBiquadFilter(); o.type='sawtooth'; o.frequency.setValueAtTime(380,t); o.frequency.exponentialRampToValueAtTime(1500,t+0.45); f.type='bandpass'; f.frequency.value=1200; f.Q.value=0.8; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.05*SET.sfx,t+0.05); g.gain.linearRampToValueAtTime(0,t+0.5); o.connect(f); f.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.52); }catch(e){} }
 let actx=null; function sfx(kind,lvl){ if(!audioOK||SET.sfx<=0) return; if(kind==='step'){ actx&&sfxLoad(); if(Object.keys(SFXB).length){ steps(); return; } } if(SFXMAP[kind]&&sfxF(SFXMAP[kind],lvl&&lvl.isObject3D?lvl:null)) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const t=actx.currentTime, g=actx.createGain(); g.connect(actx.destination); const V=SET.sfx;
  const osc=(type,f0,f1,dur,vol,at=0)=>{ const o=actx.createOscillator(), gg=actx.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t+at); if(f1) o.frequency.exponentialRampToValueAtTime(f1,t+at+dur); gg.gain.setValueAtTime(0.0001,t+at); gg.gain.exponentialRampToValueAtTime(vol*V,t+at+0.01); gg.gain.exponentialRampToValueAtTime(0.0001,t+at+dur); o.connect(gg); gg.connect(actx.destination); o.start(t+at); o.stop(t+at+dur+0.02); };
  const noise=(dur,f0,f1,vol,q=1.2)=>{ const n=actx.sampleRate*dur, b=actx.createBuffer(1,n,actx.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; const s=actx.createBufferSource(); s.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.Q.value=q; f.frequency.setValueAtTime(f0,t); f.frequency.exponentialRampToValueAtTime(f1,t+dur); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol*V,t+dur*0.3); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); s.connect(f); f.connect(g); s.start(t); };
@@ -564,8 +566,8 @@ function frame(now,noRaf){ lastStepT=performance.now(); const dt=Math.min(0.1,(n
   else if(S){
    if(['play','msg','dlg','trans','slinky'].includes(mode)){ S.time-=dt; idle+=dt; sceneT+=dt; if(idle<1) idleBarked=false; if(!idleBarked&&idle>(G.config.idleBark||45)&&mode==='play'){ idleBarked=true; bark(G.nodes[S.node].epoch==='1989'?'idle_1989':'idle_backrooms'); } for(const th of [600,300,60]) if(S.time<th&&S.time>th-5&&!timeBarked[th+'_'+MEM.loops]){ timeBarked[th+'_'+MEM.loops]=1; bark('time'+th,true); } if(S.time<=0){ S.time=0; newLoop(); }
     if(SET.hints&&idle>TM.idleHint&&mode==='play'){ idle=0; hintNow(true); } }
-   if(mode==='play') pick3D(); else hover3=null; physStep(dt); gazeStep(dt); beaconStep(dt);
-   if(vhsT>0&&window.ZSFX){ ZSFX.vhs(x,W,H,1-vhsT); vhsT=Math.max(0,vhsT-0.025); }
+   if(mode==='play') pick3D(); else hover3=null; physStep(dt); gazeStep(dt); beaconStep(dt); spotStep(dt);
+   if(vhsT>0&&window.ZSFX){ ZSFX.vhs(x,W,H,1-vhsT,vhsRW); vhsT=Math.max(0,vhsT-(vhsRW?dt/0.5:0.025)); if(vhsT<=0) vhsRW=false; }
    if(mode==='clip'&&clipV){ drawClipSubs(); button([W-230,24,200,48],'ÜBERSPRINGEN ▶',()=>clipSkip&&clipSkip(),{s:18}); }
    else if(mode!=='intro'&&mode!=='vortex'){ drawHUD(now); if(mode==='msg'&&msg) drawMsg(); if(mode==='dlg'&&dlg) drawDlg(); if(mode==='wm') drawWM(now); if(mode==='pause') drawPause(); } }
   if(fadeA>0){ x.fillStyle=`rgba(0,0,0,${fadeA})`; x.fillRect(0,0,W,H); }
@@ -679,6 +681,17 @@ function panAt(g){ const p=new THREE.Vector3(); g.getWorldPosition(p); const pn=
 function beaconStep(dt){ if(!audioOK||!actx||SET.sfx<=0||!S||mode==='vortex') return; audioListener(); beepT+=dt; if(beepT<1.7) return; beepT=0;
  for(const k in props){ const g=props[k], it=g.userData.prop&&g.userData.prop.item; if(!it||!g.visible||!G.items[it].beacon) continue; const pn=panAt(g), t=actx.currentTime;
   [0,0.14].forEach(dl=>{ const o=actx.createOscillator(), gg=actx.createGain(); o.type='square'; o.frequency.value=2900; gg.gain.setValueAtTime(0.0001,t+dl); gg.gain.exponentialRampToValueAtTime(0.05*SET.sfx,t+dl+0.01); gg.gain.exponentialRampToValueAtTime(0.0001,t+dl+0.08); o.connect(gg); gg.connect(pn); o.start(t+dl); o.stop(t+dl+0.1); }); } }
+
+// ---------- versteckte Stellen: leise Positions-Geräusche (statt sichtbarer Hotspots)
+let spotT={};
+function spotSound(kind,pn){ const t=actx.currentTime, V=SET.sfx; const env=(g,a,att,dec)=>{ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(a*V,t+att); g.gain.exponentialRampToValueAtTime(0.0001,t+att+dec); };
+ if(kind==='drip'){ const o=actx.createOscillator(), g=actx.createGain(); o.type='sine'; o.frequency.setValueAtTime(1400,t); o.frequency.exponentialRampToValueAtTime(500,t+0.12); env(g,0.07,0.005,0.15); o.connect(g); g.connect(pn); o.start(t); o.stop(t+0.2); }
+ else if(kind==='tick'){ [0,0.5,1.0].forEach(d=>{ const o=actx.createOscillator(), g=actx.createGain(); o.type='square'; o.frequency.value=1800; g.gain.setValueAtTime(0.0001,t+d); g.gain.exponentialRampToValueAtTime(0.025*V,t+d+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+d+0.03); o.connect(g); g.connect(pn); o.start(t+d); o.stop(t+d+0.05); }); }
+ else if(kind==='squeak'){ const o=actx.createOscillator(), g=actx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(900,t); o.frequency.linearRampToValueAtTime(1500,t+0.12); o.frequency.linearRampToValueAtTime(1100,t+0.2); env(g,0.035,0.02,0.2); o.connect(g); g.connect(pn); o.start(t); o.stop(t+0.25); }
+ else { const n=actx.createBufferSource(), b=actx.createBuffer(1,actx.sampleRate*1.4,actx.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1); n.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=700; f.Q.value=2; const g=actx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.03*V,t+0.6); g.gain.exponentialRampToValueAtTime(0.0001,t+1.35); n.connect(f); f.connect(g); g.connect(pn); n.start(t); } }
+function spotStep(dt){ if(!audioOK||!actx||SET.sfx<=0||!S||mode!=='play') return; const seen={};
+ for(const m of hitMeshes){ const h=m.userData.hs; if(!h||!h.snd||seen[h.id]) continue; seen[h.id]=1; if(h.when!==undefined&&!cond(h.when)) continue; if(h.sndWhen&&!cond(h.sndWhen)) continue;
+  const iv={drip:2.6,tick:4.5,squeak:5.5,wind:6.5}[h.snd]||5; spotT[h.id]=(spotT[h.id]||Math.random()*iv)+dt; if(spotT[h.id]<iv) continue; spotT[h.id]=0; audioListener(); try{ spotSound(h.snd,panAt(m)); }catch(e){} } }
 function roomHum(){ try{ if(humNode){ humNode.stop(); humNode=null; } if(!audioOK||!actx) return; const n=G.nodes[S.node]; if(!n.hum||!props[n.hum]) return; audioListener();
  const o=actx.createOscillator(), g=actx.createGain(); o.type='sawtooth'; o.frequency.value=100; const f=actx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=380; g.gain.value=0.025*SET.sfx; o.connect(f); f.connect(g); g.connect(panAt(props[n.hum])); o.start(); humNode=o; }catch(e){} }
 // ---------- Start

@@ -7,7 +7,9 @@
 (function(){
 const PAL=[[255,190,110],[255,150,70],[230,110,60],[255,220,170],[200,120,90]];
 function env(p){ return Math.sin(Math.PI*Math.min(1,Math.max(0,p))); } // 0->1->0, weich
-function vhs(ctx,W,H,p){ const a=env(p); if(a<=0.01) return; ctx.save();
+function vhs(ctx,W,H,p,rw){ const a=env(p); if(a<=0.01) return; ctx.save();
+ if(rw){ // Rückspul-Look: 3 dünne Bänder rasen nach oben, leichter Horizontal-Versatz (dezent)
+  for(let i=0;i<3;i++){ const y=H-(((p*2.4+i*0.33)%1)*H), h=6+4*i; ctx.globalAlpha=0.12*a; ctx.drawImage(ctx.canvas,0,y,W,h,-10*a,y,W,h); ctx.globalAlpha=0.08*a; ctx.fillStyle='#fff'; ctx.fillRect(0,y,W,1); } }
  // 1) leichte Chroma-Verschiebung: zwei halbtransparente Farbsäume
  const off=Math.round(3+4*a); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.08*a;
  ctx.drawImage(ctx.canvas,off,0,W,H,0,0,W,H); ctx.globalAlpha=0.06*a; ctx.drawImage(ctx.canvas,0,0,W,H,off,0,W,H);
