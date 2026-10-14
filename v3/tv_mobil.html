@@ -20,7 +20,7 @@ small{opacity:.6;margin-top:10px}
 const base='tv/',chans=['ch01.mp4','LIVE','ch02.mp4','ch03.mp4','ch04.mp4','ch05.mp4','ch06.mp4','ch07.mp4','ch08.mp4','ch09.mp4','ch10.mp4','ch11.mp4','ch12.mp4','ch13.mp4'];
 const v=document.getElementById('v'),osd=document.getElementById('osd'),nz=document.getElementById('noise'),lbl=document.getElementById('lbl');let i=0,on=false,t;
 function noise(ms){nz.style.display='block';const x=nz.getContext('2d'),d=x.createImageData(160,120);let end=Date.now()+ms;(function f(){for(let k=0;k<d.data.length;k+=4){const c=Math.random()*255;d.data[k]=d.data[k+1]=d.data[k+2]=c;d.data[k+3]=255}x.putImageData(d,0,0);if(Date.now()<end)requestAnimationFrame(f);else nz.style.display='none'})()}
-function live(){const L=720,s=Math.floor(Date.now()/1000)%(L*8);return{src:base+'nl_'+String(Math.floor(s/L)).padStart(2,'0')+'.mp4',off:s%L}}
+function live(){const L=720,s=Math.floor(Date.now()/1000)%(L*8);return{src:base+'nl/nl_'+String(Math.floor(s/L)).padStart(2,'0')+'.mp4',off:s%L}}
 function tune(){noise(400);osd.textContent=String(i+1).padStart(2,'0');osd.style.display='block';clearTimeout(t);t=setTimeout(()=>osd.style.display='none',2000);lbl.textContent='Kanal '+(i+1);
  const c=chans[i];v.onended=null;if(c==='LIVE'){const l=live();v.loop=false;v.src=l.src;v.onloadedmetadata=()=>{v.currentTime=l.off};v.onended=tune}else{v.loop=true;v.src=base+c;v.onloadedmetadata=null}v.play().catch(()=>{})}
 document.getElementById('start').onclick=e=>{e.target.remove();on=true;tune()};
