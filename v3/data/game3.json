@@ -750,21 +750,19 @@
    "name": "Polaroid",
    "icon": "📷",
    "desc": "„Finde mich – M.“ Sieht fast aus wie ein Ausweis.",
-   "model": "bill"
+   "model": "polaroid"
   },
   "dm": {
    "name": "100 D-Mark",
    "icon": "💵",
    "desc": "Begrüßungsgeld. Frisch aus dem Westen.",
-   "model": "bill"
+   "model": "note"
   },
   "banane": {
    "name": "Banane",
    "icon": "🍌",
    "desc": "Begrüßungsbanane. Wertvoller als Gold, 1989.",
-   "model": "banana",
-   "glb": "assets/items/bananas.glb",
-   "glbSize": 0.2
+   "model": "banana"
   },
   "hammer": {
    "name": "Hammer & Meißel",
@@ -823,8 +821,7 @@
     "say": "Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.",
     "speaker": "narrator"
    },
-   "glb": "assets/items/rusted_wheel_rim_01.glb",
-   "glbSize": 0.26
+   "model": "hubcap"
   },
   "schnur": {
    "name": "Paketschnur",
