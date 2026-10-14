@@ -508,7 +508,9 @@
       "bonus": 20,
       "key": "tama"
      }
-    ]
+    ],
+    "glb": "assets/items/tama.glb",
+    "glbSize": 0.07
    },
    "bleistift": {
     "name": "Bleistift",
@@ -519,7 +521,9 @@
     "line": {
      "say": "Ein Bleistift. Jeder unter vierzig fragt jetzt: wofür? Jeder über vierzig weiß es: Kassetten zurückspulen.",
      "speaker": "narrator"
-    }
+    },
+    "glb": "assets/items/pencil.glb",
+    "glbSize": 0.185
    },
    "gameboy": {
     "name": "Graue Spielkonsole",
@@ -571,7 +575,9 @@
      {
       "hintfree": true
      }
-    ]
+    ],
+    "glb": "assets/items/brause.glb",
+    "glbSize": 0.09
    },
    "kaugummi": {
     "name": "Kaugummi",
@@ -593,7 +599,9 @@
     "line": {
      "say": "Ein Notizblock mit dieser Springmaus drauf. Ich hatte zwölf davon. Frag nicht.",
      "speaker": "mara"
-    }
+    },
+    "glb": "assets/items/diddl.glb",
+    "glbSize": 0.1
    }
   },
   "spawns": {
@@ -768,7 +776,9 @@
    "name": "Banane",
    "icon": "🍌",
    "desc": "Begrüßungsbanane. Wertvoller als Gold, 1989.",
-   "model": "banana"
+   "model": "banana",
+   "glb": "assets/items/banana.glb",
+   "glbSize": 0.2
   },
   "hammer": {
    "name": "Hammer & Meißel",
@@ -846,7 +856,9 @@
    "name": "1 D-Mark (Gully)",
    "icon": "🪙",
    "desc": "Nass, aber gültig.",
-   "model": "coin"
+   "model": "coin",
+   "glb": "assets/items/coin.glb",
+   "glbSize": 0.0236
   }
  },
  "nodes": {

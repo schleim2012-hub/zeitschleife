@@ -8,7 +8,7 @@
 - Items von **Poly Haven**, CC0, optimiert mit gltf-transform (webp 256–512, quantize, simplify):
   - Hammer: "Cross Pein Hammer" (https://polyhaven.com/a/cross_pein_hammer)
   - Leere Akte: "Binder Notebook" (https://polyhaven.com/a/binder_notebook)
-- Blender-PBR-Modelle (eigene Arbeit, Blender 4.2, Cycles-CPU-Bake: AO, Normal, Rauheit, Farbe): Zauberwürfel, „Game Dude“-Konsole, Polaroid. Umgebungsreflexion per PMREM aus dem eigenen Backrooms-Panorama, weiche Kontaktschatten.
+- Blender-PBR-Modelle (eigene Arbeit, Blender 4.2, Cycles-CPU-Bake: AO, Normal, Rauheit, Farbe): Zauberwürfel, „Game Dude“-Konsole, Polaroid, 1-Mark-Münze, Brausepulver, Springmaus-Block, Tamagotchi-Ei, Bleistift, Banane. Umgebungsreflexion per PMREM aus dem eigenen Backrooms-Panorama, weiche Kontaktschatten.
 - Eigene Modelle, per three.js-Geometrie und selbst gezeichneten Canvas-Texturen (eigene Arbeit, keine Fremdscans): Banane, Trabi-Radkappe, Polaroid (Foto aus eigenem Grok-Still M3), 100-D-Mark-Fantasieschein („Bank der Zeitschleife“, kein echter Schein), 1-Mark-Münze, Paketschnur, Kaugummi-Angel, Tamagotchi-Ei, „Game Dude“-Konsole, Zauberwürfel, Bleistift, Kaugummi, Brausepulver, Springmaus-Notizblock. Slinky ebenfalls prozedural.
 - Panorama-Test (v3/test): Grok Imagine (grok.com), nachbearbeitet mit OpenCV.
 
