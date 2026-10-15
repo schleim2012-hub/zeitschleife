@@ -1,37 +1,49 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/alpha.js?v=5"></script><script src="test/lib/dust.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/alpha.js?v=5"></script><script src="test/lib/dust.js?v=1"></script><script src="test/lib/br3d.js?v=1"></script>
 <style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
-#start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:26px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
+#start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:18px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
 #start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
-<div id="start"><h1>REWIND</h1><p>Alpha · Zeitschleife V3</p><p id="sub">Intro → Backrooms → 11 Räume · jede Tür führt weiter</p><b id="go">▶ STARTEN</b><p style="margin-top:18px">Quest: nach dem Start unten rechts „VR“ wählen · Laser + Trigger auf die Tür, oder einfach hindurchgehen</p><span class="r" id="reset">Von vorn beginnen</span></div>
-<a-scene light="defaultLightsEnabled:false" renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#07070a; density:0.07">
- <a-assets><img id="pano" src="assets/pano/backrooms_alpha.jpg" crossorigin="anonymous"></a-assets>
- <a-sky id="sky" src="#pano" color="#ffffff" rotation="0 -90 0" radius="60" material="fog:false"></a-sky>
+<div id="start"><h1>REWIND</h1><p>Alpha · Zeitschleife V3</p><p id="sub">Intro → Backrooms → 11 Räume · jede Tür führt weiter</p><b id="govr" style="display:none">▶ IN VR STARTEN</b><b id="go">▶ AM BILDSCHIRM STARTEN</b><p style="margin-top:18px">Laser + Trigger auf die Tür, oder einfach hindurchgehen · linker Stick gehen, rechter Stick drehen</p><span class="r" id="reset">Von vorn beginnen</span></div>
+<a-scene light="defaultLightsEnabled:false" renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#050504; density:0.085">
  <a-entity id="rig" stick-move><a-entity id="cam" camera look-controls position="0 1.6 0"></a-entity>
   <a-entity laser-controls="hand: left" raycaster="far:12; lineOpacity:0.35"></a-entity><a-entity laser-controls="hand: right" raycaster="far:12; lineOpacity:0.35"></a-entity></a-entity>
 </a-scene>
 <script>
 AFRAME.registerComponent('stick-move',{init(){ this.ax=[0,0]; this.snap=0; const sc=this.el.sceneEl; sc.addEventListener('thumbstickmoved',e=>{ const h=e.target.getAttribute('laser-controls'); if(h&&h.hand==='left') this.ax=[e.detail.x,e.detail.y]; else { if(Math.abs(e.detail.x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(e.detail.x)*Math.PI/6; } if(Math.abs(e.detail.x)<0.3) this.snap=0; } }); },
- tick(t,dt){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const cam=this.el.sceneEl.camera; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new THREE.Vector3(-f.z,0,f.x); const o=this.el.object3D.position; o.addScaledVector(f,-y*dt*0.0016).addScaledVector(r,x*dt*0.0016); o.x=Math.max(-3,Math.min(3,o.x)); o.z=Math.max(-3,Math.min(3,o.z)); }});
+ tick(t,dt){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const cam=this.el.sceneEl.camera; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new THREE.Vector3(-f.z,0,f.x); const o=this.el.object3D.position; o.addScaledVector(f,-y*dt*0.0016).addScaledVector(r,x*dt*0.0016); if(window.__br) __br.collide(o); }});
 const sc=document.querySelector('a-scene'), mode=(ZSA.cur().id); // intro | backrooms | end
 document.getElementById('reset').onclick=e=>{ e.stopPropagation(); ZSA.reset(); location.href='alpha.html?alpha=1&step=0#intro'; };
-if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITER: '+ZSA.cur().title; document.getElementById('start').onclick=()=>{ location.href=ZSA.url(ZSA.step); }; }
+if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITER: '+ZSA.cur().title;  }
 else if(mode!=='intro'){ document.getElementById('go').textContent=mode==='end'?'▶ ZUM ENDE':'▶ WEITER ('+ZSA.cur().title+')'; }
 sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
  if(window.worldDust) worldDust(sc,{count:60,rMin:0.9,rMax:3.6,yMin:0.2,yMax:2.8,color:0xe8e0b0,color2:0xc8c090,opacity:0.32});
- // Licht: schwach, grünlich-gelb wie altes Neon; eine Röhre über der Szene flackert (Pano-Röhre + echtes Licht synchron)
- const hemi=new T.HemisphereLight(0xd8d0a0,0x1a1810,0.32); S.add(hemi);
- const tube=new T.PointLight(0xf0f0c8,0.9,7,2); tube.position.set(0.6,2.9,-1.6); S.add(tube);
- const sky=document.getElementById('sky'); const skyMesh=()=>sky.getObject3D('mesh');
- const flickM=new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0,depthWrite:false,fog:false,side:T.BackSide});
- new T.TextureLoader().load('assets/pano/backrooms_flicker.png',t=>{ flickM.alphaMap=t; flickM.needsUpdate=true; const m=skyMesh(); if(m){ const o=new T.Mesh(m.geometry,flickM); o.scale.setScalar(0.98); o.renderOrder=1; m.add(o); } });
- let fOn=1, nextF=performance.now()+3000; const hum=()=>{};
- AFRAME.registerComponent('br-flicker',{tick(){ const n=performance.now(); if(n>nextF){ fOn=fOn?0:1; nextF=n+(fOn?(Math.random()<0.25?60+Math.random()*120:1500+Math.random()*5000):(30+Math.random()*140)); }
-  flickM.opacity=fOn?0:0.92; tube.intensity=fOn?0.9:0.08; const sm=skyMesh(); if(sm) sm.material.color.setScalar(fOn?1:0.9); }}); sc.setAttribute('br-flicker','');
+ // ---------- Backrooms in 3D (echte Geometrie, Boden y=0) ----------
+ const br=window.__br=buildBackrooms(sc,{onFlick:on=>{ if(window.__brSnd) __brSnd.flick(on); }}); br.group.visible=false;
+ const rigE=document.getElementById('rig'); rigE.object3D.position.set(br.spawn.x,0,br.spawn.z);
+ AFRAME.registerComponent('br-tick',{tick(t){ br.tick(performance.now()); if(window.__brSnd) __brSnd.update(); }}); sc.setAttribute('br-tick','');
+ // ---------- Off-Screen-Ton: Fernseher hinter der Wand, Schritte nebenan, Brummen (WebAudio, räumlich) ----------
+ const AC=()=>window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)());
+ function startAmbience(){ if(window.__brSnd) return; const ac=AC(); const out=ac.createGain(); out.gain.value=0; out.connect(ac.destination); const L=ac.listener;
+  const pan=(x,y,z,ref)=>{ const p=ac.createPanner(); p.panningModel='HRTF'; p.distanceModel='inverse'; p.refDistance=ref||1.5; p.rolloffFactor=1.2; p.positionX.value=x; p.positionY.value=y; p.positionZ.value=z; p.connect(out); return p; };
+  const noise=(sec)=>{ const n=ac.sampleRate*sec, b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; return b; };
+  // Fernseher (gedämpfte Stimmen + Lacher) hinter dem Ende des linken Gangs
+  { const src=ac.createBufferSource(); src.buffer=noise(4); src.loop=true; const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=520; bp.Q.value=1.4; const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900; const g=ac.createGain(); g.gain.value=0; src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(pan(-13.2,1.2,-1.75,2.2)); src.start();
+   const syl=()=>{ const t=ac.currentTime; const pause=Math.random()<0.15; const a=pause?0:0.12+Math.random()*0.22; g.gain.setTargetAtTime(a,t,0.03); bp.frequency.setTargetAtTime(380+Math.random()*420,t,0.05); setTimeout(syl,pause?400+Math.random()*900:90+Math.random()*170); }; syl(); }
+  // Schritte nebenan (hinter der Ostwand), wandern hin und her
+  { let sx=6.5, dir=-1; const step=()=>{ const t=ac.currentTime; const o=ac.createOscillator(); o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(45,t+0.09); const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.5,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.14); const p=pan(6.4,0.1,sx,1.2); o.connect(g); g.connect(p); o.start(t); o.stop(t+0.16); sx+=dir*0.7; if(sx<-3.5||sx>3.5) dir*=-1; };
+   const walk=()=>{ let n=6+Math.floor(Math.random()*8), i=0; const f=()=>{ if(i++<n){ step(); setTimeout(f,520+Math.random()*80); } else setTimeout(walk,7000+Math.random()*14000); }; f(); }; setTimeout(walk,6000); }
+  // Brummen der Röhren (überall leise) + Flackerer brummt lauter
+  const hum=ac.createGain(); hum.gain.value=0.018; hum.connect(out); [100,200,300].forEach((f,i)=>{ const o=ac.createOscillator(); o.type=i?'sine':'triangle'; o.frequency.value=f; const g=ac.createGain(); g.gain.value=[1,0.35,0.15][i]; o.connect(g); g.connect(hum); o.start(); });
+  const bz=ac.createGain(); bz.gain.value=0.05; bz.connect(pan(0,2.5,-2.6,1)); { const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.value=120; const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400; o.connect(lp); lp.connect(bz); o.start(); }
+  const cam=sc.camera, v=new T.Vector3(), q=new T.Quaternion(), f=new T.Vector3(), u=new T.Vector3();
+  window.__brSnd={ out, flick:on=>{ bz.gain.setTargetAtTime(on?0.05:0.0,ac.currentTime,0.01); },
+   update(){ const c=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; c.getWorldPosition(v); c.getWorldQuaternion(q); f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q);
+    if(L.positionX){ L.positionX.value=v.x; L.positionY.value=v.y; L.positionZ.value=v.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } else { L.setPosition(v.x,v.y,v.z); L.setOrientation(f.x,f.y,f.z,u.x,u.y,u.z); } } };
+  out.gain.setTargetAtTime(1,ac.currentTime+0.5,1.5); }
  // ---------- Intro: großer gebogener Video-Schirm um den Spieler (190°, R 4,5 m) im dunklen Nichts – fest in der Welt
  
- const v=document.createElement('video'); v.src='clips/intro_komplett.mp4'; v.playsInline=true; v.crossOrigin='anonymous'; v.preload='auto';
+ const v=window.__introV=document.createElement('video'); v.src='clips/intro_komplett.mp4'; v.playsInline=true; v.crossOrigin='anonymous'; v.preload='auto';
  const vt=new T.VideoTexture(v); vt.colorSpace=T.SRGBColorSpace;
  const SR=6.0, TOT=96*Math.PI/180, CEN=70*Math.PI/180, SH=SR*CEN*9/16, SEG=128;
  const sg=new T.CylinderGeometry(SR,SR,SH,SEG,1,true,Math.PI-TOT/2,TOT); { const uv=sg.attributes.uv, n=sg.attributes.position.count, col=new Float32Array(n*3);
@@ -44,8 +56,8 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
  const spill=new T.Mesh(new T.PlaneGeometry(7,3.5),new T.MeshBasicMaterial({map:new T.CanvasTexture(fc),transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false})); spill.rotation.x=-Math.PI/2; spill.position.set(0,-0.7,-3.4); spill.visible=false; S.add(spill);
  const tween=(dur,fn)=>new Promise(r=>{ const t0=performance.now(); const f=()=>{ const k=Math.min(1,(performance.now()-t0)/dur); fn(k); k<1?requestAnimationFrame(f):r(); }; f(); });
  // Szene ein-/ausblenden ohne Kopf-Ebene: Himmel, Licht, Nebel in der Welt abdunkeln
- const fogC=new T.Color(0x07070a);
- const setWorld=k=>{ const m=sky.getObject3D('mesh'); if(m) m.material.color.setScalar(k); hemi.intensity=0.32*k; tube.intensity=0.9*k; if(sc.object3D.fog) sc.object3D.fog.color.copy(fogC).multiplyScalar(k); };
+ const fogC=new T.Color(0x050504);
+ const setWorld=k=>{ br.setWorld(k); if(sc.object3D.fog) sc.object3D.fog.color.copy(fogC).multiplyScalar(k); };
  // ---------- Untertitel: klein, einmal in der Welt platziert (wo du gerade hinschaust), blendet aus
  let subM=null; function subtitle(who,text,sec){ if(subM){ S.remove(subM); subM=null; } const c=document.createElement('canvas'); c.width=1024; c.height=72; const x=c.getContext('2d'); x.font='500 30px sans-serif'; const t=(who?who+': ':'')+text; const w=Math.min(1000,x.measureText(t).width+40);
   x.fillStyle='rgba(0,0,0,0.45)'; x.fillRect(512-w/2,6,w,60); x.fillStyle='#d9c79e'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,512,37);
@@ -54,13 +66,11 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
   m.position.copy(hp).addScaledVector(f,1.8); m.position.y=hp.y-0.42; m.lookAt(hp.x,m.position.y,hp.z); m.renderOrder=5; S.add(m); subM=m;
   setTimeout(()=>tween(800,k=>{ m.material.opacity=1-k; }).then(()=>{ if(subM===m){ S.remove(m); subM=null; } }),(sec||4)*1000); }
  function voice(file,who,text){ const a=new Audio('assets/vo/'+file); a.volume=0.9; a.play().catch(()=>{}); subtitle(who,text,4.2); }
- const doorCfg={x:2.3,z:-0.9,face:[0,0]};
+ const doorCfg=br.doorAt;
  const toNext=()=>ZSA.goStep(ZSA.step+1);
  function mkDoor(fn){ if(sc.__door) return; sc.__door=zsaDoor(sc,doorCfg,fn); }
  function backrooms(first){ mkDoor(toNext); setTimeout(()=>first?voice('alpha_hub1.mp3','Mara','„Die Tür mit dem Kinderzimmer-Licht. Da fängt’s an.“'):voice('alpha_hub2.mp3','Mara','„Weiter. Die Tür wartet.“'),first?900:600); }
  // ---------- Aufwachen (~5 s, überspringbar): Schwarz → 3 langsame Lidschläge, unscharf & Nebel nah, vom Teppich langsam aufrichten
- const blurM=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,fog:false,side:T.BackSide});
- new T.TextureLoader().load('assets/pano/backrooms_alpha_blur.jpg',t=>{ t.colorSpace=T.SRGBColorSpace; blurM.map=t; blurM.needsUpdate=true; const m=sky.getObject3D('mesh'); if(m){ const o=new T.Mesh(m.geometry,blurM); o.scale.setScalar(0.97); o.renderOrder=2; m.add(o); } });
  const rig=document.getElementById('rig').object3D;
  const wakeSnd=()=>{ const ac=window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); const t=ac.currentTime, out=ac.createGain(); out.gain.value=1; out.connect(ac.destination);
   const tin=ac.createOscillator(), tg=ac.createGain(); tin.frequency.value=5200; tg.gain.setValueAtTime(0.0001,t); tg.gain.exponentialRampToValueAtTime(0.018,t+0.4); tg.gain.exponentialRampToValueAtTime(0.0001,t+4.2); tin.connect(tg); tg.connect(out); tin.start(t); tin.stop(t+4.3);
@@ -70,27 +80,38 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
   // Neonröhren-Brummen (bleibt leise)
   const hum=ac.createGain(); hum.gain.setValueAtTime(0.0001,t+1.5); hum.gain.exponentialRampToValueAtTime(0.02,t+5); hum.connect(ac.destination); [100,200,300].forEach((f,i)=>{ const o=ac.createOscillator(); o.type=i?'sine':'triangle'; o.frequency.value=f; const g=ac.createGain(); g.gain.value=[1,0.35,0.15][i]; o.connect(g); g.connect(hum); o.start(t+1.5); });
   return out; };
- function wake(){ return new Promise(res=>{ sky.object3D.visible=true; setWorld(0); blurM.opacity=1; const fog=sc.object3D.fog, fd0=fog?fog.density:0.07; const y0=-1.25; rig.position.y=y0; let snd=null; try{ snd=wakeSnd(); }catch(e){}
+ function wake(){ return new Promise(res=>{ br.group.visible=true; setWorld(0); const fog=sc.object3D.fog, fd0=fog?fog.density:0.085; startAmbience(); const y0=-1.25; rig.position.y=y0; let snd=null; try{ snd=wakeSnd(); }catch(e){}
   const t0=performance.now(), D=5200; let skip=false; const sk=()=>{ skip=true; }; [0,1].forEach(i=>sc.renderer.xr.getController(i).addEventListener('selectstart',sk,{once:true})); sc.canvas.addEventListener('click',sk,{once:true}); window.__skipWake=sk;
   // Helligkeit: drei Lidschläge (Welt dimmt rhythmisch), dann offen
   const B=[[0,0],[0.10,0.28],[0.2,0.02],[0.34,0.5],[0.44,0.12],[0.6,0.8],[0.68,0.45],[0.85,1],[1,1]];
-  const br=k=>{ for(let i=1;i<B.length;i++) if(k<=B[i][0]){ const a=B[i-1], b=B[i], u=(k-a[0])/(b[0]-a[0]); const e=u*u*(3-2*u); return a[1]+(b[1]-a[1])*e; } return 1; };
+  const bri=k=>{ for(let i=1;i<B.length;i++) if(k<=B[i][0]){ const a=B[i-1], b=B[i], u=(k-a[0])/(b[0]-a[0]); const e=u*u*(3-2*u); return a[1]+(b[1]-a[1])*e; } return 1; };
   const f=()=>{ let k=Math.min(1,(performance.now()-t0)/D); if(skip) k=1;
-   setWorld(br(k)); blurM.opacity=Math.max(0,1-Math.max(0,(k-0.25)/0.6)); if(fog) fog.density=fd0+0.5*(1-k)*(1-k);
+   setWorld(bri(k)); if(fog) fog.density=fd0+0.9*(1-k)*(1-k);
    const r=Math.min(1,Math.max(0,(k-0.45)/0.5)); const e=r*r*(3-2*r); rig.position.y=y0*(1-e); // ~2,5 s langsam aufrichten, keine Drehung
-   if(k<1) requestAnimationFrame(f); else { rig.position.y=0; setWorld(1); blurM.opacity=0; if(fog) fog.density=fd0; if(skip&&snd) try{ snd.gain.setTargetAtTime(0,snd.context.currentTime,0.2); }catch(e){} res(); } }; f(); }); }
+   if(k<1) requestAnimationFrame(f); else { rig.position.y=0; setWorld(1); if(fog) fog.density=fd0; if(skip&&snd) try{ snd.gain.setTargetAtTime(0,snd.context.currentTime,0.2); }catch(e){} res(); } }; f(); }); }
  let started=false;
  function play(){ if(started) return; started=true; document.getElementById('start').style.display='none'; try{ window.__zsaAC&&__zsaAC.resume(); }catch(e){}
-  if(mode==='intro'){ sky.object3D.visible=false; setWorld(0); screen.visible=true; scrM.color.setScalar(0); v.play().catch(()=>{ v.muted=true; v.play(); }); tween(900,k=>scrM.color.setScalar(k));
+  if(mode==='intro'){ br.group.visible=false; setWorld(0); screen.visible=true; scrM.color.setScalar(0); v.play().catch(()=>{ v.muted=true; v.play(); }); tween(900,k=>scrM.color.setScalar(k));
    const done=async()=>{ if(!screen.visible||window.__introDone) return; window.__introDone=true;
     await tween(1300,k=>{ scrM.color.setScalar(1-k); spill.material.opacity=1-k; }); v.pause(); screen.visible=false; spill.visible=false; // Bild verlischt in der Welt
     history.replaceState(null,'','alpha.html?alpha=1&step=1#backrooms'); try{ localStorage.setItem('zs_alpha_v1',JSON.stringify({step:1,t:Date.now()})); }catch(e){} Object.defineProperty(ZSA,'step',{get:()=>1});
     await wake(); backrooms(true); };
    v.onended=done; v.onerror=()=>setTimeout(done,800); window.__skipIntro=done;
    [0,1].forEach(i=>sc.renderer.xr.getController(i).addEventListener('selectstart',()=>{ if(screen.visible&&v.currentTime>2) done(); }));
-  } else if(mode==='end'){ setWorld(0.55); mkDoor(()=>{ ZSA.reset(); ZSA.goStep(0); }); setTimeout(()=>voice('alpha_end.mp3','Mara','„Das Band ist zu Ende. Oder fängt es gerade erst an?“'),800); }
-  else { sky.object3D.visible=true; tween(900,k=>setWorld(k)); backrooms(false); } }
- document.getElementById('start').addEventListener('click',play); sc.addEventListener('enter-vr',play);
+  } else if(mode==='end'){ br.group.visible=true; startAmbience(); setWorld(0.55); mkDoor(()=>{ ZSA.reset(); ZSA.goStep(0); }); setTimeout(()=>voice('alpha_end.mp3','Mara','„Das Band ist zu Ende. Oder fängt es gerade erst an?“'),800); }
+  else { br.group.visible=true; startAmbience(); tween(900,k=>setWorld(k)); backrooms(false); } }
+ // ---------- Start: sauber in VR (Klick = Nutzergeste: Ton + Video freischalten, dann Session; Intro erst, wenn die Session läuft)
+ const st=document.getElementById('start'), goVR=document.getElementById('govr'), goFlat=document.getElementById('go');
+ const unlock=()=>{ try{ AC().resume(); }catch(e){} if(mode==='intro'){ try{ const pr=v.play(); pr&&pr.then(()=>{ if(!started) v.pause(); }).catch(()=>{}); }catch(e){} } };
+ const resumeRoom=ZSA.cur().page!=='alpha.html';
+ st.onclick=null; st.addEventListener('click',e=>{ if(e.target===goVR) return; unlock(); if(resumeRoom){ location.href=ZSA.url(ZSA.step); return; } play(); });
+ goVR.addEventListener('click',e=>{ e.stopPropagation(); unlock(); goVR.textContent='… VR wird gestartet'; sc.enterVR().catch(err=>{ goVR.textContent='▶ IN VR STARTEN'; console.warn(err); }); });
+ if(navigator.xr&&navigator.xr.isSessionSupported) navigator.xr.isSessionSupported('immersive-vr').then(ok=>{ if(ok){ goVR.style.display=''; goFlat.style.opacity=0.6; } }).catch(()=>{});
+ sc.addEventListener('enter-vr',()=>{ if(!sc.is('vr-mode')) return; st.style.display='none'; if(resumeRoom&&!started){ location.href=ZSA.url(ZSA.step); return; }
+  const s=sc.renderer.xr.getSession(); const go=()=>setTimeout(()=>{ if(!window.__introDone&&!started) rig.position.set(br.spawn.x,0,br.spawn.z); play(); },500);
+  if(s){ s.requestAnimationFrame(()=>go()); } else go(); });
+ // Quest: requestVideoFrameCallback steht in immersiven Sessions teils still → Textur jede Frame auffrischen
+ AFRAME.registerComponent('vid-refresh',{tick(){ if(!v.paused&&v.readyState>=2) vt.needsUpdate=true; }}); sc.setAttribute('vid-refresh','');
  window.__alphaPlay=play;
 });
 </script></body></html>
