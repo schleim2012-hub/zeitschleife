@@ -17,12 +17,13 @@ window.eraPBR=function(kind,rep,tint){ const n=kind==='wood'?'wood_table_001':'p
  const ld=(k,f)=>L.load(P+k+'.jpg',t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep||1,rep||1);if(k==='diff')t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;f(t);m.needsUpdate=true;});
  ld('diff',t=>m.map=t); ld('rough',t=>m.roughnessMap=t); ld('nor_gl',t=>{m.normalMap=t;m.normalScale.set(0.8,0.8);}); return m; };
 // desktop grain
-(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();
+(()=>{const c=document.getElementById('ffgrain'); if(!c) return; const x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();
 S.addEventListener('loaded',()=>{
  const G=S.object3D, TL=new T.TextureLoader();
  if(C.start){ const r=document.getElementById('rig'); if(r) r.object3D.position.set(C.start[0],0,C.start[1]); } // Startpunkt pro Raum
  const tex=(u,cb)=>TL.load(u,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;cb&&cb(t);});
  const std=o=>new T.MeshStandardMaterial(o);
+ let shim=null; if(C.world3d&&window[C.world3d]){ window.__W3=window[C.world3d](S,C); } else {
  // curved photo backdrop
  const B=C.backdrop, PX=B.px, R=B.r, H=512*PX, ang=768*PX/R;
  const bm=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide});
@@ -32,7 +33,6 @@ S.addEventListener('loaded',()=>{
  if(B.fadeBottom){ const fc=document.createElement('canvas'); fc.width=4; fc.height=256; const fx=fc.getContext('2d'); const fg=fx.createLinearGradient(0,256,0,0); fg.addColorStop(0,'#000'); fg.addColorStop(B.fadeBottom,'#fff'); fg.addColorStop(1-(B.fadeTop||0),'#fff'); fg.addColorStop(1,B.fadeTop?'#000':'#fff'); fx.fillStyle=fg; fx.fillRect(0,0,4,256);
   bm.alphaMap=new T.CanvasTexture(fc); bm.transparent=true; bm.depthWrite=false; bm.needsUpdate=true; }
  // animated water shimmer over photo region
- let shim=null;
  if(C.shimmer){ const [sx,sy,sz,sw,sh,scol,sop]=C.shimmer; const sc=document.createElement('canvas'); sc.width=sc.height=128; const sxc=sc.getContext('2d'); const st=new T.CanvasTexture(sc);
   const sm=new T.Mesh(new T.PlaneGeometry(sw,sh),new T.MeshBasicMaterial({map:st,color:scol,transparent:true,opacity:sop,depthWrite:false,blending:T.AdditiveBlending,fog:false,toneMapped:false})); sm.position.set(sx,sy,sz); sm.renderOrder=1; G.add(sm);
   const id=sxc.createImageData(128,128);
@@ -63,6 +63,7 @@ S.addEventListener('loaded',()=>{
  const flD=C.floorFront!=null?(W.cz+W.d/2-C.floorFront):W.d+6; const fl=new T.Mesh(new T.PlaneGeometry(W.w,flD),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,W.cz+W.d/2-flD/2); G.add(fl);
  if(C.floorFade){ const ac=document.createElement('canvas'); ac.width=ac.height=256; const ax=ac.getContext('2d'); const [cx,cy,r0,r1]=C.floorFade; const g=ax.createRadialGradient(cx*256,cy*256,r0*256,cx*256,cy*256,r1*256); g.addColorStop(0,'#fff'); g.addColorStop(1,'#000'); ax.fillStyle=g; ax.fillRect(0,0,256,256);
   floorM.alphaMap=new T.CanvasTexture(ac); floorM.transparent=true; floorM.depthWrite=false; floorM.needsUpdate=true; fl.renderOrder=2; }
+ }
  // glows
  const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gr=gx.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.3,'rgba(255,255,255,0.25)');gr.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gr;gx.fillRect(0,0,128,128);
  const gt=new T.CanvasTexture(gc); const glows=[];
