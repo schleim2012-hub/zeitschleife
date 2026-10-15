@@ -29,12 +29,15 @@ window.buildCorn=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureL
  rows.forEach((r,ri)=>{ for(let pz=Z0; pz<Z1; pz+=P) per[ri].forEach(q=>{ const z=pz+q.z, x=r.x+q.dx; const d=Math.hypot(x,z-0.3); if(d>14) return; const det=r.near&&d<7.5; inst[det?q.g:3+(q.g%2)].push([x,z,q]); }); });
  const m4=new T.Matrix4(), qt=new T.Quaternion(), sc3=new T.Vector3(), ps=new T.Vector3(), eu=new T.Euler();
  inst.forEach((L,gi)=>{ if(!L.length) return; const im=new T.InstancedMesh(plantG[gi],leafM,L.length); L.forEach(([x,z,q],i)=>{ eu.set(q.tx,q.ry,q.tz); qt.setFromEuler(eu); sc3.setScalar(q.s); ps.set(x,0,z); m4.compose(ps,qt,sc3); im.setMatrixAt(i,m4); const dry=q.v>0.85; const c=new T.Color().setHSL(dry?0.13:0.27+q.v*0.12,dry?0.35:0.4+q.v*0.25,dry?0.42:0.34+q.v*0.16); im.setColorAt(i,c); }); im.instanceMatrix.needsUpdate=true; im.frustumCulled=false; G.add(im); });
+ // Pfad-Ende: Mais wächst in den Weg und schließt ihn im Nebel (wandert beim Möbius-Sprung mit → nie erreichbar, kein Popping)
+ const endG=new T.Group(); G.add(endG); { const L=[[],[]]; for(let z=-7.5; z>-16; z-=0.17) for(let x=-1.5; x<1.5; x+=0.2){ const t=Math.min(1,Math.max(0,(-z-7.5)/3.5)); const bend=Math.max(0,-z-8)*0.12; if(rnd()>t*t*0.9+0.05) continue; if(Math.abs(x+bend*0.5)<0.25*(1-t)) continue; L[rnd()<0.5?0:1].push([x+(rnd()-0.5)*0.15,z+(rnd()-0.5)*0.1]); }
+  L.forEach((A,gi)=>{ const im=new T.InstancedMesh(plantG[3+gi],leafM,A.length); A.forEach(([x,z],i)=>{ eu.set((rnd()-0.5)*0.12,rnd()*6.28,(rnd()-0.5)*0.12); qt.setFromEuler(eu); sc3.setScalar(0.8+rnd()*0.45); ps.set(x,0,z); m4.compose(ps,qt,sc3); im.setMatrixAt(i,m4); const v=rnd(); im.setColorAt(i,new T.Color().setHSL(0.27+v*0.12,0.45+v*0.2,0.32+v*0.14)); }); im.frustumCulled=false; endG.add(im); }); }
  // ---------- Ferne Schicht: Mais-Silhouetten-Ring + Himmel ----------
  const cv=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
  const skyT=cv(1024,512,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'#010205'); g.addColorStop(0.42,'#060a16'); g.addColorStop(0.5,'#0e1424'); g.addColorStop(0.56,'#05070c'); g.addColorStop(1,'#020203'); x.fillStyle=g; x.fillRect(0,0,w,h); for(let i=0;i<500;i++){ x.fillStyle='rgba(220,230,255,'+(Math.random()**3*0.9)+')'; const s=Math.random()<0.05?2:1; x.fillRect(Math.random()*w,Math.random()*h*0.45,s,s); } });
  const sky=new T.Mesh(new T.SphereGeometry(80,32,16),new T.MeshBasicMaterial({map:skyT,side:T.BackSide,fog:false,depthWrite:false})); sky.renderOrder=-2; G.add(sky);
  const ringT=cv(2048,256,(x,w,h)=>{ x.clearRect(0,0,w,h); x.fillStyle='#030405'; x.fillRect(0,h*0.55,w,h); for(let i=0;i<900;i++){ const px=Math.random()*w, ph=h*(0.25+Math.random()*0.35); x.strokeStyle='#030405'; x.lineWidth=1+Math.random()*2; x.beginPath(); x.moveTo(px,h); x.lineTo(px+(Math.random()-0.5)*6,ph); x.stroke(); x.beginPath(); x.moveTo(px,ph+10); x.quadraticCurveTo(px+12*(Math.random()-0.5)*2,ph,px+18*(Math.random()-0.5)*2,ph+14); x.stroke(); } });
- ringT.wrapS=T.RepeatWrapping; ringT.repeat.x=3; const ring=new T.Mesh(new T.CylinderGeometry(15.5,15.5,5,64,1,true),new T.MeshBasicMaterial({map:ringT,transparent:true,side:T.BackSide,fog:false,color:0x9098a8})); ring.position.y=2.0; G.add(ring);
+ ringT.wrapS=T.RepeatWrapping; ringT.repeat.x=3; const ring=new T.Mesh(new T.CylinderGeometry(15.5,15.5,5,64,1,true),new T.MeshBasicMaterial({map:ringT,transparent:true,side:T.BackSide,fog:true,color:0x9098a8})); ring.position.y=2.0; G.add(ring);
  // ---------- Licht: kaum Mond, das UFO ist die Lichtquelle ----------
  S.add(new T.HemisphereLight(0x2a5a60,0x030403,0.7)); const moon=new T.DirectionalLight(0x8ff0d0,1.5); moon.position.set(2,12,-6); S.add(moon); const fill=new T.DirectionalLight(0x406080,0.35); fill.position.set(-4,3,8); S.add(fill);
  // ---------- UFO: flache Chromscheibe, weit weg & hoch, Irisieren nur als Spiegelung, schwache rote Lichter, Dunst davor ----------
@@ -68,7 +71,7 @@ window.buildCorn=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureL
   reds.forEach((m,i)=>{ const on=((Math.floor(k*3)-i)%16+16)%16<5; m.material.color.setHex(on?0xc02010:0x300806); m.userData.h.material.opacity=on?0.5:0.05; });
   if(pan&&ac){ ufo.getWorldPosition(v); pan.positionX.value=v.x; pan.positionY.value=v.y; pan.positionZ.value=v.z; const c=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; c.getWorldPosition(v); c.getWorldQuaternion(q); f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); const L=ac.listener; if(L.positionX){ L.positionX.value=v.x; L.positionY.value=v.y; L.positionZ.value=v.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } } };
  AFRAME.registerComponent('corn-tick',{tick(t){ update(t); }}); sc.setAttribute('corn-tick','');
- const shift=dz=>{ base.z+=dz; ufo.position.z=base.z; };
+ const shift=dz=>{ base.z+=dz; ufo.position.z=base.z; endG.position.z+=dz; };
  return {ufo,P,update,shift};
 };
 })();
