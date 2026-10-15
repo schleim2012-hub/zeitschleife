@@ -2,7 +2,7 @@
 // Jeder Raum bekommt eine Tür in der Welt (kein Leucht-Hotspot): anfassen, hindurchgehen oder mit Laser/Klick öffnen → nächster Raum.
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
-const STEPS=[ // Reihenfolge laut Story-Struktur (Story-Bot, Abschnitt 5: Akt 1–3)
+const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
  {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.95, face:[0,0]}, key:{x:-1.3,z:-0.9}},
@@ -10,11 +10,11 @@ const STEPS=[ // Reihenfolge laut Story-Struktur (Story-Bot, Abschnitt 5: Akt 1�
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-1.6,z:0.8}},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.2,z:-1.3}},
- {id:'kirmes',     page:'test/kirmes.html',        title:'Kirmes',             door:{x:-3.4,z:2.6, face:[0,0.4]}, key:{x:-1.2,z:1.6}},
  {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.2,z:0.6}},
- {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
  {id:'era2041',    page:'test/era2041.html',       title:'Stadt 2041',         door:{x:1.9, z:2.3, face:[0,0]}, key:{x:2.2,z:-1.0}},
  {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-1.5,z:-1.3}},
+ {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
+ {id:'kirmes',     page:'test/kirmes.html',        title:'Kirmes',             door:{x:-3.4,z:2.6, face:[0,0.4]}, key:{x:-1.2,z:1.6}},
  {id:'sim',        page:'test/sim.html',           title:'Simulator',          door:{x:14.3,z:4.9, face:[12,3.4]}, key:{x:11.0,z:4.4}},
  {id:'end',        page:'alpha.html', title:'Ende'} ];
 const KEY='zs_alpha_v1', P=new URLSearchParams(location.search), inTest=/\/test\//.test(location.pathname), ROOT=inTest?'../':'';
