@@ -37,10 +37,13 @@ function haptic(renderer,hand,intensity,ms){ try{ const ses=renderer&&renderer.x
   for(const src of ses.inputSources){ if(src.handedness!==hand||!src.gamepad) continue; const g=src.gamepad;
    const a=g.hapticActuators&&g.hapticActuators[0]; const I=Math.max(0,Math.min(1,intensity));
    if(a&&a.pulse){ a.pulse(I,ms); return true; } if(g.vibrationActuator&&g.vibrationActuator.playEffect){ g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:I,weakMagnitude:I*0.6}); return true; } } }catch(e){} return false; }
-// Gewicht: kritisch gedämpfte Feder; Steifigkeit sinkt mit der Masse (0,15 kg ≈ fast starr, 1 kg ≈ ~70 ms Nachlauf)
-function lagFollow(pos,vel,target,mass,dt){ const w=Math.max(9,Math.min(48,30*Math.sqrt(0.3/Math.max(0.05,mass)))); const TT=T();
- const a=target.clone().sub(pos).multiplyScalar(w*w).addScaledVector(vel,-2*w); vel.addScaledVector(a,dt); pos.addScaledVector(vel,dt);
- if(pos.distanceTo(target)>0.35) pos.copy(target).addScaledVector(pos.clone().sub(target).normalize(),0.35); return w; }
+// Gewicht: kritisch gedämpfte Feder MIT Geschwindigkeits-Vorsteuerung -> bei gleichmäßiger Bewegung kein Dauer-Nachlauf,
+// nur beim Beschleunigen/Abbremsen hängt das Objekt etwas hinterher (Lag ≈ a/w²: 0,15 kg ≈ 1 cm, 1 kg ≈ 6 cm bei 30 m/s²)
+function lagFollow(pos,vel,target,mass,dt){ const w=Math.max(9,Math.min(48,30*Math.sqrt(0.3/Math.max(0.05,mass))));
+ const s=vel._s||(vel._s={pt:target.clone(),tv:target.clone().set(0,0,0),acc:0}); s.acc+=dt;
+ if(s.pt.distanceToSquared(target)>1e-10){ const nv=target.clone().sub(s.pt).divideScalar(Math.max(s.acc,1e-3)); if(nv.length()<25) s.tv.lerp(nv,0.6); s.pt.copy(target); s.acc=0; } else if(s.acc>0.1) s.tv.set(0,0,0);
+ const a=target.clone().sub(pos).multiplyScalar(w*w).addScaledVector(s.tv.clone().sub(vel),2*w); vel.addScaledVector(a,dt); pos.addScaledVector(vel,dt);
+ if(pos.distanceTo(target)>0.12) pos.copy(target).addScaledVector(pos.clone().sub(target).normalize(),0.12); return w; }
 // feste Physik-Schritte mit Akkumulator
 function stepper(h){ let acc=0; return (dt,fn)=>{ acc=Math.min(acc+Math.min(dt,0.1),h*12); let n=0; while(acc>=h){ fn(h); acc-=h; n++; } return n; }; }
 window.VRP={Tracker,haptic,lagFollow,stepper};
