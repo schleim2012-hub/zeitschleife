@@ -102,8 +102,19 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   smoke.forEach((sp,i)=>{ sp.position.x+=Math.sin(s*0.1+sp.userData.p)*0.002; sp.material.opacity=0.06+0.02*Math.sin(s*0.3+i); });
   Lm.intensity=4+0.4*Math.sin(s*2.2); };
  AFRAME.registerComponent('a84-tick',{tick(t){ update(t); }}); sc.setAttribute('a84-tick','');
- const boxes=[[-0.9,0.9,-12.9,-5.2],[-3.5,-1.7,2.9,3.7]];
+ const boxes=[[-0.9,0.9,-12.9,-5.2],[-3.5,-1.7,2.9,3.7],[1.2,1.9,-1.75,-0.98]]; // + Zeit-Fresser-Automat
  const collide=(x,z)=>{ let px=0,pz=0; boxes.forEach(([x0,x1,z0,z1])=>{ const r=0.25; if(x>x0-r&&x<x1+r&&z>z0-r&&z<z1+r){ const o=[x-(x0-r),(x1+r)-x,z-(z0-r),(z1+r)-z]; const m=Math.min(...o); if(m===o[0]) px-=o[0]; else if(m===o[1]) px+=o[1]; else if(m===o[2]) pz-=o[2]; else pz+=o[3]; } }); return (px||pz)?[px,pz]:null; };
- return {update,collide};
+ // Spielbarer ZEIT-FRESSER: eigener Automat im begehbaren Bereich (Wand-Reihen sind nur Kulisse außerhalb der Bounds)
+ if(window.mountZeitFresser){
+  const zfCab={x:1.55,z:-1.35,ry:-0.55};
+  // voller Kabinenkörper + Bedienfeld (nicht instanziert, damit er greifbar/sichtbar vorne steht)
+  const Mzf=new T.Matrix4().compose(new T.Vector3(zfCab.x,0,zfCab.z),new T.Quaternion().setFromAxisAngle(UP,zfCab.ry),ONE);
+  const zfBody=new T.Mesh(cabG,sideM.clone()); zfBody.material.color=new T.Color(0x8a5a20); zfBody.applyMatrix4(Mzf); G.add(zfBody);
+  const zfCtl=new T.Mesh(ctl,new T.MeshStandardMaterial({color:0xe0c020,roughness:0.35})); zfCtl.applyMatrix4(Mzf); G.add(zfCtl);
+  // Boden-Schein
+  const zfGlow=new T.Mesh(new T.CircleGeometry(0.7,16),new T.MeshBasicMaterial({map:halo,color:0xffb040,transparent:true,opacity:0.22,blending:T.AdditiveBlending,depthWrite:false})); zfGlow.rotation.x=-Math.PI/2; zfGlow.position.set(zfCab.x+Math.sin(zfCab.ry)*0.55,0.01,zfCab.z+Math.cos(zfCab.ry)*0.55); G.add(zfGlow);
+  window.mountZeitFresser(sc,zfCab);
+ }
+ return {update,collide,cabs};
 };
 })();

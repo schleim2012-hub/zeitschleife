@@ -46,3 +46,6 @@
 ## Kirmes / Basketball (Tests)
 - Texturen ambientCG (CC0): Bricks076A, Asphalt025B, WoodFloor051, PaintedPlaster017, Fabric045 – https://ambientcg.com
 - Sounds prozedural (WebAudio), keine Fremdaufnahmen.
+
+## Zeit-Fresser (Spielhalle-Automat)
+- Eigener Code und eigene Grafik (Rewind V3, 2026). Nur die Genre-Mechanik "Labyrinth fressen" ist angelehnt, kein fremdes Layout, keine fremden Figuren, Namen oder Töne.
