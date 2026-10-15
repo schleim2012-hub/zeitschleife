@@ -9,12 +9,12 @@
 ## Systeme – Countdown
 
 - [x] Basis-Countdown 20:00 min (Priorität Muss) — V3 timing.timeLimit 1200
-- [ ] Blumenkrone gibt +2:00 min (Priorität Muss)
+- [ ] Blumenkrone gibt +2:00 min (Priorität Muss) — Engine+Daten fertig ({timefx:'blumenkrone'}, getestet 1190→1308 s + 6 leise Uhr-Ticks), aber noch keine Szene im Hauptspiel, die es auslöst
 - [x] Easter Egg (Zeitreise-Anspielung) gefunden: +30 s + Rückspul-Sound, 1× pro Spielstand (Priorität Muss) — 3× bonus 30 in game3, V3n 1×/Spielstand via MEM.bonusKeys
 - [x] Klassiker-Hommage gefunden: +20 s, 1× pro Spielstand (Priorität Muss) — 2× bonus 20, 1×/Spielstand
 - [x] Lustige falsche Dialogantwort: −15 bis −30 s + eigener Clip/Spruch; Abzug nur 1× pro Falle pro Schleife, danach nur Spruch (Priorität Muss) — opt.trap: Abzug 1×/Falle/Schleife, danach Spruch
 - [x] Rückkehr ab Glitch-Stufe 5: −30 s pro Eintritt (Priorität Muss) — engine glitchPenaltyFrom 5
-- [ ] Baum fällen: −60 s (Priorität Muss)
+- [ ] Baum fällen: −60 s (Priorität Muss) — Engine+Daten fertig (timeFx baum_faellen 60; Hängematte −20 s, 1×/Schleife), Auslöser-Szene fehlt noch
 - [x] Hinweis Stufe 3: 0 s, nur Spott-Spruch (Priorität Muss) — kein Zeitabzug, Spott-Spruch (larry)
 - [x] Game Over: Schleife neu, Wissen/Tagebuch/Easter-Egg-Bonus bleiben (Priorität Muss) — V3n: Notizen, MEM.know, Bonus-Keys+Bonuszeit bleiben; Neues Spiel setzt zurück
 - [x] Bonuszeit gesamt max. +5 min (Priorität Muss) — V3n: Deckel 5:00, Hinweis „Bonuszeit voll“
@@ -25,17 +25,17 @@
 
 - [x] Inventar-Limit 6 Plätze (Priorität Muss) — invLimit 6
 - [x] Anker-Items (Walkman, Mauerstück, Glühbirne) zählen nicht mit (Priorität Muss) — invCount ohne anchor
-- [ ] Köder-Items mit eigenen Benutz-Sprüchen (Priorität Muss)
-- [ ] Köder klar von Pflicht-Items unterscheidbar (Priorität Muss)
+- [x] Köder-Items mit eigenen Benutz-Sprüchen (Priorität Muss) — V3p: 6 Köder × 3 Sprüche (rotierend, mit Stimme)
+- [x] Köder klar von Pflicht-Items unterscheidbar (Priorität Muss) — gestrichelter Rahmen + „KRAM“ im Inventar
 - [ ] Zufälliger Gegenstands-Pool pro Schleife: Schlüssel-Items fest, Köder/Extras zufällig (Tamagotchi, Kassette mit Bleistift, Gameboy, Furby, Wählscheibentelefon …), je eigener Spruch (Priorität Soll)
 - [ ] Inventar-Kombi-Animation: Items fliegen zusammen + Funke/Pop (Priorität Kann)
 
 ## Systeme – Hints
 
-- [ ] Hinweistexte in Nodes entschärfen (feste hints auf Stufe 1) (Priorität Muss)
+- [x] Hinweistexte in Nodes entschärfen (feste hints auf Stufe 1) (Priorität Muss) — 15.10. geprüft: Enter-/Hotspot-Texte verraten keine Lösung, Stufe 1 bleibt vage
 - [x] 3-Stufen-Hinweise: Erzähler vage → Mara Ort → Mara Lösung (kein Leuchten) (Priorität Muss) — hintNow Stufen 1–3
 - [x] Stufe 2 erst nach 60–90 s oder 3 Fehlversuchen; Stufe 3 nur auf Wunsch (Walkman-Taste halten) (Priorität Muss) — V3n: Stufe 3 nur per Halten (H/Stick ≥1,1 s) oder zweitem Druck nach Mara-Rückfrage
-- [ ] Kein Hotspot-Leuchten, keine Hotspot-Anzeige; Trefferflächen groß aber unsichtbar (Priorität Muss)
+- [x] Kein Hotspot-Leuchten, keine Hotspot-Anzeige; Trefferflächen groß aber unsichtbar (Priorität Muss) — V3p: Hover-Label/Cursor/Münz-Glow/Laserpunkt nur mit ?debug=1
 - [ ] Typische falsche Ideen bekommen eigene Fail-Sprüche (Priorität Soll)
 - [ ] Jede Lösung vorher irgendwo angedeutet, nie verraten (Priorität Muss)
 
