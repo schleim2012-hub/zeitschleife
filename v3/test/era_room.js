@@ -100,8 +100,8 @@ S.addEventListener('loaded',()=>{
  // ambient people (silhouettes) + overheard dialogue
  const people=[]; const ppl=C.people;
  if(ppl){ ppl.who.forEach((w,i)=>{ const g=new T.Group(); const pm=new T.MeshBasicMaterial({transparent:true,alphaTest:0.3,depthWrite:true,fog:false,side:T.DoubleSide});
-   const hgt=ppl.height||1.78; const pl=new T.Mesh(new T.PlaneGeometry(1,1),pm); pl.position.y=hgt/2-0.06; g.add(pl);
-   tex(ppl.img[i],t=>{ pm.map=t; pm.needsUpdate=true; const ar=t.image.width/t.image.height; pl.scale.set(hgt*ar,hgt,1); });
+   if(window.__W3&&__W3.person){ g.add(__W3.person(i)); } else { const hgt=ppl.height||1.78; const pl=new T.Mesh(new T.PlaneGeometry(1,1),pm); pl.position.y=hgt/2-0.06; g.add(pl);
+   tex(ppl.img[i],t=>{ pm.map=t; pm.needsUpdate=true; const ar=t.image.width/t.image.height; pl.scale.set(hgt*ar,hgt,1); }); }
    g.position.set(ppl.pos[0]+i*0.75,0,ppl.pos[2]-i*0.15); G.add(g); people.push(g); }); }
  let listenT=0, convI=-1, convNext=0, convDone=false;
  // (VR-Kopf-Rauschen entfernt – nichts head-locked; stattdessen weltfester Staub)
