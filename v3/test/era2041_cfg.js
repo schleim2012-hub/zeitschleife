@@ -9,7 +9,7 @@ window.ERA={ amb:'../assets/sfx/amb_2041.mp3', ambVol:0.4,
  pools:[], world3d:'buildStreet41',
  surfaces:[[-1.8,-1.3,0.6,0.45,0.26],[2.3,0.95,0.8,0.5,0.78]],
  items:[['../assets/items/2041/gruenriegel_0.glb',-1.85,0.26,-1.3,1,20,['Erzähler','Ein Grünriegel. Schmeckt nach Algen und Gehorsam.']],['../assets/items/2041/gruenriegel_1.glb',-1.7,0.26,-1.25,1,-10,['Mara','„Noch einer? Du sammelst die doch nicht etwa?“']],['../assets/items/2041/gruenriegel_2.glb',-1.95,0.26,-1.4,1,35,['Mara','„Leg den zurück. Der guckt mich an.“']]],
- people:{who:['Frau','Mann'], img:['../assets/era2041/passer_1.png','../assets/era2041/passer_0.png'], height:1.75, pos:[1.0,0,-1.75], radius:3.0, stillSec:1.0, /* Gespräch erst, wenn man ≤ 3 m herangeht (Start ist 4,7 m entfernt) */ lines:[
+ people:{who:['Frau','Mann'], img:['../assets/era2041/passer_1.png','../assets/era2041/passer_0.png'], height:1.75, pos:[1.0,0,-4.75], radius:3.2, stillSec:1.0, /* Gespräch erst, wenn man ≤ 3 m herangeht (Start ist 4,7 m entfernt) */ lines:[
   ['Frau','Hast du\'s gehört? Die Superreichen sind mit \'ner Rakete abgehauen.','../voice/era2041/passer_0.mp3'],
   ['Mann','Schon wieder? Wohin diesmal?','../voice/era2041/passer_1.mp3'],
   ['Frau','Die wollen ein Restaurant eröffnen. Am Ende der Galaxis.','../voice/era2041/passer_2.mp3'],
