@@ -40,7 +40,7 @@ function go(){
   const fill=new T.PointLight(0x9affd0,0.35,2.0,2); fill.position.set(0,h*0.5,d/2+0.6); g.add(fill); }
  const E=window.ERA||{};
  // pool: tiled edge + shimmering water surface beyond it
- if(E.water){ const [x0,x1,ze,zf]=E.water, W=x1-x0, D=ze-zf;
+ if(Array.isArray(E.water)){ const [x0,x1,ze,zf]=E.water, W=x1-x0, D=ze-zf;
   const tc=document.createElement('canvas'); tc.width=256; tc.height=64; const tx=tc.getContext('2d'); tx.fillStyle='#b8c4bc'; tx.fillRect(0,0,256,64); tx.strokeStyle='#5a6660'; tx.lineWidth=2; for(let i=0;i<=256;i+=32){tx.beginPath();tx.moveTo(i,0);tx.lineTo(i,64);tx.stroke();} tx.beginPath();tx.moveTo(0,32);tx.lineTo(256,32);tx.stroke();
   for(let i=0;i<900;i++){ tx.fillStyle=`rgba(40,50,45,${Math.random()*0.25})`; tx.fillRect(Math.random()*256,Math.random()*64,2,2); }
   const tt=new T.CanvasTexture(tc); tt.colorSpace=T.SRGBColorSpace; tt.wrapS=T.RepeatWrapping; tt.repeat.set(W/1.2,1);
