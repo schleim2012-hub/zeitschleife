@@ -5,7 +5,7 @@
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
- {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.95, face:[0,0]}, key:{x:-1.3,z:-0.9}},
+ {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.94, face:[1.5,0]}, key:{x:-1.3,z:-0.9}},
  {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.0,z:-1.2}},
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-1.6,z:0.8}},

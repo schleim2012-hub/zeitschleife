@@ -1,19 +1,14 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 – 1984 Zimmer</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=5"></script>
-<script src="../tv.js?v=5"></script><script src="lib/dust.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=6"></script>
+<script src="../tv.js?v=5"></script><script src="lib/dust.js?v=1"></script><script src="lib/k84.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffd6f0;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #sub{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:6;color:#fff;font:600 17px sans-serif;text-shadow:0 0 8px #000;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:8px;display:none;max-width:80%}</style></head><body>
 <div id="hud"><b>1984 · Zimmer</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger = TV an/aus, Kanal, Gegenstand nehmen/ablegen<br>Desktop: WASD · Klick = TV / Gegenstand nehmen, Klick ins Leere = ablegen</div>
 <div id="sub"></div>
-<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.08;mix-blend-mode:overlay"></canvas>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
- fog="type:exponential; color:#1e0a1c; density:0.08" background="color:#05020a" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
- <a-entity light="type:ambient; color:#5a3070; intensity:0.18"></a-entity>
- <a-entity light="type:point; color:#ff4fb0; intensity:2.2; distance:5; decay:2" position="0.6 2.2 -1.6"></a-entity>
- <a-entity light="type:point; color:#ff9a4c; intensity:1.6; distance:4; decay:2" position="-1.5 1.2 -1.4"></a-entity>
- <a-entity light="type:point; color:#7a5cff; intensity:0.8; distance:5; decay:2" position="0 2.4 1.2"></a-entity>
- <a-entity id="tv" position="-1.66 0.66 -1.08" rotation="0 35 0" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:0.85"></a-entity>
+ fog="type:exponential; color:#07040a; density:0.04" background="color:#020103" light="defaultLightsEnabled:false" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
+ <a-entity id="tv" position="-0.75 0.62 -1.76" rotation="0 12 0" crt-tv="model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4,ch07.mp4,ch08.mp4,ch09.mp4,ch10.mp4,ch11.mp4,ch12.mp4,ch13.mp4,live:nl/nl_%02d.mp4:8:720; scale:0.52"></a-entity>
  <a-entity id="rig" room-move>
   <a-camera id="cam" position="0 1.6 0" wasd-controls="acceleration:18"></a-camera>
   <a-entity id="hl" laser-controls="hand:left" raycaster="objects:.clickable; far:6"></a-entity>
@@ -30,37 +25,11 @@ let maraBusy=false, saidOnce={};
 function mara(k,once=true){ if(maraBusy||(once&&saidOnce[k])) return; saidOnce[k]=1; maraBusy=true; const a=new Audio(VOICE+MARA[k]); a.volume=0.9;
  const sb=document.getElementById('sub'); sb.textContent='Mara: '+SUB[k]; sb.style.display='block';
  a.onended=a.onerror=()=>{maraBusy=false; setTimeout(()=>sb.style.display='none',600);}; a.play().catch(()=>{maraBusy=false; setTimeout(()=>sb.style.display='none',3500);}); }
-// ---------- grain (desktop overlay) ----------
-(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();
 S.addEventListener('loaded',()=>{
  const G=S.object3D, TL=new T.TextureLoader();
  const tex=(u,cb)=>TL.load(u,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;cb&&cb(t);});
  const std=o=>new T.MeshStandardMaterial(o);
- // ---------- photo world: curved backdrop (front), 1px = 0.0063 m, photo TV behind 3D TV ----------
- const bm=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide});
- tex('../assets/era1984/placeholder.jpg',t=>{ if(!bm.map){bm.map=t;bm.needsUpdate=true;} });
- tex(BACKDROP,t=>{bm.map=t;bm.needsUpdate=true;});
- const PX=0.0085, R=3.6, H=512*PX, ang=768*PX/R;
- const bd=new T.Mesh(new T.CylinderGeometry(R,R,H,48,1,true,Math.PI-ang/2,ang),bm); bd.scale.x=-1;
- bd.position.set(0.34+54*PX-0.12,1.0+(268-256)*PX,1.4); G.add(bd);
- // dark room shell (sides/back/ceiling/floor) — closes the world, hides edges
- const wallM=std({color:0x3a1a30,roughness:0.95,emissive:0x12060e}); const floorM=std({color:0x3a1c34,roughness:1});
- tex('../assets/tex/kirmes/Fabric/Fabric045_1K-JPG_Color.jpg',t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(6,6);floorM.map=t;floorM.needsUpdate=true;});
- const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);G.add(o);return o;};
- box(0.1,3.4,2.6,wallM,-2.75,1.7,0.75); box(0.1,3.4,2.6,wallM,2.75,1.7,0.75); box(5.6,3.4,0.1,wallM,0,1.7,2.05); box(5.6,0.1,4.6,wallM,0,3.35,-0.2);
- const fl=new T.Mesh(new T.PlaneGeometry(5.6,4.6),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,-0.1); G.add(fl);
- // 3D furniture in front of the photo (TV dresser + side shelf)
- const wood=std({color:0x4a2a1c,roughness:0.75}); tex('../assets/tex/kirmes/WoodFloor/WoodFloor051_1K-JPG_Color.jpg',t=>{wood.map=t;wood.needsUpdate=true;});
- // real furniture: Poly Haven CC0 (vintage_wooden_drawer_01, painted_wooden_nightstand, painted_wooden_shelves), PBR
- const ph=(n,x,y,z,ry,sc)=>{ const e=document.createElement('a-entity'); e.setAttribute('gltf-model','../assets/props/ph/'+n+'/'+n+'.gltf'); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('rotation','0 '+ry+' 0'); e.setAttribute('scale',sc+' '+sc+' '+sc); S.appendChild(e); return e; };
-  ph('painted_wooden_nightstand',-1.6,0.04,-0.95,15,1); ph('painted_wooden_shelves',1.75,0,-1.45,-20,1);
- // glow around lights (photo neon sign + lamp) — additive soft sprites
- const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gr=gx.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.3,'rgba(255,255,255,0.25)');gr.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gr;gx.fillRect(0,0,128,128);
- const gt=new T.CanvasTexture(gc);
- const glow=(x,y,z,s,col,op)=>{const sp=new T.Sprite(new T.SpriteMaterial({map:gt,color:col,transparent:true,opacity:op,depthWrite:false,blending:T.AdditiveBlending,fog:false}));sp.position.set(x,y,z);sp.scale.set(s,s*0.6,1);G.add(sp);return sp;};
- const g1=glow(0.61,2.55,-2.0,2.2,0xff4fd0,0.35), g2=glow(-1.9,1.3,-1.25,0.8,0xffa040,0.45), g3=glow(0.95,1.58,-2.0,1.3,0x60e0ff,0.18);
- // parody posters (subtle, side walls)
- [['p1',-2.69,1.65,0.2,1],['p2',-2.69,1.6,1.4,1],['p3',2.69,1.7,0.4,-1],['p4',2.69,1.6,1.5,-1]].forEach(([n,x,y,z,s])=>{const m=std({color:0x9a8090,roughness:0.85});tex('../assets/era1984/'+n+'.jpg?v=2',t=>{m.map=t;m.needsUpdate=true;});const p=new T.Mesh(new T.PlaneGeometry(0.5,0.75),m);p.position.set(x,y,z);p.rotation.y=s*Math.PI/2;G.add(p);});
+ const B84=window.__B84=build84(S);
  // ---------- grabbables: VHS (c1-c3), book (c4), cereal (c5) ----------
  const items=[];
  function item(n,w,h,d,x,y,z,ry,spine,page,flat){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg?v=2',t=>{fm.map=t;fm.needsUpdate=true;});
@@ -69,8 +38,8 @@ S.addEventListener('loaded',()=>{
   el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); if(flat){ el.object3D.position.set(x,y+d/2,z); el.object3D.rotation.set(-Math.PI/2,0,0); el.object3D.rotateOnWorldAxis(new T.Vector3(0,1,0),ry); } else { el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; } });
   const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
- item('c1',0.105,0.19,0.025,-1.5,0.66,-0.78,0.25,0x111111); item('c2',0.15,0.22,0.035,-1.36,0.66,-0.86,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.62,0.66,-0.74,-0.35,0xd8d0c0,0xd8d0c0,true);
- item('c4',0.15,0.22,0.035,1.85,1.13,-1.38,-0.3,0x5a2a1a); item('c5',0.19,0.28,0.07,1.75,0.21,-1.32,-0.4,0xd8c070);
+ item('c1',0.105,0.19,0.025,-0.38,0,-1.82,0.25,0x111111); item('c2',0.15,0.22,0.035,-0.25,0,-1.8,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.45,0.55,-0.55,-0.35,0xd8d0c0,0xd8d0c0,true);
+ item('c4',0.15,0.22,0.035,1.85,1.13,-1.8,-0.1,0x5a2a1a); item('c5',0.19,0.28,0.07,1.7,0.76,-0.05,-0.4,0xd8c070);
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }
   const hand=(src&&src.id&&src.id!=='')?src:null; const par=(hand&&(hand.id==='hl'||hand.id==='hr'))?hand.object3D:document.getElementById('cam').object3D;
@@ -81,11 +50,11 @@ S.addEventListener('loaded',()=>{
  S.addEventListener('click',e=>{ if(held && e.target===S) drop(); });
  ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',()=>{ const rc=document.getElementById(id).components.raycaster; if(held && (!rc||!rc.intersectedEls.length)) drop(); }));
  // surfaces for falling items
- const surf=[[-1.6,-0.95,0.5,0.6,0.66],[-1.6,-0.95,0.01,0.01,0],[1.75,-1.3,0.55,0.4,1.13]];
+ const surf=B84.surf;
  AFRAME.registerComponent('era-tick',{tick(t,dt){ const d=Math.min(dt,50)/1000; items.forEach(it=>{ if(!it.falling) return; const o=it.el.object3D; it.vy-=9.8*d; o.position.y+=it.vy*d;
    let fy=0; surf.forEach(([x,z,w,dd,h])=>{ if(Math.abs(o.position.x-x)<w/2&&Math.abs(o.position.z-z)<dd/2) fy=Math.max(fy,h); });
    if(o.position.y<fy+it.h/2){ o.position.y=fy+it.h/2; it.vy=0; it.falling=false; } });
-   const k=0.5+0.5*Math.sin(t*0.0013); g1.material.opacity=0.3+0.08*k; }}); S.setAttribute('era-tick','');
+   }}); S.setAttribute('era-tick','');
  // Mara: enter + TV
  setTimeout(()=>mara('enter'),2500);
  document.getElementById('tv').addEventListener('click',()=>{ setTimeout(()=>mara('tv'),6000); });
@@ -97,7 +66,7 @@ AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0;
  const L=()=>document.getElementById('hl'), Rr=()=>document.getElementById('hr');
  setTimeout(()=>{ L().addEventListener('thumbstickmoved',e=>{this.ax=[e.detail.x,e.detail.y];}); Rr().addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
  tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
-  const c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; o.position.x+=Math.max(-1.8,Math.min(1.8,wx))-wx; o.position.z+=Math.max(-1.4,Math.min(1.7,wz))-wz; }});
-</script><script>window.ERAX={covers:[['c6','book',1.6,1.13,-1.3,-25,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
- decoys:[['../assets/items/diddl.glb',-1.33,0.66,-1.02,1,25,['Mara','„Eine Diddl-Maus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
+  const c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; if(!window.__B84) return; const p={x:wx,z:wz}; __B84.collide(p); o.position.x+=p.x-wx; o.position.z+=p.z-wz; }});
+</script><script>window.ERAX={covers:[['c6','book',1.6,1.13,-1.8,-15,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
+ decoys:[['../assets/items/diddl.glb',-1.4,0.55,-1.35,1,25,['Mara','„Eine Diddl-Maus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
 <script src="era_amb.js?v=1"></script><script>eraAmbStart("../assets/sfx/amb_1984.mp3",0.3)</script><script src="era_extras.js?v=6"></script></body></html>
