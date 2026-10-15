@@ -1,6 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Basketball-Hinterhof – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=2"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8f0ff;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:10px;max-width:460px}
 #score{position:fixed;right:14px;top:12px;z-index:5;color:#ffd27a;font:700 28px sans-serif;text-shadow:0 0 12px #000}
 #prize{display:none;position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:15;color:#ffe6a8;font:700 26px sans-serif;text-shadow:0 0 16px #000;background:rgba(0,0,0,.55);padding:16px 24px;border-radius:14px}
@@ -126,7 +127,25 @@ const ballTex=cv(512,256,(x,w,h)=>{x.fillStyle='#c45a18';x.fillRect(0,0,w,h);
  x.strokeStyle='#1a120c';x.lineWidth=10;x.beginPath();x.moveTo(w/2,0);x.lineTo(w/2,h);x.stroke();
  x.beginPath();x.ellipse(w/2,h/2,w*0.42,h*0.48,0,0,7);x.stroke(); x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();});
 const ball=new T.Mesh(new T.SphereGeometry(ballR,28,20),std({map:ballTex,roughness:0.55})); ball.position.set(0.3,ballR,0.8); S.add(ball);
-const B={m:ball,v:new T.Vector3(),held:null,rest:true,t:0,scored:false};
+// ===== Physik (cannon-es, feste 1/240-s-Schritte) – siehe zeitschleife_vr_physik_tipps.md =====
+const C=window.CANNON, VR=window.VRP;
+const world=new C.World({gravity:new C.Vec3(0,-9.81,0)}); world.allowSleep=true; world.solver.iterations=14; world.broadphase=new C.NaiveBroadphase();
+const mBall=new C.Material('ball'), mFloor=new C.Material('floor'), mBoard=new C.Material('board'), mRim=new C.Material('rim'), mHand=new C.Material('hand'), mWall=new C.Material('wall');
+const CMt=(a,b,f,e)=>world.addContactMaterial(new C.ContactMaterial(a,b,{friction:f,restitution:e,contactEquationStiffness:1e7,contactEquationRelaxation:4,frictionEquationStiffness:1e7}));
+// Rückprall (Literatur): Hallenboden 0,82–0,88 (FIBA-Fallprobe), Asphalt etwas weniger; Glasbrett ~0,7–0,78; Stahlring 0,5–0,65
+CMt(mBall,mFloor,0.65,0.73); CMt(mBall,mBoard,0.35,0.72); CMt(mBall,mRim,0.25,0.58); CMt(mBall,mHand,0.9,0.2); CMt(mBall,mWall,0.5,0.55);
+function stat(shape,mat,x,y,z,q){ const b=new C.Body({mass:0,material:mat}); b.addShape(shape); b.position.set(x,y,z); if(q) b.quaternion.copy(q); world.addBody(b); return b; }
+const qPlane=(ax,ang)=>{ const q=new C.Quaternion(); q.setFromAxisAngle(ax,ang); return q; };
+const floorB=stat(new C.Plane(),mFloor,0,0,0,qPlane(new C.Vec3(1,0,0),-Math.PI/2));
+stat(new C.Plane(),mWall,0,0,-5.12); // Hauswand hinter dem Brett
+stat(new C.Plane(),mWall,0,0,6.5,qPlane(new C.Vec3(0,1,0),Math.PI)); stat(new C.Plane(),mWall,-6.5,0,0,qPlane(new C.Vec3(0,1,0),Math.PI/2)); stat(new C.Plane(),mWall,6.5,0,0,qPlane(new C.Vec3(0,1,0),-Math.PI/2));
+const boardB=stat(new C.Box(new C.Vec3(0.925,0.55,0.035)),mBoard,0,3.15,-5.0);
+const rimBodies=[]; const RIMN=28; for(let i=0;i<RIMN;i++){ const a=i/RIMN*Math.PI*2; rimBodies.push(stat(new C.Sphere(0.021),mRim,Math.cos(a)*rimR,rimY,rimZ+Math.sin(a)*rimR)); }
+stat(new C.Box(new C.Vec3(0.05,0.015,0.04)),mRim,0,rimY,-4.925); // Halterung Ring→Brett
+const ballB=new C.Body({mass:0.6,material:mBall,linearDamping:0.015,angularDamping:0.06,allowSleep:true,sleepSpeedLimit:0.12,sleepTimeLimit:0.8});
+ballB.addShape(new C.Sphere(ballR)); ballB.position.set(0.3,ballR,0.8); world.addBody(ballB);
+const B={m:ball,body:ballB,held:null,scored:false,t:0,lastThrow:null,prevY:ballR,thrownBy:null,
+ get v(){ return new T.Vector3(ballB.velocity.x,ballB.velocity.y,ballB.velocity.z); }, get rest(){ return ballB.sleepState===C.Body.SLEEPING; }};
 let score=0, streak=0, prizeGiven=false;
 const maraLines=['Netter Wurf. Fast wie 89.','Swish. Die Straße hat es gehört.','Noch einer – dann glaub ich dir die Zeitreise.','Nicht schlecht für jemanden aus der Zukunft.'];
 function mara(t){const el=document.getElementById('hud'); el.innerHTML=`Basketball-Hinterhof (1989)<br><small style="color:#ffb0d8">Mara: „${t}“</small>`; setTimeout(()=>{el.innerHTML='Basketball-Hinterhof (1989)<br><small>VR: L-Stick · Trigger-Teleport · R-Stick Snap · Grip Ball</small>';},4500);}
@@ -135,45 +154,80 @@ function setScore(n){score=n; document.getElementById('score').textContent=score
   document.getElementById('prize').style.display='block'; document.getElementById('prize').textContent=got?'🏀 Serie! +1:30 auf die Schleife':'🏀 Serie! (Zeitbonus schon verbraucht)';
   mara(got?'Drei hintereinander – ich schenk dir anderthalb Minuten.':'Drei hintereinander. Mehr Zeit gibt\'s diesmal nicht.');
   setTimeout(()=>{document.getElementById('prize').style.display='none';},4200);} }
+// Aufprall-Sounds + Haptik
+ballB.addEventListener('collide',e=>{ const iv=Math.abs(e.contact.getImpactVelocityAlongNormal()); const o=e.body;
+ if(o===floorB){ if(iv>0.6) SND.bounce(Math.min(1,iv/6)); }
+ else if(rimBodies.includes(o)){ if(iv>0.25){ SND.rim(); B.rimHit=(B.rimHit||0)+1; } }
+ else if(o===boardB){ if(iv>0.4) SND.thud(Math.min(1,iv/5)); }
+ else if(o.material===mHand){ const st=ctr.find(s=>s.body===o); if(st) VR.haptic(R,st.hand,Math.min(1,0.2+iv/4),25); if(iv>0.6) SND.bounce(Math.min(0.6,iv/8)); }
+ else if(o.material===mWall){ if(iv>0.6) SND.thud(Math.min(1,iv/6)); } });
 // rig + locomotion
 const rigEl=document.getElementById('rig'); const rig=rigEl.object3D; const cam=document.getElementById('cam').object3D;
-const ctr=[{hand:'left'},{hand:'right'}];
+const ctr=[];
 ['left','right'].forEach((hand,i)=>{
  const c=document.createElement('a-entity'); c.setAttribute('laser-controls',`hand:${hand}`);
  c.setAttribute('raycaster', hand==='left'?'objects:.floor; far:8; showLine:true':'enabled:false');
- sc.appendChild(c); ctr[i]={c:c.object3D, el:c, hist:[], held:null, hand};
+ sc.appendChild(c);
+ // Hand als kinematischer Kollider (Bonelab-Idee: Hände gehen nicht durch den Ball, man kann ihn anstoßen/dribbeln)
+ const hb=new C.Body({mass:0,type:C.Body.KINEMATIC,material:mHand,allowSleep:false}); hb.addShape(new C.Sphere(0.045)); hb.position.set(0,-10,0); hb.collisionResponse=false; world.addBody(hb);
+ ctr[i]={c:c.object3D, el:c, tr:new VR.Tracker(), held:null, hand, body:hb, prev:new T.Vector3(0,-10,0), tgt:new T.Vector3(0,-10,0), off:new T.Vector3(), qOff:new T.Quaternion(), noHitUntil:0};
  c.addEventListener('squeezestart',()=>grab(ctr[i])); c.addEventListener('squeezeend',()=>release(ctr[i]));
- c.addEventListener('triggerdown',()=>{ if(ctr[i].held){ release(ctr[i]); return; } if(hand==='left'||hand==='right') tryTeleport(ctr[i]); });
+ c.addEventListener('triggerdown',()=>{ if(ctr[i].held){ release(ctr[i]); return; } tryTeleport(ctr[i]); });
 });
-ground.userData.floor=true; ground.name='floor'; // mark for ray
-function grab(st){ if(B.held||(!B.rest&&B.v.length()>0.5)) return; const p=new T.Vector3(); st.c.getWorldPosition(p);
- if(p.distanceTo(B.m.position)<0.32){ B.held=st; st.held=B; B.rest=false; B.scored=false; }}
-function release(st){ if(st.held!==B) return; const hist=st.hist; let v=new T.Vector3();
- if(hist.length>=2){ const a=hist[hist.length-1], b=hist[0]; const dt=Math.max(0.016,(a.t-b.t)/1000); v.copy(a.p).sub(b.p).multiplyScalar(1.25/dt); }
- B.v.copy(v); if(B.v.length()<0.4) B.v.set(0,0,0); B.held=null; st.held=null; B.t=0; }
+ground.userData.floor=true; ground.name='floor';
+const lagP=new T.Vector3(), lagV=new T.Vector3();
+function ctrPose(st){ const p=new T.Vector3(), q=new T.Quaternion(); st.c.getWorldPosition(p); st.c.getWorldQuaternion(q); return {p,q}; }
+function grab(st){ if(B.held) return; const {p,q}=ctrPose(st); const bp=new T.Vector3().copy(ballB.position);
+ if(p.distanceTo(bp)>ballR+0.17) return; // Greifradius: Handfläche bis ~17 cm neben der Balloberfläche
+ const dir=bp.clone().sub(p); if(dir.length()<1e-3) dir.set(0,-1,0); dir.setLength(ballR+0.025); // Ball sitzt an der Handfläche, nicht im Controller
+ st.off.copy(dir).applyQuaternion(q.clone().invert()); st.qOff.copy(q.clone().invert().multiply(ball.quaternion));
+ B.held=st; st.held=B; B.scored=false; B.rimHit=0; ballB.type=C.Body.KINEMATIC; ballB.wakeUp(); ballB.velocity.set(0,0,0); ballB.angularVelocity.set(0,0,0);
+ lagP.copy(bp); lagV.set(0,0,0); st.body.collisionResponse=false; VR.haptic(R,st.hand,0.45,35); }
+function release(st){ if(st.held!==B) return; const {p}=ctrPose(st); const off=new T.Vector3().copy(ballB.position).sub(p);
+ const est=st.tr.estimate(off,{stepBack:1,tangential:0.6,scale:1.06,max:16});
+ ballB.type=C.Body.DYNAMIC; ballB.mass=0.6; ballB.updateMassProperties(); ballB.wakeUp();
+ ballB.velocity.set(est.v.x,est.v.y,est.v.z); ballB.angularVelocity.set(est.w.x*0.5,est.w.y*0.5,est.w.z*0.5);
+ if(est.speed<0.25) ballB.velocity.set(0,0,0);
+ B.held=null; st.held=null; B.t=0; B.thrownBy=st; B.lastThrow={v:est.v.toArray().map(x=>+x.toFixed(2)),w:est.w.toArray().map(x=>+x.toFixed(2)),n:st.tr.s.length};
+ st.noHitUntil=performance.now()+180; VR.haptic(R,st.hand,0.12,12); }
 const tpMarker=new T.Mesh(new T.RingGeometry(0.18,0.26,24),new T.MeshBasicMaterial({color:0x7ec8ff,transparent:true,opacity:0.7,side:T.DoubleSide}));
 tpMarker.rotation.x=-Math.PI/2; tpMarker.visible=false; S.add(tpMarker);
 function tryTeleport(st){ const o=new T.Vector3(),q=new T.Quaternion(); st.c.getWorldPosition(o); st.c.getWorldQuaternion(q);
  const dir=new T.Vector3(0,0,-1).applyQuaternion(q); const rc=new T.Raycaster(o,dir,0.2,10);
  const hit=rc.intersectObject(ground)[0]; if(!hit) return; rig.position.x=hit.point.x; rig.position.z=hit.point.z; tpMarker.visible=false; noise(0.08,400,1,0.2); }
-sc.canvas.addEventListener('click',()=>{ if(B.held) return; const o=new T.Vector3(); cam.getWorldPosition(o); const dir=new T.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new T.Quaternion()));
- B.m.position.copy(o).addScaledVector(dir,0.45); B.v.copy(dir).multiplyScalar(6.2).add(new T.Vector3(0,2.8,0)); B.rest=false; B.scored=false; B.t=0; streak=0; });
-const GRAV=-9.81; let last=performance.now(); let snapArm=true;
-function step(dt){
- if(B.held){ B.held.c.getWorldPosition(B.m.position); B.m.position.y-=0.05; return; }
- if(B.rest && B.v.length()<0.05){ B.v.set(0,0,0); return; }
- B.t+=dt; B.v.y+=GRAV*dt; B.m.position.addScaledVector(B.v,dt); const P=B.m.position,r=ballR;
- if(P.y<r){ P.y=r; if(B.v.y<0){ if(Math.abs(B.v.y)>0.8) SND.bounce(Math.min(1,-B.v.y/6)); B.v.y*=-0.72; B.v.x*=0.92; B.v.z*=0.92; } if(B.v.length()<0.35){ B.rest=true; B.v.set(0,0,0);} }
- if(P.z<-4.05+r && Math.abs(P.x)<5.5){ P.z=-4.05+r; if(B.v.z<0){ B.v.z*=-0.55; SND.thud(0.5);} }
- if(P.z<-5.05+r && P.z>-5.25 && Math.abs(P.x)<0.95 && P.y>2.55 && P.y<3.7){ P.z=-5.05+r; if(B.v.z<0){ B.v.z*=-0.45; SND.rim(); }}
- const dx=P.x, dy=P.y-rimY, dz=P.z-rimZ; const horiz=Math.hypot(dx,dz);
- if(Math.abs(dy)<0.08 && Math.abs(horiz-rimR)<0.05){ const n=new T.Vector3(dx,0,dz).normalize(); B.v.reflect(n).multiplyScalar(0.55); B.v.y=Math.abs(B.v.y)*0.4+0.2; SND.rim(); P.addScaledVector(n,0.03); }
- if(!B.scored && horiz<rimR*0.72 && P.y<rimY && P.y>rimY-0.35 && B.v.y<0){ B.scored=true; setScore(score+1); SND.swish(); }
- if(B.t>10 || P.y<-1 || P.length()>16){ B.m.position.set(0.3,ballR,0.8); B.v.set(0,0,0); B.rest=true; B.t=0; B.scored=false; }
-}
-AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=Math.min(0.033,(now-last)/1000); last=now;
+// Desktop: Klick = Wurf; schaut man grob zum Korb, wird die Flugbahn passend gerechnet (±4 % Streuung → trifft nicht immer)
+function desktopThrow(){ if(B.held) return; const o=new T.Vector3(); cam.getWorldPosition(o); const q=cam.getWorldQuaternion(new T.Quaternion()); const dir=new T.Vector3(0,0,-1).applyQuaternion(q);
+ const start=o.clone().addScaledVector(dir,0.45); start.y-=0.15; const tgt=new T.Vector3(0,rimY+0.02,rimZ); const hz=new T.Vector3(tgt.x-start.x,0,tgt.z-start.z); const d=hz.length(), h=tgt.y-start.y;
+ const fl=new T.Vector3(dir.x,0,dir.z).normalize(); let v;
+ if(fl.dot(hz.clone().normalize())>0.97&&d>0.8){ const th=52*Math.PI/180; const v2=9.81*d*d/(2*Math.cos(th)**2*(d*Math.tan(th)-h)); const sp=Math.sqrt(Math.max(1,v2))*(1+(Math.random()-0.5)*0.08);
+   v=hz.normalize().multiplyScalar(sp*Math.cos(th)); v.y=sp*Math.sin(th); }
+ else v=dir.clone().multiplyScalar(6.2).add(new T.Vector3(0,2.8,0));
+ ballB.type=C.Body.DYNAMIC; ballB.wakeUp(); ballB.position.set(start.x,start.y,start.z); ballB.velocity.set(v.x,v.y,v.z); ballB.angularVelocity.set(-fl.z*7,0,fl.x*7); /* Rückwärtsdrall: ω = Flugrichtung × oben */
+ B.scored=false; B.rimHit=0; B.t=0; streak=0; }
+sc.canvas.addEventListener('click',desktopThrow);
+const GRAV=-9.81; let last=performance.now(); let snapArm=true; const physStep=VR.stepper(1/240);
+function respawn(){ const p=new T.Vector3(); cam.getWorldPosition(p); const f=new T.Vector3(0,0,-1).applyQuaternion(cam.getWorldQuaternion(new T.Quaternion())); f.y=0; f.normalize();
+ ballB.type=C.Body.DYNAMIC; ballB.position.set(p.x+f.x*0.7,0.6,p.z+f.z*0.7); ballB.velocity.set(0,0,0); ballB.angularVelocity.set(0,0,0); ballB.wakeUp(); B.t=0; B.scored=false; }
+function physFrame(dt,now){ const pres=R.xr.isPresenting;
+ for(const st of ctr){ const {p,q}=ctrPose(st); st.tr.push(p,q,now/1000);
+  const live=pres&&p.lengthSq()>1e-6; st.prev.copy(st.body.position); st.tgt.copy(live?p:new T.Vector3(0,-10,0));
+  st.body.collisionResponse=live&&!st.held&&now>st.noHitUntil; st.pose={p,q};
+  const d=st.tgt.clone().sub(st.prev); if(d.length()>0.5||dt<=0){ st.body.position.set(st.tgt.x,st.tgt.y,st.tgt.z); st.body.velocity.set(0,0,0); } else st.body.velocity.set(d.x/dt,d.y/dt,d.z/dt); }
+ if(B.held){ const st=B.held, tgt=st.off.clone().applyQuaternion(st.pose.q).add(st.pose.p); B.target=tgt; }
+ const n=physStep(dt,h=>{
+  // Hand-Kollider: kinematisch, Geschwindigkeit = Handweg/Frame → überträgt Impuls auf den Ball
+  if(B.held&&B.target){ VR.lagFollow(lagP,lagV,B.target,0.6,h); ballB.position.set(lagP.x,lagP.y,lagP.z); ballB.velocity.set(lagV.x,lagV.y,lagV.z); }
+  const y0=ballB.position.y; world.step(h);
+  // Korb: Ballmitte kreuzt die Ringebene von oben, innerhalb des Rings
+  const P=ballB.position; if(!B.held&&!B.scored&&y0>=rimY&&P.y<rimY&&ballB.velocity.y<0&&Math.hypot(P.x,P.z-rimZ)<rimR-0.035){ B.scored=true; setScore(score+1); SND.swish(); if(B.thrownBy){ const hh=B.thrownBy.hand; VR.haptic(R,hh,0.35,40); setTimeout(()=>VR.haptic(R,hh,0.5,60),120); } }
+ });
+ ball.position.set(ballB.position.x,ballB.position.y,ballB.position.z);
+ if(B.held) ball.quaternion.copy(B.held.pose.q).multiply(B.held.qOff); else ball.quaternion.set(ballB.quaternion.x,ballB.quaternion.y,ballB.quaternion.z,ballB.quaternion.w);
+ if(!B.held){ B.t+=dt; const P=ballB.position; if(P.y<-1||Math.hypot(P.x,P.z)>16) respawn(); if(B.rest&&B.t>2&&!B.scored) streak=streak; }
+ return n; }
+AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=Math.min(0.05,(now-last)/1000); last=now;
  // controllers hist + teleport preview + stick move/turn
- for(const st of ctr){ const p=new T.Vector3(); st.c.getWorldPosition(p); st.hist.push({p:p.clone(),t:now}); while(st.hist.length>6) st.hist.shift();
+ for(const st of ctr){
   const gp=st.el.components['tracked-controls']||st.el.components['tracked-controls-webxr'];
   const src=st.el.components['laser-controls'];
  }
@@ -196,14 +250,14 @@ AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=M
  for(const st of ctr){ if(st.held) continue; const o=new T.Vector3(),q=new T.Quaternion(); st.c.getWorldPosition(o); st.c.getWorldQuaternion(q);
   const dir=new T.Vector3(0,0,-1).applyQuaternion(q); const hit=new T.Raycaster(o,dir,0.2,10).intersectObject(ground)[0];
   if(hit){ tpMarker.position.copy(hit.point); tpMarker.position.y=0.02; tpMarker.visible=true; break; } else tpMarker.visible=false; }
- for(let k=0;k<3;k++) step(dt/3);
+ physFrame(dt,now);
  lampL.intensity=4.5+Math.sin(now*0.008)*0.15+Math.random()*0.05;
  // moths swirl
  const da=dust.geometry.attributes.position; for(let i=0;i<da.count;i++){ let x=da.getX(i)+Math.sin(now*0.002+i)*0.004; let y=da.getY(i)+Math.sin(now*0.003+i*1.7)*0.006; let z=da.getZ(i)+Math.cos(now*0.0025+i)*0.004;
   if(y>3.8) y=0.4; da.setXYZ(i,x,y,z);} da.needsUpdate=true;
 }});
 sc.setAttribute('basket-tick','');
-window.__b={B,get score(){return score},streak:()=>streak,get clock(){return window.__loopClock},setScore};
+window.__b={B,world,ballB,ctr,grab,release,desktopThrow,respawn,rimY,rimZ,rimR,get score(){return score},streak:()=>streak,get clock(){return window.__loopClock},setScore};
 });
 
 // found-footage grain in VR (head-locked, very subtle)
