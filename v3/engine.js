@@ -579,7 +579,7 @@ function frame(now,noRaf){ lastStepT=performance.now(); const dt=Math.min(0.1,(n
    if(['play','msg','dlg','trans','slinky'].includes(mode)){ S.time-=dt; idle+=dt; sceneT+=dt; if(idle<1) idleBarked=false; if(!idleBarked&&idle>(G.config.idleBark||45)&&mode==='play'){ idleBarked=true; bark(G.nodes[S.node].epoch==='1989'?'idle_1989':'idle_backrooms'); } for(const th of [600,300,60]) if(S.time<th&&S.time>th-5&&!timeBarked[th+'_'+MEM.loops]){ timeBarked[th+'_'+MEM.loops]=1; bark('time'+th,true); } if(S.time<=0){ S.time=0; newLoop(); }
     if(SET.hints&&idle>TM.idleHint&&mode==='play'){ idle=0; hintNow(true); } }
    if(mode==='play') pick3D(); else hover3=null; physStep(dt); gazeStep(dt); beaconStep(dt); spotStep(dt);
-   if(vhsT>0&&window.ZSFX){ if(SET.glitch>0||vhsRW){ x.save(); x.globalAlpha=vhsRW?Math.max(0.35,SET.glitch):SET.glitch; ZSFX.vhs(x,W,H,1-vhsT,vhsRW); x.restore(); } vhsT=Math.max(0,vhsT-(vhsRW?dt/0.5:0.025)); if(vhsT<=0) vhsRW=false; }
+   if(vhsT>0&&window.ZSFX){ if((SET.glitch>0||vhsRW)&&!vrMode){ /* in VR kein Rauschen auf dem Kopf-Panel (Übelkeit) */ x.save(); x.globalAlpha=vhsRW?Math.max(0.35,SET.glitch):SET.glitch; ZSFX.vhs(x,W,H,1-vhsT,vhsRW); x.restore(); } vhsT=Math.max(0,vhsT-(vhsRW?dt/0.5:0.025)); if(vhsT<=0) vhsRW=false; }
    if(mode==='clip'&&clipV){ drawClipSubs(); button([W-230,24,200,48],'ÜBERSPRINGEN ▶',()=>clipSkip&&clipSkip(),{s:18}); }
    else if(mode!=='intro'&&mode!=='vortex'){ drawHUD(now); if(mode==='msg'&&msg) drawMsg(); if(mode==='dlg'&&dlg) drawDlg(); if(mode==='wm') drawWM(now); if(mode==='pause') drawPause(); } }
   if(fadeA>0){ x.fillStyle=`rgba(0,0,0,${fadeA})`; x.fillRect(0,0,W,H); }

@@ -1,12 +1,12 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 – 1984 Zimmer</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="../tv.js?v=5"></script>
+<script src="../tv.js?v=5"></script><script src="lib/dust.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffd6f0;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #sub{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:6;color:#fff;font:600 17px sans-serif;text-shadow:0 0 8px #000;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:8px;display:none;max-width:80%}</style></head><body>
 <div id="hud"><b>1984 · Zimmer</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger = TV an/aus, Kanal, Gegenstand nehmen/ablegen<br>Desktop: WASD · Klick = TV / Gegenstand nehmen, Klick ins Leere = ablegen</div>
 <div id="sub"></div>
-<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.17;mix-blend-mode:overlay"></canvas>
+<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.08;mix-blend-mode:overlay"></canvas>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
  fog="type:exponential; color:#1e0a1c; density:0.08" background="color:#05020a" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
  <a-entity light="type:ambient; color:#5a3070; intensity:0.18"></a-entity>
@@ -89,10 +89,8 @@ S.addEventListener('loaded',()=>{
  // Mara: enter + TV
  setTimeout(()=>mara('enter'),2500);
  document.getElementById('tv').addEventListener('click',()=>{ setTimeout(()=>mara('tv'),6000); });
- // VR grain (head-locked, subtle)
- const nc=document.createElement('canvas');nc.width=nc.height=128;const nx=nc.getContext('2d');const nd=nx.createImageData(128,128);const nt=new T.CanvasTexture(nc);
- const nm=new T.Mesh(new T.PlaneGeometry(0.5,0.5),new T.MeshBasicMaterial({map:nt,transparent:true,opacity:0.06,depthTest:false,depthWrite:false,blending:T.AdditiveBlending,fog:false}));nm.position.set(0,0,-0.12);nm.renderOrder=999;document.getElementById('cam').object3D.add(nm);
- setInterval(()=>{for(let i=0;i<nd.data.length;i+=4){const v=Math.random()*255;nd.data[i]=nd.data[i+1]=nd.data[i+2]=v;nd.data[i+3]=255;}nx.putImageData(nd,0,0);nt.needsUpdate=true;},70);
+ // (VR-Kopf-Rauschen entfernt) – stattdessen weltfester Staub
+ if(window.worldDust) worldDust(S,{count:55,rMin:1.0,rMax:3.6,color:0xffe2b8,opacity:0.36});
 });
 // VR locomotion: left stick move, right stick snap 30°, clamp to room
 AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0;

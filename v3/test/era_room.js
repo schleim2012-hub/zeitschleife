@@ -86,10 +86,8 @@ S.addEventListener('loaded',()=>{
    tex(ppl.img[i],t=>{ pm.map=t; pm.needsUpdate=true; const ar=t.image.width/t.image.height; pl.scale.set(hgt*ar,hgt,1); });
    g.position.set(ppl.pos[0]+i*0.75,0,ppl.pos[2]-i*0.15); G.add(g); people.push(g); }); }
  let listenT=0, convI=-1, convNext=0, convDone=false;
- // VR grain
- const nc=document.createElement('canvas');nc.width=nc.height=128;const nx=nc.getContext('2d');const nd=nx.createImageData(128,128);const nt=new T.CanvasTexture(nc);
- const nm=new T.Mesh(new T.PlaneGeometry(0.5,0.5),new T.MeshBasicMaterial({map:nt,transparent:true,opacity:0.06,depthTest:false,depthWrite:false,blending:T.AdditiveBlending,fog:false}));nm.position.set(0,0,-0.12);nm.renderOrder=999;document.getElementById('cam').object3D.add(nm);
- setInterval(()=>{for(let i=0;i<nd.data.length;i+=4){const v=Math.random()*255;nd.data[i]=nd.data[i+1]=nd.data[i+2]=v;nd.data[i+3]=255;}nx.putImageData(nd,0,0);nt.needsUpdate=true;},70);
+ // (VR-Kopf-Rauschen entfernt – nichts head-locked; stattdessen weltfester Staub)
+ if(window.worldDust) worldDust(S,{count:60,rMin:1.0,rMax:3.8,color:C.dustColor||0xffe2b8,opacity:0.4}); else { const sc=document.createElement('script'); sc.src='lib/dust.js?v=1'; sc.onload=()=>worldDust(S,{count:60,rMin:1.0,rMax:3.8,color:C.dustColor||0xffe2b8,opacity:0.4}); document.head.appendChild(sc); }
  const lastP=new T.Vector3(); let still=0;
  AFRAME.registerComponent('era-tick',{tick(t,dt){ const d=Math.min(dt,50)/1000;
   if(window.VRP){ const now=t/1000; Object.values(HND).forEach(h=>{ const o=document.getElementById(h.id).object3D; if(!h.tr) h.tr=new VRP.Tracker(); o.getWorldPosition(hp); o.getWorldQuaternion(hq); h.tr.push(hp.clone(),hq.clone(),now); }); }

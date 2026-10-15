@@ -1,19 +1,19 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Kirmes-Test – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/basefog.js?v=1"></script>
+<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
 <div id="fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .25s"></div>
 <div id="prize" style="display:none;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:15;text-align:center;color:#ffe6a8;font:700 28px sans-serif;text-shadow:0 0 18px #000;background:rgba(0,0,0,.55);padding:18px 28px;border-radius:16px"></div>
 <div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick auf Bude = davor stellen · Simulator-Tür = Kabine · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
-<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.16;mix-blend-mode:overlay"></canvas>
+<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.08;mix-blend-mode:overlay"></canvas>
 <script>(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();</script>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#06050a; density:0.075">
  <a-sky color="#140a10"></a-sky>
  <a-entity light="type:ambient; intensity:0.05; color:#9a86d0"></a-entity>
  <a-entity light="type:hemisphere; intensity:0.08; color:#ffd9a8; groundColor:#1a1020"></a-entity>
- <a-entity id="cam" camera look-controls position="0 1.6 0.4"></a-entity>
+ <a-entity id="rig"><a-entity id="cam" camera look-controls position="0 1.6 0.4"></a-entity></a-entity>
 </a-scene>
 <script>
 const sc=document.querySelector('a-scene');
@@ -67,11 +67,19 @@ const sideAlpha=(()=>{ const c=document.createElement('canvas'); c.width=256; c.
 [['L',Math.PI+KANG/2],['R',Math.PI-KANG/2-SANG]].forEach(([n,th])=>{ const m=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide,alphaMap:sideAlpha,transparent:true,depthWrite:false});
  TL2.load('../assets/pano/kirmes_side_'+n+'.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;m.map=t;m.needsUpdate=true;});
  const w=new T.Mesh(new T.CylinderGeometry(KR+0.05,KR+0.05,SH,40,1,true,th,SANG),m); w.scale.x=-1; w.renderOrder=-7; w.position.set(KC[0],1.6+(256-266)*SH/512*(-1),KC[1]); S.add(w); });
-if(window.baseFog) baseFog(S,{R:KR,cx:KC[0],cz:KC[1],thL:KANG+2*SANG,h:1.3,ring:3.0,color:0x06050a,opacity:0.9});
+// 360°: hinter dem Spieler die geschlossene Budengasse (Perchance 031/036/037, wärmer & dunkler gegradet), überlappt die Seitenbilder weich
+(()=>{ const OVA=8*Math.PI/180, BL=2*Math.PI-KANG-2*SANG+2*OVA, BR=KR+0.1, BH=BR*BL*512/1286;
+ const ba=(()=>{ const c=document.createElement('canvas'); c.width=256; c.height=128; const x=c.getContext('2d'); const h=x.createLinearGradient(0,0,256,0); h.addColorStop(0,'#000'); h.addColorStop(0.09,'#fff'); h.addColorStop(0.91,'#fff'); h.addColorStop(1,'#000'); x.fillStyle=h; x.fillRect(0,0,256,128);
+  x.globalCompositeOperation='multiply'; const v=x.createLinearGradient(0,0,0,128); v.addColorStop(0,'#000'); v.addColorStop(0.32,'#fff'); v.addColorStop(1,'#fff'); x.fillStyle=v; x.fillRect(0,0,256,128); return new T.CanvasTexture(c); })();
+ const m=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide,alphaMap:ba,transparent:true,depthWrite:false});
+ TL2.load('../assets/pano/kirmes_back.jpg',t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;m.map=t;m.needsUpdate=true;});
+ const w=new T.Mesh(new T.CylinderGeometry(BR,BR,BH,96,1,true,Math.PI+KANG/2+SANG-OVA,BL),m); w.scale.x=-1; w.renderOrder=-8; w.position.set(KC[0],1.6+10*BH/512,KC[1]); S.add(w); window.__kBack=w; })();
+if(window.baseFog) baseFog(S,{R:KR,cx:KC[0],cz:KC[1],thL:2*Math.PI,h:1.3,ring:3.0,color:0x06050a,opacity:0.9});
+if(window.worldDust) worldDust(sc,{count:70,rMin:1.0,rMax:4.0,yMin:0.3,yMax:3.2,color:0xffc890,color2:0xff8a40,opacity:0.42}); // Funken/Staub über dem Platz – weltfest
 // 3D-Pflaster blendet zum Foto hin aus (Matte-Painting-Übergang); das nasse Foto-Pflaster liegt unter y=0 auf dem Bogen
 (()=>{ const N=512, RR=14, c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d'), id=x.createImageData(N,N);
  for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const wx=(i/N-0.5)*2*RR-KC[0], dz=(j/N-0.5)*2*RR-KC[1], r=Math.hypot(wx,dz), ang=Math.atan2(wx,-dz);
-  let a=1; if(Math.abs(ang)<KANG/2){ const d=KR-r, edge=Math.min(1,(KANG/2-Math.abs(ang))/0.25); const t=Math.min(1,Math.max(0,(d-0.4)/3.0)); a=1-(1-t*t*(3-2*t))*edge; }
+  let a=1; { const d=KR-r, edge=1; /* rundum */ const t=Math.min(1,Math.max(0,(d-0.4)/3.0)); a=1-(1-t*t*(3-2*t))*edge; }
   const k=(j*N+i)*4; id.data[k]=id.data[k+1]=id.data[k+2]=Math.round(a*255); id.data[k+3]=255; }
  x.putImageData(id,0,0); fl.material.alphaMap=new T.CanvasTexture(c); fl.material.transparent=true; fl.material.depthWrite=false; fl.renderOrder=-5; fl.material.needsUpdate=true; /* Wand zuerst, Boden blendet darüber */ })();
 
@@ -211,6 +219,8 @@ function goToStall(g){
   setTimeout(()=>{
     const front=g.localToWorld(new T.Vector3(0,0,1.55));
     const camEl=document.getElementById('cam'); const cam=camEl.object3D;
+    if(R.xr.isPresenting){ // VR: Kopf wird vom Headset gesetzt → Rig so verschieben, dass der Kopf vor der Bude landet (Controller hängen am selben Rig)
+      const rig=document.getElementById('rig').object3D; rig.position.set(front.x-cam.position.x,0,front.z-cam.position.z); fade.style.opacity='0'; return; }
     cam.position.set(front.x,1.6,front.z);
     // face stall center
     const c=g.localToWorld(new T.Vector3(0,1.4,-0.2));
@@ -225,7 +235,7 @@ function drawBoard(){ const c=boardTex.image, x=c.getContext('2d'); x.clearRect(
  x.fillText(`Dosen: ${dosenScore} · Würfe ${dosenThrows}`,30,70); x.fillText(`Enten: ${hitsD} / Schüsse ${shots}`,30,135); x.fillStyle='#ffb0d8'; x.fillText(raceMsg||'Pferderennen: Ball in die Löcher rollen!',30,200); boardTex.needsUpdate=true; }
 drawBoard();
 // ---------- Controller (rohe XR-Posen über three.js)
-const ctr=[0,1].map(i=>{ const c=R.xr.getController(i); S.add(c); const hb=new C.Body({mass:0,type:C.Body.KINEMATIC,material:M.hand,allowSleep:false}); hb.addShape(new C.Sphere(0.045)); hb.position.set(0,-10,0); hb.collisionResponse=false; world.addBody(hb);
+const ctr=[0,1].map(i=>{ const c=R.xr.getController(i); document.getElementById('rig').object3D.add(c); /* Controller MÜSSEN im selben Rig wie die Kamera hängen */ const hb=new C.Body({mass:0,type:C.Body.KINEMATIC,material:M.hand,allowSleep:false}); hb.addShape(new C.Sphere(0.045)); hb.position.set(0,-10,0); hb.collisionResponse=false; world.addBody(hb);
  const st={c,held:null,tr:new VR.Tracker(),body:hb,hand:i?'right':'left',off:new T.Vector3(),rifle:null}; c.addEventListener('connected',e=>{ if(e.data&&e.data.handedness) st.hand=e.data.handedness; }); 
  const rifle=new T.Group(); const bar=new T.Mesh(new T.CylinderGeometry(0.008,0.008,0.5,10),std({color:0x222222,metalness:0.8,roughness:0.3})); bar.rotation.x=Math.PI/2; bar.position.z=-0.25; rifle.add(bar); const stock=new T.Mesh(new T.BoxGeometry(0.035,0.06,0.2),std({color:0x5a3a20})); stock.position.set(0,-0.02,0.06); rifle.add(stock); rifle.visible=false; c.add(rifle); st.rifle=rifle;
  const ln=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,-1)]),new T.LineBasicMaterial({color:0xffe6a8,transparent:true,opacity:0.5})); ln.scale.z=3; c.add(ln); st.ln=ln;
@@ -234,10 +244,16 @@ function nearG2(p){ const l=G2.worldToLocal(p.clone()); return Math.abs(l.x)<1.6
 function press(st,trigger){ ac(); const p=new T.Vector3(); st.c.getWorldPosition(p);
  if(trigger&&!st.held){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q); if(rayHitsSim(p,new T.Vector3(0,0,-1).applyQuaternion(q))){ goSim(); return; } }
  if(trigger&&st.rifle.visible){ shoot(st.c,st); return; }
- let best=null,bd=0.18; for(const b of balls){ if(b.held) continue; const d=b.m.position.distanceTo(p); if(d<bd){ bd=d; best=b; } }
- if(best){ const bp=new T.Vector3().copy(best.body.position); const dir=bp.clone().sub(p); if(dir.length()<1e-3) dir.set(0,0,-1); dir.setLength(0.055); const q=new T.Quaternion(); st.c.getWorldQuaternion(q); st.off.copy(dir).applyQuaternion(q.invert());
+ let best=null,bd=0.22; for(const b of balls){ if(b.held) continue; const d=b.m.position.distanceTo(p); if(d<bd){ bd=d; best=b; } }
+ if(!best&&!trigger){ // Gravity Gloves: Griff + grob auf einen Ball zeigen → Ball fliegt in die Hand
+  const q=new T.Quaternion(); st.c.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); let pb=null,pa=0.32;
+  for(const b of balls){ if(b.held) continue; const to=b.m.position.clone().sub(p), dd=to.length(); if(dd>5) continue; const a=Math.acos(Math.min(1,f.dot(to.normalize()))); if(a<pa){ pa=a; pb=b; } }
+  if(pb){ const bp=new T.Vector3().copy(pb.body.position), dd=bp.distanceTo(p), tf=Math.max(0.3,Math.min(0.6,dd*0.13)); const v=p.clone().sub(bp).divideScalar(tf); v.y+=0.5*9.81*tf;
+   pb.body.type=C.Body.DYNAMIC; pb.body.wakeUp(); pb.body.velocity.set(v.x,v.y,v.z); st.pull=pb; st.pullT=performance.now(); VR.haptic(R,st.hand,0.2,20); }
+  return; }
+ if(best){ st.pull=null; const bp=new T.Vector3().copy(best.body.position); const dir=bp.clone().sub(p); if(dir.length()<1e-3) dir.set(0,0,-1); dir.setLength(0.055); const q=new T.Quaternion(); st.c.getWorldQuaternion(q); st.off.copy(dir).applyQuaternion(q.invert());
   best.held=st; st.held=best; best.body.type=C.Body.KINEMATIC; best.body.wakeUp(); best.lagP.copy(bp); best.lagV.set(0,0,0); VR.haptic(R,st.hand,0.35,30); } }
-function release(st){ const b=st.held; if(!b) return; st.held=null; b.held=null; const p=new T.Vector3(); st.c.getWorldPosition(p); const off=new T.Vector3().copy(b.body.position).sub(p);
+function release(st){ st.pull=null; const b=st.held; if(!b) return; st.held=null; b.held=null; const p=new T.Vector3(); st.c.getWorldPosition(p); const off=new T.Vector3().copy(b.body.position).sub(p);
  const est=st.tr.estimate(off,{stepBack:1,tangential:0.6,scale:1.04,max:15}); b.body.type=C.Body.DYNAMIC; b.body.wakeUp(); b.body.velocity.set(est.v.x,est.v.y,est.v.z); b.body.angularVelocity.set(est.w.x*0.5,est.w.y*0.5,est.w.z*0.5); b.t=0;
  b.thrown=true; b.lastThrow=est.v.toArray().map(x=>+x.toFixed(2)); st.noHitUntil=performance.now()+180; if(b.kind==='d') { dosenThrows++; drawBoard(); } }
 // Schuss (VR: Controller-Ray; Desktop: Kamera)
@@ -275,9 +291,10 @@ const tmp=new T.Vector3(); let last=performance.now();
 function ctrPose(st){ const p=new T.Vector3(), q=new T.Quaternion(); st.c.getWorldPosition(p); st.c.getWorldQuaternion(q); return {p,q}; }
 function resetBall(b){ const body=b.body; body.type=C.Body.DYNAMIC; body.position.set(b.home.x,b.home.y,b.home.z); body.velocity.set(0,0,0); body.angularVelocity.set(0,0,0); body.sleep(); b.t=0; b.thrown=false; b.held=null; b.rattled=false; }
 function physFrame(dt,now){ const pres=R.xr.isPresenting;
+ for(const st of ctr){ if(!st.pull||st.held) continue; const hp=new T.Vector3(); st.c.getWorldPosition(hp); if(hp.distanceTo(st.pull.m.position)<0.2) press(st,false); else if(now-st.pullT>1500) st.pull=null; }
  for(const st of ctr){ const {p,q}=ctrPose(st); st.pose={p,q}; st.tr.push(p,q,now/1000); const live=pres&&p.lengthSq()>1e-6; const tgt=live?p:new T.Vector3(0,-10,0);
   const cur=new T.Vector3().copy(st.body.position), d=tgt.clone().sub(cur); st.body.collisionResponse=live&&!st.held&&now>(st.noHitUntil||0);
-  if(d.length()>0.5||dt<=0){ st.body.position.set(tgt.x,tgt.y,tgt.z); st.body.velocity.set(0,0,0); } else st.body.velocity.set(d.x/dt,d.y/dt,d.z/dt); }
+  if(d.length()>0.28||dt<=0){ /* Snap-Back >28 cm */ st.body.position.set(tgt.x,tgt.y,tgt.z); st.body.velocity.set(0,0,0); } else st.body.velocity.set(d.x/dt,d.y/dt,d.z/dt); }
  physStep(dt,h=>{
   for(const b of balls){ if(!b.held) continue; const st=b.held, tgt=st.off.clone().applyQuaternion(st.pose.q).add(st.pose.p); VR.lagFollow(b.lagP,b.lagV,tgt,0.15,h); b.body.position.set(b.lagP.x,b.lagP.y,b.lagP.z); b.body.velocity.set(b.lagV.x,b.lagV.y,b.lagV.z); }
   world.step(h);
@@ -309,9 +326,5 @@ function isAimingAt(st){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q);
 AFRAME.registerComponent('kirmes-tick',{tick}); sc.setAttribute('kirmes-tick','');
 });
 
-// found-footage grain in VR (head-locked, very subtle)
-(()=>{const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gd=gx.createImageData(128,128);const gt=new THREE.CanvasTexture(gc);
-const gm=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),new THREE.MeshBasicMaterial({map:gt,transparent:true,opacity:0.07,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));gm.position.set(0,0,-0.12);gm.renderOrder=999;
-const cam=document.getElementById('cam'); const add=()=>cam.object3D.add(gm); cam.object3D?add():cam.addEventListener('loaded',add);
-setInterval(()=>{for(let i=0;i<gd.data.length;i+=4){const v=Math.random()*255;gd.data[i]=gd.data[i+1]=gd.data[i+2]=v;gd.data[i+3]=255;}gx.putImageData(gd,0,0);gt.needsUpdate=true;},70);})();
+// (VR-Kopf-Rauschen entfernt – machte übel. Found-Footage-Look nur noch als weltfester Staub, s. lib/dust.js)
 </script></body></html>

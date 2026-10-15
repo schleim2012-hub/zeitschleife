@@ -8,7 +8,7 @@ window.baseFog=function(parent,o){ const T=THREE, R=o.R, thL=o.thL||Math.PI, col
  const edge=document.createElement('canvas'); edge.width=128; edge.height=4; const ex=edge.getContext('2d'); const eg=ex.createLinearGradient(0,0,128,0);
  eg.addColorStop(0,'#000'); eg.addColorStop(0.08,'#fff'); eg.addColorStop(0.92,'#fff'); eg.addColorStop(1,'#000'); ex.fillStyle=eg; ex.fillRect(0,0,128,4);
  // Kombi-Alpha (vertikal × Ränder) in eine Textur
- const ac=document.createElement('canvas'); ac.width=128; ac.height=128; const ax=ac.getContext('2d'); ax.drawImage(vc,0,0,128,128); ax.globalCompositeOperation='multiply'; ax.drawImage(edge,0,0,128,128);
+ const ac=document.createElement('canvas'); ac.width=128; ac.height=128; const ax=ac.getContext('2d'); ax.drawImage(vc,0,0,128,128); if(thL<6.27){ ax.globalCompositeOperation='multiply'; ax.drawImage(edge,0,0,128,128); } // voller 360°-Ring: keine Endkanten
  const vm=new T.MeshBasicMaterial({color:col,transparent:true,opacity:op,alphaMap:new T.CanvasTexture(ac),depthWrite:false,fog:false,side:T.DoubleSide});
  const v=new T.Mesh(new T.CylinderGeometry(R-0.05,R-0.05,h,96,1,true,Math.PI-thL/2,thL),vm); v.position.y=h/2-0.02; v.renderOrder=3; g.add(v);
  // flacher Nebel auf dem Boden vor der Wand (radial)

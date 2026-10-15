@@ -1,11 +1,11 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Simulator-Kabine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/basefog.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8e4dc;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .35s}</style></head><body>
 <div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür · Schild „← KIRMES“ hinten = zurück</div>
 <div id="fade"></div>
-<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.15;mix-blend-mode:overlay"></canvas>
+<canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.08;mix-blend-mode:overlay"></canvas>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#050507; density:0.085" background="color:#020203" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
  <a-entity light="type:ambient; color:#5a6070; intensity:0.10"></a-entity>
  <a-entity id="rig" position="12 0 3.4" sim-move>
@@ -22,6 +22,7 @@ const S=document.querySelector('a-scene'), T=THREE;
 const OUT=new T.Vector3(12,0,3.4), IN=new T.Vector3(0,0,0.15);
 let inside=false;
 S.addEventListener('loaded',()=>{
+if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,color:0xcfd8ff,color2:0xffd0a0,opacity:0.3}); // feiner Staub, weltfest
  const G=S.object3D, TL=new T.TextureLoader();
  const tex=(u,cb,srgb=true)=>TL.load(u,t=>{ if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; cb&&cb(t); });
  const std=o=>new T.MeshStandardMaterial(o);
@@ -30,9 +31,10 @@ S.addEventListener('loaded',()=>{
  const wm=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide});
  tex('../assets/pano/sim_grok_p3_01.jpg',t=>{ wm.map=t; wm.needsUpdate=true; });
  const wall=new T.Mesh(new T.CylinderGeometry(R,R,H,128,1,true,Math.PI-ANG/2,ANG),wm); wall.scale.x=-1; wall.position.set(0,1.6+(EYE-PXH/2)/PPM,0); G.add(wall);
- // Rückseite der Kabine: dunkle Hülle (kein Foto) mit Tür-Schimmer
- const back=new T.Mesh(new T.CylinderGeometry(R+0.02,R+0.02,H,64,1,true,ANG/2-Math.PI+Math.PI,2*Math.PI-ANG),std({color:0x0c0c0e,roughness:0.9,metalness:0.3,side:T.DoubleSide})); back.position.copy(wall.position); G.add(back);
- if(window.baseFog) baseFog(G,{R:R,cx:0,cz:0,thL:ANG,h:0.35,ring:0.55,color:0x030304,opacity:0.75});
+ // Rückseite der Kabine (360°): Wandausschnitte ohne Leinwand aus p3_01 (gespiegelt an den Nahtstellen → nahtlos) + p3_02/p3_04, dunkel überblendet; Ausgangstür sitzt davor
+ const bm=new T.MeshBasicMaterial({color:0xffffff,fog:false,toneMapped:false,side:T.DoubleSide}); tex('../assets/pano/sim_back.jpg',t=>{ bm.map=t; bm.needsUpdate=true; });
+ const back=new T.Mesh(new T.CylinderGeometry(R,R,H,128,1,true,Math.PI+ANG/2,2*Math.PI-ANG),bm); back.scale.x=-1; back.position.copy(wall.position); G.add(back);
+ if(window.baseFog) baseFog(G,{R:R,cx:0,cz:0,thL:2*Math.PI,h:0.35,ring:0.55,color:0x030304,opacity:0.75});
  const fl=new T.Mesh(new T.CircleGeometry(R+0.05,48),std({color:0x0a0a0b,roughness:0.95})); fl.rotation.x=-Math.PI/2; fl.position.y=0.002; G.add(fl);
  // Leinwand-Patch exakt über dem Foto-Bildschirm (Pixel 545..1270 × 266..526)
  const sx0=545, sx1=1270, sy0=266, sy1=526;
@@ -102,6 +104,13 @@ S.addEventListener('loaded',()=>{
  // Halle: Betonboden, Arbeitslampe, Kabel
  const asp=new T.MeshStandardMaterial({color:0x4a4846,roughness:0.95}); ['Color','NormalGL','Roughness'].forEach(k=>tex('../assets/tex/kirmes/Asphalt/Asphalt025B_1K-JPG_'+k+'.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(6,6); if(k==='Color') asp.map=t; else if(k==='NormalGL') asp.normalMap=t; else asp.roughnessMap=t; asp.needsUpdate=true; },k==='Color'));
  const hf=new T.Mesh(new T.PlaneGeometry(16,16),asp); hf.rotation.x=-Math.PI/2; hf.position.set(OUT.x,0,OUT.z-3); hf.receiveShadow=true; G.add(hf);
+ // 360°: die Kabine steht am Rand der Kirmes – Foto-Ring rundum (Hauptplatz hinter dem Spieler, Richtung „← KIRMES“; geschlossene Budengasse hinter der Kabine), abgedunkelt
+ if(window.kirmesRing){ const KRc=new T.Vector3(OUT.x,0,OUT.z-1.6); kirmesRing(G,{cx:KRc.x,cz:KRc.z,R:8.6,rotY:Math.PI,tone:0.62});
+  if(window.baseFog) baseFog(G,{R:8.6,cx:KRc.x,cz:KRc.z,thL:2*Math.PI,h:1.2,ring:2.6,color:0x050507,opacity:0.9});
+  // Asphalt blendet zum Fotoboden hin aus (Matte-Painting-Übergang)
+  { const N=256, c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d'); const id=x.createImageData(N,N);
+   for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const wx=(i/N-0.5)*16+OUT.x-KRc.x, wz=(j/N-0.5)*16+(OUT.z-3)-KRc.z, r=Math.hypot(wx,wz); const t=Math.min(1,Math.max(0,(8.3-r)/2.6)); const a=t*t*(3-2*t); const k=(j*N+i)*4; id.data[k]=id.data[k+1]=id.data[k+2]=Math.round(a*255); id.data[k+3]=255; }
+   x.putImageData(id,0,0); asp.alphaMap=new T.CanvasTexture(c); asp.transparent=true; asp.depthWrite=false; hf.renderOrder=-5; asp.needsUpdate=true; } }
  const work=new T.SpotLight(0xffd2a0,34,10,0.62,0.65,1.5); work.position.set(OUT.x+1.6,3.6,OUT.z-1.4); work.target.position.set(OUT.x+0.2,1.0,OUT.z-3.4); work.castShadow=true; work.shadow.mapSize.set(1024,1024); G.add(work); G.add(work.target);
  const lampH=new T.Mesh(new T.ConeGeometry(0.16,0.18,18,1,true),std({color:0x222222,metalness:0.7,roughness:0.4,side:T.DoubleSide})); lampH.position.copy(work.position); lampH.position.y+=0.06; G.add(lampH);
  const bulb=new T.Mesh(new T.SphereGeometry(0.05,12,8),new T.MeshBasicMaterial({color:0xffe6c0})); bulb.position.copy(work.position); G.add(bulb);
