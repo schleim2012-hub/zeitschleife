@@ -1,26 +1,24 @@
 /* ZSFX – wiederverwendbare, VR-komfortable Effekte (V2/V3).
    Regeln: kein Vollbild-Strobo, keine Kamera-/Horizontbewegung, Helligkeit ändert sich nur weich.
    API (V3):
-     ZSFX.vhs(ctx,W,H,p)            – dezenter VHS-Glitch auf einem 2D-Canvas, p=0..1 Fortschritt (Hüllkurve weich)
+     ZSFX.vhs(ctx,W,H,p,rw)         – Fake-VHS (Rauschen+Tracking am Rand, kein RGB-Split), p=0..1, rw=Rückspul
      ZSFX.hyper2D(ctx,W,H,t,state)  – Hyperspace-Streifen flach (Desktop/Handy), t in s
      ZSFX.hyperspace(sceneEl,{duration}) -> Promise – 360°-Hyperspace in A-Frame/three.js (VR) */
 (function(){
 const PAL=[[255,190,110],[255,150,70],[230,110,60],[255,220,170],[200,120,90]];
 function env(p){ return Math.sin(Math.PI*Math.min(1,Math.max(0,p))); } // 0->1->0, weich
 function vhs(ctx,W,H,p,rw){ const a=env(p); if(a<=0.01) return; ctx.save();
- if(rw){ // Rückspul-Look: 3 dünne Bänder rasen nach oben, leichter Horizontal-Versatz (dezent)
-  for(let i=0;i<3;i++){ const y=H-(((p*2.4+i*0.33)%1)*H), h=6+4*i; ctx.globalAlpha=0.12*a; ctx.drawImage(ctx.canvas,0,y,W,h,-10*a,y,W,h); ctx.globalAlpha=0.08*a; ctx.fillStyle='#fff'; ctx.fillRect(0,y,W,1); } }
- // 1) leichte Chroma-Verschiebung: zwei halbtransparente Farbsäume
- const off=Math.round(3+4*a); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.08*a;
- ctx.drawImage(ctx.canvas,off,0,W,H,0,0,W,H); ctx.globalAlpha=0.06*a; ctx.drawImage(ctx.canvas,0,0,W,H,off,0,W,H);
- ctx.globalCompositeOperation='source-over';
- // 2) 1-2 sanfte Tracking-Bänder, die langsam nach unten wandern
- for(let i=0;i<2;i++){ const y=((p*0.6+i*0.47)%1)*H, h=14+10*i; ctx.globalAlpha=0.10*a; ctx.fillStyle='#fff'; ctx.fillRect(0,y,W,1.5);
-  ctx.globalAlpha=0.07*a; ctx.drawImage(ctx.canvas,0,y,W,h,8*a,y,W,h); }
- // 3) feines, schwaches Rauschen (statisch pro Aufruf, niedrige Deckkraft)
- ctx.globalAlpha=0.05*a; ctx.fillStyle='#ddd'; for(let i=0;i<220;i++){ ctx.fillRect(Math.random()*W,Math.random()*H,2,1); }
- // 4) Scanlines
- ctx.globalAlpha=0.05*a; ctx.fillStyle='#000'; for(let y=0;y<H;y+=4) ctx.fillRect(0,y,W,1);
+ // Nur Fake-VHS: Rauschen + Tracking am Rand. Kein RGB-Split, kein Vollbild-Flackern (Pete Quest-Feedback).
+ if(rw){ // Rückspul: 2 dünne Bänder rasen nach oben, kaum Versatz
+  for(let i=0;i<2;i++){ const y=H-(((p*2.2+i*0.4)%1)*H), h=4+3*i; ctx.globalAlpha=0.08*a; ctx.drawImage(ctx.canvas,0,y,W,h,-4*a,y,W,h); ctx.globalAlpha=0.06*a; ctx.fillStyle='#fff'; ctx.fillRect(0,y,W,1); } }
+ // Tracking-Streifen bevorzugt nah am oberen/unteren Rand
+ for(let i=0;i<2;i++){ const edge=i===0?0.08:0.88; const y=((edge+p*0.12+i*0.02)%1)*H, h=8+6*i;
+  ctx.globalAlpha=0.07*a; ctx.fillStyle='#fff'; ctx.fillRect(0,y,W,1);
+  ctx.globalAlpha=0.045*a; ctx.drawImage(ctx.canvas,0,y,W,h,3*a,y,W,h); }
+ // feines Rauschen (wenig Deckkraft)
+ ctx.globalAlpha=0.035*a; ctx.fillStyle='#ccc'; for(let i=0;i<140;i++){ ctx.fillRect(Math.random()*W,Math.random()*H,1.5,1); }
+ // sehr leichte Scanlines
+ ctx.globalAlpha=0.03*a; ctx.fillStyle='#000'; for(let y=0;y<H;y+=5) ctx.fillRect(0,y,W,1);
  ctx.restore(); }
 function mkStars(n){ const s=[]; for(let i=0;i<n;i++) s.push({a:Math.random()*Math.PI*2,r:0.15+Math.random()*1.0,z:Math.random(),c:PAL[i%PAL.length]}); return s; }
 function hyper2D(ctx,W,H,t,st){ st.stars=st.stars||mkStars(420); const cx=W/2,cy=H/2, speed=0.6+Math.min(1,t/0.8)*2.2;
