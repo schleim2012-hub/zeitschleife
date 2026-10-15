@@ -177,7 +177,9 @@ const ctr=[];
 ground.userData.floor=true; ground.name='floor';
 const lagP=new T.Vector3(), lagV=new T.Vector3();
 function ctrPose(st){ const p=new T.Vector3(), q=new T.Quaternion(); st.c.getWorldPosition(p); st.c.getWorldQuaternion(q); return {p,q}; }
-function grab(st){ if(B.held) return; const {p,q}=ctrPose(st); const bp=new T.Vector3().copy(ballB.position);
+function grab(st){ if(B.held&&B.held!==st&&!B.second){ const {p,q}=ctrPose(st); const bp=new T.Vector3().copy(ballB.position); if(p.distanceTo(bp)>ballR+0.17) return; // zweite Hand: Ball wird zwischen beiden Händen gehalten
+   st.off.copy(bp.clone().sub(p)).applyQuaternion(q.clone().invert()); B.second=st; st.held=B; st.body.collisionResponse=false; VR.haptic(R,st.hand,0.35,30); return; }
+ if(B.held) return; const {p,q}=ctrPose(st); const bp=new T.Vector3().copy(ballB.position);
  if(p.distanceTo(bp)>ballR+0.17) return; // Greifradius: Handfläche bis ~17 cm neben der Balloberfläche
  const dir=bp.clone().sub(p); if(dir.length()<1e-3) dir.set(0,-1,0); dir.setLength(ballR+0.025); // Ball sitzt an der Handfläche, nicht im Controller
  st.off.copy(dir).applyQuaternion(q.clone().invert()); st.qOff.copy(q.clone().invert().multiply(ball.quaternion));
@@ -185,6 +187,9 @@ function grab(st){ if(B.held) return; const {p,q}=ctrPose(st); const bp=new T.Ve
  lagP.copy(bp); lagV.set(0,0,0); st.body.collisionResponse=false; VR.haptic(R,st.hand,0.45,35); }
 function release(st){ if(st.held!==B) return; const {p}=ctrPose(st); const off=new T.Vector3().copy(ballB.position).sub(p);
  const est=st.tr.estimate(off,{stepBack:1,tangential:0.6,scale:1.06,max:16});
+ if(B.second){ const other=st===B.second?B.held:B.second; st.held=null; B.second=null; B.held=other; const op=ctrPose(other); other.off.copy(new T.Vector3().copy(ballB.position).sub(op.p)).applyQuaternion(op.q.clone().invert()); other.qOff.copy(op.q.clone().invert().multiply(ball.quaternion));
+   B.pendingRel={v:est.v.clone(),w:est.w.clone(),t:performance.now()}; st.noHitUntil=performance.now()+180; return; }
+ if(B.pendingRel&&performance.now()-B.pendingRel.t<150){ est.v.add(B.pendingRel.v).multiplyScalar(0.5); est.w.add(B.pendingRel.w).multiplyScalar(0.5); est.speed=est.v.length(); B.twoHand=true; } else B.twoHand=false; B.pendingRel=null;
  ballB.type=C.Body.DYNAMIC; ballB.mass=0.6; ballB.updateMassProperties(); ballB.wakeUp();
  ballB.velocity.set(est.v.x,est.v.y,est.v.z); ballB.angularVelocity.set(est.w.x*0.5,est.w.y*0.5,est.w.z*0.5);
  if(est.speed<0.25) ballB.velocity.set(0,0,0);
@@ -213,10 +218,10 @@ function physFrame(dt,now){ const pres=R.xr.isPresenting;
   const live=pres&&p.lengthSq()>1e-6; st.prev.copy(st.body.position); st.tgt.copy(live?p:new T.Vector3(0,-10,0));
   st.body.collisionResponse=live&&!st.held&&now>st.noHitUntil; st.pose={p,q};
   const d=st.tgt.clone().sub(st.prev); if(d.length()>0.5||dt<=0){ st.body.position.set(st.tgt.x,st.tgt.y,st.tgt.z); st.body.velocity.set(0,0,0); } else st.body.velocity.set(d.x/dt,d.y/dt,d.z/dt); }
- if(B.held){ const st=B.held, tgt=st.off.clone().applyQuaternion(st.pose.q).add(st.pose.p); B.target=tgt; }
+ if(B.held){ const st=B.held, tgt=st.off.clone().applyQuaternion(st.pose.q).add(st.pose.p); if(B.second&&B.second.pose){ const s2=B.second; tgt.add(s2.off.clone().applyQuaternion(s2.pose.q).add(s2.pose.p)).multiplyScalar(0.5); } B.target=tgt; }
  const n=physStep(dt,h=>{
   // Hand-Kollider: kinematisch, Geschwindigkeit = Handweg/Frame → überträgt Impuls auf den Ball
-  if(B.held&&B.target){ VR.lagFollow(lagP,lagV,B.target,0.6,h); ballB.position.set(lagP.x,lagP.y,lagP.z); ballB.velocity.set(lagV.x,lagV.y,lagV.z); }
+  if(B.held&&B.target){ VR.lagFollow(lagP,lagV,B.target,B.second?0.3:0.6,h); ballB.position.set(lagP.x,lagP.y,lagP.z); ballB.velocity.set(lagV.x,lagV.y,lagV.z); }
   const y0=ballB.position.y; world.step(h);
   // Korb: Ballmitte kreuzt die Ringebene von oben, innerhalb des Rings
   const P=ballB.position; if(!B.held&&!B.scored&&y0>=rimY&&P.y<rimY&&ballB.velocity.y<0&&Math.hypot(P.x,P.z-rimZ)<rimR-0.035){ B.scored=true; setScore(score+1); SND.swish(); if(B.thrownBy){ const hh=B.thrownBy.hand; VR.haptic(R,hh,0.35,40); setTimeout(()=>VR.haptic(R,hh,0.5,60),120); } }
@@ -257,7 +262,7 @@ AFRAME.registerComponent('basket-tick',{tick(){ const now=performance.now(),dt=M
   if(y>3.8) y=0.4; da.setXYZ(i,x,y,z);} da.needsUpdate=true;
 }});
 sc.setAttribute('basket-tick','');
-window.__b={B,world,ballB,ctr,grab,release,desktopThrow,respawn,rimY,rimZ,rimR,get score(){return score},streak:()=>streak,get clock(){return window.__loopClock},setScore};
+window.__b={B,world,ballB,ctr,physFrame,grab,release,desktopThrow,respawn,rimY,rimZ,rimR,get score(){return score},streak:()=>streak,get clock(){return window.__loopClock},setScore};
 });
 
 // found-footage grain in VR (head-locked, very subtle)
