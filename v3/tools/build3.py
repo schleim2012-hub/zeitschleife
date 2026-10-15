@@ -10,7 +10,7 @@ def IF(c,a,b=None): d={'if':c,'then':a}; d.update({'else':b} if b else {}); retu
 config={
  'start':'B1','stillDir':'stills','skyDir':'sky','clipDir':'clips',
  'epochs':{'hub':'Backrooms','1972':'Festival 1972','1984':'Pool 1984','1989':'Berlin 1989','2041':'Dystopie 2041'},
- 'epochEntry':{'hub':'B2','1989':'M1'},'openEpochs':['hub','1989'],
+ 'epochEntry':{'hub':'B2','1989':'M1'},'openEpochs':['hub','1984'],
  # ---- ALLE Zeit-/Spielzahlen an EINER Stelle (vorläufig, Pete stellt sie ein) ----
  'timing':{'_info':'Alle Werte in Sekunden. Vorläufig, frei änderbar.',
    'timeLimit':1200,'maxBonus':300,'minTimeAfterPenalty':60,

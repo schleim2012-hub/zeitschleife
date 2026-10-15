@@ -17,7 +17,7 @@
   },
   "openEpochs": [
    "hub",
-   "1989"
+   "1984"
   ],
   "timing": {
    "_info": "Alle Werte in Sekunden. Vorläufig, frei änderbar.",
@@ -1006,16 +1006,6 @@
    ],
    "props": [
     {
-     "id": "polaroid",
-     "type": "polaroid",
-     "pos": [
-      -0.55,
-      -1.59,
-      -1.35
-     ],
-     "when": "!has.polaroid"
-    },
-    {
      "id": "eimer",
      "type": "trash",
      "pos": [
@@ -1187,24 +1177,6 @@
     }
    ],
    "hotspots": [
-    {
-     "id": "polaroid",
-     "label": "Polaroid",
-     "prop": "polaroid",
-     "when": "!has.polaroid",
-     "on": [
-      {
-       "give": "polaroid"
-      },
-      {
-       "say": "Ein Sofortbild: eine Frau mit Föhnfrisur, leicht verschwommen. Hinten drauf: \"Finde mich – M.\" Endlich mal eine Frau, die dich finden will. Statt dich zu blockieren.",
-       "speaker": "narrator"
-      },
-      {
-       "note": "Polaroid: „Finde mich – M.“"
-      }
-     ]
-    },
     {
      "id": "eimer",
      "label": "Mülleimer",
@@ -2116,6 +2088,10 @@
           "speaker": "beamtin"
          },
          {
+          "say": "Sie schiebt dir das Foto zurück. Behalten. Das brauchst du noch.",
+          "speaker": "narrator"
+         },
+         {
           "give": "dm"
          },
          {
@@ -2879,14 +2855,6 @@
  "hints": {
   "B1": [
    {
-    "if": "!has.polaroid",
-    "t": [
-     "Wer aufwacht, sollte erst mal schauen, worauf er liegt.",
-     "Guck mal auf den Teppich vor dir. Da liegt was, das nicht nach Teppich aussieht.",
-     "Das Polaroid, Süßer. Vorne links am Boden. Heb es auf."
-    ]
-   },
-   {
     "if": "1",
     "t": [
      "Flure führen irgendwohin. Das ist ihr einziger Job.",
@@ -3010,10 +2978,6 @@
  },
  "slinky": {
   "B1": [
-   [
-    "!has.polaroid",
-    "polaroid"
-   ],
    [
     "1",
     "flur"
