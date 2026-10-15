@@ -49,7 +49,7 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   const draw=(blur,lw,cc)=>{ x.shadowColor=css; x.shadowBlur=blur; x.strokeStyle=cc; x.lineWidth=lw; for(let i=0;i<n;i++){ if(vert) x.strokeText(txt[i],cw/2,50+i*104); else x.strokeText(txt[i],60+i*84,ch/2); } }; draw(28,9,css); draw(10,6,css); draw(0,2.5,'#ffffffcc');
   let px,py; if(vert){ px=vx; py=0; vx+=cw+4; } else { px=1100; py=hy; hy+=ch+4; } ax.drawImage(c,px,py);
   const w=vert?size:size*cw/ch, h=vert?size*ch/cw:size; const C3=new T.Color(1,1,1); let cx, cz=z, corners;
-  if(vert){ cx=side*(XF-0.5); corners=[new T.Vector3(cx-w/2,y-h/2,cz),new T.Vector3(cx+w/2,y-h/2,cz),new T.Vector3(cx+w/2,y+h/2,cz),new T.Vector3(cx-w/2,y+h/2,cz)]; const bk=new T.Mesh(new T.BoxGeometry(w+0.04,h+0.04,0.06)); bk.position.set(cx,y,cz-0.035); frames.add(bk); const br=new T.Mesh(new T.BoxGeometry(0.4,0.05,0.05)); br.position.set(side*(XF-0.25),y+h/2-0.2,cz); frames.add(br); }
+  if(vert){ cx=side*(XF-0.5); corners=[new T.Vector3(cx-w/2,y-h/2,cz),new T.Vector3(cx+w/2,y-h/2,cz),new T.Vector3(cx+w/2,y+h/2,cz),new T.Vector3(cx-w/2,y+h/2,cz)]; const bk=new T.Mesh(new T.BoxGeometry(w+0.04,h+0.04,0.06)); bk.position.set(cx,y,cz-0.035); frames.add(bk); [h/2-0.15,-h/2+0.15].forEach(dy=>{ const br=new T.Mesh(new T.BoxGeometry(0.4,0.05,0.05)); br.position.set(side*(XF-0.25),y+dy,cz-0.09); frames.add(br); }); }
   else { cx=side*(XF-0.45); const s2=side; corners=[new T.Vector3(cx,y-h/2,cz-s2*w/2),new T.Vector3(cx,y-h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz-s2*w/2)]; }
   const si=pushQuad(sq,corners,px/2048,1-(py+ch)/1024,cw/2048,ch/1024,C3);
   const hcol=new T.Color(col).multiplyScalar(0.35); const R=Math.max(w,h)*0.8, hx=cx-side*0.1, hz=cz+0.06; const hi=pushQuad(hq,[new T.Vector3(hx-R,y-R,hz),new T.Vector3(hx+R,y-R,hz),new T.Vector3(hx+R,y+R,hz),new T.Vector3(hx-R,y+R,hz)],0,0,1,1,hcol);
@@ -91,21 +91,60 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
    p.setXYZ(i,x,y,z); nn.setXYZ(i,dx,dy,dz); }
   const uv=g.attributes.uv; for(let i=0;i<p.count;i++){ const ax=Math.abs(nn.getX(i)), ay=Math.abs(nn.getY(i)); let u,v; if(ay>=ax&&ay>=Math.abs(nn.getZ(i))){u=p.getX(i);v=p.getZ(i);} else if(ax>=Math.abs(nn.getZ(i))){u=p.getZ(i);v=p.getY(i);} else {u=p.getX(i);v=p.getY(i);} uv.setXY(i,u/0.55,v/0.55); }
   return g; }
- // ---- Trabant 601, rechts geparkt: gerundete Karosserie, dunkles Fensterband, Säulen ----
- { const TG=new T.Group(); TG.position.set(1.75,0,-3.4); TG.rotation.y=0.02; G.add(TG);
-  const body=rbox(1.5,0.58,3.48,0.14,0.012,10,0); body.translate(0,0.6,0);
-  const cab=rbox(1.3,0.52,1.85,0.12,0.01,10,0); { const p=cab.attributes.position; for(let i=0;i<p.count;i++){ const y=p.getY(i); if(y>0){ const k=y/0.26; p.setX(i,p.getX(i)*(1-0.08*k)); p.setZ(i,p.getZ(i)*(1-0.14*k)-0.04*k); } } } cab.translate(0,1.12,-0.18);
-  const cols=(g,f)=>{ const p=g.attributes.position, c=new Float32Array(p.count*3); for(let i=0;i<p.count;i++){ const v=f(p.getX(i),p.getY(i),p.getZ(i)); c.set(v,i*3); } g.setAttribute('color',new T.BufferAttribute(c,3)); };
-  const paint=[0.62,0.68,0.64], glassC=[0.03,0.035,0.045];
-  cols(body,(x,y,z)=>y<0.42?[0.35,0.37,0.36]:paint);
-  cols(cab,(x,y,z)=>{ const band=y>0.95&&y<1.3; const pillar=Math.abs(z+0.18-0.0)<0.05||Math.abs(z+0.18+0.9)<0.12||Math.abs(z+0.18-0.78)<0.1; return band&&!pillar?glassC:paint; });
-  const trabiM=new T.MeshStandardMaterial({vertexColors:true,roughness:0.35,metalness:0.15,envMap:env,envMapIntensity:1.0});
-  const mg=[body,cab].map(g=>g.toNonIndexed()); const bg=new T.BufferGeometry(); ['position','normal','uv','color'].forEach(k=>{ let n=0; mg.forEach(g=>n+=g.attributes[k].array.length); const a=new Float32Array(n); let o=0; mg.forEach(g=>{ a.set(g.attributes[k].array,o); o+=g.attributes[k].array.length; }); bg.setAttribute(k,new T.BufferAttribute(a,mg[0].attributes[k].itemSize)); }); TG.add(new T.Mesh(bg,trabiM));
-  const tyre=new T.MeshStandardMaterial({color:0x0a0a0a,roughness:0.8}); const rim=new T.MeshStandardMaterial({color:0x9a9a96,roughness:0.3,metalness:0.9,envMap:env}); const wh=new T.Group(), rm=new T.Group();
-  [[-0.68,1.12],[0.68,1.12],[-0.68,-1.18],[0.68,-1.18]].forEach(([x,z])=>{ const t=new T.Mesh(new T.CylinderGeometry(0.28,0.28,0.17,18)); t.rotation.z=Math.PI/2; t.position.set(x,0.28,z); wh.add(t); const h=new T.Mesh(new T.CylinderGeometry(0.14,0.14,0.18,14)); h.rotation.z=Math.PI/2; h.position.set(x*1.01,0.28,z); rm.add(h); }); TG.add(flat(wh,tyre));
-  [1.77,-1.77].forEach(z=>{ const b=new T.Mesh(new T.BoxGeometry(1.48,0.09,0.08)); b.position.set(0,0.4,z); rm.add(b); }); TG.add(flat(rm,rim));
-  const hl=new T.MeshBasicMaterial({color:0xfff0c0,toneMapped:false}); const hlo=new T.MeshStandardMaterial({color:0x303028,roughness:0.2,metalness:0.6}); [-0.5,0.5].forEach((x,i)=>{ const h=new T.Mesh(new T.CircleGeometry(0.085,16),i?hlo:hl); h.position.set(x,0.7,1.772); TG.add(h); });
-  [-0.55,0.55].forEach(x=>{ const t=new T.Mesh(new T.PlaneGeometry(0.14,0.08),new T.MeshBasicMaterial({color:0x400806})); t.position.set(x,0.72,-1.745); t.rotation.y=Math.PI; TG.add(t); }); trabi=[1.75,-3.4]; }
+ // ---- Trabant 601, rechts geparkt, halb im Schatten: zweifarbig (verschmutztes Papyrusweiß + helles Dach), Rost an Schwellern/Radläufen, nasser Klarlack mit Tropfen ----
+ { const TG=new T.Group(); TG.position.set(1.75,0,-4.6); TG.rotation.y=0.03; G.add(TG);
+  const body=rbox(1.5,0.58,3.48,0.16,0.014,24,0); { const p=body.attributes.position; for(let i=0;i<p.count;i++){ const z=p.getZ(i), y=p.getY(i); if(y>0&&z>0.9) p.setY(i,y-(z-0.9)*0.16*(y/0.29)); if(y>0&&z<-1.2) p.setY(i,y-(-1.2-z)*0.1*(y/0.29)); } } body.translate(0,0.6,0);
+  const cab=rbox(1.3,0.52,1.85,0.12,0.01,14,0); { const p=cab.attributes.position; for(let i=0;i<p.count;i++){ const y=p.getY(i); if(y>0){ const k=y/0.26; p.setX(i,p.getX(i)*(1-0.08*k)); p.setZ(i,p.getZ(i)*(1-0.14*k)-0.04*k); } } } cab.translate(0,1.12,-0.18);
+  [body,cab].forEach(g=>{ const uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i,uv.getX(i)*0.45,uv.getY(i)*0.45); });
+  const hsh=(x,y,z)=>{ const s=Math.sin(x*12.9+y*78.2+z*37.7)*43758.5; return s-Math.floor(s); };
+  const nz=(x,y,z)=>0.5*Math.sin(x*7.1+z*3.3)*Math.sin(y*9.4-z*5.2)+0.3*Math.sin(x*17+y*13+z*11)+0.2*(hsh(Math.floor(x*9),Math.floor(y*9),Math.floor(z*9))-0.5);
+  const W=[[-1.12,1],[1.18,1]].map(([z])=>-z); // Radmitten (lokal z)
+  const paint=[0.11,0.135,0.145], roof=[0.27,0.26,0.23], rustC=[0.17,0.075,0.035], glassC=[0.012,0.014,0.018];
+  const shade=(x,y,z,base)=>{ let arch=0; [1.12,-1.18].forEach(wz=>{ const d=Math.hypot(z-wz,y-0.28); arch=Math.max(arch,1-Math.abs(d-0.4)/0.12); });
+   const r=Math.max(0,Math.min(1,(nz(x,y,z)+0.15)*1.6+(0.5-y)*1.8+arch*0.9-0.9)); const dirt=0.55+0.45*Math.min(1,Math.max(0,(y-0.2)/0.9));
+   return [0,1,2].map(k=>(base[k]*(1-r)+rustC[k]*r)*dirt*(0.92+0.16*(nz(x*3,y*3,z*3)))); };
+  const cols=(g,f)=>{ const p=g.attributes.position, c=new Float32Array(p.count*3); for(let i=0;i<p.count;i++) c.set(f(p.getX(i),p.getY(i),p.getZ(i)),i*3); g.setAttribute('color',new T.BufferAttribute(c,3)); };
+  cols(body,(x,y,z)=>shade(x,y,z,paint));
+  cols(cab,(x,y,z)=>{ const band=y>0.95&&y<1.3; const zz=z+0.18; const pillar=Math.abs(zz-0.02)<0.05||Math.abs(zz+0.86)<0.13||Math.abs(zz-0.8)<0.07; return band&&!pillar?glassC:(y>=1.3?shade(x,y,z,roof):shade(x,y,z,paint)); });
+  // Radlauf-Lippen (im Lack), als Teil der Karosserie
+  const lips=[]; [1.12,-1.18].forEach(wz=>[-1,1].forEach(s=>{ const g=new T.TorusGeometry(0.4,0.03,6,22,Math.PI); g.rotateY(Math.PI/2); g.translate(s*0.745,0.28,wz); cols(g,(x,y,z)=>shade(x,y,z,paint)); lips.push(g); }));
+  const all=[body,cab].map(g=>g.toNonIndexed()); const bg=new T.BufferGeometry(); ['position','normal','uv','color'].forEach(k=>{ let n=0; all.forEach(g=>n+=g.attributes[k].array.length); const a=new Float32Array(n); let o=0; all.forEach(g=>{ a.set(g.attributes[k].array,o); o+=g.attributes[k].array.length; }); bg.setAttribute(k,new T.BufferAttribute(a,all[0].attributes[k].itemSize)); });
+  const dn=ld('drops_n.jpg',0,2.2);
+  const trabiM=new T.MeshPhysicalMaterial({vertexColors:true,map:ld('trabi_g.jpg',1),roughnessMap:ld('trabi_r.jpg'),roughness:1,metalness:0.05,clearcoat:0.45,clearcoatRoughness:0.12,clearcoatNormalMap:dn,clearcoatNormalScale:new T.Vector2(0.9,0.9),envMap:env,envMapIntensity:0.3});
+  TG.add(new T.Mesh(bg,trabiM));
+  // Fenster als eigene Schale (glänzend schwarz, Tropfen): Dreiecke des Fensterbands, minimal nach außen versetzt
+  { const g=cab.toNonIndexed(), p=g.attributes.position, nn=g.attributes.normal, uv=g.attributes.uv; const P=[],N=[],U=[]; for(let t=0;t<p.count;t+=3){ let ok=true; for(let j=0;j<3;j++){ const y=p.getY(t+j), zz=p.getZ(t+j)+0.18, ny=nn.getY(t+j); if(!(y>0.96&&y<1.29)||Math.abs(ny)>0.7||Math.abs(zz-0.02)<0.055||Math.abs(zz+0.86)<0.14||Math.abs(zz-0.8)<0.075) ok=false; } if(!ok) continue; for(let j=0;j<3;j++){ const i=t+j; P.push(p.getX(i)+nn.getX(i)*0.004,p.getY(i)+nn.getY(i)*0.004,p.getZ(i)+nn.getZ(i)*0.004); N.push(nn.getX(i),nn.getY(i),nn.getZ(i)); U.push(uv.getX(i)*2,uv.getY(i)*2); } }
+   const wg=new T.BufferGeometry(); wg.setAttribute('position',new T.Float32BufferAttribute(P,3)); wg.setAttribute('normal',new T.Float32BufferAttribute(N,3)); wg.setAttribute('uv',new T.Float32BufferAttribute(U,2));
+   TG.add(new T.Mesh(wg,new T.MeshPhysicalMaterial({color:0x020304,roughness:0.05,metalness:0.2,clearcoat:1,clearcoatRoughness:0.02,clearcoatNormalMap:ld('drops_n.jpg',0,3),clearcoatNormalScale:new T.Vector2(1.2,1.2),envMap:env,envMapIntensity:1.3}))); }
+  // Radkästen (dunkel) hinter den Reifen
+  const well=[]; [1.12,-1.18].forEach(wz=>[-1,1].forEach(s=>{ const g=new T.CircleGeometry(0.39,20,0,Math.PI); g.rotateY(s*Math.PI/2); g.translate(s*0.752,0.28,wz); well.push(g.toNonIndexed()); const b=new T.PlaneGeometry(0.3,0.78); b.rotateX(Math.PI/2); b.translate(s*0.62,0.66,wz); well.push(b.toNonIndexed()); }));
+  const wm=new T.Mesh(merge(well),new T.MeshBasicMaterial({color:0x020202,side:T.DoubleSide})); TG.add(wm);
+  // Reifen mit Flanke, Radkappen
+  const tyre=new T.MeshStandardMaterial({color:0x0b0b0b,roughness:0.75}); const chrome=new T.MeshStandardMaterial({color:0xa8a8a4,map:ld('trabi_g.jpg',1,0.4),roughness:0.2,metalness:1.0,envMap:env,envMapIntensity:1.2}); const wh=new T.Group(), cr=new T.Group();
+  [[-0.66,1.12],[0.66,1.12],[-0.66,-1.18],[0.66,-1.18]].forEach(([x,z])=>{ const s=Math.sign(x); const t=new T.Mesh(new T.CylinderGeometry(0.27,0.27,0.15,22)); t.rotation.z=Math.PI/2; t.position.set(x,0.28,z); wh.add(t); [-1,1].forEach(q=>{ const tr=new T.Mesh(new T.TorusGeometry(0.235,0.04,6,22)); tr.rotation.y=Math.PI/2; tr.position.set(x+q*0.075,0.28,z); wh.add(tr); });
+   const cap=new T.Mesh(new T.SphereGeometry(0.15,16,6,0,Math.PI*2,0,Math.PI/2)); cap.scale.set(1,0.25,1); cap.rotation.z=-s*Math.PI/2; cap.position.set(x+s*0.08,0.28,z); cr.add(cap); });
+  TG.add(flat(wh,tyre));
+  // Chrom-Stoßstangen (mit Ecken + Hörnern), Scheinwerferringe, Türgriffe, Spiegel
+  [1.79,-1.79].forEach(z=>{ const b=new T.Mesh(rbox(1.5,0.1,0.1,0.045,0,4,0)); b.position.set(0,0.4,z); cr.add(b); [-1,1].forEach(s=>{ const e=new T.Mesh(rbox(0.1,0.1,0.3,0.045,0,4,0)); e.position.set(s*0.72,0.4,z-Math.sign(z)*0.12); cr.add(e); const h=new T.Mesh(rbox(0.06,0.16,0.07,0.025,0,3,0)); h.position.set(s*0.38,0.44,z+Math.sign(z)*0.03); cr.add(h); }); });
+  const hlP=[[-0.46,0.6,1.735],[0.46,0.6,1.735]]; hlP.forEach(([x,y,z])=>{ const r=new T.Mesh(new T.TorusGeometry(0.1,0.016,8,24)); r.position.set(x,y,z+0.01); cr.add(r); });
+  [-1,1].forEach(s=>{ const h=new T.Mesh(new T.BoxGeometry(0.03,0.025,0.12)); h.position.set(s*0.765,0.98,0.38); cr.add(h); }); { const st=new T.Mesh(new T.CylinderGeometry(0.01,0.01,0.12,6)); st.rotation.z=1.2; st.position.set(-0.8,1.02,0.66); cr.add(st); const mi=new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.02,14)); mi.rotation.z=Math.PI/2; mi.position.set(-0.85,1.04,0.66); cr.add(mi); }
+  TG.add(flat(cr,chrome));
+  // Scheinwerfer: Reflektor (dunkler Chrom) + gewölbtes Glas; aus. Rückleuchten rund, dunkelrot, Blinker bernstein
+  const refl=new T.MeshStandardMaterial({color:0x6a6a66,roughness:0.15,metalness:1,envMap:env}); const lensM=new T.MeshStandardMaterial({color:0xd8dce0,roughness:0.03,metalness:0.1,transparent:true,opacity:0.28,envMap:env,envMapIntensity:2.2,depthWrite:false});
+  const rg=[], lg=[]; hlP.forEach(([x,y,z])=>{ const d=new T.SphereGeometry(0.09,18,6,0,Math.PI*2,0,Math.PI/2); d.scale(1,0.3,1); d.rotateX(Math.PI/2); const dd=d.clone(); d.scale(1,1,-1); d.translate(x,y,z+0.02); rg.push(d.toNonIndexed()); dd.scale(1,1,1.6); dd.translate(x,y,z+0.005); lg.push(dd.toNonIndexed()); });
+  const tl=new T.MeshStandardMaterial({color:0x3a0806,roughness:0.1,emissive:0x1a0200,envMap:env}); [-0.55,0.55].forEach(x=>{ const d=new T.SphereGeometry(0.065,14,6,0,Math.PI*2,0,Math.PI/2); d.scale(1,0.35,1); d.rotateX(-Math.PI/2); d.translate(x,0.72,-1.74); lg.push(d.toNonIndexed()); const c=new T.CircleGeometry(0.06,14); c.rotateY(Math.PI); c.translate(x,0.72,-1.742); const m=new T.Mesh(c,tl); TG.add(m); });
+  TG.add(new T.Mesh(merge(rg),refl)); const lm=new T.Mesh(merge(lg),lensM); lm.renderOrder=3; TG.add(lm);
+  const amb=new T.MeshStandardMaterial({color:0x4a2a06,roughness:0.15,emissive:0x0a0400,envMap:env}); [-0.6,0.6].forEach(x=>{ const c=new T.Mesh(new T.CircleGeometry(0.035,10),amb); c.position.set(x,0.45,1.745); TG.add(c); });
+  // Grill-Schlitze, Scheibenwischer, Türfugen, Kennzeichen
+  const dk=new T.Group(); for(let i=0;i<3;i++){ const s=new T.Mesh(new T.BoxGeometry(0.5,0.012,0.01)); s.position.set(0,0.56+i*0.03,1.742); dk.add(s); }
+  [[-0.05,1.0],[0.55,1.0]].forEach(([x])=>{ const a=new T.Vector3(x,0.9,0.755), b=new T.Vector3(x-0.4,0.95,0.755); const w=new T.Mesh(new T.BoxGeometry(0.012,0.014,a.distanceTo(b))); w.position.copy(a).lerp(b,0.5); w.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),b.clone().sub(a).normalize()); dk.add(w); const arm=new T.Mesh(new T.CylinderGeometry(0.01,0.01,0.05,6)); arm.position.copy(a); dk.add(arm); });
+  [-1,1].forEach(s=>{ [0.62,-0.5].forEach(z=>{ const f=new T.Mesh(new T.BoxGeometry(0.004,0.42,0.006)); f.position.set(s*0.752,0.64,z); dk.add(f); }); const f2=new T.Mesh(new T.BoxGeometry(0.004,0.006,1.12)); f2.position.set(s*0.752,0.44,0.06); dk.add(f2); });
+  TG.add(flat(dk,new T.MeshStandardMaterial({color:0x050505,roughness:0.5})));
+  const plT=cv(256,64,(x)=>{ x.fillStyle='#b8b4a8'; x.fillRect(0,0,256,64); x.strokeStyle='#111'; x.lineWidth=4; x.strokeRect(3,3,250,58); x.fillStyle='#151515'; x.font='bold 40px Arial'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('IA 23-45',128,34); });
+  const plM=new T.MeshStandardMaterial({map:plT,roughness:0.6,color:0x707070}); [[1.765,0],[-1.765,Math.PI]].forEach(([z,r])=>{ const p=new T.Mesh(new T.PlaneGeometry(0.4,0.1),plM); p.position.set(0,0.3,z+Math.sign(z)*0.075); p.rotation.y=r; TG.add(p); });
+  // Kontaktschatten + Pfütze unterm Auto
+  const ao=cv(128,128,(x)=>{ const g=x.createRadialGradient(64,64,10,64,64,64); g.addColorStop(0,'rgba(0,0,0,0.9)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); }); const sh=new T.Mesh(new T.PlaneGeometry(2.2,4.4),new T.MeshBasicMaterial({map:ao,transparent:true,depthWrite:false,color:0x000000})); sh.material.alphaMap=ao; sh.rotation.x=-Math.PI/2; sh.position.y=0.008; TG.add(sh);
+  trabi=[1.75,-4.6]; }
  // Trabi verschieben (alles oben ab car) erledigt per Gruppe unten
  // ---- Gully mit Dampf, Müllsäcke, Kartons ----
  const mh=new T.Mesh(new T.CircleGeometry(0.34,24),new T.MeshStandardMaterial({map:cv(128,128,(x)=>{ x.fillStyle='#1a1a1a'; x.beginPath(); x.arc(64,64,62,0,7); x.fill(); x.strokeStyle='#333'; x.lineWidth=3; for(let r=12;r<60;r+=10){ x.beginPath(); x.arc(64,64,r,0,7); x.stroke(); } }),roughness:0.4,metalness:0.8})); mh.rotation.x=-Math.PI/2; mh.position.set(-0.6,0.006,-4.2); G.add(mh);
@@ -125,7 +164,7 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   steam.forEach((sp,i)=>{ sp.position.y=0.3+((s*0.25+i*0.4)%2.8); sp.material.opacity=0.08*(1-sp.position.y/3.2); sp.position.x=-0.6+Math.sin(s*0.5+sp.userData.ph)*0.2*sp.position.y; });
    };
  AFRAME.registerComponent('s41-tick',{tick(t){ update(t); }}); sc.setAttribute('s41-tick','');
- const boxes=[[0.95,2.55,-5.2,-1.6]];
+ const boxes=[[0.95,2.55,-6.45,-2.75]];
  const collide=(x,z)=>{ let px=0,pz=0; boxes.forEach(([x0,x1,z0,z1])=>{ const r=0.25; if(x>x0-r&&x<x1+r&&z>z0-r&&z<z1+r){ const o=[x-(x0-r),(x1+r)-x,z-(z0-r),(z1+r)-z]; const m=Math.min(...o); if(m===o[0]) px-=o[0]; else if(m===o[1]) px+=o[1]; else if(m===o[2]) pz-=o[2]; else pz+=o[3]; } }); return (px||pz)?[px,pz]:null; };
  return {update,collide};
 };

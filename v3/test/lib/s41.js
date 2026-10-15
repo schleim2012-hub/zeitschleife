@@ -48,7 +48,7 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   const draw=(blur,lw,cc)=>{ x.shadowColor=css; x.shadowBlur=blur; x.strokeStyle=cc; x.lineWidth=lw; for(let i=0;i<n;i++){ if(vert) x.strokeText(txt[i],cw/2,50+i*104); else x.strokeText(txt[i],60+i*84,ch/2); } }; draw(28,9,css); draw(10,6,css); draw(0,2.5,'#ffffffcc');
   let px,py; if(vert){ px=vx; py=0; vx+=cw+4; } else { px=1100; py=hy; hy+=ch+4; } ax.drawImage(c,px,py);
   const w=vert?size:size*cw/ch, h=vert?size*ch/cw:size; const C3=new T.Color(1,1,1); let cx, cz=z, corners;
-  if(vert){ cx=side*(XF-0.5); corners=[new T.Vector3(cx-w/2,y-h/2,cz),new T.Vector3(cx+w/2,y-h/2,cz),new T.Vector3(cx+w/2,y+h/2,cz),new T.Vector3(cx-w/2,y+h/2,cz)]; const bk=new T.Mesh(new T.BoxGeometry(w+0.04,h+0.04,0.06)); bk.position.set(cx,y,cz-0.035); frames.add(bk); const br=new T.Mesh(new T.BoxGeometry(0.4,0.05,0.05)); br.position.set(side*(XF-0.25),y+h/2-0.2,cz); frames.add(br); }
+  if(vert){ cx=side*(XF-0.5); corners=[new T.Vector3(cx-w/2,y-h/2,cz),new T.Vector3(cx+w/2,y-h/2,cz),new T.Vector3(cx+w/2,y+h/2,cz),new T.Vector3(cx-w/2,y+h/2,cz)]; const bk=new T.Mesh(new T.BoxGeometry(w+0.04,h+0.04,0.06)); bk.position.set(cx,y,cz-0.035); frames.add(bk); [h/2-0.15,-h/2+0.15].forEach(dy=>{ const br=new T.Mesh(new T.BoxGeometry(0.4,0.05,0.05)); br.position.set(side*(XF-0.25),y+dy,cz-0.09); frames.add(br); }); }
   else { cx=side*(XF-0.45); const s2=side; corners=[new T.Vector3(cx,y-h/2,cz-s2*w/2),new T.Vector3(cx,y-h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz-s2*w/2)]; }
   const si=pushQuad(sq,corners,px/2048,1-(py+ch)/1024,cw/2048,ch/1024,C3);
   const hcol=new T.Color(col).multiplyScalar(0.35); const R=Math.max(w,h)*0.8, hx=cx-side*0.1, hz=cz+0.06; const hi=pushQuad(hq,[new T.Vector3(hx-R,y-R,hz),new T.Vector3(hx+R,y-R,hz),new T.Vector3(hx+R,y+R,hz),new T.Vector3(hx-R,y+R,hz)],0,0,1,1,hcol);
@@ -60,7 +60,7 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   strM=mk(rq,new T.MeshBasicMaterial({map:stT,alphaMap:stT,vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false}));
   const fr=flat(frames,MAT.frame); G.add(fr); };
  let sigM,haloM,strM; const setSign=(g,k)=>{ const put=(m,i,c)=>{ const a=m.geometry.attributes.color; for(let j=0;j<6;j++) a.setXYZ(i+j,c.r*k,c.g*k,c.b*k); a.needsUpdate=true; }; put(sigM,g.si,{r:1,g:1,b:1}); put(haloM,g.hi,g.hcol); put(strM,g.ri,g.scol); };
- neon('HOTEL',0xff3a24,true,-1,-3.2,4.6,0.62); neon('BAR42',0x30e0ff,true,1,-7.4,4.0,0.56,true); neon('SOYLENT',0x50ff90,true,1,-12.5,5.0,0.6); neon('PFANDLEIHE',0xff40d0,false,-1,-9.5,3.25,0.42); neon('KARAOKE',0xff5aa0,true,-1,-16,4.6,0.55,true); neon('+',0x40ff80,false,1,-17.5,3.4,0.7);
+ neon('HOTEL',0xff3a24,true,-1,-3.2,4.6,0.62); neon('BAR42',0x30e0ff,true,1,-6.1,3.7,0.56,true); neon('SOYLENT',0x50ff90,true,1,-12.5,5.0,0.6); neon('PFANDLEIHE',0xff40d0,false,-1,-9.5,3.25,0.42); neon('KARAOKE',0xff5aa0,true,-1,-16,4.6,0.55,true); neon('+',0x40ff80,false,1,-17.5,3.4,0.7);
  neon('OFFEN',0xff2a2a,false,1,-1.25,1.8,0.22); finishSigns();
  // Neon-Lichtquellen (praktisch): Rot links vorne, Cyan rechts
  const Lr=new T.PointLight(0xff3a28,7,10,1.6); Lr.position.set(-2.7,4.2,-3.0); G.add(Lr); const Lc=new T.PointLight(0x30d8ff,7,9,1.5); Lc.position.set(2.2,2.6,-7.0); G.add(Lc);
