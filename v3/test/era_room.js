@@ -43,7 +43,22 @@ S.addEventListener('loaded',()=>{
  if(C.floorTex) tex(C.floorTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(C.floorRep||5,C.floorRep||5);floorM.map=t;floorM.needsUpdate=true;});
  if(C.wallTex) tex(C.wallTex,t=>{t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(3,2);wallM.map=t;wallM.needsUpdate=true;});
  const box=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);G.add(o);return o;};
- const W=C.room; if(!W.noWalls){ box(0.1,W.h,W.d,wallM,-W.w/2,W.h/2,W.cz); box(0.1,W.h,W.d,wallM,W.w/2,W.h/2,W.cz); box(W.w,W.h,0.1,wallM,0,W.h/2,W.cz+W.d/2); }
+ const W=C.room;
+ if(W.plainWalls){ box(0.1,W.h,W.d,wallM,-W.w/2,W.h/2,W.cz); box(0.1,W.h,W.d,wallM,W.w/2,W.h/2,W.cz); box(W.w,W.h,0.1,wallM,0,W.h/2,W.cz+W.d/2); }
+ else if(!W.noWalls){ // Raum rundum geschlossen – als Foto statt glatter Kastenwände: zwei an den Nahtstellen gespiegelte, abgedunkelte Kopien des Hintergrundfotos
+  // schließen die restlichen Grad hinter dem Spieler (nahtlos an beiden Kanten), in der Mitte hinten weich ins Dunkel überblendet
+  const back=2*Math.PI-ang, half=back/2, part=Math.min(1,half/ang);
+  const ac=document.createElement('canvas'); ac.width=256; ac.height=128; const ax=ac.getContext('2d'); const hg=ax.createLinearGradient(0,0,256,0); hg.addColorStop(0,'#fff'); hg.addColorStop(0.7,'#fff'); hg.addColorStop(1,'#000'); ax.fillStyle=hg; ax.fillRect(0,0,256,128);
+  if(B.fadeBottom){ ax.globalCompositeOperation='multiply'; const vg=ax.createLinearGradient(0,128,0,0); vg.addColorStop(0,'#000'); vg.addColorStop(B.fadeBottom,'#fff'); vg.addColorStop(1-(B.fadeTop||0),'#fff'); vg.addColorStop(1,B.fadeTop?'#000':'#fff'); ax.fillStyle=vg; ax.fillRect(0,0,256,128); }
+  const am=new T.CanvasTexture(ac);
+  [0,1].forEach(k=>{ const m=new T.MeshBasicMaterial({color:0x8c8c8c,fog:false,toneMapped:false,side:T.DoubleSide,transparent:true,depthWrite:false,alphaMap:am});
+   tex(B.url,t=>{ const tt=t.clone(); tt.needsUpdate=true; tt.wrapS=T.ClampToEdgeWrapping; m.map=tt; m.needsUpdate=true; });
+   const g=new T.CylinderGeometry(R,R,H,64,1,true,k?Math.PI-ang/2-half:Math.PI+ang/2,half); const uv=g.attributes.uv;
+   // u neu: an der Fotokante gespiegelt (k=0 rechte Kante → nach innen, k=1 linke Kante); Alpha-u läuft 0 (Kante) → 1 (Mitte hinten)
+   const a2=new Float32Array(uv.count*2);
+   for(let i=0;i<uv.count;i++){ const u=uv.getX(i), v=uv.getY(i); const e=k?(1-u):u; uv.setX(i,k?(e*part):(1-e*part)); a2[i*2]=e; a2[i*2+1]=v; }
+   g.setAttribute('uv1',new T.BufferAttribute(a2,2)); m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <alphamap_fragment>','diffuseColor.a *= texture2D( alphaMap, vAlphaMapUv ).g;'); };
+   am.channel=1; const mesh=new T.Mesh(g,m); mesh.scale.x=-1; mesh.position.copy(bd.position); mesh.renderOrder=-1; G.add(mesh); }); }
  if(W.ceiling) box(W.w,0.1,W.d+4,wallM,0,W.h,W.cz-1);
  const flD=C.floorFront!=null?(W.cz+W.d/2-C.floorFront):W.d+6; const fl=new T.Mesh(new T.PlaneGeometry(W.w,flD),floorM); fl.rotation.x=-Math.PI/2; fl.position.set(0,0,W.cz+W.d/2-flD/2); G.add(fl);
  if(C.floorFade){ const ac=document.createElement('canvas'); ac.width=ac.height=256; const ax=ac.getContext('2d'); const [cx,cy,r0,r1]=C.floorFade; const g=ax.createRadialGradient(cx*256,cy*256,r0*256,cx*256,cy*256,r1*256); g.addColorStop(0,'#fff'); g.addColorStop(1,'#000'); ax.fillStyle=g; ax.fillRect(0,0,256,256);

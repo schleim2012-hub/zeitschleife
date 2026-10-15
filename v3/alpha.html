@@ -1,0 +1,62 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/alpha.js?v=1"></script><script src="test/lib/dust.js?v=1"></script>
+<style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
+#start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:26px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
+#start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
+<div id="start"><h1>REWIND</h1><p>Alpha · Zeitschleife V3</p><p id="sub">Intro → Backrooms → 11 Räume · jede Tür führt weiter</p><b id="go">▶ STARTEN</b><p style="margin-top:18px">Quest: nach dem Start unten rechts „VR“ wählen · Laser + Trigger auf die Tür, oder einfach hindurchgehen</p><span class="r" id="reset">Von vorn beginnen</span></div>
+<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#0a0906; density:0.04">
+ <a-assets><img id="pano" src="test/backrooms_pano_4k.jpg" crossorigin="anonymous"></a-assets>
+ <a-sky id="sky" src="#pano" color="#9a9384" rotation="0 -90 0" radius="60" material="fog:false"></a-sky>
+ <a-entity id="rig" stick-move><a-entity id="cam" camera look-controls position="0 1.6 0"></a-entity>
+  <a-entity laser-controls="hand: left" raycaster="far:12; lineOpacity:0.35"></a-entity><a-entity laser-controls="hand: right" raycaster="far:12; lineOpacity:0.35"></a-entity></a-entity>
+</a-scene>
+<script>
+AFRAME.registerComponent('stick-move',{init(){ this.ax=[0,0]; this.snap=0; const sc=this.el.sceneEl; sc.addEventListener('thumbstickmoved',e=>{ const h=e.target.getAttribute('laser-controls'); if(h&&h.hand==='left') this.ax=[e.detail.x,e.detail.y]; else { if(Math.abs(e.detail.x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(e.detail.x)*Math.PI/6; } if(Math.abs(e.detail.x)<0.3) this.snap=0; } }); },
+ tick(t,dt){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const cam=this.el.sceneEl.camera; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new THREE.Vector3(-f.z,0,f.x); const o=this.el.object3D.position; o.addScaledVector(f,-y*dt*0.0016).addScaledVector(r,x*dt*0.0016); o.x=Math.max(-3,Math.min(3,o.x)); o.z=Math.max(-3,Math.min(3,o.z)); }});
+const sc=document.querySelector('a-scene'), mode=(ZSA.cur().id); // intro | backrooms | end
+document.getElementById('reset').onclick=e=>{ e.stopPropagation(); ZSA.reset(); location.href='alpha.html?alpha=1&step=0#intro'; };
+if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITER: '+ZSA.cur().title; document.getElementById('start').onclick=()=>{ location.href=ZSA.url(ZSA.step); }; }
+else if(mode!=='intro'){ document.getElementById('go').textContent=mode==='end'?'▶ ZUM ENDE':'▶ WEITER ('+ZSA.cur().title+')'; }
+sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
+ if(window.worldDust) worldDust(sc,{count:45,rMin:1,rMax:3.5,color:0xfff0c0,opacity:0.3});
+ S.add(new T.HemisphereLight(0xfff2cc,0x2a2418,0.9)); const ceil=new T.PointLight(0xfff0c8,1.2,8,2); ceil.position.set(0,3,-1.5); S.add(ceil);
+ // Röhren-TV im Raum (Weltposition, nicht am Kopf)
+ const tv=new T.Group(); tv.position.set(0,0,-2.1); S.add(tv);
+ const dark=new T.MeshStandardMaterial({color:0x1d1a17,roughness:0.55,metalness:0.2}), wood=new T.MeshStandardMaterial({color:0x4a3626,roughness:0.7});
+ const b=(w,h,d,m,x,y,z)=>{ const o=new T.Mesh(new T.BoxGeometry(w,h,d),m); o.position.set(x,y,z); tv.add(o); return o; };
+ b(1.1,0.62,0.6,wood,0,0.31,0); b(1.04,0.82,0.66,dark,0,1.03,0); b(0.98,0.04,0.6,dark,0,1.46,0); b(0.06,0.06,0.02,new T.MeshStandardMaterial({color:0x802010,emissive:0x501008}),0.44,0.7,0.335);
+ const sCan=document.createElement('canvas'); sCan.width=320; sCan.height=240; const sx=sCan.getContext('2d'); const sTex=new T.CanvasTexture(sCan); sTex.colorSpace=T.SRGBColorSpace;
+ const scrM=new T.MeshBasicMaterial({map:sTex,toneMapped:false}); const scr=new T.Mesh(new T.PlaneGeometry(0.84,0.63),scrM); scr.position.set(-0.04,1.05,0.332); tv.add(scr);
+ // Kontaktschatten (sonst schwebt alles über dem Panoramaboden)
+ const shadowTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); const g=x.createRadialGradient(64,64,4,64,64,62); g.addColorStop(0,'rgba(0,0,0,0.85)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); return new T.CanvasTexture(c); })();
+ const shadow=(par,w,d)=>{ const m=new T.Mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=0.005; par.add(m); return m; }; shadow(tv,1.8,1.2);
+ const glow=new T.PointLight(0x9fb4d8,0.6,3,2); glow.position.set(0,1.0,0.8); tv.add(glow);
+ let screenMode='off', endTxt=false, nd=sx.createImageData(320,240);
+ function drawScreen(){ if(screenMode==='static'){ for(let i=0;i<nd.data.length;i+=4){ const v=Math.random()*150+20; nd.data[i]=v*0.9; nd.data[i+1]=v*0.95; nd.data[i+2]=v; nd.data[i+3]=255; } sx.putImageData(nd,0,0); sTex.needsUpdate=true; glow.intensity=0.4+Math.random()*0.3; }
+  else if(screenMode==='text'){ if(endTxt) return; endTxt=true; sx.fillStyle='#050608'; sx.fillRect(0,0,320,240); sx.textAlign='center'; sx.fillStyle='#e8dcc0'; sx.font='700 30px sans-serif'; sx.fillText('ENDE DER ALPHA',160,105); sx.font='15px sans-serif'; sx.fillStyle='#a89878'; sx.fillText('Danke fürs Testen.',160,140); sx.fillText('Tür = neue Schleife',160,165); sTex.needsUpdate=true; } }
+ setInterval(drawScreen,60);
+ // Untertitel/Text als Tafel im Raum unter dem TV
+ const say=(who,t)=>{ const c=document.createElement('canvas'); c.width=1024; c.height=160; const x=c.getContext('2d'); x.fillStyle='rgba(8,7,6,0.82)'; x.fillRect(0,0,1024,160); x.fillStyle='#d9b77a'; x.font='700 30px sans-serif'; x.fillText(who,30,50); x.fillStyle='#eee4d0'; x.font='34px sans-serif'; x.fillText(t,30,110);
+  const tx=new T.CanvasTexture(c); tx.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(1.6,0.25),new T.MeshBasicMaterial({map:tx,transparent:true,toneMapped:false})); m.position.set(0,1.62,-1.9); S.add(m); return m; };
+ const doorCfg={x:2.3,z:-0.9,face:[0,0]};
+ const toNext=()=>ZSA.goStep(ZSA.step+1);
+ function backrooms(first){ screenMode='static'; if(!sc.__door){ sc.__door=zsaDoor(sc,doorCfg,toNext); }
+  say('Mara', first?'„Die Tür mit dem Kinderzimmer-Licht. Da fängt\'s an.“':'„Zurück im Flur. Weiter, die Tür wartet.“'); }
+ // Intro auf dem TV
+ const v=document.createElement('video'); v.src='clips/intro_komplett.mp4'; v.playsInline=true; v.crossOrigin='anonymous'; v.preload='auto';
+ const vt=new T.VideoTexture(v); vt.colorSpace=T.SRGBColorSpace; let started=false;
+ function play(){ if(started) return; started=true; document.getElementById('start').style.display='none';
+  if(mode==='intro'){ scrM.map=vt; scrM.needsUpdate=true; screenMode='video'; glow.intensity=0.9; v.play().catch(()=>{ v.muted=true; v.play(); });
+   const done=()=>{ if(screenMode!=='video') return; v.pause(); scrM.map=sTex; scrM.needsUpdate=true; ZSA.goStep && (history.replaceState(null,'','alpha.html?alpha=1&step=1#backrooms')); try{ localStorage.setItem('zs_alpha_v1',JSON.stringify({step:1,t:Date.now()})); }catch(e){} window.__zsaStep1=true; backroomsAfterIntro(); };
+   v.onended=done; v.onerror=()=>setTimeout(done,800); window.__skipIntro=done;
+   // Überspringen: Trigger/Klick auf den TV
+   [0,1].forEach(i=>sc.renderer.xr.getController(i).addEventListener('selectstart',()=>{ if(screenMode==='video'&&v.currentTime>2) done(); }));
+  } else if(mode==='end'){ screenMode='text'; sc.__door=zsaDoor(sc,doorCfg,()=>{ ZSA.reset(); ZSA.goStep(0); }); say('Erzähler','„Das Band ist zu Ende. Oder fängt es gerade erst an?“'); }
+  else backrooms(false); }
+ function backroomsAfterIntro(){ // Schritt 1 = Backrooms; Tür führt zu Schritt 2
+  Object.defineProperty(ZSA,'step',{get:()=>1}); backrooms(true); }
+ document.getElementById('start').addEventListener('click',play); sc.addEventListener('enter-vr',play);
+ window.__alphaPlay=play;
+});
+</script></body></html>

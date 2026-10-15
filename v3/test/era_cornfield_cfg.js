@@ -1,7 +1,7 @@
 window.ERA={ amb:'../assets/sfx/amb_cornfield.mp3', ambVol:0.35, props:[['../assets/props/wooden_crate_01.glb',1.0,0,-0.8,0.8,25]], pools:[[1.0,0.9,-0.8,0.5,1.2]],
  backdrop:{url:'../assets/cornfield/backdrop.jpg', px:0.02, r:6.5, front:3.6, horizonRow:235}, // Perchance cornfield/cornfield_007 (Pete)
  wall:0x101010, wallEm:0x020202, floor:0xa0a0a0, floorRough:0.6, floorTex:'../assets/cornfield/floor_photo.jpg', floorRep:2, floorFade:[0.5,0.85,0.12,0.62],
- room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false,noWalls:true},
+ room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false},
  lights:[[0xffc080,1.8,7,-1.6,3.0,-1.2],[0x6080b0,1.4,6,1.8,2.8,-0.8],[0x707880,0.5,8,0,3,2]],
  glows:[],
  enter:['Erzähler','Ein Maisfeld. Der Weg geht geradeaus. Und kommt trotzdem wieder hier an.'],

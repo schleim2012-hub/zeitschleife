@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Simulator-Kabine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=1"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8e4dc;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .35s}</style></head><body>
 <div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür · Schild „← KIRMES“ hinten = zurück</div>
@@ -129,7 +129,7 @@ if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,c
  // Klickziele als A-Frame-Entities (Laser + Maus)
  const mk=(obj,fn)=>{ const e=document.createElement('a-entity'); e.classList.add('clickable'); e.setObject3D('mesh',obj); obj.parent&&obj.parent.remove(obj); e.addEventListener('click',fn); S.appendChild(e); return e; };
  const dWorld=new T.Vector3(); doorHit.getWorldPosition(dWorld); O.remove(doorHit); doorHit.position.copy(dWorld); mk(doorHit,()=>{ if(!inside) go(true); });
- { const kh=new T.Mesh(new T.PlaneGeometry(1.1,0.4),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide})); kh.position.copy(kSign.position); kh.rotation.copy(kSign.rotation); mk(kh,()=>{ if(!inside){ fade.style.opacity='1'; setTimeout(()=>location.href='kirmes.html',350); } }); }
+ { const kh=new T.Mesh(new T.PlaneGeometry(1.1,0.4),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide})); kh.position.copy(kSign.position); kh.rotation.copy(kSign.rotation); mk(kh,()=>{ if(window.ZSA&&ZSA.on) return; if(!inside){ fade.style.opacity='1'; setTimeout(()=>location.href='kirmes.html',350); } }); }
  const exHit=new T.Mesh(new T.PlaneGeometry(0.8,1.9),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide})); exHit.position.set(0,0.95,R-0.06); exHit.rotation.y=Math.PI; mk(exHit,()=>{ if(inside) go(false); });
  // ---------- Ton (synthetisch): Hallenbrummen außen, Leinwand-Rauschen + Hydraulik-Rumpeln innen
  const AUD={ac:null,g:{},mode(i){ if(!this.ac) return; const t=this.ac.currentTime; this.g.hall.gain.setTargetAtTime(i?0.05:0.22,t,0.4); this.g.hiss.gain.setTargetAtTime(i?0.05:0.0,t,0.4); this.g.rum.gain.setTargetAtTime(i?0.32:0.04,t,0.6); },

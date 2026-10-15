@@ -1,7 +1,7 @@
 window.ERA={ amb:'../assets/sfx/amb_arcade.mp3', ambVol:0.35, props:[['../assets/props/vending_machine.glb',-2.35,0,-0.4,1,70]], ph:[['metal_stool_01',1.25,0,-0.95,0,1]], pools:[[1.25,1.4,-0.95,0.5,1.2]],
  backdrop:{url:'../assets/arcade/backdrop.jpg', px:0.02, r:6.5, front:3.6, horizonRow:240}, // Perchance arcade/arcade_006 (Pete)
  wall:0x101010, wallEm:0x020202, floor:0xa0a0a0, floorRough:0.6, floorTex:'../assets/arcade/floor_photo.jpg', floorRep:2, floorFade:[0.5,0.85,0.12,0.62],
- room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false,noWalls:true},
+ room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false},
  lights:[[0xff5090,1.8,7,-1.6,3.0,-1.2],[0x40a0ff,1.4,6,1.8,2.8,-0.8],[0x707880,0.5,8,0,3,2]],
  glows:[],
  enter:['Erzähler','Eine Spielhalle, kurz vor Ladenschluss. Die Automaten summen, als hätten sie Heimweh.'],

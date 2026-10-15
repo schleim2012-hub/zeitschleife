@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Kirmes-Test – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=1"></script>
 <script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
@@ -116,7 +116,7 @@ const simDoor=(()=>{ const P='../assets/tex/ph/painted_metal_shutter_'; const m=
  const sl=new T.PointLight(0xff4a2a,0.6,2.5,2); sl.position.set(0,2.2,0.4); SIM.add(sl);
  const spill=new T.PointLight(0x8aa0c8,0.4,2.6,2); spill.position.set(0,1.1,0.5); SIM.add(spill); setInterval(()=>{ spill.intensity=0.25+Math.random()*0.3; },90);
  const hit=new T.Mesh(new T.PlaneGeometry(0.9,2.0),new T.MeshBasicMaterial({visible:false})); hit.position.set(0,1.0,0.05); SIM.add(hit); return hit; })();
-function goSim(){ const f=document.getElementById('fade'); f.style.opacity='1'; setTimeout(()=>{ location.href='sim.html?from=kirmes'; },320); }
+function goSim(){ if(window.ZSA&&ZSA.on) return; /* Alpha: feste Reihenfolge, Simulator kommt später */ const f=document.getElementById('fade'); f.style.opacity='1'; setTimeout(()=>{ location.href='sim.html?from=kirmes'; },320); }
 function rayHitsSim(o,dir){ const r=new T.Raycaster(o,dir,0.05,14); return r.intersectObject(simDoor,false).length>0; }
 // photo wallpaper on booth back walls + front skirts (FMV look, real photographed surfaces)
 [[G1,0],[G2,1],[G3,2]].forEach(([g,i])=>{ const bw=new T.Mesh(new T.PlaneGeometry(2.16,1.55),std({color:0x2a1c14,roughness:0.95})); bw.position.set(0,1.75,-0.89); g.add(bw);
