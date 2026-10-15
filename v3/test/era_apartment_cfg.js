@@ -7,6 +7,6 @@ window.ERA={ amb:'../assets/sfx/amb_apartment.mp3', ambVol:0.35, props:[['../ass
  enter:['Erzähler','Eine Wohnung im Jahr 2041. Draußen leuchtet die Stadt. Drinnen nur Kabel und eine Matratze.'],
  floorFront:-3.0, bounds:[-2.6,2.6,-2.1,2.35]
 };
-window.ERAX={stands:[[2.65,0.9,-80,0.95,2.1,0x0b100e,[['p8_bar',0.9,1.4,0,['Mara', '„Grünriegel. Der Kühlschrank ist voll davon. Und sonst nichts.“']]],0x9affd0,0.8]],
+window.ERAX={stands:[[2.65,0.9,-80,0.95,2.1,0x0b100e,[['p8_bar',0.9,1.4,0,['Mara', '„Grünriegel. Der Kühlschrank ist voll davon. Und sonst nichts.“']]]]],
  covers:[['c8','book',-1.85,0.8,-1.0,-20,['Mara', '„KI für Dummies. Liegt hier, als hätte jemand gelernt. Aufgegeben auch.“']],['c9','book',-1.95,0.8,-0.7,10,['Mara', '„Wie ich lernte, die Simulation zu lieben. Eselsohr auf Seite eins.“']]],
  decoys:[['../assets/items/binder_notebook.glb',-1.75,0.8,-0.6,1,40,['Mara', '„Ein Ordner. Mietvertrag bis 2099. Unterschrieben mit Kabel.“']],['../assets/items/cube.glb',0.6,0,-1.0,1,0,['Mara', '„Noch so ein Würfel. Die sind überall. Wie Krümel.“']]]};

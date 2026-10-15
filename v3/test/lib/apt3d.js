@@ -78,19 +78,25 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  const s1=suitcase(0.68,0.2,0.46,leather); s1.position.set(-0.75,0.1,0.65); s1.rotation.y=0.3; G.add(s1);
  const s2=suitcase(0.55,0.17,0.38,leather2); s2.position.set(-0.72,0.29,0.62); s2.rotation.y=-0.15; G.add(s2);
  const s3=suitcase(0.5,0.2,0.36,leather); s3.rotation.z=Math.PI/2; s3.position.set(-1.15,0.25,0.95); s3.rotation.y=0.8; G.add(s3);
+ // Sterbende Stehlampe, umgekippt am Boden neben der Matratze (warm, schwach, flackert)
+ const lampG=new T.Group(); lampG.position.set(-1.55,0,2.15); lampG.rotation.y=0.6; G.add(lampG);
+ const pole=new T.Mesh(new T.CylinderGeometry(0.012,0.012,1.35,8),frameM); pole.rotation.z=Math.PI/2-0.06; pole.position.set(0.55,0.05,0); lampG.add(pole);
+ const foot=new T.Mesh(new T.CylinderGeometry(0.13,0.15,0.03,20),frameM); foot.rotation.z=Math.PI/2-0.06; foot.position.set(1.22,0.12,0); lampG.add(foot);
+ const shadeM=new T.MeshStandardMaterial({color:0xa08860,roughness:0.9,side:T.DoubleSide,emissive:0x40200a,emissiveIntensity:0.6}); const shade=new T.Mesh(new T.CylinderGeometry(0.12,0.2,0.24,20,1,true),shadeM); shade.rotation.z=Math.PI/2+0.25; shade.position.set(-0.17,0.17,0); lampG.add(shade);
+ const lbulb=new T.Mesh(new T.SphereGeometry(0.03,10,8),new T.MeshBasicMaterial({color:0xffb060,toneMapped:false})); lbulb.position.set(-0.12,0.16,0); lampG.add(lbulb);
+ const lampL=new T.PointLight(0xff9a48,0.9,2.6,2); lampL.position.set(-1.7,0.25,2.05); G.add(lampL); let lampOn=1;
  // ---- DAS SOFA ----
  const sofa=new T.Group(); sofa.position.set(0,0,-1.97); G.add(sofa); const SB={x:0,z:-1.97};
  const fab=new T.MeshStandardMaterial({map:ld('sofa_c.jpg',1),normalMap:ld('sofa_n.jpg'),normalScale:new T.Vector2(0.6,0.6),roughness:0.93});
  const fabD=fab.clone(); fabD.color=new T.Color(0x9a9090);
  const wood=new T.MeshStandardMaterial({color:0x2a1a10,roughness:0.5});
- const flesh=new T.MeshStandardMaterial({map:ld('flesh_c.jpg',1),roughness:0.22,metalness:0.05,color:0x9a5a5a,emissive:0x400810,emissiveIntensity:0.2,side:T.DoubleSide});
+ const flesh=new T.MeshStandardMaterial({map:ld('flesh_c.jpg',1),roughness:0.22,metalness:0.05,color:0x6e4a48,emissive:0x1a0204,emissiveIntensity:0.2,side:T.DoubleSide});
  const M=(g,m,x,y,z)=>{ const o=new T.Mesh(g,m); o.position.set(x,y,z); return o; };
  [[-0.92,-0.34],[0.92,-0.34],[-0.92,0.34],[0.92,0.34]].forEach(([x,z])=>{ const f=M(new T.CylinderGeometry(0.03,0.018,0.07,10),wood,x,0.035,z); sofa.add(f); });
  sofa.add(M(rbox(2.0,0.28,0.86,0.05,0.012,8,0.002),fabD,0,0.21,0));
  [-1,1].forEach(s=>{ sofa.add(M(rbox(0.26,0.38,0.9,0.07,0.015,8,0.002),fabD,s*0.97,0.5,0)); const roll=M(rbox(0.32,0.2,0.94,0.095,0.02,10,0.003),fab,s*0.99,0.69,0.0); roll.rotation.z=-s*0.08; sofa.add(roll); });
  sofa.add(M(rbox(1.72,0.62,0.22,0.07,0.012,8,0.002),fabD,0,0.66,-0.34));
  // Rachen (in der Fuge versteckt)
- const gul=new T.Mesh(new T.CylinderGeometry(0.26,0.26,1.62,20,1,true,Math.PI*0.5,Math.PI),flesh); gul.rotation.z=Math.PI/2; gul.position.set(0,0.52,-0.12); sofa.add(gul);
  // Zahn-Geometrie: gebogener Kegel, Wurzel dunkel → Spitze elfenbein
  const toothG=(()=>{ const g=new T.ConeGeometry(0.022,0.105,7,3); g.translate(0,0.0525,0); const p=g.attributes.position, col=new Float32Array(p.count*3); for(let i=0;i<p.count;i++){ const y=p.getY(i)/0.105; p.setZ(i,p.getZ(i)+y*y*0.018); const c=0.35+0.65*Math.min(1,y*2.2); col[i*3]=c*0.93; col[i*3+1]=c*0.86; col[i*3+2]=c*0.7; } g.setAttribute('color',new T.BufferAttribute(col,3)); g.computeVertexNormals(); return g; })();
  const toothM=new T.MeshStandardMaterial({vertexColors:true,color:0xf2ead0,roughness:0.35});
@@ -106,11 +112,27 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  const lo=new T.Group(); lo.position.set(0,0.38,0.41); sofa.add(lo); const LO=(o,x,y,z)=>{ o.position.set(x,y-0.38,z-0.41); lo.add(o); return o; };
  [-1,1].forEach(s=>{ const c=LO(new T.Mesh(rbox(0.83,0.15,0.66,0.06,0.028,10,0.004),fab),s*0.42,0.425,0.08); c.rotation.z=s*0.015; });
  lo.add(new T.Mesh(lipG(0.475-0.38,-0.22-0.41,0.02,0.026,0.008,2),flesh)); lo.add(new T.Mesh(lipG(0.49-0.38,-0.2-0.41,0.02,0.032,0.01,3),fab));
- let mawM=null; const maw=new T.Mesh(new T.SphereGeometry(1,24,14),flesh); maw.scale.set(0.8,0.17,0.15); maw.position.set(0,0.47,-0.16); maw.material=flesh.clone(); maw.material.color=new T.Color(0x3a1418); maw.material.roughness=0.15; mawM=maw.material; sofa.add(maw);
+ let mawM=null;
+ const tongueM=new T.MeshStandardMaterial({map:ld('flesh_c.jpg',1),color:0x7a4a4a,roughness:0.18,metalness:0.05});
+ // Rachen: vertiefter Schlund (Tunnel nach hinten/unten), Gaumen mit Querrippen, wird zum Ende hin schwarz
+ const throatG=(()=>{ const R=12, Sg=36, pos=[], col=[], idx=[]; for(let r=0;r<=R;r++){ const k=r/R; const cx=0, cy=0.5-0.13*k, cz=-0.03-0.38*k; const rx=0.76*(1-k)+0.16*k, ry=0.18*(1-k)+0.05*k;
+   for(let j=0;j<=Sg;j++){ const a=j/Sg*Math.PI*2; const up=Math.max(0,Math.sin(a)); let f=1-0.09*up*(0.5+0.5*Math.cos(k*Math.PI*2*6)); f*=1+0.04*Math.sin(a*7+k*9); pos.push(cx+Math.cos(a)*rx*f, cy+Math.sin(a)*ry*f, cz); const rid=up>0.2?0.6+0.4*Math.max(0,Math.cos(k*Math.PI*2*6)):0.85; const c=Math.pow(1-k,2.2)*(0.45+0.35*up)*rid; col.push(c,c*0.9,c*0.9); } }
+  for(let r=0;r<R;r++) for(let j=0;j<Sg;j++){ const a=r*(Sg+1)+j, b=a+Sg+1; idx.push(a,a+1,b, a+1,b+1,b); }
+  const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(pos,3)); g.setAttribute('color',new T.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals(); return g; })();
+ const throatM=new T.MeshBasicMaterial({map:ld('flesh_c.jpg',1),color:0x6a4442,vertexColors:true,side:T.DoubleSide});
+ const throat=new T.Mesh(throatG,throatM); sofa.add(throat);
+ const endcap=new T.Mesh(new T.CircleGeometry(0.2,16),new T.MeshBasicMaterial({color:0x000000})); endcap.scale.y=0.35; endcap.position.set(0,0.37,-0.4); sofa.add(endcap);
+ // Speichelfäden zwischen Ober- und Unterkiefer (2 Segmente mit Durchhang), nur offen sichtbar
+ const salM=new T.MeshStandardMaterial({color:0xe8e2d8,roughness:0.03,metalness:0.1,transparent:true,opacity:0.75,depthWrite:false,emissive:0x202020});
+ const segG=new T.CylinderGeometry(1,1,1,5,1,true); const strands=[]; for(let i=0;i<9;i++){ const x=-0.66+i*0.165+(rnd()-0.5)*0.06; const a=new T.Object3D(), b=new T.Object3D(); a.position.set(x,0.52-1.0,-0.05+0.3); up.add(a); b.position.set(x*0.98,0.49-0.38,-0.2-0.41); lo.add(b); const r=0.003+rnd()*0.003, sag=0.03+rnd()*0.06; const sg=[]; for(let k=0;k<5;k++){ const m=new T.Mesh(segG,salM); m.visible=false; sofa.add(m); sg.push(m); } strands.push({a,b,r,sag,sg}); }
+ const va=new T.Vector3(), vb=new T.Vector3(), vm=new T.Vector3(), Y=new T.Vector3(0,1,0);
+ const seg=(m,p,q,r)=>{ const d=q.clone().sub(p); const L=d.length(); m.position.copy(p).addScaledVector(d,0.5); m.quaternion.setFromUnitVectors(Y,d.normalize()); m.scale.set(r,L,r); };
+ const P0=new T.Vector3(), P1=new T.Vector3(); const pt=(o,t,out)=>{ out.copy(va).lerp(vb,t); out.y-=o.sag*open*4*t*(1-t); out.z+=0.03*4*t*(1-t); return out; };
+ const strandUpd=()=>{ const vis=open>0.25; sofa.updateMatrixWorld(); strands.forEach(o=>{ o.sg.forEach(m=>m.visible=vis); if(!vis) return; o.a.getWorldPosition(va); o.b.getWorldPosition(vb); sofa.worldToLocal(va); sofa.worldToLocal(vb); for(let k=0;k<5;k++){ pt(o,k/5,P0); pt(o,(k+1)/5,P1); const th=1-0.55*Math.sin((k+0.5)/5*Math.PI); seg(o.sg[k],P0,P1,o.r*th); } }); };
 
 
- const tongue=LO(new T.Mesh(new T.SphereGeometry(1,18,10),flesh),0,0.43,-0.12); tongue.scale.set(0.42,0.05,0.16);
- const tL=teeth(32,0.49,-0.17,false,0.02); tL.position.set(0,-0.38,-0.41); lo.add(tL);
+ const tongue=LO(new T.Mesh((()=>{ const g=new T.SphereGeometry(1,28,14); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i), z=p.getZ(i); let yy=y; if(y>0) yy=y*(1-0.55*Math.exp(-x*x*18)); yy+= 0.15*Math.sin(x*7+z*5)*Math.max(0,y); p.setXYZ(i,x*(1-0.25*Math.max(0,z)),yy,z); } g.computeVertexNormals(); return g; })(),tongueM),0,0.41,-0.2); tongue.scale.set(0.3,0.06,0.2); tongue.rotation.x=0.15;
+ const tL=teeth(30,0.495,-0.15,false,0.025); tL.position.set(0,-0.38,-0.41); tL.scale.set(1,1.2,1); lo.add(tL);
  // grüner Schein unter dem Sofa
  const gc=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
  const glow=new T.Mesh(new T.PlaneGeometry(2.2,1.0),new T.MeshBasicMaterial({map:gc,color:0x3aa860,transparent:true,opacity:0.35,blending:T.AdditiveBlending,depthWrite:false})); glow.rotation.x=-Math.PI/2; glow.position.set(0,0.004,-1.75); G.add(glow);
@@ -141,7 +163,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  // ---- Zustände ----
  let open=0, lunge=0, fired=false, t0=-1, twitchAt=8000+rnd()*6000, twitchT=-1, forced=null;
  const ease=x=>1-Math.pow(1-Math.min(1,Math.max(0,x)),3);
- const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.2*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.5*open; flesh.emissiveIntensity=0.15+0.55*open; if(mawM) mawM.emissiveIntensity=0.05+0.25*open; tongue.position.y=0.43-0.38+0.06*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=0.7+0.5*open; };
+ const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.26*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.28*open; flesh.emissiveIntensity=0.1+0.2*open; tongue.position.y=0.41-0.38+0.05*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=0.7-0.3*open; strandUpd(); };
  const fire=()=>{ if(fired) return; fired=true; t0=performance.now(); growl(); window.__sofaFired=true; };
  hit.addEventListener('click',fire);
  const cam=()=>document.getElementById('cam').object3D, cp=new T.Vector3();
@@ -152,7 +174,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
    lunge = e<0.22 ? ease(e/0.22) : e<0.55 ? 1 : 1-ease((e-0.55)/1.6); if(e>2.3){ t0=-1; lunge=0; open=0; } pose(); return; }
   // Leerlauf: seltenes Zucken (Fuge öffnet sich minimal, knarzt)
   if(!fired&&t>twitchAt){ twitchT=t; twitchAt=t+7000+rnd()*9000; creak(); } if(twitchT>0){ const k=(t-twitchT)/1000; open=k<0.35?0.07*Math.sin(k/0.35*Math.PI):0; if(k>0.4) twitchT=-1; pose(); }
-  tvL.intensity=0.7+0.35*Math.random(); };
+  tvL.intensity=0.7+0.35*Math.random(); if(Math.random()<0.03) lampOn=Math.random()<0.25?0.15:1; lampL.intensity=0.9*lampOn*(0.85+0.15*Math.random()); lbulb.material.color.setHex(lampOn>0.5?0xffb060:0x402810); };
  AFRAME.registerComponent('apt-tick',{tick(t){ update(t); }}); sc.setAttribute('apt-tick','');
  window.__sofa={ fire, set:(o,l)=>{ forced=[o,l]; }, release:()=>{ forced=null; open=0; lunge=0; pose(); } };
  // ---- Kollision (Spieler-Kopf, Radius 0.25) ----
