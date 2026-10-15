@@ -475,7 +475,22 @@
    }
   },
   "barkCooldown": 9,
-  "idleBark": 45
+  "idleBark": 45,
+  "timeFx": {
+   "_info": "Zeit-Effekte für Szenen (Aktion {\"timefx\":name}). Bonus 1×/Spielstand, Abzug 1×/Schleife; Zeitgewinn = leises Uhrticken ~3 s.",
+   "blumenkrone": {
+    "bonus": 120,
+    "key": "blumenkrone"
+   },
+   "baum_faellen": {
+    "penalty": 60,
+    "key": "baum_faellen"
+   },
+   "haengematte": {
+    "penalty": 20,
+    "key": "haengematte"
+   }
+  }
  },
  "pool": {
   "perLoop": 5,
@@ -535,14 +550,23 @@
      "say": "Eine graue Spielkonsole mit Klötzchenspiel. Batterie leer. Wie immer, wenn's spannend wird.",
      "speaker": "narrator"
     },
-    "onUse": [
+    "glb": "assets/items/gameboy.glb",
+    "glbSize": 0.148,
+    "decoy": true,
+    "fails": [
      {
       "say": "Leg das weg. Wir haben keine Zeit für Klötzchen.",
       "speaker": "mara"
+     },
+     {
+      "say": "Du drückst auf Start. Die Batterie ist leer. Die Klötzchen bleiben, wo sie sind. Wie du.",
+      "speaker": "narrator"
+     },
+     {
+      "say": "Der ist hier eigentlich noch gar nicht erschienen. Steck ihn weg, bevor jemand fragt.",
+      "speaker": "mara"
      }
-    ],
-    "glb": "assets/items/gameboy.glb",
-    "glbSize": 0.148
+    ]
    },
    "wuerfel": {
     "name": "Zauberwürfel",
@@ -601,7 +625,22 @@
      "speaker": "mara"
     },
     "glb": "assets/items/diddl.glb",
-    "glbSize": 0.1
+    "glbSize": 0.1,
+    "decoy": true,
+    "fails": [
+     {
+      "say": "Das ist mein Notizblock! Also, so einer wie meiner. Finger weg.",
+      "speaker": "mara"
+     },
+     {
+      "say": "Du blätterst durch den Springmaus-Block. Auf jeder Seite Herzchen. Kein einziger Hinweis.",
+      "speaker": "narrator"
+     },
+     {
+      "say": "Die Springmaus grinst dich an. Sie weiß etwas. Sie wird es dir nie sagen.",
+      "speaker": "narrator"
+     }
+    ]
    }
   },
   "spawns": {
@@ -807,7 +846,22 @@
    "fail": {
     "say": "Du hältst die Tasse hin. Niemand schenkt dir was ein. Niemand.",
     "speaker": "narrator"
-   }
+   },
+   "decoy": true,
+   "fails": [
+    {
+     "say": "Du hältst die Tasse hin. Niemand schenkt dir was ein. Niemand.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Du prostest dem Nichts mit der leeren Tasse zu. Es prostet nicht zurück. Typisch Montag.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Leg die Tasse weg. Bester Mitarbeiter des Monats warst du nie.",
+     "speaker": "mara"
+    }
+   ]
   },
   "akte": {
    "name": "Leere Akte",
@@ -818,7 +872,22 @@
     "speaker": "narrator"
    },
    "glb": "assets/items/binder_notebook.glb",
-   "glbSize": 0.28
+   "glbSize": 0.28,
+   "decoy": true,
+   "fails": [
+    {
+     "say": "Die Akte ist leer. Sie hat dir nichts zu sagen. Und du ihr offenbar auch nicht.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Willst du dem das jetzt vorlesen? Da steht nichts drin, Süßer.",
+     "speaker": "mara"
+    },
+    {
+     "say": "Du wedelst bedeutungsvoll mit der leeren Akte. Bürokratie beeindruckt hier niemanden. Noch nicht.",
+     "speaker": "narrator"
+    }
+   ]
   },
   "huhn": {
    "name": "Gummihuhn mit Seilrolle",
@@ -827,7 +896,22 @@
    "fail": {
     "say": "Das Gummihuhn quietscht vorwurfsvoll. Es wartet auf ein anderes Spiel.",
     "speaker": "narrator"
-   }
+   },
+   "decoy": true,
+   "fails": [
+    {
+     "say": "Das Gummihuhn quietscht vorwurfsvoll. Es wartet auf ein anderes Spiel.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Nimm das Huhn runter. Es schaut mich wieder so an.",
+     "speaker": "mara"
+    },
+    {
+     "say": "Das Huhn hängt an seiner Seilrolle und wartet auf ein Abenteuer. Dieses hier ist es nicht.",
+     "speaker": "narrator"
+    }
+   ]
   },
   "radkappe": {
    "name": "Trabi-Radkappe",
@@ -837,7 +921,22 @@
     "say": "Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.",
     "speaker": "narrator"
    },
-   "model": "hubcap"
+   "model": "hubcap",
+   "decoy": true,
+   "fails": [
+    {
+     "say": "Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Du hältst die Radkappe davor wie einen Schild. Das Universum ist nicht beeindruckt.",
+     "speaker": "narrator"
+    },
+    {
+     "say": "Irgendwo sucht ein Trabi-Fahrer gerade seine Radkappe. Und du spielst Frisbee.",
+     "speaker": "mara"
+    }
+   ]
   },
   "schnur": {
    "name": "Paketschnur",
