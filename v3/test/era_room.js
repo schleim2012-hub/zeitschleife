@@ -47,12 +47,12 @@ S.addEventListener('loaded',()=>{
  if(W.plainWalls){ box(0.1,W.h,W.d,wallM,-W.w/2,W.h/2,W.cz); box(0.1,W.h,W.d,wallM,W.w/2,W.h/2,W.cz); box(W.w,W.h,0.1,wallM,0,W.h/2,W.cz+W.d/2); }
  else if(!W.noWalls){ // Raum rundum geschlossen – als Foto statt glatter Kastenwände: zwei an den Nahtstellen gespiegelte, abgedunkelte Kopien des Hintergrundfotos
   // schließen die restlichen Grad hinter dem Spieler (nahtlos an beiden Kanten), in der Mitte hinten weich ins Dunkel überblendet
-  const back=2*Math.PI-ang, half=back/2, part=Math.min(1,half/ang);
+  const CL=C.closure||{}; const back=2*Math.PI-ang, half=back/2, part=CL.part||Math.min(0.42,half/ang); // nur die äußeren ~40 % spiegeln (keine doppelten Hauptmotive), unscharf & dunkel
   const ac=document.createElement('canvas'); ac.width=256; ac.height=128; const ax=ac.getContext('2d'); const hg=ax.createLinearGradient(0,0,256,0); hg.addColorStop(0,'#fff'); hg.addColorStop(0.7,'#fff'); hg.addColorStop(1,'#000'); ax.fillStyle=hg; ax.fillRect(0,0,256,128);
   if(B.fadeBottom){ ax.globalCompositeOperation='multiply'; const vg=ax.createLinearGradient(0,128,0,0); vg.addColorStop(0,'#000'); vg.addColorStop(B.fadeBottom,'#fff'); vg.addColorStop(1-(B.fadeTop||0),'#fff'); vg.addColorStop(1,B.fadeTop?'#000':'#fff'); ax.fillStyle=vg; ax.fillRect(0,0,256,128); }
   const am=new T.CanvasTexture(ac);
   [0,1].forEach(k=>{ const m=new T.MeshBasicMaterial({color:0x8c8c8c,fog:false,toneMapped:false,side:T.DoubleSide,transparent:true,depthWrite:false,alphaMap:am});
-   tex(B.url,t=>{ const tt=t.clone(); tt.needsUpdate=true; tt.wrapS=T.ClampToEdgeWrapping; m.map=tt; m.needsUpdate=true; });
+   tex(B.url,t=>{ const img=t.image, cv=document.createElement('canvas'); cv.width=512; cv.height=Math.round(512*img.height/img.width); const cx=cv.getContext('2d'); cx.filter='blur('+(CL.blur==null?5:CL.blur)+'px) brightness('+(CL.tone||0.8)+')'; cx.drawImage(img,0,0,cv.width,cv.height); const tt=new T.CanvasTexture(cv); tt.colorSpace=T.SRGBColorSpace; m.map=tt; m.needsUpdate=true; });
    const g=new T.CylinderGeometry(R,R,H,64,1,true,k?Math.PI-ang/2-half:Math.PI+ang/2,half); const uv=g.attributes.uv;
    // u neu: an der Fotokante gespiegelt (k=0 rechte Kante → nach innen, k=1 linke Kante); Alpha-u läuft 0 (Kante) → 1 (Mitte hinten)
    const a2=new Float32Array(uv.count*2);
