@@ -48,13 +48,24 @@ function woodMat(color,rep){ const T=THREE, m=new T.MeshStandardMaterial({color,
  L('diff',t=>{ t.colorSpace=T.SRGBColorSpace; m.map=t; }); L('rough',t=>m.roughnessMap=t); L('nor_gl',t=>{ m.normalMap=t; m.normalScale.set(0.8,0.8); }); return m; }
 // verwitterter Zettel (Handschrift, Klebestreifen) – statt HUD-Text
 // abgenutzter Lack (Lackputz-Textur + Schmutz/Abrieb in Canvas gemalt): Blatt, Füllungen, Zarge
-function paintMat(tint,rep,grime){ const T=THREE, m=new T.MeshStandardMaterial({color:0xffffff,roughness:0.55,metalness:0}); const b=ROOT+'assets/tex/kirmes/Painted/PaintedPlaster017_1K-JPG_';
+function paintMat(tint,rep,grime){ const T=THREE, m=new T.MeshStandardMaterial({color:0xffffff,roughness:0.88,metalness:0}); const b=ROOT+'assets/tex/kirmes/Painted/PaintedPlaster017_1K-JPG_';
  TL().load(b+'Color.jpg',t=>{ const img=t.image, c=document.createElement('canvas'); c.width=512; c.height=1024; const x=c.getContext('2d'); x.drawImage(img,0,0,512,1024);
   x.globalCompositeOperation='multiply'; x.fillStyle=tint; x.fillRect(0,0,512,1024); x.globalCompositeOperation='source-over';
-  if(grime){ let gr=x.createLinearGradient(0,1024,0,700); gr.addColorStop(0,'rgba(50,38,22,0.55)'); gr.addColorStop(1,'rgba(50,38,22,0)'); x.fillStyle=gr; x.fillRect(0,700,512,324); // Fußtritte unten
-   const h=x.createRadialGradient(440,520,4,440,520,90); h.addColorStop(0,'rgba(40,30,18,0.5)'); h.addColorStop(1,'rgba(40,30,18,0)'); x.fillStyle=h; x.fillRect(300,380,212,280); // Griffspur an der Klinke
-   for(let i=0;i<260;i++){ x.fillStyle='rgba(30,24,16,'+(Math.random()*0.18)+')'; const r=Math.random()*2.2; x.fillRect(Math.random()*512,Math.random()*1024,r,r); }
-   for(let i=0;i<10;i++){ x.strokeStyle='rgba(235,225,200,0.25)'; x.lineWidth=1; x.beginPath(); const sx=Math.random()*512, sy=600+Math.random()*400; x.moveTo(sx,sy); x.lineTo(sx+Math.random()*40-20,sy+Math.random()*20); x.stroke(); } }
+  // Nikotin-Vergilbung (oben stärker), fleckig
+  { const ny=x.createLinearGradient(0,0,0,1024); ny.addColorStop(0,'rgba(120,88,30,0.32)'); ny.addColorStop(1,'rgba(90,70,30,0.12)'); x.fillStyle=ny; x.fillRect(0,0,512,1024);
+   for(let i=0;i<22;i++){ const rx=Math.random()*512, ry=Math.random()*1024, r=30+Math.random()*120; const s=x.createRadialGradient(rx,ry,0,rx,ry,r); s.addColorStop(0,'rgba(80,58,24,'+(0.08+Math.random()*0.12)+')'); s.addColorStop(1,'rgba(80,58,24,0)'); x.fillStyle=s; x.fillRect(rx-r,ry-r,2*r,2*r); } }
+  if(grime){ let gr=x.createLinearGradient(0,1024,0,640); gr.addColorStop(0,'rgba(36,26,14,0.75)'); gr.addColorStop(1,'rgba(36,26,14,0)'); x.fillStyle=gr; x.fillRect(0,640,512,384); // Fußtritte unten
+   for(let i=0;i<9;i++){ const rx=60+Math.random()*390, ry=900+Math.random()*110; const s=x.createRadialGradient(rx,ry,0,rx,ry,30+Math.random()*30); s.addColorStop(0,'rgba(25,18,10,0.45)'); s.addColorStop(1,'rgba(25,18,10,0)'); x.fillStyle=s; x.fillRect(rx-60,ry-60,120,120); }
+   for(let k=0;k<3;k++){ const h=x.createRadialGradient(455,525,4,455,525,70+k*45); h.addColorStop(0,'rgba(28,20,10,0.55)'); h.addColorStop(1,'rgba(28,20,10,0)'); x.fillStyle=h; x.fillRect(300,330,212,400); } // Griffspur
+   for(let i=0;i<40;i++){ x.fillStyle='rgba(22,16,9,'+(0.1+Math.random()*0.2)+')'; x.beginPath(); x.ellipse(400+Math.random()*100,440+Math.random()*180,2+Math.random()*7,1+Math.random()*4,Math.random()*3,0,7); x.fill(); } // Fingerabdrücke
+   for(let i=0;i<500;i++){ x.fillStyle='rgba(30,22,12,'+(Math.random()*0.25)+')'; const r=Math.random()*2.5; x.fillRect(Math.random()*512,Math.random()*1024,r,r); }
+   for(let i=0;i<55;i++){ const sx=Math.random()*512, sy=Math.random()*1024, dk=Math.random()<0.6; x.strokeStyle=dk?'rgba(40,30,18,0.45)':'rgba(200,185,150,0.22)'; x.lineWidth=0.6+Math.random()*1.2; x.beginPath(); x.moveTo(sx,sy); x.lineTo(sx+Math.random()*70-35,sy+Math.random()*24-12); x.stroke(); } // Kratzer
+   for(let i=0;i<4;i++){ x.strokeStyle='rgba(30,22,14,0.3)'; x.lineWidth=1; const sx=Math.random()*512; x.beginPath(); x.moveTo(sx,200+Math.random()*300); x.lineTo(sx+Math.random()*6-3,500+Math.random()*400); x.stroke(); } // Laufspuren
+  }
+  // abgeplatzte Kanten: dunkler Untergrund durchscheinend
+  for(let i=0;i<(grime?26:12);i++){ const left=Math.random()<0.5, ex=left?Math.random()*14:512-Math.random()*14, ey=Math.random()*1024, ey2=Math.random()<0.25?(Math.random()<0.5?Math.random()*14:1010+Math.random()*14):null;
+   const cx=ey2==null?ex:Math.random()*512, cy=ey2==null?ey:ey2; x.fillStyle='rgba(58,44,30,0.9)'; x.beginPath(); const n=7, R=3+Math.random()*9; for(let j=0;j<n;j++){ const an=j/n*6.283, rr=R*(0.5+Math.random()*0.6); x.lineTo(cx+Math.cos(an)*rr,cy+Math.sin(an)*rr*1.4); } x.closePath(); x.fill();
+   x.strokeStyle='rgba(225,210,170,0.25)'; x.lineWidth=0.8; x.stroke(); }
   const e=x.createLinearGradient(0,0,512,0); e.addColorStop(0,'rgba(0,0,0,0.25)'); e.addColorStop(0.06,'rgba(0,0,0,0)'); e.addColorStop(0.94,'rgba(0,0,0,0)'); e.addColorStop(1,'rgba(0,0,0,0.25)'); x.fillStyle=e; x.fillRect(0,0,512,1024);
   const ct=new T.CanvasTexture(c); ct.colorSpace=T.SRGBColorSpace; ct.wrapS=ct.wrapT=T.RepeatWrapping; ct.repeat.set(rep[0],rep[1]); m.map=ct; m.needsUpdate=true; });
  TL().load(b+'Roughness.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(rep[0],rep[1]); m.roughnessMap=t; m.needsUpdate=true; });
@@ -68,8 +79,8 @@ window.zsaNote=function(text,w,h){ const T=THREE, c=document.createElement('canv
  const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(w||0.21,h||0.15),new T.MeshStandardMaterial({map:t,roughness:0.95,side:T.DoubleSide})); m.rotation.z=(Math.random()-0.5)*0.08; return m; };
 window.zsaDoor=function(sceneEl,cfg,onOpen){ const T=THREE, S=sceneEl.object3D; const g=new T.Group(); g.position.set(cfg.x,0,cfg.z);
  const f=cfg.face||[0,0]; g.rotation.y=Math.atan2(f[0]-cfg.x,f[1]-cfg.z); S.add(g);
- const wood=cfg.wood?woodMat(0x9a8b78,[1,2]):paintMat('#8f8566',[1,1],true), woodP=cfg.wood?woodMat(0x7e705f,[1,1]):paintMat('#82785c',[1,1],false), frameM=cfg.wood?woodMat(0x5a4c3e,[0.3,2]):paintMat('#4e4638',[0.2,1],false);
- const brass=new T.MeshStandardMaterial({color:0x8a6a3a,roughness:0.42,metalness:0.9}), dark=new T.MeshStandardMaterial({color:0x080706,roughness:1});
+ const wood=cfg.wood?woodMat(0x9a8b78,[1,2]):paintMat('#9a8850',[1,1],true), woodP=cfg.wood?woodMat(0x7e705f,[1,1]):paintMat('#887645',[1,1],true), frameM=cfg.wood?woodMat(0x5a4c3e,[0.3,2]):paintMat('#6a5c3c',[0.2,1],false);
+ const brass=new T.MeshStandardMaterial({color:0x6e5532,roughness:0.62,metalness:0.8}), dark=new T.MeshStandardMaterial({color:0x080706,roughness:1});
  const add=(m,x,y,z,p)=>{ m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; (p||g).add(m); return m; };
  const bx=(w,h,d,m,x,y,z,p)=>add(new T.Mesh(new T.BoxGeometry(w,h,d),m),x,y,z,p);
  // Zarge + Bekleidung (Architrave)
@@ -101,8 +112,8 @@ window.zsaDoor=function(sceneEl,cfg,onOpen){ const T=THREE, S=sceneEl.object3D; 
   const sh=new T.Mesh(new T.PlaneGeometry(1.9,1.0),new T.MeshBasicMaterial({map:new T.CanvasTexture(c),transparent:true,depthWrite:false})); sh.rotation.x=-Math.PI/2; sh.position.y=0.004; g.add(sh); }
  // kleine Türlampe (echte Lichtquelle, kein Hotspot)
  const hous=add(new T.Mesh(new T.CylinderGeometry(0.06,0.09,0.07,18,1,true),new T.MeshStandardMaterial({color:0x1c1a16,metalness:0.7,roughness:0.45,side:T.DoubleSide})),0,2.42,0.16);
- bx(0.025,0.025,0.12,frameM,0,2.46,0.1); const bulb=add(new T.Mesh(new T.SphereGeometry(0.024,10,8),new T.MeshBasicMaterial({color:0xffd9a0,toneMapped:false})),0,2.4,0.16);
- const DL=new T.PointLight(0xffc88a,cfg.light==null?0.7:cfg.light,3.4,2); DL.position.set(0,2.3,0.35); g.add(DL);
+ bx(0.025,0.025,0.12,frameM,0,2.46,0.1); const bulb=add(new T.Mesh(new T.SphereGeometry(0.024,10,8),new T.MeshBasicMaterial({color:0xc89a60,toneMapped:false})),0,2.4,0.16);
+ const DL=new T.PointLight(0xffc88a,cfg.light==null?0.38:cfg.light,3.4,2); DL.position.set(0,2.3,0.35); g.add(DL);
  const L=new T.PointLight(0xffb070,0.0,2.2,2); L.position.set(0.2,1.3,0.4); g.add(L);
  if(cfg.note){ const n=zsaNote(cfg.note,0.2,0.14); n.position.set(0.44,1.5,0.05); hinge.add(n); }
  let locked=!!cfg.locked, opened=false, t0=0, lastRattle=0, shake=0;
@@ -131,33 +142,67 @@ window.zsaCtrlPos=function(sceneEl,c,out){ const S=sceneEl.object3D; if(!c.paren
 window.zsaRay=function(sceneEl,c){ const T=THREE, S=sceneEl.object3D, o=new T.Vector3(), q=new T.Quaternion(); zsaCtrlPos(sceneEl,c,o); if(!c.parent||c.parent===S){ q.copy(c.quaternion); const camEl=sceneEl.camera&&sceneEl.camera.el; const rig=camEl&&camEl.object3D.parent; if(rig&&rig!==S){ const rq=new T.Quaternion(); rig.getWorldQuaternion(rq); q.premultiply(rq); } } else c.getWorldQuaternion(q); return new T.Raycaster(o,new T.Vector3(0,0,-1).applyQuaternion(q),0,14); };
 window.zsaMouseRay=function(sceneEl,e){ const T=THREE, r=sceneEl.canvas.getBoundingClientRect(), rc=new T.Raycaster(); rc.setFromCamera({x:(e.clientX-r.left)/r.width*2-1,y:-(e.clientY-r.top)/r.height*2+1},sceneEl.camera); return rc; };
 // ---------- Schlüssel: liegt auf der nächsten Fläche unter (x,z); aufheben per Hand, Laser, Klick oder einfach hingehen → Tür schließt auf
-window.zsaKey=function(sceneEl,cfg,onFound){ const T=THREE, S=sceneEl.object3D; const brass=new T.MeshStandardMaterial({color:0xb08a48,roughness:0.32,metalness:0.92,emissive:0x2a1a06});
+window.zsaKey=function(sceneEl,cfg,onFound){ const T=THREE, S=sceneEl.object3D; const brass=new T.MeshStandardMaterial({color:0x9c7a40,roughness:0.4,metalness:0.9});
  const k=new T.Group(); const ring=new T.Mesh(new T.TorusGeometry(0.016,0.0045,10,24),brass); ring.position.x=-0.03; k.add(ring);
  const shaft=new T.Mesh(new T.CylinderGeometry(0.0035,0.0035,0.06,8),brass); shaft.rotation.z=Math.PI/2; shaft.position.x=0.012; k.add(shaft);
  [[0.03,-0.007],[0.038,-0.009]].forEach(([x,y])=>{ const b=new T.Mesh(new T.BoxGeometry(0.006,0.012,0.004),brass); b.position.set(x,y,0); k.add(b); });
- k.rotation.x=-Math.PI/2; k.rotation.z=Math.random()*6; k.scale.setScalar(1.35); const holder=new T.Group(); holder.add(k); S.add(holder);
+ k.rotation.x=-Math.PI/2; k.rotation.z=Math.random()*6; k.scale.setScalar(1.6); const holder=new T.Group(); holder.add(k); S.add(holder);
  // auf Fläche legen (Raycast nach unten, ignoriert Fotowände/Unsichtbares)
- const place=()=>{ const rc=new T.Raycaster(new T.Vector3(cfg.x,(cfg.y||2.2),cfg.z),new T.Vector3(0,-1,0),0,4); const objs=[]; S.traverse(o=>{ if(o.isMesh&&o.visible&&o!==ring&&!(o.material&&(o.material.transparent||o.material.side===T.BackSide))) objs.push(o); });
+ const place=()=>{ const rc=new T.Raycaster(new T.Vector3(cfg.x,(cfg.y||2.2),cfg.z),new T.Vector3(0,-1,0),0,4); const objs=[]; const mine=o=>{ while(o){ if(o===holder) return true; o=o.parent; } return false; }; S.traverse(o=>{ if(o.isMesh&&o.visible&&!mine(o)&&!(o.material&&(o.material.visible===false||o.material.transparent||o.material.side===T.BackSide))) objs.push(o); });
   const h=rc.intersectObjects(objs,false).find(x=>x.face&&Math.abs(x.face.normal.y)>0.3); holder.position.set(cfg.x,h?h.point.y+0.006:0.006,cfg.z); };
  place(); setTimeout(place,1500); setTimeout(place,5000);
  // kleiner Lichtfleck + gelegentliches Glitzern (in der Welt, kein Hotspot)
  const gl=document.createElement('canvas'); gl.width=gl.height=64; const gx=gl.getContext('2d'); const gg=gx.createRadialGradient(32,32,0,32,32,32); gg.addColorStop(0,'rgba(255,240,200,1)'); gg.addColorStop(0.25,'rgba(255,220,150,0.35)'); gg.addColorStop(1,'rgba(255,200,120,0)'); gx.fillStyle=gg; gx.fillRect(0,0,64,64);
- const spr=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(gl),transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0})); spr.scale.set(0.07,0.07,1); spr.position.y=0.015; holder.add(spr);
- const kl=new T.PointLight(0xffd8a0,0.25,0.9,2); kl.position.y=0.2; holder.add(kl);
+ const spr=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(gl),transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0})); spr.scale.set(0.035,0.035,1); spr.position.y=0.015; holder.add(spr);
+ const kl=new T.PointLight(0xffd8a0,0.14,0.7,2); kl.position.y=0.3; holder.add(kl);
  const hitS=new T.Mesh(new T.SphereGeometry(0.11,8,6),new T.MeshBasicMaterial({visible:false})); holder.add(hitS);
  let found=false; const R=sceneEl.renderer, head=new T.Vector3(), hp=new T.Vector3(), kp=new T.Vector3();
  const take=()=>{ if(found) return; found=true; SND.chime(); holder.visible=false; onFound&&onFound(); };
  [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(found) return; const rc=zsaRay(sceneEl,c); if(rc.intersectObject(hitS,false).length) return take(); holder.getWorldPosition(kp); const d=kp.clone().sub(rc.ray.origin); if(d.length()<6&&rc.ray.direction.angleTo(d)<0.06) take(); }); c.addEventListener('squeezestart',()=>{ if(found) return; zsaCtrlPos(sceneEl,c,hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.3) take(); }); });
  sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||found) return; if(zsaMouseRay(sceneEl,e).intersectObject(hitS,false).length) take(); });
- (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found) return; const now=performance.now(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.9:0; spr.material.rotation=now*0.002;
+ (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found) return; const now=performance.now(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.55:0; spr.material.rotation=now*0.002;
   const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<0.45) return take();
   if(R.xr.isPresenting) for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(kp)<0.16) return take(); } });
  holder.userData.take=take; return holder; };
+// Sprachzeilen (ElevenLabs, Kap. 6 Verzweigungskonzept). VO_AT: wann sie in der Alpha laufen (enter = nach Betreten + delay s, key = Schlüssel gefunden)
+const VO={
+ v_2041_baum_e:['Erzähler','Kein Tor. Ein Baum. Irgendwer hat 1972 was richtig gemacht.'],
+ v_kirmes_m:['Mara','„Hier war ich schon mal … als Kind?“'],
+ v_finale_m:['Mara','„Moment … das hab ich doch …“'],
+ v_licht_e:['Erzähler','Licht an, Licht aus. Dasselbe Zimmer. Nur eins davon erinnert sich.'],
+ v_walkman_m:['Mara','„Rückspulen kostet. Zehn Sekunden. Das Leben ist kein Mixtape.“'],
+ v_2041_baum_m:['Mara','„Komisch, wie ein Baum mehr verbindet, als jede Mauer trennt.“'],
+ v_2041_tor_e:['Erzähler','Mauern. Haben wir doch schon mal gehabt.'],
+ v_pool_m:['Mara','„Woher kenn ich die Zahl?“'],
+ v_apt_m:['Mara','„Ab hier geht’s nur noch vorwärts.“'],
+ v_warn_m:['Mara','„Hör mir zu. Wenn die Uhr abläuft, vergess ich dich. Diesmal für immer.“'],
+ v_jacke_m:['Mara','„Das ist meine Jacke. Warum ist das meine Jacke?“'],
+ v_end_ausbruch_m:['Mara','„Geh. Einer von uns sollte aufwachen.“'],
+ v_end_erinn_m:['Mara','„Ich hab das gebaut. Ich wollte nur, dass jemand mitkommt.“'],
+ v_end_erinn_e:['Erzähler','Und dann, zum ersten Mal: kein Rückspulen.'],
+ v_end_vergessen_m:['Mara','„Kennen wir uns? Du siehst nett aus. Bleib doch.“'],
+ v_end_testband:['Testband','Teilnehmerin 7. Begleitperson integriert.'] };
+const VO_AT={
+ era1984:[['v_licht_e','enter',9]], era1984mall:[['v_walkman_m','enter',9]], pool:[['v_pool_m','key',0.8]],
+ era2041:[['v_2041_baum_e','enter',8],['v_2041_baum_m','key',0.8]], apartment:[['v_apt_m','enter',6]],
+ kirmes:[['v_kirmes_m','enter',7]], sim:[['v_finale_m','key',0.8]] };
+let subM=null;
+window.zsaSay=function(id,sec){ const v=VO[id]; if(!v) return; const sc=document.querySelector('a-scene'); if(!sc||!sc.renderer) return; const T=THREE, S=sc.object3D;
+ const a=new Audio(ROOT+'assets/vo/'+id+'.mp3'); a.volume=0.9; a.play().catch(()=>{});
+ if(subM){ S.remove(subM); subM=null; } const c=document.createElement('canvas'); c.width=1024; c.height=72; const x=c.getContext('2d'); x.font='500 30px sans-serif'; const t=v[0]+': '+v[1]; let fs=30; while(x.measureText(t).width>980&&fs>18){ fs-=2; x.font='500 '+fs+'px sans-serif'; } const w=Math.min(1010,x.measureText(t).width+40);
+ x.fillStyle='rgba(0,0,0,0.45)'; x.fillRect(512-w/2,6,w,60); x.fillStyle='#d9c79e'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,512,37);
+ const tx=new T.CanvasTexture(c); tx.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(1.0,0.07),new T.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,toneMapped:false,fog:false}));
+ const cam=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; const hp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize();
+ m.position.copy(hp).addScaledVector(f,1.8); m.position.y=hp.y-0.42; m.lookAt(hp.x,m.position.y,hp.z); m.renderOrder=5; S.add(m); subM=m;
+ const hold=()=>Math.max(3.2,(isFinite(a.duration)?a.duration:4)+0.8); setTimeout(()=>{ const t0=performance.now(); const fd=()=>{ const k=Math.min(1,(performance.now()-t0)/800); m.material.opacity=1-k; if(k<1) requestAnimationFrame(fd); else if(subM===m){ S.remove(m); subM=null; } }; fd(); },(sec||hold())*1000); };
+window.zsaVO=VO;
 // Räume: Tür automatisch setzen
 const s=STEPS[step];
 if(s.door) document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(()=>{
   const kc=s.key; const cfg=Object.assign({},s.door,{locked:!!kc,note:s.door.note||(kc?(s.keyNote||'Abgeschlossen. Der Schlüssel liegt hier irgendwo. – M.'):null)});
   const d=window.__zsaDoorG=zsaDoor(sc,cfg,()=>goStep(step+1));
-  if(kc){ window.__zsaKeyG=zsaKey(sc,kc,()=>d.userData.unlock()); setTimeout(()=>{ if(d.userData.isLocked()){ d.userData.unlock(); } },150000); /* Sicherheitsnetz: nach 2,5 min gibt die Schleife nach */ }
+  const at=VO_AT[s.id]||[]; at.filter(e=>e[1]==='enter').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000));
+  const onKey=()=>at.filter(e=>e[1]==='key').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000));
+  if(kc){ window.__zsaKeyG=zsaKey(sc,kc,()=>{ d.userData.unlock(); onKey(); }); setTimeout(()=>{ if(d.userData.isLocked()){ d.userData.unlock(); } },150000); /* Sicherheitsnetz: nach 2,5 min gibt die Schleife nach */ }
  },300); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
 })();

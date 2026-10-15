@@ -1,11 +1,11 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/alpha.js?v=3"></script><script src="test/lib/dust.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/alpha.js?v=4"></script><script src="test/lib/dust.js?v=1"></script>
 <style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
 #start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:26px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
 #start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
 <div id="start"><h1>REWIND</h1><p>Alpha · Zeitschleife V3</p><p id="sub">Intro → Backrooms → 11 Räume · jede Tür führt weiter</p><b id="go">▶ STARTEN</b><p style="margin-top:18px">Quest: nach dem Start unten rechts „VR“ wählen · Laser + Trigger auf die Tür, oder einfach hindurchgehen</p><span class="r" id="reset">Von vorn beginnen</span></div>
-<a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#07070a; density:0.07">
+<a-scene light="defaultLightsEnabled:false" renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#07070a; density:0.07">
  <a-assets><img id="pano" src="assets/pano/backrooms_alpha.jpg" crossorigin="anonymous"></a-assets>
  <a-sky id="sky" src="#pano" color="#ffffff" rotation="0 -90 0" radius="60" material="fog:false"></a-sky>
  <a-entity id="rig" stick-move><a-entity id="cam" camera look-controls position="0 1.6 0"></a-entity>
