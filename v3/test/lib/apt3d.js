@@ -106,8 +106,9 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  const lo=new T.Group(); lo.position.set(0,0.38,0.41); sofa.add(lo); const LO=(o,x,y,z)=>{ o.position.set(x,y-0.38,z-0.41); lo.add(o); return o; };
  [-1,1].forEach(s=>{ const c=LO(new T.Mesh(rbox(0.83,0.15,0.66,0.06,0.028,10,0.004),fab),s*0.42,0.425,0.08); c.rotation.z=s*0.015; });
  lo.add(new T.Mesh(lipG(0.475-0.38,-0.22-0.41,0.02,0.026,0.008,2),flesh)); lo.add(new T.Mesh(lipG(0.49-0.38,-0.2-0.41,0.02,0.032,0.01,3),fab));
- const maw=new T.Mesh(new T.SphereGeometry(1,24,14),flesh); maw.scale.set(0.8,0.17,0.15); maw.position.set(0,0.47,-0.16); sofa.add(maw);
- const throat=new T.Mesh(new T.SphereGeometry(1,16,10),new T.MeshBasicMaterial({color:0x050001})); throat.scale.set(0.5,0.055,0.03); throat.position.set(0,0.49,-0.02); sofa.add(throat);
+ let mawM=null; const maw=new T.Mesh(new T.SphereGeometry(1,24,14),flesh); maw.scale.set(0.8,0.17,0.15); maw.position.set(0,0.47,-0.16); maw.material=flesh.clone(); maw.material.color=new T.Color(0x3a1418); maw.material.roughness=0.15; mawM=maw.material; sofa.add(maw);
+
+
  const tongue=LO(new T.Mesh(new T.SphereGeometry(1,18,10),flesh),0,0.43,-0.12); tongue.scale.set(0.42,0.05,0.16);
  const tL=teeth(32,0.49,-0.17,false,0.02); tL.position.set(0,-0.38,-0.41); lo.add(tL);
  // grüner Schein unter dem Sofa
@@ -140,7 +141,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  // ---- Zustände ----
  let open=0, lunge=0, fired=false, t0=-1, twitchAt=8000+rnd()*6000, twitchT=-1, forced=null;
  const ease=x=>1-Math.pow(1-Math.min(1,Math.max(0,x)),3);
- const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.2*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.5*open; flesh.emissiveIntensity=0.15+0.55*open; tongue.position.y=0.43-0.38+0.06*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=0.7+0.5*open; };
+ const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.2*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.5*open; flesh.emissiveIntensity=0.15+0.55*open; if(mawM) mawM.emissiveIntensity=0.05+0.25*open; tongue.position.y=0.43-0.38+0.06*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=0.7+0.5*open; };
  const fire=()=>{ if(fired) return; fired=true; t0=performance.now(); growl(); window.__sofaFired=true; };
  hit.addEventListener('click',fire);
  const cam=()=>document.getElementById('cam').object3D, cp=new T.Vector3();
