@@ -1,4 +1,4 @@
-window.ERA={ amb:'../assets/sfx/amb_1989.mp3', ambVol:0.35, pools:[[-1.35,0.85,-1.0,0.6,1.3]],
+window.ERA={ amb:'../assets/sfx/amb_1989.mp3', ambVol:0.5, pools:[[-1.35,0.85,-1.0,0.6,1.3]],
  backdrop:{url:'../assets/era1989/street_backdrop.jpg', px:0.02, r:6.5, front:3.6, horizonRow:236}, // Perchance e1989_street_023 (Pete)
  wall:0x14171b, wallEm:0x030405, floor:0xb0b0b0, floorRough:0.35, floorTex:'../assets/era1989/floor_photo.jpg', floorRep:2, floorFade:[0.5,0.85,0.12,0.62],
  room:{w:9,h:4.2,d:3.6,cz:0.6,ceiling:false,noWalls:true},
