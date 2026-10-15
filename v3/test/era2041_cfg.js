@@ -9,7 +9,7 @@ window.ERA={ amb:'../assets/sfx/amb_2041.mp3', ambVol:0.4,
  pools:[[2.3,1.2,0.95,0.7,1.2]],
  surfaces:[[-1.8,-1.3,0.6,0.45,0.26],[2.3,0.95,0.8,0.5,0.78]],
  items:[['../assets/items/2041/gruenriegel_0.glb',-1.85,0.26,-1.3,1,20,['Erzähler','Ein Grünriegel. Schmeckt nach Algen und Gehorsam.']],['../assets/items/2041/gruenriegel_1.glb',-1.7,0.26,-1.25,1,-10,['Mara','„Noch einer? Du sammelst die doch nicht etwa?“']],['../assets/items/2041/gruenriegel_2.glb',-1.95,0.26,-1.4,1,35,['Mara','„Leg den zurück. Der guckt mich an.“']]],
- people:{who:['Frau','Mann'], img:['../assets/era2041/passer_1.png','../assets/era2041/passer_0.png'], height:1.75, pos:[1.0,0,-1.75], radius:2.8, stillSec:2.0, lines:[
+ people:{who:['Frau','Mann'], img:['../assets/era2041/passer_1.png','../assets/era2041/passer_0.png'], height:1.75, pos:[1.0,0,-1.75], radius:3.0, stillSec:1.0, /* Gespräch erst, wenn man ≤ 3 m herangeht (Start ist 4,7 m entfernt) */ lines:[
   ['Frau','Hast du\'s gehört? Die Superreichen sind mit \'ner Rakete abgehauen.','../voice/era2041/passer_0.mp3'],
   ['Mann','Schon wieder? Wohin diesmal?','../voice/era2041/passer_1.mp3'],
   ['Frau','Die wollen ein Restaurant eröffnen. Am Ende der Galaxis.','../voice/era2041/passer_2.mp3'],
@@ -20,7 +20,7 @@ window.ERA={ amb:'../assets/sfx/amb_2041.mp3', ambVol:0.4,
   ['Mann','Ist eh nur ein Gerücht. … Hast du ein Handtuch?','../voice/era2041/passer_7.mp3']],
   after:'(Die beiden schlurfen weiter. Irgendwo piept eine Überwachungsdrohne.)'},
  enter:['Erzähler','2041. Die Luft schmeckt grün. Zwei müde Gestalten stehen im Smog und reden.'],
- floorFront:-3.0, bounds:[-2.9,2.9,-1.7,2.2]
+ floorFront:-3.0, start:[-1.8,1.6], bounds:[-2.9,2.9,-1.7,2.2]
 };
 window.ERAX={
  stands:[[2.65,-0.55,-70,1.5,2.4,0x0b100e,[['p8',1.0,1.5,-0.37,['Mara','„Soylent. Grüne Riegel für die ganze Familie. Frag lieber nicht, was drin ist.“']],['p7',1.0,1.5,0.37,['Mara','„Frische Bergluft in Dosen. Familiengröße. Schnüffel nicht dran, Süßer, das ist peinlich.“']]],0x9affd0,1.0],

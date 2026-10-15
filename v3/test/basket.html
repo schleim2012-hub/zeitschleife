@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Basketball-Hinterhof – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script>
+<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/basefog.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8f0ff;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:10px;max-width:460px}
 #score{position:fixed;right:14px;top:12px;z-index:5;color:#ffd27a;font:700 28px sans-serif;text-shadow:0 0 12px #000}
 #prize{display:none;position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:15;color:#ffe6a8;font:700 26px sans-serif;text-shadow:0 0 16px #000;background:rgba(0,0,0,.55);padding:16px 24px;border-radius:14px}
@@ -64,6 +64,7 @@ const WPX=107.6, WR=7.32, WW=1756/WPX, WH=1008/WPX, WANG=WW/WR;
 const wall=new T.Mesh(new T.CylinderGeometry(WR,WR,WH,96,1,true,Math.PI-WANG/2,WANG),wallTexM); wall.scale.x=-1; wall.position.set(0,0,2.2);
 // cylinder segment: radius 12 centered behind player -> front arc at z=-5.2
 wall.position.y=2.6+(409-504)/WPX; S.add(wall);
+if(window.baseFog) baseFog(S,{R:WR,cx:0,cz:2.2,thL:WANG,h:0.8,ring:2.2,color:0x050304,opacity:0.8}); // kaschiert die gebogene Wandkante
 // Matte-Painting-Übergang: 3D-Boden blendet zur Fotowand hin aus, dahinter liegt der nasse Foto-Boden (unter y=0 auf dem Bogen)
 (()=>{ const N=512, c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d'), id=x.createImageData(N,N);
  for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const wx=(i/N-0.5)*24, wz=(j/N-0.5)*24; /* Kreis liegt flach: v nach unten = +z */ const dz=wz-2.2, r=Math.hypot(wx,dz), ang=Math.atan2(wx,-dz);

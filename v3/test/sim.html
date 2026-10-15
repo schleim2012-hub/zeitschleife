@@ -1,9 +1,9 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Simulator-Kabine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/basefog.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8e4dc;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .35s}</style></head><body>
-<div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür</div>
+<div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür · Schild „← KIRMES“ hinten = zurück</div>
 <div id="fade"></div>
 <canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.15;mix-blend-mode:overlay"></canvas>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#050507; density:0.085" background="color:#020203" cursor="rayOrigin:mouse" raycaster="objects:.clickable">
@@ -32,6 +32,7 @@ S.addEventListener('loaded',()=>{
  const wall=new T.Mesh(new T.CylinderGeometry(R,R,H,128,1,true,Math.PI-ANG/2,ANG),wm); wall.scale.x=-1; wall.position.set(0,1.6+(EYE-PXH/2)/PPM,0); G.add(wall);
  // Rückseite der Kabine: dunkle Hülle (kein Foto) mit Tür-Schimmer
  const back=new T.Mesh(new T.CylinderGeometry(R+0.02,R+0.02,H,64,1,true,ANG/2-Math.PI+Math.PI,2*Math.PI-ANG),std({color:0x0c0c0e,roughness:0.9,metalness:0.3,side:T.DoubleSide})); back.position.copy(wall.position); G.add(back);
+ if(window.baseFog) baseFog(G,{R:R,cx:0,cz:0,thL:ANG,h:0.35,ring:0.55,color:0x030304,opacity:0.75});
  const fl=new T.Mesh(new T.CircleGeometry(R+0.05,48),std({color:0x0a0a0b,roughness:0.95})); fl.rotation.x=-Math.PI/2; fl.position.y=0.002; G.add(fl);
  // Leinwand-Patch exakt über dem Foto-Bildschirm (Pixel 545..1270 × 266..526)
  const sx0=545, sx1=1270, sy0=266, sy1=526;
@@ -105,6 +106,10 @@ S.addEventListener('loaded',()=>{
  const lampH=new T.Mesh(new T.ConeGeometry(0.16,0.18,18,1,true),std({color:0x222222,metalness:0.7,roughness:0.4,side:T.DoubleSide})); lampH.position.copy(work.position); lampH.position.y+=0.06; G.add(lampH);
  const bulb=new T.Mesh(new T.SphereGeometry(0.05,12,8),new T.MeshBasicMaterial({color:0xffe6c0})); bulb.position.copy(work.position); G.add(bulb);
  const cable=new T.Mesh(new T.CylinderGeometry(0.008,0.008,4,6),darkMetal); cable.position.set(work.position.x,work.position.y+2.1,work.position.z); G.add(cable);
+ // Rückweg zur Kirmes: Schild hinten in der Halle
+ const kc=document.createElement('canvas'); kc.width=512; kc.height=128; const kx=kc.getContext('2d'); kx.fillStyle='#08070a'; kx.fillRect(0,0,512,128); kx.font='700 56px sans-serif'; kx.textAlign='center'; kx.textBaseline='middle'; kx.shadowColor='#ffb04a'; kx.shadowBlur=16; kx.fillStyle='#ffc070'; kx.fillText('← KIRMES',256,66);
+ const kT=new T.CanvasTexture(kc); kT.colorSpace=T.SRGBColorSpace; const kSign=new T.Mesh(new T.PlaneGeometry(1.0,0.25),new T.MeshBasicMaterial({map:kT,toneMapped:false})); kSign.position.set(OUT.x-2.2,2.0,OUT.z+1.6); kSign.rotation.y=Math.PI*0.8; G.add(kSign);
+ const kL=new T.PointLight(0xffb060,0.5,2.2,2); kL.position.set(OUT.x-2.0,2.0,OUT.z+1.2); G.add(kL);
  // ---------- Ein-/Aussteigen
  const rig=document.getElementById('rig').object3D, fade=document.getElementById('fade');
  function go(toIn){ fade.style.opacity='1'; setTimeout(()=>{ inside=toIn; rig.position.copy(toIn?IN:OUT); rig.rotation.set(0,0,0); fade.style.opacity='0'; AUD.mode(toIn); if(window.__simVideo){ if(toIn){ sm.map=window.__simVideoTex; sm.needsUpdate=true; noiseOn=false; window.__simVideo.play().catch(()=>{}); } else window.__simVideo.pause(); } },380); }
@@ -115,6 +120,7 @@ S.addEventListener('loaded',()=>{
  // Klickziele als A-Frame-Entities (Laser + Maus)
  const mk=(obj,fn)=>{ const e=document.createElement('a-entity'); e.classList.add('clickable'); e.setObject3D('mesh',obj); obj.parent&&obj.parent.remove(obj); e.addEventListener('click',fn); S.appendChild(e); return e; };
  const dWorld=new T.Vector3(); doorHit.getWorldPosition(dWorld); O.remove(doorHit); doorHit.position.copy(dWorld); mk(doorHit,()=>{ if(!inside) go(true); });
+ { const kh=new T.Mesh(new T.PlaneGeometry(1.1,0.4),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide})); kh.position.copy(kSign.position); kh.rotation.copy(kSign.rotation); mk(kh,()=>{ if(!inside){ fade.style.opacity='1'; setTimeout(()=>location.href='kirmes.html',350); } }); }
  const exHit=new T.Mesh(new T.PlaneGeometry(0.8,1.9),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide})); exHit.position.set(0,0.95,R-0.06); exHit.rotation.y=Math.PI; mk(exHit,()=>{ if(inside) go(false); });
  // ---------- Ton (synthetisch): Hallenbrummen außen, Leinwand-Rauschen + Hydraulik-Rumpeln innen
  const AUD={ac:null,g:{},mode(i){ if(!this.ac) return; const t=this.ac.currentTime; this.g.hall.gain.setTargetAtTime(i?0.05:0.22,t,0.4); this.g.hiss.gain.setTargetAtTime(i?0.05:0.0,t,0.4); this.g.rum.gain.setTargetAtTime(i?0.32:0.04,t,0.6); },

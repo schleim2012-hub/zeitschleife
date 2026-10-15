@@ -8,7 +8,7 @@ window.ERA={ amb:'../assets/sfx/amb_mall.mp3', ambVol:0.3, pools:[[-2.25,0.95,-0
  ph:[['painted_wooden_bench',-2.3,0,-0.7,90,1],['potted_plant_01',2.35,0,-1.1,0,1.1],['potted_plant_01',-2.35,0,-1.85,40,0.95]],
  shimmer:[0,-0.75,-3.45,6,1.6,0x9fd8ff,0.22],
  water:{pos:[0,0.6,-5],vol:0.45,url:'../assets/sfx/fountain_cc0.mp3',gain:3.2},
- mara:['Mara','„Okay, ganz ernst: Ich bin Mara. Ich bin 1996 in einer Mall eingeschlafen, in der Umkleide. Seitdem bin ich hier. Frag nicht.“','../voice/mara_a7fef26d64.mp3',16000],
+ mara:['Mara','„Okay, ganz ernst: Ich bin Mara. Diese Mall kenn ich – nur zwölf Jahre später, mit Pastell statt Neon. Da schlaf ich irgendwann in der Umkleide ein. Jetzt ist erst 1984, und ich bin hier nur zu Besuch. Frag nicht.“','../voice/mara_3c67b56525.mp3',16000],
  surfaces:[[-2.3,-0.7,0.5,1.15,0.47]],
  items:[['../assets/items/coin.glb',-2.3,0.48,-0.5,1,0,['Erzähler','Ein Groschen für den Brunnen. Wünsch dir was – aber nichts mit Zeitreisen.']]],
  enter:['Erzähler','Einkaufszentrum, 1984. Neon, Springbrunnen, und aus jedem Laden dudelt derselbe Synthiepop.'],
