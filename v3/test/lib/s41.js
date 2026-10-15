@@ -49,7 +49,7 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
   let px,py; if(vert){ px=vx; py=0; vx+=cw+4; } else { px=1100; py=hy; hy+=ch+4; } ax.drawImage(c,px,py);
   const w=vert?size:size*cw/ch, h=vert?size*ch/cw:size; const C3=new T.Color(1,1,1); let cx, cz=z, corners;
   if(vert){ cx=side*(XF-0.5); corners=[new T.Vector3(cx-w/2,y-h/2,cz),new T.Vector3(cx+w/2,y-h/2,cz),new T.Vector3(cx+w/2,y+h/2,cz),new T.Vector3(cx-w/2,y+h/2,cz)]; const bk=new T.Mesh(new T.BoxGeometry(w+0.04,h+0.04,0.06)); bk.position.set(cx,y,cz-0.035); frames.add(bk); const br=new T.Mesh(new T.BoxGeometry(0.4,0.05,0.05)); br.position.set(side*(XF-0.25),y+h/2-0.2,cz); frames.add(br); }
-  else { cx=side*(XF-0.45); const s2=side; corners=[new T.Vector3(cx,y-h/2,cz+s2*w/2),new T.Vector3(cx,y-h/2,cz-s2*w/2),new T.Vector3(cx,y+h/2,cz-s2*w/2),new T.Vector3(cx,y+h/2,cz+s2*w/2)]; }
+  else { cx=side*(XF-0.45); const s2=side; corners=[new T.Vector3(cx,y-h/2,cz-s2*w/2),new T.Vector3(cx,y-h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz+s2*w/2),new T.Vector3(cx,y+h/2,cz-s2*w/2)]; }
   const si=pushQuad(sq,corners,px/2048,1-(py+ch)/1024,cw/2048,ch/1024,C3);
   const hcol=new T.Color(col).multiplyScalar(0.35); const R=Math.max(w,h)*0.8, hx=cx-side*0.1, hz=cz+0.06; const hi=pushQuad(hq,[new T.Vector3(hx-R,y-R,hz),new T.Vector3(hx+R,y-R,hz),new T.Vector3(hx+R,y+R,hz),new T.Vector3(hx-R,y+R,hz)],0,0,1,1,hcol);
   const scol=new T.Color(col).multiplyScalar(0.55); const len=Math.min(9,y*1.6+2), sw=(vert?0.7:w*0.8)/2, sx=side*(XF-0.9), z0=cz-0.2; const ri=pushQuad(rq,[new T.Vector3(sx-sw,0.012,z0),new T.Vector3(sx+sw,0.012,z0),new T.Vector3(sx+sw,0.012,z0+len),new T.Vector3(sx-sw,0.012,z0+len)],0,0,1,1,scol);

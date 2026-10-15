@@ -10,7 +10,7 @@ const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (S
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8}},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:0.9, z:2.25, face:[0.9,0]}, key:{x:0.6,z:-1.15}},
- {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.2,z:0.6}},
+ {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:3.22, z:1.6, face:[0,1.6]}, key:{x:-2.2,z:0.6}},
  {id:'era2041',    page:'test/era2041.html',       title:'Stadt 2041',         door:{x:3.22, z:2.0, face:[0,2.0]}, key:{x:2.2,z:-1.0}},
  {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.6, face:[1.9,0]}, key:{x:-1.3,z:-1.3}},
  {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
