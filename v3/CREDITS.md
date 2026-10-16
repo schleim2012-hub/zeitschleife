@@ -49,3 +49,5 @@
 
 ## Zeit-Fresser (Spielhalle-Automat)
 - Eigener Code und eigene Grafik (Rewind V3, 2026). Nur die Genre-Mechanik "Labyrinth fressen" ist angelehnt, kein fremdes Layout, keine fremden Figuren, Namen oder Töne.
+
+- FORUM 3D (Spielhalle 1984): eigener Raycaster-Code und eigene prozedurale Grafik/Töne, nur das Genre als Vorbild. Keine fremden Assets.
