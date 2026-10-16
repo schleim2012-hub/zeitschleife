@@ -51,3 +51,10 @@
 - Eigener Code und eigene Grafik (Rewind V3, 2026). Nur die Genre-Mechanik "Labyrinth fressen" ist angelehnt, kein fremdes Layout, keine fremden Figuren, Namen oder Töne.
 
 - FORUM 3D (Spielhalle 1984): eigener Raycaster-Code und eigene prozedurale Grafik/Töne, nur das Genre als Vorbild. Keine fremden Assets.
+
+## Versteckte Küche in den Backrooms (V3 Alpha, Maniac-Mansion-Easter-Egg)
+- Beton-Boden: ambientCG "Concrete034" (CC0), https://ambientcg.com/view?id=Concrete034
+- Schrankholz: ambientCG "Wood049" (CC0), https://ambientcg.com/view?id=Wood049
+- Wandputz: ambientCG "PaintedPlaster017" (CC0, schon im Projekt), blau getönt + Schmutz per Canvas
+- Handschrift auf dem Kühlschrank-Zettel: Font "Kalam" (Indian Type Foundry, SIL Open Font License 1.1, fonts/Kalam-OFL.txt)
+- Küche, Geräte, Kettensäge, Zettel: eigene three.js-Geometrie und Canvas-Texturen nach Petes Referenzbild. Alle Geräusche (Mikrowelle, Hamster-Fiepen, Popcorn, Ding, Kettensäge) live per WebAudio synthetisiert.

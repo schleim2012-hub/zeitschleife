@@ -7,7 +7,7 @@ const H=2.75, WT=0.14;
 const R=[ [-4,4,-4,3], [1,2.6,3,9], [-12,-4,-2.5,-1], [-1,1,-24,-4], [-6,-1.07,-12,-7], [1.07,6,-16,-11] ];
 // Wandsegmente (x1,z1,x2,z2) – handgebaut, Öffnungen sind Lücken
 const W=[ [-4,3,1,3],[2.6,3,4,3], [4,-4,4,-1.45],[4,-0.35,4,3], [-4,-4,-4,-2.5],[-4,-1,-4,3], [-4,-4,-1,-4],[1,-4,4,-4],
- [1,3,1,9],[2.6,3,2.6,9],[1,9,2.6,9], [-12,-2.5,-4,-2.5],[-12,-1,-4,-1],[-12,-2.5,-12,-1],
+ [1,3,1,9],[2.6,3,2.6,9],[1,9,2.6,9], [-12,-2.5,-4,-2.5],[-12,-1,-10.45,-1],[-9.55,-1,-4,-1],[-12,-2.5,-12,-1],
  [-1,-4,-1,-9],[-1,-10.5,-1,-24],[1,-4,1,-13],[1,-14.2,1,-24],
  [-6,-7,-1,-7],[-6,-12,-1,-12],[-6,-12,-6,-7], [1,-11,6,-11],[1,-16,6,-16],[6,-16,6,-11] ];
 const PIL=[[-1.7,-1.6,0.5],[2.4,1.3,0.45],[-3.6,-9.6,0.5],[3.6,-13.6,0.5]]; // Pfeiler x,z,size
@@ -59,16 +59,17 @@ window.buildBackrooms=function(sc,o){ o=o||{}; const T=THREE, S=sc.object3D, ROO
   for(let gz=Math.ceil(r[2]/0.6)*0.6; gz<r[3]; gz+=0.6){ const P=[[r[0],H-0.004,gz-0.012],[r[1],H-0.004,gz-0.012],[r[1],H-0.004,gz+0.012],[r[0],H-0.004,gz+0.012]]; quad(RB,P,[0,-1,0],P.map(()=>[0,0]),P.map(()=>col(tone(bake((r[0]+r[1])/2,H-0.1,gz,0,-1,0))*0.8))); } });
  // Wände: beide Seiten, unterteilt (Länge 0,5, Höhe in Stufen) für Licht + AO
  const YS=[0,0.1,0.35,0.9,1.6,2.3,2.6,H];
- const wall=(ax,az,bx,bz)=>{ const L=Math.hypot(bx-ax,bz-az), tx=(bx-ax)/L, tz=(bz-az)/L; const nx=-tz, nz=tx; const n=Math.max(1,Math.round(L/0.5));
-  [1,-1].forEach(sd=>{ const ox=nx*WT/2*sd, oz=nz*WT/2*sd; for(let k=0;k<n;k++){ const s0=k/n*L, s1=(k+1)/n*L; for(let j=0;j<YS.length-1;j++){ const y0=YS[j], y1=YS[j+1];
+ const wall=(ax,az,bx,bz,ys)=>{ const YS_=ys||YS; const L=Math.hypot(bx-ax,bz-az), tx=(bx-ax)/L, tz=(bz-az)/L; const nx=-tz, nz=tx; const n=Math.max(1,Math.round(L/0.5));
+  [1,-1].forEach(sd=>{ const ox=nx*WT/2*sd, oz=nz*WT/2*sd; for(let k=0;k<n;k++){ const s0=k/n*L, s1=(k+1)/n*L; for(let j=0;j<YS_.length-1;j++){ const y0=YS_[j], y1=YS_[j+1];
     const P=[[ax+tx*s0+ox,y0,az+tz*s0+oz],[ax+tx*s1+ox,y0,az+tz*s1+oz],[ax+tx*s1+ox,y1,az+tz*s1+oz],[ax+tx*s0+ox,y1,az+tz*s0+oz]]; if(sd<0) P.reverse();
     const U=P.map(v=>{ const s=(v[0]-ax)*tx+(v[2]-az)*tz; return [s/1.2*sd, v[1]/1.2]; });
     quad(WB,P,[nx*sd,0,nz*sd],U,P.map(v=>{ const E=bake(v[0],v[1],v[2],nx*sd,0,nz*sd); const s=(v[0]-ax)*tx+(v[2]-az)*tz; let ao=1; ao*=0.55+0.45*Math.min(1,v[1]/0.32); ao*=0.75+0.25*Math.min(1,(H-v[1])/0.3);
      // Ecken: nahe anderer Wände dunkler
      const wx=v[0]+nx*sd*0.12, wz=v[2]+nz*sd*0.12; const wd=wallDist(wx,wz); ao*=0.6+0.4*Math.min(1,wd/0.3); return col(tone(E)*ao); })); } } });
-  // Stirnseiten
+  if(ys) return; // Stirnseiten
   [[ax,az,-1],[bx,bz,1]].forEach(([ex,ez,s])=>{ const P=[[ex-nx*WT/2,0,ez-nz*WT/2],[ex+nx*WT/2,0,ez+nz*WT/2],[ex+nx*WT/2,H,ez+nz*WT/2],[ex-nx*WT/2,H,ez-nz*WT/2]]; if(s<0) P.reverse(); const E=bake(ex+tx*s*0.1,1.2,ez+tz*s*0.1,tx*s,0,tz*s); quad(WB,P,[tx*s,0,tz*s],P.map(v=>[(v[0]*nx+v[2]*nz)/1.2,v[1]/1.2]),P.map(v=>col(tone(E)*(0.55+0.45*Math.min(1,v[1]/0.3))))); }); };
  W.forEach(w=>wall(...w));
+wall(-10.45,-1,-9.55,-1,[2.05,2.3,2.6,H]); // Sturz über der Küchentür
  PIL.forEach(([x,z,s])=>{ const h=s/2; wall(x-h,z-h,x+h,z-h); wall(x+h,z-h,x+h,z+h); wall(x+h,z+h,x-h,z+h); wall(x-h,z+h,x-h,z-h); });
  // Fußleisten (dunkles, abgestoßenes Holz)
  const BB=mk(); const base=(ax,az,bx,bz)=>{ const L=Math.hypot(bx-ax,bz-az), tx=(bx-ax)/L, tz=(bz-az)/L, nx=-tz, nz=tx; [1,-1].forEach(sd=>{ const o=WT/2+0.012; const P=[[ax+nx*o*sd,0,az+nz*o*sd],[bx+nx*o*sd,0,bz+nz*o*sd],[bx+nx*o*sd,0.09,bz+nz*o*sd],[ax+nx*o*sd,0.09,az+nz*o*sd]]; if(sd<0) P.reverse(); const E=bake((ax+bx)/2+nx*sd*0.2,0.1,(az+bz)/2+nz*sd*0.2,nx*sd,0,nz*sd); quad(BB,P,[nx*sd,0,nz*sd],P.map(v=>[((v[0]-ax)*tx+(v[2]-az)*tz)/2,v[1]*2]),P.map(()=>col(tone(E)*0.7)));
@@ -80,7 +81,7 @@ window.buildBackrooms=function(sc,o){ o=o||{}; const T=THREE, S=sc.object3D, ROO
  const mCeil=new T.MeshStandardMaterial({map:tex('ceil_c.jpg',1,1),normalMap:tex('ceil_n.jpg'),roughness:0.95,metalness:0,vertexColors:true});
  const mRail=new T.MeshStandardMaterial({color:0xb8b090,roughness:0.6,metalness:0.3,vertexColors:true});
  const mBase=new T.MeshStandardMaterial({color:0x3a2c1c,roughness:0.7,metalness:0,vertexColors:true});
- const add=(B,m)=>{ const me=new T.Mesh(toGeo(B),m); me.matrixAutoUpdate=false; G.add(me); return me; };
+ const add=(B,m)=>{ const me=new T.Mesh(toGeo(B),m); me.matrixAutoUpdate=false; me.userData.keep=true; G.add(me); return me; };
  add(FB,mFloor); add(CB,mCeil); add(WB,mWall); add(RB,mRail); add(BB,mBase);
  // Löcher in der Decke: schwarzer Schacht + ein paar Kabel / Rohr; hängende Platten
  const voidM=new T.MeshBasicMaterial({color:0x020202}); const cabM=new T.MeshStandardMaterial({color:0x111111,roughness:0.6});
@@ -110,6 +111,8 @@ window.buildBackrooms=function(sc,o){ o=o||{}; const T=THREE, S=sc.object3D, ROO
  const hemi=new T.HemisphereLight(0xfff4d0,0x3a3010,o.hemi||1.15); S.add(hemi);
  const pl=[]; const mkPL=(t,I)=>{ const L=new T.PointLight(0xfff0c0,I,6,2); L.position.set(t.x,H-0.25,t.z); S.add(L); pl.push(L); return L; };
  const L0=mkPL(sp,1.6), L1=mkPL(fl1,1.1), L2=mkPL(fl2,1.0);
+// ---------- versteckte Küche (mmk.js) hinter der angelehnten Tür im linken Seitengang ----------
+const KIT=window.buildMMKitchen?buildMMKitchen(sc,{G,ROOT,L1,L2,hemi,hemiBase:o.hemi||1.15}):null; const XW=KIT?KIT.walls:[], XR=KIT?KIT.rects:[];
  // ---------- Set-Dressing ----------
  const decal=(draw,w,h,x,y,z,rx,ry)=>{ const c=document.createElement('canvas'); c.width=c.height=256; draw(c.getContext('2d')); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace;
   const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshStandardMaterial({map:t,transparent:true,depthWrite:false,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-2})); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,0); G.add(m); return m; };
@@ -147,18 +150,24 @@ window.buildBackrooms=function(sc,o){ o=o||{}; const T=THREE, S=sc.object3D, ROO
  const farT=TL.load(ROOT+'assets/pano/backrooms_alpha.jpg'); farT.colorSpace=T.SRGBColorSpace; farT.repeat.set(0.16,0.7); farT.offset.set(0.42,0.12);
  const far=new T.Mesh(new T.PlaneGeometry(9,6),new T.MeshBasicMaterial({map:farT,fog:false,color:0x403c30})); far.position.set(0,2.2,-36); G.add(far);
  const haze=new T.Mesh(new T.PlaneGeometry(2,H),new T.MeshBasicMaterial({color:0x1a170c,transparent:true,opacity:0.55,depthWrite:false,fog:false})); haze.position.set(0,H/2,-24.05); G.add(haze);
- // Forced Perspective: kleinere Tür am Ende des hinteren Gangs
- if(window.zsaDoor){ const d=zsaDoor(sc,{x:1.8,z:8.88,face:[1.8,0],locked:true,light:0.18}); d.scale.setScalar(0.8); d.userData.fake=true; }
+ let fakeDoor=null;
+// Forced Perspective: kleinere Tür am Ende des hinteren Gangs
+ if(window.zsaDoor){ const d=zsaDoor(sc,{x:1.8,z:8.88,face:[1.8,0],locked:true,light:0.18}); d.scale.setScalar(0.8); d.userData.fake=true; fakeDoor=d; }
  // ---------- Kollision ----------
- const collide=(p,r)=>{ r=r||0.28; for(let it=0;it<2;it++){ for(const [ax,az,bx,bz] of W){ const vx=bx-ax, vz=bz-az, l=vx*vx+vz*vz; let u=((p.x-ax)*vx+(p.z-az)*vz)/l; u=Math.max(0,Math.min(1,u)); const cx=ax+u*vx, cz=az+u*vz; const dx=p.x-cx, dz=p.z-cz, d=Math.hypot(dx,dz); const m=r+WT/2; if(d<m&&d>1e-5){ p.x=cx+dx/d*m; p.z=cz+dz/d*m; } }
-   for(const [x,z,s] of PIL){ const h=s/2+r; const dx=p.x-x, dz=p.z-z; if(Math.abs(dx)<h&&Math.abs(dz)<h){ if(h-Math.abs(dx)<h-Math.abs(dz)) p.x=x+Math.sign(dx)*h; else p.z=z+Math.sign(dz)*h; } } }
+ const collide=(p,r)=>{ r=r||0.28; for(let it=0;it<2;it++){ for(const [ax,az,bx,bz] of W.concat(XW)){ const vx=bx-ax, vz=bz-az, l=vx*vx+vz*vz; let u=((p.x-ax)*vx+(p.z-az)*vz)/l; u=Math.max(0,Math.min(1,u)); const cx=ax+u*vx, cz=az+u*vz; const dx=p.x-cx, dz=p.z-cz, d=Math.hypot(dx,dz); const m=r+WT/2; if(d<m&&d>1e-5){ p.x=cx+dx/d*m; p.z=cz+dz/d*m; } }
+   for(const [x,z,s] of PIL){ const h=s/2+r; const dx=p.x-x, dz=p.z-z; if(Math.abs(dx)<h&&Math.abs(dz)<h){ if(h-Math.abs(dx)<h-Math.abs(dz)) p.x=x+Math.sign(dx)*h; else p.z=z+Math.sign(dz)*h; } }
+   for(const [x0,x1,z0,z1] of XR){ if(p.x>x0-r&&p.x<x1+r&&p.z>z0-r&&p.z<z1+r){ const pen=[p.x-(x0-r),(x1+r)-p.x,p.z-(z0-r),(z1+r)-p.z]; const m=Math.min(...pen); if(m===pen[0]) p.x=x0-r; else if(m===pen[1]) p.x=x1+r; else if(m===pen[2]) p.z=z0-r; else p.z=z1+r; } } }
   p.x=Math.max(BOUND.x0,Math.min(BOUND.x1,p.x)); p.z=Math.max(BOUND.z0,Math.min(BOUND.z1,p.z)); return p; };
  // ---------- Flackern + Welt-Helligkeit ----------
  const st=[{t:fl1,L:L1,on:1,next:0},{t:fl2,L:L2,on:1,next:0}]; let K=1; const base0={hemi:hemi.intensity,L0:L0.intensity,L1:L1.intensity,L2:L2.intensity};
  const vcMats=[mFloor,mWall,mCeil,mRail,mBase];
  const setWorld=k=>{ K=k; vcMats.forEach(m=>m.color.setScalar(k)); mOnV.color.setHex(0xfff2c8).multiplyScalar(Math.max(0.02,k)); mWeak.color.setHex(0x9a8f6c).multiplyScalar(Math.max(0.02,k)); hemi.intensity=base0.hemi*k; L0.intensity=base0.L0*k; };
  const tick=(now)=>{ st.forEach(s=>{ if(now>s.next){ s.on=s.on?0:1; s.next=now+(s.on?(Math.random()<0.3?50+Math.random()*120:1200+Math.random()*4500):(40+Math.random()*160)); if(o.onFlick) o.onFlick(s.on); }
-   const v=s.on?1:0.06; s.L.intensity=base0[s===st[0]?'L1':'L2']*v*K; s.t.mesh.material.color.setHex(0xfff2c8).multiplyScalar(Math.max(0.03,v*K)); }); };
- return {group:G,collide,setWorld,tick,tubes,hemi,spawn:{x:0,z:0.3},doorAt:{x:4-WT/2-0.01,z:-0.9,face:[0,-0.9]},H};
+   const v=s.on?1:0.06; s.L.intensity=base0[s===st[0]?'L1':'L2']*v*K; s.t.mesh.material.color.setHex(0xfff2c8).multiplyScalar(Math.max(0.03,v*K)); }); if(KIT){ KIT.tick(now,st,K); cull(G.visible&&window.__mmk&&__mmk.inside>0.97); } };
+// in der Küche: alles ausblenden, was man durch die Tür nicht sehen kann (nur Gang bleibt) → weniger Draw Calls auf der Quest
+let culled=false, cullList=null; const cull=on=>{ if(on===culled) return; culled=on; if(!cullList){ cullList=[]; const c3=new T.Vector3(), b3=new T.Box3(); G.children.forEach(c=>{ if(c===KIT.group||c.userData.keep) return; b3.setFromObject(c); if(b3.isEmpty()) return; b3.getCenter(c3); if(c3.x>-12.3&&c3.x<-3.7&&c3.z>-2.8&&c3.z<-0.7) return; cullList.push(c); });
+  sc.querySelectorAll('[gltf-model]').forEach(e=>cullList.push(e.object3D)); if(sc.__door) cullList.push(sc.__door); if(fakeDoor) cullList.push(fakeDoor); }
+ cullList.forEach(c=>{ c.visible=!on; }); };
+ return {group:G,kitchen:KIT,collide,setWorld,tick,tubes,hemi,spawn:{x:0,z:0.3},doorAt:{x:4-WT/2-0.01,z:-0.9,face:[0,-0.9]},H};
 };
 })();
