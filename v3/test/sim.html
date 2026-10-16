@@ -47,6 +47,29 @@ if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,c
  function noise(){ roll=(roll+3)%96; for(let y=0;y<96;y++){ const band=Math.abs(y-roll)<4?40:0, sl=(y%2)?0.82:1; for(let x=0;x<256;x++){ const v=(Math.random()*120+28+band)*sl; const i=(y*256+x)*4; nd.data[i]=v*0.86; nd.data[i+1]=v*0.92; nd.data[i+2]=v; nd.data[i+3]=255; } } nx.putImageData(nd,0,0); nTex.needsUpdate=true; }
  let noiseOn=true; setInterval(()=>{ if(noiseOn&&inside) noise(); },55); noise();
  const glow=new T.PointLight(0x9fb4d8,0.5,4,2); glow.position.set(0,1.6,-1.2); G.add(glow); setInterval(()=>{ glow.intensity=inside?0.35+Math.random()*0.25:0; },80);
+ // Teppich-Stapel-Nachbar (Roy-Gag): rechts vom Sitz, dunkel, nur innen sichtbar
+ const neigh=new T.Group(); neigh.position.set(0.58,0,0.05); neigh.visible=false; G.add(neigh);
+ const cMat=std({color:0x3a2e24,roughness:0.92,metalness:0.05});
+ tex('../assets/tex/br/carpet_c.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.map=tx; cMat.color.set(0xffffff); cMat.needsUpdate=true; });
+ tex('../assets/tex/br/carpet_n.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.normalMap=tx; cMat.normalScale.set(0.7,0.7); cMat.needsUpdate=true; },false);
+ tex('../assets/tex/br/carpet_r.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.roughnessMap=tx; cMat.needsUpdate=true; },false);
+ const roll=(len,rad,x,y,z,rx,ry)=>{ const m=new T.Mesh(new T.CylinderGeometry(rad,rad,len,14),cMat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,Math.PI/2); m.castShadow=true; neigh.add(m); return m; };
+ // Sitz aus Rollen + Rumpf + Kopf (Stapel, nicht billig-Cartoon)
+ roll(0.42,0.07,0,0.18,0.02,0,0.2); roll(0.38,0.065,0.02,0.30,-0.02,0.1,-0.15);
+ roll(0.36,0.06,-0.02,0.42,0.04,-0.05,0.25);
+ const torso=new T.Mesh(new T.BoxGeometry(0.28,0.38,0.22),cMat); torso.position.set(0,0.72,0); torso.castShadow=true; neigh.add(torso);
+ const sh=new T.Mesh(new T.BoxGeometry(0.42,0.12,0.18),cMat); sh.position.set(0,0.92,0); neigh.add(sh);
+ const armL=new T.Mesh(new T.CylinderGeometry(0.045,0.04,0.32,10),cMat); armL.position.set(-0.22,0.68,0.06); armL.rotation.z=0.35; neigh.add(armL);
+ const armR=new T.Mesh(new T.CylinderGeometry(0.045,0.04,0.32,10),cMat); armR.position.set(0.22,0.68,0.04); armR.rotation.z=-0.25; neigh.add(armR);
+ const head=new T.Mesh(new T.SphereGeometry(0.11,12,10),cMat); head.position.set(0,1.12,0.02); head.scale.set(1,1.05,0.92); neigh.add(head);
+ // zweite Schicht „Teppichkanten“ als dunklere Rollen oben auf dem Kopf (Stapel-Look)
+ roll(0.22,0.05,0,1.22,0.02,0.4,0.6);
+ const seat=new T.Mesh(new T.BoxGeometry(0.36,0.08,0.34),std({color:0x1a1816,roughness:0.85,metalness:0.2})); seat.position.set(0,0.12,0.02); neigh.add(seat);
+ // eigener Sitzplatz links (Spieler) – schlichte dunkle Bank, damit der Nachbar logisch sitzt
+ const mySeat=new T.Group(); mySeat.position.set(-0.05,0,0.12); G.add(mySeat);
+ const bench=new T.Mesh(new T.BoxGeometry(0.7,0.1,0.42),std({color:0x141312,roughness:0.8,metalness:0.25})); bench.position.set(0,0.28,0); mySeat.add(bench);
+ const backrest=new T.Mesh(new T.BoxGeometry(0.7,0.45,0.08),std({color:0x121110,roughness:0.85,metalness:0.2})); backrest.position.set(0,0.55,0.18); mySeat.add(backrest);
+ window.__simNeigh=neigh;
  // echter Clip, falls vorhanden
  const clipUrl=new URLSearchParams(location.search).get('clip')||'../assets/sim/clip1.mp4';
  fetch(clipUrl,{method:'HEAD'}).then(r=>{ if(!r.ok) return; const v=document.createElement('video'); v.src=clipUrl; v.loop=true; v.muted=false; v.playsInline=true; v.crossOrigin='anonymous';
@@ -121,7 +144,7 @@ if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,c
  const kL=new T.PointLight(0xffb060,0.5,2.2,2); kL.position.set(OUT.x-2.0,2.0,OUT.z+1.2); G.add(kL);
  // ---------- Ein-/Aussteigen
  const rig=document.getElementById('rig').object3D, fade=document.getElementById('fade');
- function go(toIn){ fade.style.opacity='1'; setTimeout(()=>{ inside=toIn; rig.position.copy(toIn?IN:OUT); rig.rotation.set(0,0,0); fade.style.opacity='0'; AUD.mode(toIn); if(window.__simVideo){ if(toIn){ sm.map=window.__simVideoTex; sm.needsUpdate=true; noiseOn=false; window.__simVideo.play().catch(()=>{}); } else window.__simVideo.pause(); } },380); }
+ function go(toIn){ fade.style.opacity='1'; setTimeout(()=>{ inside=toIn; rig.position.copy(toIn?IN:OUT); rig.rotation.set(0,0,0); fade.style.opacity='0'; AUD.mode(toIn); if(window.__simNeigh) window.__simNeigh.visible=!!toIn; if(window.__simVideo){ if(toIn){ sm.map=window.__simVideoTex; sm.needsUpdate=true; noiseOn=false; window.__simVideo.play().catch(()=>{}); } else window.__simVideo.pause(); } },380); }
  // Innen: Ausstieg hinten (dunkler Türspalt im Rücken)
  const exitC=document.createElement('canvas'); exitC.width=256; exitC.height=64; const ex=exitC.getContext('2d'); ex.fillStyle='#0a0303'; ex.fillRect(0,0,256,64); ex.font='700 34px sans-serif'; ex.textAlign='center'; ex.textBaseline='middle'; ex.shadowColor='#ff3020'; ex.shadowBlur=12; ex.fillStyle='#ff5a40'; ex.fillText('AUSGANG',128,33);
  const exT=new T.CanvasTexture(exitC); exT.colorSpace=T.SRGBColorSpace; const exitS=new T.Mesh(new T.PlaneGeometry(0.5,0.125),new T.MeshBasicMaterial({map:exT,toneMapped:false})); exitS.position.set(0,2.15,R-0.05); exitS.rotation.y=Math.PI; G.add(exitS);
