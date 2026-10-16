@@ -3,7 +3,7 @@
    Licht: nur praktisch (Magenta fern, Cyan Mitte, Kasse warm). window.buildArcade84(sceneEl,C) */
 (function(){
 let sd=8484; const rnd=()=>{ sd=(sd*16807)%2147483647; return sd/2147483647; };
-window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/arc/';
+window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); window.__arcGroup=G; const B='../assets/tex/arc/';
  const ld=(f,srgb,rx,ry)=>{ const t=TL.load(f.includes('/')?f:B+f); t.wrapS=t.wrapT=T.RepeatWrapping; if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; if(rx) t.repeat.set(rx,ry||rx); return t; };
  const cv=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; t.userData={c}; return t; };
  const XW=4.4, YC=3.2, Z0=4.4, Z1=-16;
@@ -155,10 +155,18 @@ window.ArcadeBigScreen=(function(){
   if(mat) mat.color.setScalar(showOp);
   if(spill) spill.material.opacity=0.4*showOp;
  }
- function setHidden(on){ const hide=o=>{ if(!o) return; if(o.isObject3D) o.visible=!on; else if(o.object3D) o.object3D.visible=!on; else if(o.setAttribute){ o.object3D&& (o.object3D.visible=!on); o.setAttribute('visible', !on); } };
+ function setHidden(on){ const hide=o=>{ if(!o) return; if(o.isObject3D) o.visible=!on; else if(o.object3D) o.object3D.visible=!on; else if(o.setAttribute){ if(o.object3D) o.object3D.visible=!on; o.setAttribute('visible', !on); } };
   hideList.forEach(hide); (window.__arcCabHide||[]).forEach(hide);
+  if(window.__arcGroup) window.__arcGroup.visible=!on;
   const G=window.__arcGlow; if(G&&G.backdrop) G.backdrop.forEach(o=>{ if(o) o.visible=!on; });
-  if(G&&G.NS) G.NS.forEach(([m,hs])=>{ m.visible=!on; hs.visible=!on; }); }
+  if(G&&G.NS) G.NS.forEach(([m,hs])=>{ m.visible=!on; hs.visible=!on; });
+  // Props/Extras (Getränkeautomat „KE“ usw.) – alles außer Rig und Play-Screen
+  if(scRef){ const rig=document.getElementById('rig');
+   scRef.querySelectorAll('a-entity').forEach(e=>{
+    if(e===hit||e===rig||(rig&&rig.contains(e))) return;
+    if(e.id==='cam'||e.id==='hl'||e.id==='hr') return;
+    if(e.hasAttribute('gltf-model')||e.classList.contains('clickable')) hide(e);
+   }); } }
  function tickDim(){
   if(!fading) return; const u=Math.min(1,(performance.now()-dimT0)/dimDur), e=ease(u);
   const k=dimFrom+(dimTo-dimFrom)*e; showOp=wantShow?e:(1-e); applyDim(k);
