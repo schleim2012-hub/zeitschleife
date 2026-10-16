@@ -181,7 +181,7 @@ window.Forum3D=function(cv){
 };
 
 // ---------- Einbau in die Spielhalle ----------
-window.mountForum3D=function(sc,cab){ const T=THREE, S=sc.object3D;
+window.mountForum3D=function(sc,cab,hideExtra){ const T=THREE, S=sc.object3D;
  const cv=document.createElement('canvas'); cv.width=320; cv.height=256; const game=Forum3D(cv); game.draw();
  const tex=new T.CanvasTexture(cv); tex.colorSpace=T.SRGBColorSpace; tex.minFilter=T.LinearFilter; tex.generateMipmaps=false;
  const Mc=new T.Matrix4().compose(new T.Vector3(cab.x,0,cab.z),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),cab.ry),new T.Vector3(1,1,1));
@@ -199,7 +199,7 @@ window.mountForum3D=function(sc,cab){ const T=THREE, S=sc.object3D;
  function enter(){ playing=true; idle=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
   const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw); const front=new T.Vector3(Math.sin(cab.ry),0,Math.cos(cab.ry)); const want=new T.Vector3(cab.x,0,cab.z).addScaledVector(front,0.85);
   if(Math.hypot(cw.x-want.x,cw.z-want.z)>1.1){ rig.object3D.position.x+=want.x-cw.x; rig.object3D.position.z+=want.z-cw.z; }
-  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'f3d'); if(h&&!h.__f3dBound){ h.__f3dBound=1; h.addEventListener('click',onScreen); } }
+  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'f3d',[el,mar,...(hideExtra||[])]); if(h&&!h.__f3dBound){ h.__f3dBound=1; h.addEventListener('click',onScreen); } }
   hint(vr()?'FORUM 3D · großer Schirm · Stick gehen · Trigger = Banane · B/Y oder Trigger auf Schirm = aufhören':'FORUM 3D · Pfeiltasten/WASD · Leertaste/Klick = Banane · Esc = aufhören'); }
  function leave(){ playing=false; if(window.ArcadeBigScreen) ArcadeBigScreen.hide('f3d'); game.setAxes(0,0,0); for(const k in keys) keys[k]=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
  el.addEventListener('click',onScreen);
