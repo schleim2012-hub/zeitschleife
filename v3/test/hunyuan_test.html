@@ -1,0 +1,46 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TEST · Hunyuan-Raum</title>
+<style>body{margin:0;background:#000;overflow:hidden;font:13px system-ui;color:#c9b38a}#i{position:fixed;left:10px;bottom:10px;opacity:.7;pointer-events:none}</style>
+<script type="importmap">{"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+"@sparkjsdev/spark":"https://sparkjs.dev/releases/spark/2.3.1/spark.module.js"}}</script>
+</head><body><div id="i">TEST · Hunyuan HY-World 2.0 · 1 Bild → Gaussian Splat · Maus ziehen / WASD · VR: linker Stick</div>
+<script type="module">
+import * as THREE from "three";
+import { VRButton } from "three/addons/webxr/VRButton.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x020202);
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5)); renderer.setSize(innerWidth,innerHeight);
+renderer.xr.enabled=true; renderer.xr.setReferenceSpaceType("local-floor");
+document.body.appendChild(renderer.domElement); document.body.appendChild(VRButton.createButton(renderer));
+scene.add(new SparkRenderer({renderer}));
+// rig at floor height; camera is a child, nothing attached to the camera (no head-locked content)
+const rig=new THREE.Group(); scene.add(rig);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.02,200); camera.position.set(0,1.3,0.3); rig.add(camera);
+// world-space room: HY-World output is camera space (y down, z forward) -> flip, scale ~3 m depth, original camera at 1.3 m eye height
+const S=3.0, EYE=1.3;
+const room=new SplatMesh({url:"hunyuan/sofa_room.ply"});
+room.quaternion.set(1,0,0,0); room.scale.setScalar(S); room.position.set(0,EYE,0); scene.add(room);
+// dark floor so you don't stand in the void
+const floor=new THREE.Mesh(new THREE.CircleGeometry(6,48),new THREE.MeshBasicMaterial({color:0x070504}));
+floor.rotation.x=-Math.PI/2; floor.position.y=0; scene.add(floor);
+const oc=new OrbitControls(camera,renderer.domElement); oc.target.set(0,1.1,-2.4); oc.enableDamping=true; oc.update();
+const keys={}; addEventListener("keydown",e=>keys[e.code]=1); addEventListener("keyup",e=>keys[e.code]=0);
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const clock=new THREE.Clock(), v=new THREE.Vector3(), fw=new THREE.Vector3();
+renderer.setAnimationLoop(()=>{
+ const dt=Math.min(clock.getDelta(),0.05);
+ let mx=(keys.KeyD?1:0)-(keys.KeyA?1:0), mz=(keys.KeyS?1:0)-(keys.KeyW?1:0);
+ if(renderer.xr.isPresenting){ const s=renderer.xr.getSession();
+  for(const src of s.inputSources){ if(src.handedness==="left"&&src.gamepad){const a=src.gamepad.axes; mx=a[2]||0; mz=a[3]||0;} } }
+ if(Math.abs(mx)>.15||Math.abs(mz)>.15){
+  const cam=renderer.xr.isPresenting?renderer.xr.getCamera():camera; cam.getWorldDirection(fw); fw.y=0; fw.normalize();
+  v.set(-fw.z,0,fw.x).multiplyScalar(mx).addScaledVector(fw,-mz).multiplyScalar(1.2*dt); rig.position.add(v);
+  if(!renderer.xr.isPresenting){oc.target.add(v);} }
+ if(!renderer.xr.isPresenting) oc.update();
+ renderer.render(scene,camera);
+});
+</script></body></html>
