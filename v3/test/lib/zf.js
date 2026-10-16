@@ -127,7 +127,7 @@ window.mountZeitFresser=function(sc,cab,hideExtra){ const T=THREE, S=sc.object3D
  const mc=document.createElement('canvas'); mc.width=512; mc.height=204; { const g=mc.getContext('2d'); const gr=g.createLinearGradient(0,0,0,204); gr.addColorStop(0,'#301804'); gr.addColorStop(0.5,'#000'); gr.addColorStop(1,'#301804'); g.fillStyle=gr; g.fillRect(0,0,512,204); g.strokeStyle='#ffb040'; g.lineWidth=5; g.strokeRect(10,10,492,184);
   g.font='bold 62px Arial Black, Arial'; g.textAlign='center'; g.textBaseline='middle'; g.shadowColor='#ffa030'; g.shadowBlur=22; g.fillStyle='#ffc050'; g.fillText('ZEIT-FRESSER',256,96); g.shadowBlur=0; g.lineWidth=2.5; g.strokeStyle='#fff'; g.strokeText('ZEIT-FRESSER',256,96);
   g.font='bold 20px Arial'; g.fillStyle='#e0a050'; g.fillText('SCHLEIFE ELECTRONICS 1984',256,160); }
- const mt=new T.CanvasTexture(mc); mt.colorSpace=T.SRGBColorSpace; const mar=new T.Mesh(new T.PlaneGeometry(0.6,0.24),new T.MeshBasicMaterial({map:mt,toneMapped:false,color:0xd8d8d8})); place(mar,[0,1.71,0.226],0.15,0.004); S.add(mar);
+ const mt=new T.CanvasTexture(mc); mt.colorSpace=T.SRGBColorSpace; const mar=new T.Mesh(new T.PlaneGeometry(0.6,0.24),new T.MeshBasicMaterial({map:mt,toneMapped:false,color:0xd8d8d8})); place(mar,[0,1.71,0.226],0.15,0.004); S.add(mar); (window.__arcCabHide=window.__arcCabHide||[]).push(el,mar,...(hideExtra||[]));
  // ---------- Steuerung ----------
  let playing=false; const rig=document.getElementById('rig'), cam=document.getElementById('cam'); let rot0=0, idle=0;
  const sub=document.getElementById('sub'); const hint=s=>{ if(!sub) return; sub.textContent=s; sub.style.display='block'; clearTimeout(hint.t); hint.t=setTimeout(()=>sub.style.display='none',3200); };

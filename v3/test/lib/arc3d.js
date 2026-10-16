@@ -68,10 +68,10 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
    x.font='bold '+(t.length>11?26:34)+'px Arial Black, Arial'; x.textAlign='center'; x.textBaseline='middle'; x.shadowColor=c; x.shadowBlur=12; x.fillStyle=c; x.fillText(t,ox+128,oy+51); x.shadowBlur=0; x.lineWidth=1.5; x.strokeStyle='#fff'; x.strokeText(t,ox+128,oy+51);
    for(let k=0;k<5;k++){ x.fillStyle=c; x.globalAlpha=0.3; x.beginPath(); x.arc(ox+20+rnd()*216,oy+14+rnd()*74,2+rnd()*3,0,7); x.fill(); x.globalAlpha=1; } });
    x.fillStyle='#200000'; x.fillRect(0,409.6,256,102.4); [70,186].forEach(px=>{ x.fillStyle='#ff3020'; x.fillRect(px-14,440,28,40); x.fillStyle='#200000'; x.fillRect(px-2,448,4,24); }); });
- const marM=new T.MeshBasicMaterial({map:MT,vertexColors:true,toneMapped:false}); G.add(new T.Mesh(merge(marQ),marM));
+ const marM=new T.MeshBasicMaterial({map:MT,vertexColors:true,toneMapped:false}); const marMesh=new T.Mesh(merge(marQ),marM); G.add(marMesh);
  const halo=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.35,'rgba(255,255,255,0.3)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
- G.add(new T.Mesh(merge(hq),new T.MeshBasicMaterial({map:halo,vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false})));
- G.add(new T.Mesh(merge(fq),new T.MeshBasicMaterial({map:halo,vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false})));
+ const hqMesh=new T.Mesh(merge(hq),new T.MeshBasicMaterial({map:halo,vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false})); G.add(hqMesh);
+ const fqMesh=new T.Mesh(merge(fq),new T.MeshBasicMaterial({map:halo,vertexColors:true,transparent:true,blending:T.AdditiveBlending,depthWrite:false})); G.add(fqMesh);
  // ---- Kasse hinten links (Eingangsseite) + Wechselautomat ----
  { add('desk',box(1.6,1.05,0.6,-2.6,0.525,3.3)); add('desk',box(1.7,0.05,0.7,-2.6,1.075,3.3)); add('desk',box(0.6,1.6,0.45,-3.95,0.8,3.6)); add('fix',box(0.04,0.9,0.5,-3.4,1.55,3.3)); }
  // Neon-Schilder: HIGH SCORE (fern), WECHSELGELD (Kasse), SPIELHALLE-Pfeil
@@ -99,7 +99,8 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  const glowHalos=[]; G.traverse(o=>{ if(o.isMesh&&o.material&&o.material.blending===T.AdditiveBlending) glowHalos.push(o.material); });
  window.__arcGlow={ NS, scrM, marM, flM, carp:MAT.carp, carpEm:0.32, smoke, glowHalos,
   nsOp:NS.map(([m,hs])=>[m.material.opacity??1, hs.material.opacity??0.35]),
-  haloOp:glowHalos.map(m=>m.opacity??1) };
+  haloOp:glowHalos.map(m=>m.opacity??1),
+  backdrop:[cabI,ctlI,scr,marMesh,hqMesh,fqMesh,flu] };
  let fr=0, last=0, flk=1; const sCol=scr.geometry.attributes.color; const scrIdx=[...flickS].map(i=>i*6);
  const update=(t)=>{ const s=t*0.001; if(t-last>95){ last=t; fr++; drawScreens(fr); }
   const dim=window.__arcDim==null?1:window.__arcDim;
@@ -139,7 +140,7 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
 window.ArcadeBigScreen=(function(){
  let mesh=null, mat=null, spill=null, hit=null, scRef=null, owner=null, dimFrom=1, dimTo=1, dimT0=0, dimDur=400, fading=false, showOp=0, wantShow=false, hideList=[];
  const ease=k=>k*k*(3-2*k);
- const SR=1.6; // Screen-Fläche ~1,6 m vor den Augen, zwischen Spieler und Automat
+ const SR=1.6; // Screen-Fläche ~1,6 m vor den Augen
  function applyDim(k){
   window.__arcDim=k; const L=window.__arcLights, G=window.__arcGlow;
   if(L){ L.Lc.intensity=2.6*k; L.Lk.intensity=1.6*k; L.Hemi.intensity=0.9*k; }
@@ -154,7 +155,10 @@ window.ArcadeBigScreen=(function(){
   if(mat) mat.color.setScalar(showOp);
   if(spill) spill.material.opacity=0.4*showOp;
  }
- function setHidden(on){ hideList.forEach(o=>{ if(!o) return; if(o.isObject3D) o.visible=!on; else if(o.object3D) o.object3D.visible=!on; else if(o.setAttribute) o.setAttribute('visible', !on); }); }
+ function setHidden(on){ const hide=o=>{ if(!o) return; if(o.isObject3D) o.visible=!on; else if(o.object3D) o.object3D.visible=!on; else if(o.setAttribute){ o.object3D&& (o.object3D.visible=!on); o.setAttribute('visible', !on); } };
+  hideList.forEach(hide); (window.__arcCabHide||[]).forEach(hide);
+  const G=window.__arcGlow; if(G&&G.backdrop) G.backdrop.forEach(o=>{ if(o) o.visible=!on; });
+  if(G&&G.NS) G.NS.forEach(([m,hs])=>{ m.visible=!on; hs.visible=!on; }); }
  function tickDim(){
   if(!fading) return; const u=Math.min(1,(performance.now()-dimT0)/dimDur), e=ease(u);
   const k=dimFrom+(dimTo-dimFrom)*e; showOp=wantShow?e:(1-e); applyDim(k);
@@ -162,7 +166,7 @@ window.ArcadeBigScreen=(function(){
   else requestAnimationFrame(tickDim);
  }
  function geo(){
-  const T=THREE, TOT=78*Math.PI/180, CEN=60*Math.PI/180, SH=SR*CEN*(256/320), SEG=72;
+  const T=THREE, TOT=100*Math.PI/180, CEN=78*Math.PI/180, SH=SR*CEN*(256/320), SEG=96;
   const sg=new T.CylinderGeometry(SR,SR,SH,SEG,1,true,Math.PI-TOT/2,TOT); const uv=sg.attributes.uv, n=sg.attributes.position.count, col=new Float32Array(n*3);
   for(let k=0;k<n;k++){ const u=uv.getX(k), a=(u-0.5)*TOT; let uu,f=1; if(Math.abs(a)<=CEN/2) uu=0.5+a/CEN; else { const e=(Math.abs(a)-CEN/2)/((TOT-CEN)/2); uu=a>0?1-0.03*(1-e):0.03*(1-e); f=Math.pow(1-e,1.8)*0.5; } uv.setX(k,uu); col[k*3]=col[k*3+1]=col[k*3+2]=f; }
   sg.setAttribute('color',new T.BufferAttribute(col,3)); return sg;
@@ -173,7 +177,7 @@ window.ArcadeBigScreen=(function(){
    mesh=new T.Mesh(geo(),mat); mesh.scale.x=-1; mesh.visible=false; mesh.renderOrder=6;
    const fc=document.createElement('canvas'); fc.width=256; fc.height=128; { const x=fc.getContext('2d'); const g=x.createRadialGradient(128,0,4,128,0,140); g.addColorStop(0,'rgba(180,200,230,0.28)'); g.addColorStop(1,'rgba(180,200,230,0)'); x.fillStyle=g; x.fillRect(0,0,256,128); }
    spill=new T.Mesh(new T.PlaneGeometry(2.4,1.4),new T.MeshBasicMaterial({map:new T.CanvasTexture(fc),transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,opacity:0})); spill.rotation.x=-Math.PI/2; spill.visible=false; spill.renderOrder=5;
-   hit=document.createElement('a-entity'); hit.classList.add('clickable'); hit.setAttribute('geometry','primitive:plane;width:1.85;height:1.5'); hit.setAttribute('material','opacity:0;transparent:true;shader:flat;side:double'); hit.setAttribute('visible',false); }
+   hit=document.createElement('a-entity'); hit.classList.add('clickable'); hit.setAttribute('geometry','primitive:plane;width:2.4;height:1.7'); hit.setAttribute('material','opacity:0;transparent:true;shader:flat;side:double'); hit.setAttribute('visible',false); }
   else { mat.map=tex; mat.needsUpdate=true; }
   if(scRef!==sc){ if(mesh.parent) mesh.parent.remove(mesh); if(spill.parent) spill.parent.remove(spill); sc.object3D.add(mesh); sc.object3D.add(spill); if(hit.parentElement!==sc) sc.appendChild(hit); scRef=sc; }
  }
@@ -185,7 +189,7 @@ window.ArcadeBigScreen=(function(){
   if(hit){ const d=SR*0.92; hit.object3D.position.set(hp.x+f.x*d, hp.y, hp.z+f.z*d); hit.object3D.rotation.set(0,yaw,0); hit.object3D.visible=true; hit.setAttribute('visible',true); }
  }
  return {
-  show(sc,tex,id,hide){ if(owner&&owner!==id) this.hide(owner,true); ensure(sc,tex); owner=id; hideList=(hide||[]).slice(); setHidden(true); place(); wantShow=true; dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=0.02; dimT0=performance.now(); dimDur=400; fading=true; showOp=0; applyDim(dimFrom); requestAnimationFrame(tickDim); return hit; },
+  show(sc,tex,id,hide){ if(owner&&owner!==id) this.hide(owner,true); ensure(sc,tex); owner=id; hideList=(hide||[]).slice(); setHidden(true); place(); wantShow=true; dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=0.015; dimT0=performance.now(); dimDur=400; fading=true; showOp=0; applyDim(dimFrom); requestAnimationFrame(tickDim); return hit; },
   hide(id,instant){ if(owner&&id&&owner!==id) return; owner=null; wantShow=false; if(instant){ fading=false; showOp=0; setHidden(false); hideList=[]; applyDim(1); if(mesh) mesh.visible=false; if(spill) spill.visible=false; if(hit){ hit.object3D.visible=false; hit.setAttribute('visible',false); } return; }
    dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=1; dimT0=performance.now(); dimDur=400; fading=true; requestAnimationFrame(tickDim); },
   hitEl(){ return hit; },
