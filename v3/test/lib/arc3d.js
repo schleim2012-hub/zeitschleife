@@ -82,7 +82,8 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  const Lm=new T.PointLight(0xff3aa0,4,10,1.6); Lm.position.set(0,2.5,Z1+1.6); G.add(Lm);
  const Lc=new T.PointLight(0x30a8ff,2.6,7,1.6); Lc.position.set(1.2,2.7,-3.2); G.add(Lc);
  const Lk=new T.PointLight(0xffa060,1.6,5,1.6); Lk.position.set(-2.4,2.3,2.8); G.add(Lk);
- S.add(new T.HemisphereLight(0x2a2448,0x0a0610,0.9));
+ const Hemi=new T.HemisphereLight(0x2a2448,0x0a0610,0.9); S.add(Hemi);
+ window.__arcDim=1; window.__arcLights={Lm,Lc,Lk,Hemi,fogD:0.075};
  // Zigarettenrauch: Schichten unter der Decke, driftend
  const smoke=[]; for(let i=0;i<9;i++){ const sp=new T.Sprite(new T.SpriteMaterial({map:halo,color:0x6a5a80,transparent:true,opacity:0.07,depthWrite:false})); sp.position.set((rnd()-0.5)*6,2.3+rnd()*0.7,1-rnd()*15); const s=3+rnd()*3; sp.scale.set(s*1.6,s*0.5,1); sp.userData.p=rnd()*6; smoke.push(sp); G.add(sp); }
  // ---- Schmutz: Kippen, Becher, Aschenbecher auf Automat ----
@@ -99,8 +100,8 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  const update=(t)=>{ const s=t*0.001; if(t-last>95){ last=t; fr++; drawScreens(fr); }
   if(Math.random()<0.05) flk=Math.random()<0.5?0.05:1; flM.color.setRGB(0.82*flk,0.88*flk,flk);
   scrIdx.forEach(o=>{ const k=Math.random()<0.1?0.2+Math.random()*0.5:1; for(let j=0;j<6;j++) sCol.setXYZ(o+j,k,k,k); }); sCol.needsUpdate=true;
-  smoke.forEach((sp,i)=>{ sp.position.x+=Math.sin(s*0.1+sp.userData.p)*0.002; sp.material.opacity=0.06+0.02*Math.sin(s*0.3+i); });
-  Lm.intensity=4+0.4*Math.sin(s*2.2); };
+  smoke.forEach((sp,i)=>{ sp.position.x+=Math.sin(s*0.1+sp.userData.p)*0.002; sp.material.opacity=(0.06+0.02*Math.sin(s*0.3+i))*(window.__arcDim||1); });
+  const dim=window.__arcDim==null?1:window.__arcDim; Lm.intensity=(4+0.4*Math.sin(s*2.2))*dim; };
  AFRAME.registerComponent('a84-tick',{tick(t){ update(t); }}); sc.setAttribute('a84-tick','');
  const boxes=[[-0.9,0.9,-12.9,-5.2],[-3.5,-1.7,2.9,3.7],[1.2,1.9,-1.75,-0.98],[-1.9,-1.2,-1.75,-0.98]]; // + Zeit-Fresser- und Forum-3D-Automat
  const collide=(x,z)=>{ let px=0,pz=0; boxes.forEach(([x0,x1,z0,z1])=>{ const r=0.25; if(x>x0-r&&x<x1+r&&z>z0-r&&z<z1+r){ const o=[x-(x0-r),(x1+r)-x,z-(z0-r),(z1+r)-z]; const m=Math.min(...o); if(m===o[0]) px-=o[0]; else if(m===o[1]) px+=o[1]; else if(m===o[2]) pz-=o[2]; else pz+=o[3]; } }); return (px||pz)?[px,pz]:null; };
@@ -126,4 +127,54 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  }
  return {update,collide,cabs};
 };
+
+/* Großer gebogener Play-Screen (wie Alpha-Intro): weltfest, ~2,2 m vor dem Spieler, Arcade dimmt weich */
+window.ArcadeBigScreen=(function(){
+ let mesh=null, mat=null, spill=null, hit=null, scRef=null, owner=null, dimFrom=1, dimTo=1, dimT0=0, dimDur=400, fading=false, showOp=0, wantShow=false;
+ const ease=k=>k*k*(3-2*k);
+ function applyDim(k){
+  window.__arcDim=k; const L=window.__arcLights;
+  if(L){ L.Lc.intensity=2.6*k; L.Lk.intensity=1.6*k; L.Hemi.intensity=0.9*k; }
+  if(scRef&&scRef.object3D.fog){ const d0=(L&&L.fogD)||0.075; scRef.object3D.fog.density=d0+(0.22-d0)*(1-k); }
+  if(mat) mat.color.setScalar(showOp);
+  if(spill) spill.material.opacity=0.45*showOp;
+ }
+ function tickDim(){
+  if(!fading) return; const u=Math.min(1,(performance.now()-dimT0)/dimDur), e=ease(u);
+  const k=dimFrom+(dimTo-dimFrom)*e; showOp=wantShow?e:(1-e); applyDim(k);
+  if(u>=1){ fading=false; if(!wantShow&&mesh){ mesh.visible=false; if(spill) spill.visible=false; if(hit) hit.object3D.visible=false; showOp=0; applyDim(1); } }
+  else requestAnimationFrame(tickDim);
+ }
+ function geo(){
+  const T=THREE, SR=2.2, TOT=70*Math.PI/180, CEN=55*Math.PI/180, SH=SR*CEN*(256/320), SEG=72;
+  const sg=new T.CylinderGeometry(SR,SR,SH,SEG,1,true,Math.PI-TOT/2,TOT); const uv=sg.attributes.uv, n=sg.attributes.position.count, col=new Float32Array(n*3);
+  for(let k=0;k<n;k++){ const u=uv.getX(k), a=(u-0.5)*TOT; let uu,f=1; if(Math.abs(a)<=CEN/2) uu=0.5+a/CEN; else { const e=(Math.abs(a)-CEN/2)/((TOT-CEN)/2); uu=a>0?1-0.03*(1-e):0.03*(1-e); f=Math.pow(1-e,1.8)*0.5; } uv.setX(k,uu); col[k*3]=col[k*3+1]=col[k*3+2]=f; }
+  sg.setAttribute('color',new T.BufferAttribute(col,3)); return sg;
+ }
+ function ensure(sc,tex){
+  const T=THREE;
+  if(!mesh){ mat=new T.MeshBasicMaterial({map:tex,vertexColors:true,toneMapped:false,fog:false,side:T.DoubleSide,color:0xffffff});
+   mesh=new T.Mesh(geo(),mat); mesh.scale.x=-1; mesh.visible=false; mesh.renderOrder=4;
+   const fc=document.createElement('canvas'); fc.width=256; fc.height=128; { const x=fc.getContext('2d'); const g=x.createRadialGradient(128,0,4,128,0,140); g.addColorStop(0,'rgba(180,200,230,0.32)'); g.addColorStop(1,'rgba(180,200,230,0)'); x.fillStyle=g; x.fillRect(0,0,256,128); }
+   spill=new T.Mesh(new T.PlaneGeometry(3.0,1.7),new T.MeshBasicMaterial({map:new T.CanvasTexture(fc),transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,opacity:0})); spill.rotation.x=-Math.PI/2; spill.visible=false;
+   hit=document.createElement('a-entity'); hit.classList.add('clickable'); hit.setAttribute('geometry','primitive:plane;width:2.05;height:1.65'); hit.setAttribute('material','opacity:0;transparent:true;shader:flat;side:double'); hit.setAttribute('visible',false); }
+  else { mat.map=tex; mat.needsUpdate=true; }
+  if(scRef!==sc){ if(mesh.parent) mesh.parent.remove(mesh); if(spill.parent) spill.parent.remove(spill); sc.object3D.add(mesh); sc.object3D.add(spill); if(hit.parentElement!==sc) sc.appendChild(hit); scRef=sc; }
+ }
+ function place(){
+  const T=THREE, cam=document.getElementById('cam').object3D, hp=new T.Vector3(), q=new T.Quaternion();
+  cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-6) f.set(0,0,-1); f.normalize();
+  const yaw=Math.atan2(-f.x,-f.z); mesh.position.set(hp.x,hp.y,hp.z); mesh.rotation.set(0,yaw,0); mesh.visible=true;
+  spill.position.set(hp.x+f.x*1.6, 0.02, hp.z+f.z*1.6); spill.rotation.y=yaw; spill.visible=true;
+  if(hit){ hit.object3D.position.set(hp.x+f.x*2.05, hp.y, hp.z+f.z*2.05); hit.object3D.rotation.set(0,yaw,0); hit.object3D.visible=true; hit.setAttribute('visible',true); }
+ }
+ return {
+  show(sc,tex,id){ if(owner&&owner!==id) this.hide(owner,true); ensure(sc,tex); owner=id; place(); wantShow=true; dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=0.07; dimT0=performance.now(); dimDur=400; fading=true; showOp=0; applyDim(dimFrom); requestAnimationFrame(tickDim); return hit; },
+  hide(id,instant){ if(owner&&id&&owner!==id) return; owner=null; wantShow=false; if(instant){ fading=false; showOp=0; applyDim(1); if(mesh) mesh.visible=false; if(spill) spill.visible=false; if(hit){ hit.object3D.visible=false; hit.setAttribute('visible',false); } return; }
+   dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=1; dimT0=performance.now(); dimDur=400; fading=true; requestAnimationFrame(tickDim); },
+  hitEl(){ return hit; },
+  owner(){ return owner; }
+ };
+})();
+
 })();

@@ -195,12 +195,14 @@ window.mountForum3D=function(sc,cab){ const T=THREE, S=sc.object3D;
  let playing=false; const rig=document.getElementById('rig'), cam=document.getElementById('cam'); let rot0=0, idle=0; const keys={};
  const sub=document.getElementById('sub'); const hint=s=>{ if(!sub) return; sub.textContent=s; sub.style.display='block'; clearTimeout(hint.t); hint.t=setTimeout(()=>sub.style.display='none',3600); };
  const vr=()=>sc.is('vr-mode');
+ function onScreen(){ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else if(!vr()) game.fire(); else leave(); }
  function enter(){ playing=true; idle=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
   const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw); const front=new T.Vector3(Math.sin(cab.ry),0,Math.cos(cab.ry)); const want=new T.Vector3(cab.x,0,cab.z).addScaledVector(front,0.85);
   if(Math.hypot(cw.x-want.x,cw.z-want.z)>1.1){ rig.object3D.position.x+=want.x-cw.x; rig.object3D.position.z+=want.z-cw.z; }
-  hint(vr()?'FORUM 3D · linker Stick gehen/drehen · Trigger = Banane werfen · B/Y = aufhören':'FORUM 3D · Pfeiltasten/WASD · Q/E seitlich · Leertaste/Klick = Banane · Esc = aufhören'); }
- function leave(){ playing=false; game.setAxes(0,0,0); for(const k in keys) keys[k]=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
- el.addEventListener('click',()=>{ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else if(!vr()) game.fire(); });
+  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'f3d'); if(h&&!h.__f3dBound){ h.__f3dBound=1; h.addEventListener('click',onScreen); } }
+  hint(vr()?'FORUM 3D · großer Schirm · Stick gehen · Trigger = Banane · B/Y oder Trigger auf Schirm = aufhören':'FORUM 3D · Pfeiltasten/WASD · Leertaste/Klick = Banane · Esc = aufhören'); }
+ function leave(){ playing=false; if(window.ArcadeBigScreen) ArcadeBigScreen.hide('f3d'); game.setAxes(0,0,0); for(const k in keys) keys[k]=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
+ el.addEventListener('click',onScreen);
  const KM={ArrowUp:'f',KeyW:'f',ArrowDown:'b',KeyS:'b',ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',KeyQ:'sl',KeyE:'sr'};
  const keyAxes=()=>game.setAxes((keys.f?1:0)-(keys.b?1:0),(keys.r?1:0)-(keys.l?1:0),(keys.sr?1:0)-(keys.sl?1:0));
  window.addEventListener('keydown',e=>{ if(!playing) return; if(e.code==='Escape'){ leave(); return; } if(e.code==='Space'){ game.fire(); e.preventDefault(); idle=0; return; } if(e.code in KM){ keys[KM[e.code]]=1; keyAxes(); idle=0; e.preventDefault(); } },true);

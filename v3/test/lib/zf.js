@@ -132,13 +132,14 @@ window.mountZeitFresser=function(sc,cab){ const T=THREE, S=sc.object3D;
  let playing=false; const rig=document.getElementById('rig'), cam=document.getElementById('cam'); let rot0=0, idle=0;
  const sub=document.getElementById('sub'); const hint=s=>{ if(!sub) return; sub.textContent=s; sub.style.display='block'; clearTimeout(hint.t); hint.t=setTimeout(()=>sub.style.display='none',3200); };
  const screenPos=new T.Vector3();
+ function onScreen(){ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else leave(); }
  function enter(){ playing=true; idle=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
-  // zu weit weg? sanft vor den Automaten setzen (nur Position, keine Drehung)
   el.object3D.getWorldPosition(screenPos); const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw); const front=new T.Vector3(Math.sin(cab.ry),0,Math.cos(cab.ry)); const want=new T.Vector3(cab.x,0,cab.z).addScaledVector(front,0.85);
   if(Math.hypot(cw.x-want.x,cw.z-want.z)>1.1){ rig.object3D.position.x+=want.x-cw.x; rig.object3D.position.z+=want.z-cw.z; }
-  hint(sc.is('vr-mode')?'ZEIT-FRESSER · linker Stick lenken · Trigger auf den Bildschirm = aufhören':'ZEIT-FRESSER · Pfeiltasten/WASD · Klick auf den Bildschirm oder Esc = aufhören'); }
- function leave(){ playing=false; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
- el.addEventListener('click',()=>{ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else leave(); });
+  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'zf'); if(h&&!h.__zfBound){ h.__zfBound=1; h.addEventListener('click',onScreen); } }
+  hint(sc.is('vr-mode')?'ZEIT-FRESSER · linker Stick · großer Schirm · Trigger auf Schirm = aufhören':'ZEIT-FRESSER · Pfeiltasten/WASD · Klick/Esc = aufhören'); }
+ function leave(){ playing=false; if(window.ArcadeBigScreen) ArcadeBigScreen.hide('zf'); const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
+ el.addEventListener('click',onScreen);
  const KEY={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
  window.addEventListener('keydown',e=>{ if(!playing) return; if(e.code==='Escape'){ leave(); return; } if(e.code in KEY){ game.setDir(KEY[e.code]); idle=0; e.preventDefault(); } },true);
  setTimeout(()=>{ ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(!h) return;
