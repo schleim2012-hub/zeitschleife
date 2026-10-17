@@ -6,7 +6,7 @@ const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (S
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
  {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.94, face:[1.5,0]}, key:{x:-1.3,z:-0.9}},
- {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.0,z:-1.2}},
+ {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.25,z:-0.55,y:0.52}},
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8}},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:0.9, z:2.25, face:[0.9,0]}, key:{x:0.6,z:-1.15}},
@@ -23,8 +23,20 @@ const save=st=>{ try{ localStorage.setItem(KEY,JSON.stringify(Object.assign(ls()
 const on=P.get('alpha')==='1'||/alpha\.html$/.test(location.pathname);
 let step=P.has('step')?+P.get('step'):(ls().step||0); step=Math.max(0,Math.min(STEPS.length-1,step|0));
 const url=i=>{ const s=STEPS[i]; return ROOT+s.page+'?alpha=1&step='+i+(s.page==='alpha.html'?'#'+s.id:''); };
-function fadeOut(cb){ let f=document.getElementById('zsaFade'); if(!f){ f=document.createElement('div'); f.id='zsaFade'; f.style.cssText='position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:99;transition:opacity .28s'; document.body.appendChild(f); }
- requestAnimationFrame(()=>{ f.style.opacity='1'; }); setTimeout(cb,300); }
+function fadeOut(cb){
+ // Weicher VHS-Rückspul (~0,5 s): nur Rauschen + Tracking am Rand, kein RGB-Split, kein Vollbild-Strobo (Quest-tauglich).
+ let f=document.getElementById('zsaFade'); if(!f){ f=document.createElement('div'); f.id='zsaFade'; f.style.cssText='position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:99'; document.body.appendChild(f); }
+ let cv=document.getElementById('zsaVhs'); if(!cv){ cv=document.createElement('canvas'); cv.id='zsaVhs'; cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100;opacity:0'; document.body.appendChild(cv); }
+ const W=Math.min(640,innerWidth|0)||640, H=Math.min(360,innerHeight|0)||360; cv.width=W; cv.height=H; const x=cv.getContext('2d');
+ try{ const ac=(window.__zsaAC)||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); if(ac){ try{ac.resume();}catch(e){} const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain(), fl=ac.createBiquadFilter(); o.type='sawtooth'; o.frequency.setValueAtTime(320,t); o.frequency.exponentialRampToValueAtTime(1400,t+0.45); fl.type='bandpass'; fl.frequency.value=1100; fl.Q.value=0.8; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.045,t+0.04); g.gain.linearRampToValueAtTime(0,t+0.5); o.connect(fl); fl.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.52); } }catch(e){}
+ const t0=performance.now(), DUR=520;
+ const frame=now=>{ const u=Math.min(1,(now-t0)/DUR), a=Math.sin(Math.PI*u); f.style.opacity=String(0.55*u+0.35*u*u); cv.style.opacity=String(0.55+0.35*a);
+  x.fillStyle='#050308'; x.globalAlpha=0.55+0.35*u; x.fillRect(0,0,W,H);
+  x.globalAlpha=0.07*a; x.fillStyle='#ccc'; for(let i=0;i<110;i++) x.fillRect(Math.random()*W,Math.random()*H,1.5,1);
+  for(let i=0;i<2;i++){ const y=H-(((u*2.2+i*0.4)%1)*H); x.globalAlpha=0.1*a; x.fillStyle='#fff'; x.fillRect(0,y,W,1); x.globalAlpha=0.05*a; x.fillRect(0,y,W,3+2*i); }
+  x.globalAlpha=0.04*a; x.fillStyle='#000'; for(let y=0;y<H;y+=5) x.fillRect(0,y,W,1);
+  if(u<1) requestAnimationFrame(frame); else { f.style.opacity='1'; cv.style.opacity='0'; cb&&cb(); } };
+ requestAnimationFrame(frame); }
 function goStep(i){ i=Math.max(0,Math.min(STEPS.length-1,i)); save({step:i}); fadeOut(()=>{ location.href=url(i); }); }
 window.ZSA={on,STEPS,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url};
 if(!on) return;
@@ -148,21 +160,29 @@ window.zsaKey=function(sceneEl,cfg,onFound){ const T=THREE, S=sceneEl.object3D; 
  [[0.03,-0.007],[0.038,-0.009]].forEach(([x,y])=>{ const b=new T.Mesh(new T.BoxGeometry(0.006,0.012,0.004),brass); b.position.set(x,y,0); k.add(b); });
  k.rotation.x=-Math.PI/2; k.rotation.z=Math.random()*6; k.scale.setScalar(1.6); const holder=new T.Group(); holder.add(k); S.add(holder);
  // auf Fläche legen (Raycast nach unten, ignoriert Fotowände/Unsichtbares)
- const place=()=>{ const rc=new T.Raycaster(new T.Vector3(cfg.x,(cfg.y||2.2),cfg.z),new T.Vector3(0,-1,0),0,4); const objs=[]; const mine=o=>{ while(o){ if(o===holder) return true; o=o.parent; } return false; }; S.traverse(o=>{ if(o.isMesh&&o.visible&&!mine(o)&&!(o.material&&(o.material.visible===false||o.material.transparent||o.material.side===T.BackSide))) objs.push(o); });
+ const place=()=>{ if(cfg.y!=null){ holder.position.set(cfg.x,cfg.y,cfg.z); return; }
+  const rc=new T.Raycaster(new T.Vector3(cfg.x,2.2,cfg.z),new T.Vector3(0,-1,0),0,4); const objs=[]; const mine=o=>{ while(o){ if(o===holder) return true; o=o.parent; } return false; }; S.traverse(o=>{ if(o.isMesh&&o.visible&&!mine(o)&&!(o.material&&(o.material.visible===false||o.material.transparent||o.material.side===T.BackSide))) objs.push(o); });
   const h=rc.intersectObjects(objs,false).find(x=>x.face&&Math.abs(x.face.normal.y)>0.3); holder.position.set(cfg.x,h?h.point.y+0.006:0.006,cfg.z); };
  place(); setTimeout(place,1500); setTimeout(place,5000);
  // kleiner Lichtfleck + gelegentliches Glitzern (in der Welt, kein Hotspot)
  const gl=document.createElement('canvas'); gl.width=gl.height=64; const gx=gl.getContext('2d'); const gg=gx.createRadialGradient(32,32,0,32,32,32); gg.addColorStop(0,'rgba(255,240,200,1)'); gg.addColorStop(0.25,'rgba(255,220,150,0.35)'); gg.addColorStop(1,'rgba(255,200,120,0)'); gx.fillStyle=gg; gx.fillRect(0,0,64,64);
  const spr=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(gl),transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0})); spr.scale.set(0.035,0.035,1); spr.position.y=0.015; holder.add(spr);
  const kl=new T.PointLight(0xffd8a0,0.14,0.7,2); kl.position.y=0.3; holder.add(kl);
- const hitS=new T.Mesh(new T.SphereGeometry(0.11,8,6),new T.MeshBasicMaterial({visible:false})); holder.add(hitS);
+ const hitS=new T.Mesh(new T.SphereGeometry(0.22,10,8),new T.MeshBasicMaterial({visible:false})); holder.add(hitS);
  let found=false; const R=sceneEl.renderer, head=new T.Vector3(), hp=new T.Vector3(), kp=new T.Vector3();
- const take=()=>{ if(found) return; found=true; SND.chime(); holder.visible=false; onFound&&onFound(); };
- [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(found) return; const rc=zsaRay(sceneEl,c); if(rc.intersectObject(hitS,false).length) return take(); holder.getWorldPosition(kp); const d=kp.clone().sub(rc.ray.origin); if(d.length()<6&&rc.ray.direction.angleTo(d)<0.06) take(); }); c.addEventListener('squeezestart',()=>{ if(found) return; zsaCtrlPos(sceneEl,c,hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.3) take(); }); });
+ const take=()=>{ if(found) return; found=true; SND.chime(); holder.visible=false; try{ kE.parentNode&&kE.parentNode.removeChild(kE); }catch(e){} onFound&&onFound(); };
+ [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(found) return; const rc=zsaRay(sceneEl,c); if(rc.intersectObject(hitS,false).length) return take(); holder.getWorldPosition(kp); const d=kp.clone().sub(rc.ray.origin); if(d.length()<7&&rc.ray.direction.angleTo(d)<0.12) take(); }); c.addEventListener('squeezestart',()=>{ if(found) return; zsaCtrlPos(sceneEl,c,hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.45) take(); }); });
+ // A-Frame-Pfad (wie die greifbaren Raum-Gegenstände): unsichtbare .clickable-Kugel → laser-controls/cursor-Klick; Grip über die A-Frame-Controller-Entities
+ const kE=document.createElement('a-entity'); kE.classList.add('clickable'); kE.id='zsaKeyHit'; sceneEl.appendChild(kE);
+ const hitA=new T.Mesh(new T.SphereGeometry(0.22,10,8),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false}));
+ const syncA=()=>{ holder.getWorldPosition(kp); kE.object3D.position.copy(kp); };
+ const initA=()=>{ kE.setObject3D('mesh',hitA); syncA(); kE.addEventListener('click',take); }; kE.hasLoaded?initA():kE.addEventListener('loaded',initA);
+ [1600,5200].forEach(ms=>setTimeout(syncA,ms));
+ const gripEls=new Set(); const hookG=()=>document.querySelectorAll('[laser-controls],[hand-controls],[oculus-touch-controls]').forEach(el=>{ if(gripEls.has(el)) return; gripEls.add(el); el.addEventListener('gripdown',()=>{ if(found) return; el.object3D.getWorldPosition(hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.45) take(); }); }); hookG(); [1000,4000].forEach(ms=>setTimeout(hookG,ms));
  sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||found) return; if(zsaMouseRay(sceneEl,e).intersectObject(hitS,false).length) take(); });
  (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found) return; const now=performance.now(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.55:0; spr.material.rotation=now*0.002;
-  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<0.45) return take();
-  if(R.xr.isPresenting) for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(kp)<0.16) return take(); } });
+  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<0.75) return take();
+  if(R.xr.isPresenting) for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(kp)<0.32) return take(); } });
  holder.userData.take=take; return holder; };
 // Sprachzeilen (ElevenLabs, Kap. 6 Verzweigungskonzept). VO_AT: wann sie in der Alpha laufen (enter = nach Betreten + delay s, key = Schlüssel gefunden)
 const VO={

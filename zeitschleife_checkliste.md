@@ -48,7 +48,7 @@
 - [ ] Glitches können Geheimnisse kurz andeuten (Easter Eggs, Hinweise) (Priorität Soll)
 - [x] Optionsschalter „Glitch-Intensität“; keine Kamerabewegung, keine harten Blitze (Priorität Muss) — V3n: AUS/LEISE/NORMAL in Optionen
 - [ ] Glitch-Zähler in Backrooms als wachsender Wandriss (Overlay) (Priorität Soll)
-- [ ] Szenenübergang: kurzer VHS-Rückspul-Glitch (0,5 s) beim Ärenwechsel (Priorität Soll)
+- [x] Szenenübergang: kurzer VHS-Rückspul-Glitch (0,5 s) beim Ärenwechsel (Priorität Soll) — Alpha goStep: Canvas-VHS + Rückspulton (~0,52 s), 17.10.
 
 ## Systeme – Zustände / Ruf / Wissen
 
