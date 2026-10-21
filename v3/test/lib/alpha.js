@@ -3,7 +3,7 @@
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=m1525')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=m1546')+'"><\/script>'); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
@@ -13,12 +13,17 @@ const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (S
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8, hide:{type:'locker', x:-2.75, z:0.75, ry:90, num:37, inNote:'Fach 37. Seit Jahren nicht abgeholt.'}}, keyNote:'Abgeschlossen. Fach 37. Frag nicht, woher ich das weiß. – M.'},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:0.9, z:2.25, face:[0.9,0]}, key:{x:0.6,z:-1.15}},
  {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:3.22, z:1.6, face:[0,1.6]}, key:{x:-2.2,z:0.6, hide:{type:'tin', x:-1.95, y:0.345, z:-1.05, ry:-20, cap:'Etwas klappert heraus.'}}, keyNote:'Abgeschlossen. Hier versteckt man Wichtiges im Kaffee. – M.'},
+ {id:'wohnung',    page:'test/era_wohnung.html',   title:'Wohnung',            door:{x:42.42, z:1.55, face:[40,1.55], attach:'office', wood:true}}, // Ausgang im Büro (Ostwand), Tür hängt an OFF.group -> nur im Büro sichtbar
  {id:'era2041',    page:'test/era2041.html',       title:'Stadt 2041',         door:{x:3.22, z:2.0, face:[0,2.0]}, key:{x:2.2,z:-1.0}},
  {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.6, face:[1.9,0]}, key:{x:-1.3,z:-1.3, hide:{type:'drawer', dark:true, x:-1.0, z:-1.55, ry:0, inNote:'Ersatzschlüssel. Nicht für dich. – Hausverwaltung'}}, keyNote:'Abgeschlossen. Ersatzschlüssel? Schublade. Wie immer. – M.'},
  {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
  {id:'kirmes',     page:'test/kirmes.html',        title:'Kirmes',             door:{x:-3.4,z:2.6, face:[0,0.4]}, key:{x:-1.2,z:1.6}},
  {id:'sim',        page:'test/sim.html',           title:'Simulator',          door:{x:14.3,z:4.9, face:[12,3.4]}, key:{x:11.0,z:4.4}},
  {id:'end',        page:'alpha.html', title:'Ende'} ];
+// Abstecher (kein eigener Schritt): Tür in Raum 'from' -> Seite -> Tür zurück an dieselbe Stelle. Rückweg-Zone/Spawn in Weltkoordinaten der Zielseite.
+const SIDES={ warteraum:{page:'test/era_warteraum.html', from:'backrooms', title:'Warteraum',
+  exit:{x:0.75, z:2.5, w:1.0, n:[0,-1], h:2.2}, // NO-EXIT-Tür (Collider [0.17,1.33,2.45,2.55] in assets/warteraum/scene.json)
+  spawn:{x:0.75, z:1.75, yaw:0} } };          // Ankunft vor der NO-EXIT-Tür, Blick in den Raum (-z)
 const KEY='zs_alpha_v1', P=new URLSearchParams(location.search), inTest=/\/test\//.test(location.pathname), ROOT=inTest?'../':'';
 const ls=()=>{ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } };
 const save=st=>{ try{ localStorage.setItem(KEY,JSON.stringify(Object.assign(ls(),st,{t:Date.now()}))); }catch(e){} };
@@ -37,10 +42,15 @@ function fadeOut(cb){
   x.globalAlpha=0.07*a; x.fillStyle='#ccc'; for(let i=0;i<110;i++) x.fillRect(Math.random()*W,Math.random()*H,1.5,1);
   for(let i=0;i<2;i++){ const y=H-(((u*2.2+i*0.4)%1)*H); x.globalAlpha=0.1*a; x.fillStyle='#fff'; x.fillRect(0,y,W,1); x.globalAlpha=0.05*a; x.fillRect(0,y,W,3+2*i); }
   x.globalAlpha=0.04*a; x.fillStyle='#000'; for(let y=0;y<H;y+=5) x.fillRect(0,y,W,1);
-  if(u<1) requestAnimationFrame(frame); else { f.style.opacity='1'; cv.style.opacity='0'; cb&&cb(); } };
+  if(u<1&&!fin) requestAnimationFrame(frame); else finish(); };
+ let fin=false; const finish=()=>{ if(fin) return; fin=true; f.style.opacity='1'; cv.style.opacity='0'; cb&&cb(); };
+ setTimeout(finish,DUR+350); // falls rAF stockt (schwere Szene, Hintergrund-Tab): trotzdem weiter
  requestAnimationFrame(frame); }
 function goStep(i){ i=Math.max(0,Math.min(STEPS.length-1,i)); save({step:i}); fadeOut(()=>{ location.href=url(i); }); }
-window.ZSA={on,STEPS,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url};
+const side=P.get('side'), SD=SIDES[side]||null;
+function goSide(id){ const d=SIDES[id]; if(!d) return; save({step,side:id}); fadeOut(()=>{ location.href=ROOT+d.page+'?alpha=1&step='+step+'&side='+id; }); }
+function backFromSide(){ save({step,side:null}); fadeOut(()=>{ location.href=url(step).replace('#','&from='+side+'#'); }); }
+window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url};
 if(!on) return;
 save({step});
 // Quest: nach Seitenwechsel ggf. direkt wieder in VR (WebXR-Navigation)
@@ -146,7 +156,7 @@ window.zsaDoor=function(sceneEl,cfg,onOpen){ const T=THREE, S=sceneEl.object3D; 
   if(shake&&now-shake<350){ hinge.rotation.y=(locked?0:-0.14)+Math.sin((now-shake)*0.09)*0.012*(1-(now-shake)/350); }
   else if(!locked) hinge.rotation.y=-0.14+0.012*Math.sin(now*0.0011);
   const cam=sceneEl.camera; if(!cam) return; cam.getWorldPosition(head);
-  knob.getWorldPosition(knobW); loc.copy(head); g.worldToLocal(loc); const inDoor=Math.abs(loc.x)<0.45&&loc.z<0.25&&loc.z>-0.5; if(inDoor&&!inside){ inside=true; return open(); } if(!inDoor) inside=false;
+  knob.getWorldPosition(knobW); loc.copy(head); g.worldToLocal(loc); const inDoor=Math.abs(loc.x)<0.45&&loc.z<(cfg.reach||0.25)&&loc.z>-0.5; if(inDoor&&!inside){ inside=true; return open(); } if(!inDoor) inside=false;
   if(!R.xr.isPresenting) return; for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(knobW)<0.17) return open(); } };
  (window.__zsaSteps=window.__zsaSteps||[]).push(step);
  if(window.AFRAME&&!AFRAME.components['zsa-tick']) AFRAME.registerComponent('zsa-tick',{tick(){ (window.__zsaSteps||[]).forEach(f=>f()); }});
@@ -223,11 +233,24 @@ window.zsaSay=function(id,sec){ const v=VO[id]; if(!v) return; const sc=document
 window.zsaVO=VO;
 // Räume: Tür automatisch setzen
 const s=STEPS[step];
-if(s.door) document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(()=>{
+if(s.door&&!SD) document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(()=>{
   const kc=s.key; const cfg=Object.assign({},s.door,{locked:!!kc,note:s.door.note||(kc?(s.keyNote||'Abgeschlossen. Der Schlüssel liegt hier irgendwo. – M.'):null)});
   const d=window.__zsaDoorG=zsaDoor(sc,cfg,()=>goStep(step+1));
+  if(cfg.attach&&window.__apt&&__apt.ROOMS&&__apt.ROOMS[cfg.attach]){ const R0=__apt.ROOMS[cfg.attach]; const G=(R0.objs&&R0.objs[0]); if(G&&G.attach) G.attach(d); } // Wohnung: Tür gehört zum Raum (wird mit ihm aus-/eingeblendet)
   const at=VO_AT[s.id]||[]; at.filter(e=>e[1]==='enter').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000));
   const onKey=()=>{ at.filter(e=>e[1]==='key').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000)); if(window.NOKIO&&NOKIO.onKey) NOKIO.onKey(); };
   if(kc){ window.__zsaKeyG=zsaKey(sc,kc,()=>{ d.userData.unlock(); onKey(); }); setTimeout(()=>{ if(d.userData.isLocked()){ d.userData.unlock(); } },150000); /* Sicherheitsnetz: nach 2,5 min gibt die Schleife nach */ }
  },300); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
+// Abstecher-Seite: Rückweg durch die vorhandene Tür (Hingehen, Laser+Trigger, Griff an der Tür, Maus/Touch-Tipp). Kein Leucht-Hotspot: unsichtbare Trefferbox.
+if(SD) document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(()=>{ const T=THREE, R=sc.renderer, E=SD.exit;
+  const rigE=document.getElementById('rig'); if(rigE&&SD.spawn){ const sp=SD.spawn; rigE.object3D.rotation.set(0,sp.yaw||0,0); rigE.object3D.position.set(sp.x,0,sp.z); }
+  const hb=new T.Mesh(new T.BoxGeometry(E.w,E.h,0.3),new T.MeshBasicMaterial({visible:false})); hb.position.set(E.x-E.n[0]*0.1,E.h/2,E.z-E.n[1]*0.1); hb.rotation.y=Math.atan2(E.n[0],E.n[1]); sc.object3D.add(hb); hb.updateMatrixWorld(true);
+  let gone=false, armed=false; const t0=performance.now(); const leave=()=>{ if(gone) return; gone=true; try{ SND.creak(); }catch(e){} backFromSide(); };
+  [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(zsaRay(sc,c).intersectObject(hb).length) leave(); }); c.addEventListener('squeezestart',()=>{ const p=zsaCtrlPos(sc,c,new T.Vector3()); if(new T.Box3().setFromObject(hb).expandByScalar(0.1).containsPoint(p)) leave(); }); });
+  sc.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting) return; if(zsaMouseRay(sc,e).intersectObject(hb).length) leave(); });
+  const head=new T.Vector3(); (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(gone) return; sc.camera.getWorldPosition(head); const dx=head.x-E.x, dz=head.z-E.z, dist=dx*E.n[0]+dz*E.n[1], lat=Math.abs(dx*E.n[1]-dz*E.n[0]);
+   if(dist>0.9||lat>E.w/2+0.4) armed=true; if(armed&&performance.now()-t0>1500&&dist<0.5&&lat<E.w/2+0.1) leave(); }); // erst scharf, wenn man nach Ankunft weg war (kein Sofort-Zurück)
+  if(window.AFRAME&&!AFRAME.components['zsa-tick']) AFRAME.registerComponent('zsa-tick',{tick(){ (window.__zsaSteps||[]).forEach(f=>f()); }}); sc.setAttribute('zsa-tick','');
+  window.__zsaSideExit={hb,leave};
+ },400); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
 })();

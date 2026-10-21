@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1021t1"></script><script src="test/lib/helpmenu.js?v=1021t1"></script><script src="test/lib/alpha.js?v=m1525"></script><script src="test/lib/dust.js?v=1"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=2"></script><script src="test/lib/br3d.js?v=3"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1021t1"></script><script src="test/lib/helpmenu.js?v=1021t1"></script><script src="test/lib/alpha.js?v=m1546"></script><script src="test/lib/dust.js?v=1"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=2"></script><script src="test/lib/br3d.js?v=m1546"></script>
 <style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
 #start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:18px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
 #start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
@@ -21,6 +21,7 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
  if(window.worldDust) worldDust(sc,{count:60,rMin:0.9,rMax:3.6,yMin:0.2,yMax:2.8,color:0xe8e0b0,color2:0xc8c090,opacity:0.32});
  // ---------- Backrooms in 3D (echte Geometrie, Boden y=0) ----------
  const br=window.__br=buildBackrooms(sc,{onFlick:on=>{ if(window.__brSnd) __brSnd.flick(on); }}); br.group.visible=false;
+ if(/[?&]from=warteraum/.test(location.search)) br.spawn={x:1.8,z:7.75}; // zurück aus dem Warteraum: vor der kleinen Tür, Blick den Gang hinunter (-z)
  const rigE=document.getElementById('rig'); rigE.object3D.position.set(br.spawn.x,0,br.spawn.z);
  AFRAME.registerComponent('br-tick',{tick(t){ br.tick(performance.now()); if(window.__brSnd) __brSnd.update(); }}); sc.setAttribute('br-tick','');
  // ---------- Off-Screen-Ton: Fernseher hinter der Wand, Schritte nebenan, Brummen (WebAudio, räumlich) ----------

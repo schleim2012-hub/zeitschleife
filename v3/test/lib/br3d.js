@@ -152,7 +152,7 @@ const KIT=window.buildMMKitchen?buildMMKitchen(sc,{G,ROOT,L1,L2,hemi,hemiBase:HE
  const haze=new T.Mesh(new T.PlaneGeometry(2,H),new T.MeshBasicMaterial({color:0x1a170c,transparent:true,opacity:0.55,depthWrite:false,fog:false})); haze.position.set(0,H/2,-24.05); G.add(haze);
  let fakeDoor=null;
 // Forced Perspective: kleinere Tür am Ende des hinteren Gangs
- if(window.zsaDoor){ const d=zsaDoor(sc,{x:1.8,z:8.88,face:[1.8,0],locked:true,light:0.18}); d.scale.setScalar(0.8); d.userData.fake=true; fakeDoor=d; }
+ if(window.zsaDoor){ const side=!!(window.ZSA&&ZSA.on&&ZSA.SIDES&&ZSA.SIDES.warteraum); /* im Spiel: die kleine Tür führt in den Warteraum (Abstecher, Rückweg durch NO EXIT) */ const d=zsaDoor(sc,{x:1.8,z:8.88,face:[1.8,0],locked:!side,light:0.18,reach:0.4},side?()=>ZSA.goSide('warteraum'):null); d.scale.setScalar(0.8); d.userData.fake=!side; fakeDoor=d; window.__brSideDoor=d; }
  // ---------- Gebackenes Licht (Blender-Lightmap) + Decals in einem Atlas (statt 13 Einzel-Decals) ----------
  if(window.ZSBake){ const P2=Math.PI/2, F=WT/2, hy=H-0.66, D=[];
   [[0.8,-1.2,1.7,0],[-2.6,1.6,1.3,1],[0.2,-7.5,1.9,0],[-0.4,-15,2.2,1],[-8,-1.7,1.5,0],[3.4,-14,1.7,1],[1.7,6.5,1.5,0],[-3,-10.5,1.6,1],[2.6,-2.6,1.2,6]].forEach(([x,z,s,c],i)=>D.push([c,x,0,z,s,s*0.8,'y',i*1.3]));
