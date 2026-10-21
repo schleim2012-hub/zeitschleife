@@ -15,15 +15,14 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  const head=new T.Vector3(), hq=new T.Quaternion(); const getHead=()=>{ const c=R.xr.isPresenting?R.xr.getCamera():sc.camera; c.getWorldPosition(head); c.getWorldQuaternion(hq); return head; };
  const before=new Set(S.children);
  // ---------- Schlafzimmer ----------
- const B84=build84(sc); const bedExtra=new T.Group(); bedExtra.name='bedExtra'; S.add(bedExtra);
+ const B84=build84(sc); const TVYAW=2.75; /* TV in der Ecke am Bettende (vorn links), Front schräg zum Kopfende des Betts */ const bedExtra=new T.Group(); bedExtra.name='bedExtra'; S.add(bedExtra);
  // großer Röhrenfernseher (≈ 72 cm Diagonale) auf einem Rollwagen statt auf dem Nachttisch
- setTimeout(()=>document.querySelectorAll('[gltf-model]').forEach(e=>{ if(/painted_wooden_nightstand/.test(e.getAttribute('gltf-model'))) e.parentNode.removeChild(e); }),0);
- { const b=new K.Batch(), M=0x2a2a2c; const x0=-1.25,x1=-0.25,z0=-1.98,z1=-1.42; [0.12,0.52].forEach(y=>b.box('m',x0,x1,y,y+0.025,z0,z1,0x3a3a3c)); [[x0,z0],[x1-0.03,z0],[x0,z1-0.03],[x1-0.03,z1-0.03]].forEach(([x,z])=>{ b.box('m',x,x+0.03,0.06,0.545,z,z+0.03,M); b.cyl('r',0.03,0.03,0.025,x+0.015,0.03,z+0.015,0x111111,[Math.PI/2,0,0],12); });
-  for(let i=0;i<3;i++) b.box('v',x0+0.08+i*0.012,x0+0.27+i*0.012,0.145+i*0.026,0.17+i*0.026,z0+0.12,z0+0.225,[0x1a1a1a,0x2a1a10,0x101820][i]); b.box('v',-0.95,-0.55,0.145,0.235,-1.92,-1.6,0x1c1c1e);
+ { const b=new K.Batch(), M=0x2a2a2c; const x0=-0.5,x1=0.5,z0=-0.28,z1=0.28; bedExtra.position.set(-1.62,0,1.52); bedExtra.rotation.y=TVYAW; [0.12,0.52].forEach(y=>b.box('m',x0,x1,y,y+0.025,z0,z1,0x3a3a3c)); [[x0,z0],[x1-0.03,z0],[x0,z1-0.03],[x1-0.03,z1-0.03]].forEach(([x,z])=>{ b.box('m',x,x+0.03,0.06,0.545,z,z+0.03,M); b.cyl('r',0.03,0.03,0.025,x+0.015,0.03,z+0.015,0x111111,[Math.PI/2,0,0],12); });
+  for(let i=0;i<3;i++) b.box('v',x0+0.08+i*0.012,x0+0.27+i*0.012,0.145+i*0.026,0.17+i*0.026,z0+0.12,z0+0.225,[0x1a1a1a,0x2a1a10,0x101820][i]); b.box('v',-0.2,0.2,0.145,0.235,-0.22,0.1,0x1c1c1e);
   b.build(bedExtra,{m:K.std({color:0xffffff,roughness:0.4,metalness:0.6}),r:K.std({color:0xffffff,roughness:0.8}),v:K.std({color:0xffffff,roughness:0.45})}); }
- const tvEl=document.createElement('a-entity'); tvEl.id='tv84'; tvEl.classList.add('clickable'); tvEl.setAttribute('position','-0.75 0.545 -1.72'); tvEl.setAttribute('rotation','0 10 0');
+ const tvEl=document.createElement('a-entity'); tvEl.id='tv84'; tvEl.classList.add('clickable'); tvEl.setAttribute('position','-1.62 0.545 1.52'); tvEl.setAttribute('rotation','0 '+(TVYAW*180/Math.PI)+' 0');
  tvEl.setAttribute('crt-tv','model:../assets/props/television_02.glb; base:../tv/; channels:ch01.mp4,ch02.mp4,ch03.mp4,ch04.mp4,ch05.mp4,ch06.mp4; scale:1.8'); sc.appendChild(tvEl);
- const bedDoor=wallDoor(bedExtra,1.5,1.995,[0,-1],0.98,2.12,true);
+ const bedDoorG=new T.Group(); S.add(bedDoorG); bedDoorG.name='bedDoorG'; const bedDoor=wallDoor(bedDoorG,1.5,1.995,[0,-1],0.98,2.12,true);
  // ---------- Küche ----------
  const KG=new T.Group(); KG.name='kitchenG'; S.add(KG); const L1=new T.PointLight(0xffb35c,0,3.4,2), L2=new T.PointLight(0xffcf90,0,3.6,2); L1.position.set(-9,2,0.5); L2.position.set(-9,2.3,0.8); KG.add(L1); KG.add(L2);
  const kHemi=new T.HemisphereLight(0x2a2838,0x0a0806,0.5); KG.add(kHemi);
@@ -34,10 +33,10 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  const livKitDoor=wallDoor(LIV.group,18.0,0.8,[1,0],0.9,2.05,true), livOffDoor=wallDoor(LIV.group,19.0,-2.4,[0,1],0.9,2.05,true), offDoor=wallDoor(OFF.group,38.8,2.2,[0,-1],0.9,2.05,true);
  // ---------- Räume ----------
  const ROOMS={
-  bedroom:{name:'Schlafzimmer',objs:null,collide:p=>{ B84.collide(p); const s=[-1.25,-0.25,-1.98,-1.42], r=0.25; if(p.x>s[0]-r&&p.x<s[1]+r&&p.z<s[3]+r){ p.z=s[3]+r; } },doors:[{d:bedDoor,to:'kitchen',via:'s'}]},
-  kitchen:{name:'Küche',objs:[KG,...kExtra],collide:p=>{ const r=0.25; p.x=Math.max(-11.5+r,Math.min(-7.0-r,p.x)); p.z=Math.max(-0.92+r*0.4,Math.min(2.5-r,p.z)); KIT.rects.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r) p.z=b0-r; }); },doors:[{d:kitDoor,to:'living',via:'w'}],tick:(now)=>{ KIT.tick(now,[{on:1},{on:1}],1); if(window.__mmk&&__mmk.doorOpen&&!A.busy&&A.room==='kitchen') useDoor('bedroom','k'); }},
-  living:{name:'Wohnzimmer',objs:[LIV.group],collide:LIV.collide,doors:[{d:livKitDoor,to:'kitchen',via:'e'},{d:livOffDoor,to:'office',via:'n'}],interact:LIV.interact,grabs:LIV.grabs,surf:LIV.surf,tick:(n,dt)=>LIV.tick(n,dt)},
-  office:{name:'Büro',objs:[OFF.group],collide:OFF.collide,doors:[{d:offDoor,to:'living',via:'o'}],interact:OFF.interact,files:OFF.files,tick:n=>OFF.tick(n)} };
+  bedroom:{name:'Schlafzimmer',objs:null,bounds:[-2.1,2.1,-2.0,2.0],solid:[[-2.1,-1.15,-2.0,0.04],[-1.0,-0.5,-2.0,-1.5],[1.48,2.1,-0.9,0.4],[1.3,2.1,-2.0,-1.6],[-2.1,-1.15,1.05,2.0]],collide:null,doors:[{d:bedDoor,to:'kitchen',via:'s'}]},
+  kitchen:{name:'Küche',objs:[KG,...kExtra],bounds:[-11.5,-7.0,-0.92,2.5],collide:p=>{ const r=0.25; p.x=Math.max(-11.5+r,Math.min(-7.0-r,p.x)); p.z=Math.max(-0.92+r*0.4,Math.min(2.5-r,p.z)); KIT.rects.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r) p.z=b0-r; }); },doors:[{d:kitDoor,to:'living',via:'w'}],tick:(now)=>{ KIT.tick(now,[{on:1},{on:1}],1); if(window.__mmk&&__mmk.doorOpen&&!A.busy&&A.room==='kitchen') useDoor('bedroom','k'); }},
+  living:{name:'Wohnzimmer',objs:[LIV.group],bounds:[18,23.5,-2.4,2.4],collide:LIV.collide,doors:[{d:livKitDoor,to:'kitchen',via:'e'},{d:livOffDoor,to:'office',via:'n'}],interact:LIV.interact,grabs:LIV.grabs,surf:LIV.surf,tick:(n,dt)=>LIV.tick(n,dt)},
+  office:{name:'Büro',objs:[OFF.group],bounds:[38,42.5,-2.0,2.2],collide:OFF.collide,doors:[{d:offDoor,to:'living',via:'o'}],interact:OFF.interact,files:OFF.files,tick:n=>OFF.tick(n)} };
  // Ankunftspunkte: [x,z,Blickrichtung-yaw]
  const SPAWN={bedroom:{k:[1.4,1.15,0],def:[0.3,1.0,0]},kitchen:{s:[-10.0,-0.05,Math.PI],e:[-7.75,0.35,Math.PI/2],def:[-9.2,0.3,Math.PI]},living:{w:[18.8,0.8,-Math.PI/2],o:[19.0,-1.6,Math.PI],def:[19.2,0.2,-Math.PI/2]},office:{n:[38.8,1.45,0],def:[38.8,1.45,0]}};
  const allObjs=()=>{ Object.values(ROOMS).forEach(r=>r.objs&&r.objs.forEach(o=>o.visible=false)); };
@@ -45,7 +44,7 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  const show=id=>{ if(!ROOMS.bedroom.objs||id==='bedroom') classifyBed(); Object.entries(ROOMS).forEach(([k,r])=>r.objs.forEach(o=>o.visible=(k===id))); A.room=id; if(id!=='kitchen'&&window.__mmk) __mmk.doorOpen=false;
   try{ const tv=tvEl.components['crt-tv']; if(tv&&id!=='bedroom'&&tv.on&&tv.video) tv.video.pause(); }catch(e){} uiClose(); };
  const placeAt=(x,z,yaw)=>{ rig.rotation.set(0,yaw,0); rig.updateMatrixWorld(true); const c=camEl.object3D.position, off=new T.Vector3(c.x,0,c.z).applyAxisAngle(new T.Vector3(0,1,0),yaw); rig.position.set(x-off.x,0,z-off.z); if(!R.xr.isPresenting){ const lc=camEl.components['look-controls']; if(lc){ lc.yawObject.rotation.y=0; lc.pitchObject.rotation.x=0; } camEl.object3D.rotation.set(0,0,0); } };
- const go=(id,via)=>{ show(id); const s=(SPAWN[id][via])||SPAWN[id].def; placeAt(s[0],s[1],s[2]); A.arrivedAt=performance.now(); if(id==='living'&&A.rabbit&&!A.rang){ A.rang=true; setTimeout(ring,2500); } };
+ const go=(id,via)=>{ show(id); const s=(SPAWN[id][via])||SPAWN[id].def; const pp={x:s[0],z:s[1]}; hardClamp(ROOMS[id],pp); placeAt(pp.x,pp.z,s[2]); A.arrivedAt=performance.now(); if(id==='living'&&A.rabbit&&!A.rang){ A.rang=true; setTimeout(ring,2500); } };
  function useDoor(to,via){ if(A.busy) return; A.busy=true; drop(); aptDoorTrans(sc,{hide:()=>allObjs(),swap:()=>go(to,via),done:()=>{ A.busy=false; if(window.__mmk) __mmk.doorOpen=false; }}); }
  A.go=go; A.useDoor=useDoor; A.ROOMS=ROOMS; A.LIV=LIV; A.OFF=OFF; A.KIT=KIT; A.placeAt=placeAt;
  // ---------- Tür-Mesh (Blatt, Klinke) ----------
@@ -108,9 +107,13 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  sc.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||A.busy) return; if(held&&held.mouse){ drop(); return; } pick(zsaMouseRay(sc,e),'mouse'); });
  // ---------- Laufen (linker Stick), Drehen (rechter Stick, 30°), Kollision am Kopf ----------
  let ax=[0,0], snap=0; setTimeout(()=>{ const L=document.getElementById('hl'), Rr=document.getElementById('hr'); L&&L.addEventListener('thumbstickmoved',e=>{ ax=[e.detail.x,e.detail.y]; }); Rr&&Rr.addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!snap){ snap=1; const hpp=getHead().clone(); rig.rotation.y-=Math.sign(x)*Math.PI/6; rig.updateMatrixWorld(true); const hn=getHead(); rig.position.x+=hpp.x-hn.x; rig.position.z+=hpp.z-hn.z; } if(Math.abs(x)<0.3) snap=0; }); },0);
+ // harte Raumgrenze (AABB) + Zusatz-Hindernisse; läuft NACH dem Möbel-Ausschieben, damit nichts durch die Wand drückt. Durch Türen nur per Überblendung.
+ const hardClamp=(r,p)=>{ const R0=0.22; (r.solid||[]).forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-R0&&p.x<a1+R0&&p.z>b0-R0&&p.z<b1+R0){ const c=[[p.x-(a0-R0),'x',a0-R0],[(a1+R0)-p.x,'x',a1+R0],[p.z-(b0-R0),'z',b0-R0],[(b1+R0)-p.z,'z',b1+R0]].filter(e=>{ const v=e[2]; const b=r.bounds; return !b||(e[1]==='x'?(v>b[0]+R0-1e-3&&v<b[1]-R0+1e-3):(v>b[2]+R0-1e-3&&v<b[3]-R0+1e-3)); }).sort((u,v)=>u[0]-v[0])[0]; if(c) p[c[1]]=c[2]; } });
+  const b=r.bounds; if(b){ const m=0.2; p.x=Math.max(b[0]+m,Math.min(b[1]-m,p.x)); p.z=Math.max(b[2]+m,Math.min(b[3]-m,p.z)); } };
+ A.hardClamp=hardClamp;
  let last=0; A.tick=(t,dt)=>{ const now=performance.now(), d=Math.min(dt||16,50)/1000; if(!A.room) return; const r=room();
   if(!A.busy&&(Math.abs(ax[0])>0.15||Math.abs(ax[1])>0.15)){ getHead(); const f=new T.Vector3(ax[0],0,ax[1]).applyQuaternion(hq); f.y=0; rig.position.addScaledVector(f,1.4*d); }
-  rig.updateMatrixWorld(true); getHead(); const p={x:head.x,z:head.z}; r.collide&&r.collide(p); rig.position.x+=p.x-head.x; rig.position.z+=p.z-head.z;
+  rig.updateMatrixWorld(true); getHead(); const p={x:head.x,z:head.z}; for(let it=0;it<2;it++){ r.collide&&r.collide(p); hardClamp(r,p); } rig.position.x+=p.x-head.x; rig.position.z+=p.z-head.z;
   // Tür durch Hingehen (nur wenn man darauf zuläuft)
   if(!A.busy&&now-(A.arrivedAt||0)>1500) (r.doors||[]).forEach(dd=>{ const u=dd.d.g.userData; const dx=head.x-u.x, dz=head.z-u.z; const dist=dx*u.n[0]+dz*u.n[1], lat=Math.abs(dx*u.n[1]-dz*u.n[0]); if(dist<0.42&&dist>-0.2&&lat<u.w/2) useDoor(dd.to,dd.via); });
   r.tick&&r.tick(now,d);

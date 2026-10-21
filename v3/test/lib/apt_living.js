@@ -172,7 +172,7 @@ window.aptBuildLiving=function(sc,K){ const T=THREE, S=sc.object3D, G=new T.Grou
   HS.position.y+=((phoneUp?0.32:0.12)-HS.position.y)*Math.min(1,dt*6); HS.rotation.z+=((phoneUp?0.5:0)-HS.rotation.z)*Math.min(1,dt*6); HS.position.x+=((phoneUp?-0.06:0)-HS.position.x)*Math.min(1,dt*6);
   lamp.intensity=2.3*(0.985+0.015*Math.sin(now*0.013)); };
  const solid=[[20.5,23.2,-2.4,-1.5],[20.95,22.35,1.9,2.4],[18,18.5,-2.3,0.1],[20.7,21.9,-0.48,0.28],[19.85,20.35,-2.3,-1.8],[18.95,19.75,0.55,1.35],[22.9,23.2,-2.1,-1.8],[22.5,22.75,2.0,2.3]];
- const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const dl=p.x-(a0-r), dr=(a1+r)-p.x, db=p.z-(b0-r), df=(b1+r)-p.z, m=Math.min(dl,dr,db,df); if(m===dl) p.x=a0-r; else if(m===dr) p.x=a1+r; else if(m===db) p.z=b0-r; else p.z=b1+r; } } };
+ const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const c=[[p.x-(a0-r),'x',a0-r],[(a1+r)-p.x,'x',a1+r],[p.z-(b0-r),'z',b0-r],[(b1+r)-p.z,'z',b1+r]].filter(e=>e[1]==='x'?(e[2]>=X0+r-1e-3&&e[2]<=X1-r+1e-3):(e[2]>=Z0+r-1e-3&&e[2]<=Z1-r+1e-3)).sort((u,v)=>u[0]-v[0])[0]; if(c) p[c[1]]=c[2]; } } };
  const surf=[[21.3,-0.1,1.2,0.76,0.42],[21.65,2.15,1.4,0.46,0.5],[22.6,2.15,0.25,0.2,0.11],[21.85,-1.95,2.7,0.88,0.5],[20.1,-2.05,0.5,0.5,0.58],[19.35,0.95,0.7,0.7,0.53],[18.25,-1.1,0.45,2.4,0.75]];
  return {group:G,lights:[lamp,tvL,street,hemi],collide,surf,X0,X1,Z0,Z1,
   doors:{kitchen:{pos:[X0+0.02,DW.z],face:[1,0],w:DW.w,spawn:[X0+0.8,DW.z],yaw:-Math.PI/2},office:{pos:[DS.x,Z0+0.02],face:[0,1],w:DS.w,spawn:[DS.x,Z0+0.8],yaw:Math.PI}},

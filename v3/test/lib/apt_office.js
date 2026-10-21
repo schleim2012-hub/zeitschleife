@@ -124,7 +124,7 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
   pcScr.material.color.setHex(0xffffff); pcT.needsUpdate=true; };
  const tick=(now)=>{ if(pcOn) drawPC(now); lampS.intensity=4*(0.99+0.01*Math.sin(now*0.017)); projS.intensity=1.4*(0.97+0.03*Math.sin(now*0.09)); slide.material.opacity=0.52+0.03*Math.sin(now*0.09); };
  const solid=[[39.72,41.28,-0.88,-0.12],[41.95,42.5,-1.9,0.0],[38,38.45,-1.92,-0.6],[40.1,40.6,0.9,1.5],[38.45,38.95,0.9,1.3],[41.6,42.1,0.5,0.9],[40.3,40.8,-1.45,-1.0]];
- const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const dl=p.x-(a0-r), dr=(a1+r)-p.x, db=p.z-(b0-r), df=(b1+r)-p.z, m=Math.min(dl,dr,db,df); if(m===dl) p.x=a0-r; else if(m===dr) p.x=a1+r; else if(m===db) p.z=b0-r; else p.z=b1+r; } } };
+ const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const c=[[p.x-(a0-r),'x',a0-r],[(a1+r)-p.x,'x',a1+r],[p.z-(b0-r),'z',b0-r],[(b1+r)-p.z,'z',b1+r]].filter(e=>e[1]==='x'?(e[2]>=X0+r-1e-3&&e[2]<=X1-r+1e-3):(e[2]>=Z0+r-1e-3&&e[2]<=Z1-r+1e-3)).sort((u,v)=>u[0]-v[0])[0]; if(c) p[c[1]]=c[2]; } } };
  return {group:G,lights:[lampS,crtL,projS,hemi],collide,X0,X1,Z0,Z1,doors:{living:{pos:[DN.x,Z1-0.02],face:[0,-1],w:DN.w,spawn:[DN.x,Z1-0.8],yaw:0}},
   interact:[{hit:pcHit,fn:pcPress,name:'pc'}],files,tick,pcIsOn:()=>pcOn};
 };
