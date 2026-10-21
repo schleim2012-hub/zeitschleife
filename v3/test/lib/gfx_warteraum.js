@@ -27,7 +27,7 @@ AFRAME.registerComponent('warteraum',{
    swap('wr_glass',o=>new T.MeshStandardMaterial({color:0x9ab0a8,roughness:0.1,metalness:0,transparent:true,opacity:0.13,depthWrite:false}));
    if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xc07a38); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.55; M.wr_shade.side=T.DoubleSide; }
    if(M.wr_noexit){ M.wr_noexit.emissive=new T.Color(0xb8d8a8); M.wr_noexit.emissiveMap=M.wr_noexit.map; M.wr_noexit.emissiveIntensity=0.5; }
-   if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x6a0e06); M.wr_redglass.emissiveIntensity=0.28; M.wr_redglass.side=T.DoubleSide; }
+   if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.16; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
    swap('wr_flip',o=>new T.MeshBasicMaterial({map:ft,color:0x9a9a90}));
@@ -93,7 +93,7 @@ AFRAME.registerComponent('warteraum',{
  clamp(){ const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D; const R0=0.22; let p={x:h.x,z:h.z};
   const B=[[-2.65,2.55,-2.2,2.2]]; // Raum (innen)
   p.x=Math.min(B[0][1],Math.max(B[0][0],p.x)); p.z=Math.min(B[0][3],Math.max(B[0][2],p.z));
-  const box=[[-3,-2.05,-2.1,2.1],[-2.05,-1.15,-0.75,0.65],[1.9,3,-0.75,1.35],[-1.55,-0.55,1.55,2.5],[2.1,3,1.85,2.5],[1.25,1.85,1.9,2.5],[0,2.4,-2.6,-1.95],[-0.7,-0.2,-2.45,-1.95],[2.2,2.8,-1.95,-1.25],[2.1,2.7,-2.6,-1.9]];
+  const box=(this.S&&this.S.colliders)||[[-3,-2.05,-2.1,2.1],[-2.05,-1.15,-0.75,0.65],[1.9,3,-0.75,1.35],[-1.55,-0.55,1.55,2.5],[2.1,3,1.85,2.5],[1.25,1.85,1.9,2.5],[0,2.4,-2.6,-1.95],[-0.7,-0.2,-2.45,-1.95],[2.2,2.8,-1.95,-1.25],[2.1,2.7,-2.6,-1.9]];
   box.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-R0&&p.x<a1+R0&&p.z>b0-R0&&p.z<b1+R0){ const c=[[p.x-(a0-R0),'x',a0-R0],[(a1+R0)-p.x,'x',a1+R0],[p.z-(b0-R0),'z',b0-R0],[(b1+R0)-p.z,'z',b1+R0]].sort((u,v)=>u[0]-v[0])[0]; p[c[1]]=c[2]; } });
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
  // ---------------- Ton ----------------

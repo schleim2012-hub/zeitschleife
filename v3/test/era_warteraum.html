@@ -1,16 +1,24 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 – Warteraum (Jenseits)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="lib/gfx_warteraum.js?v=1"></script>
+<script src="lib/gfx_warteraum.js?v=2"></script>
 <style>@font-face{font-family:"Barlow Condensed";src:url(../fonts/Rajdhani-Bold.ttf)}
-#hud{position:fixed;left:12px;top:10px;z-index:5;color:#cfe0c8;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:480px}</style></head><body>
+#hud{position:fixed;left:12px;top:10px;z-index:5;color:#cfe0c8;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:480px}
+#ff{position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);mix-blend-mode:multiply}
+#grain{position:fixed;inset:0;z-index:4;pointer-events:none;width:100%;height:100%;opacity:.07;image-rendering:pixelated}</style></head><body>
 <div id="hud"><b>Warteraum · Jenseits-Bürgeramt</b> (Testszene)<br>VR: L-Stick gehen · R-Stick drehen · Ton startet mit dem ersten Trigger<br>Desktop: WASD · Maus ziehen · Klick = Ton an</div>
 <a-scene warteraum renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor"
- fog="type:exponential; color:#07100e; density:0.035" background="color:#000" light="defaultLightsEnabled:false">
+ fog="type:exponential; color:#0d1513; density:0.05" background="color:#000" light="defaultLightsEnabled:false">
  <a-entity id="rig" position="0.3 0 1.7">
   <a-camera id="cam" position="0 1.6 0" wasd-controls="acceleration:18"></a-camera>
   <a-entity id="hl" laser-controls="hand:left" raycaster="objects:.clickable; far:6; lineOpacity:0.2"></a-entity>
   <a-entity id="hr" laser-controls="hand:right" raycaster="objects:.clickable; far:6; lineOpacity:0.2"></a-entity>
  </a-entity>
 </a-scene>
+<!-- Found-Footage-Anmutung nur am Desktop (Vignette + Korn als HTML-Overlay, kostet in VR nichts); ?noff=1 aus -->
+<div id="ff"></div><canvas id="grain" width="160" height="90"></canvas>
+<script>(()=>{ if(/[?&]noff=1/.test(location.search)){ff.remove();grain.remove();return;} const c=grain,x=c.getContext('2d'),d=x.createImageData(160,90);
+ const go=()=>{ for(let i=0;i<d.data.length;i+=4){ const v=Math.random()*255; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=255; } x.putImageData(d,0,0); setTimeout(()=>requestAnimationFrame(go),60); }; go();
+ document.querySelector('a-scene').addEventListener('enter-vr',()=>{ff.style.display=grain.style.display='none';});
+ document.querySelector('a-scene').addEventListener('exit-vr',()=>{ff.style.display=grain.style.display='';}); })();</script>
 </body></html>

@@ -1,6 +1,6 @@
 // Warteraum Screenshots + Draw Calls. NODE_PATH=/workspace/rewind_gfx/shot/node_modules node shoot_warteraum.js [url] [outDir]
 const puppeteer=require('puppeteer-core'); const fs=require('fs'); const path=require('path');
-const URL=process.argv[2]||'http://127.0.0.1:8843/v3/test/era_warteraum.html?mute=1'; const OUT=process.argv[3]||'/workspace/rewind_gfx/beetlejuice/shots';
+const URL=process.argv[2]||'http://127.0.0.1:8843/v3/test/era_warteraum.html?mute=1&v=2'; const OUT=process.argv[3]||'/workspace/rewind_gfx/beetlejuice/shots';
 const W=+process.env.W||1280,H=+process.env.H||720, WAIT=+process.env.WAIT||20000;
 const deg=Math.PI/180;
 // [name, x,y,z, yaw°, pitch°, fov]

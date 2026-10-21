@@ -58,7 +58,7 @@ def onwall(o,W):
 def wall_mesh(key,holes,mat,uvs=1.6):
     W=WALLS[key]; L=wlen(W); H=max(wH(W,0),wH(W,1))
     A=sorted(set([0,L]+[h[0] for h in holes]+[h[1] for h in holes]+[i*0.5 for i in range(1,int(L/0.5)+1) if i*0.5<L]))
-    B=sorted(set([0,H]+[h[2] for h in holes]+[h[3] for h in holes]+[0.9,1.8]))
+    B=sorted(set([0,H]+[h[2] for h in holes]+[h[3] for h in holes]+[0.12,0.35,0.9,1.8,H-0.3]))
     verts=[];faces=[];idx={}
     def vi(a,b):
         k=(round(a,4),round(b,4))
@@ -90,12 +90,26 @@ def floor_uv(p):
     k=1.0+0.11*(p.y+2.5)/5.0; a=math.radians(41+3*(p.y/2.5))
     u=(p.x*math.cos(a)+p.y*math.sin(a))*k; v=(-p.x*math.sin(a)+p.y*math.cos(a))*k
     return (u/(4*TILE)+0.13,v/(4*TILE)+0.07)
+def vnoise(x,y,s=1.3,seed=0):  # weiche Wertrauschen-Funktion für Schmutzwolken
+    import math as m
+    return 0.5+0.25*m.sin(x*s*2.1+seed)*m.cos(y*s*1.7-seed*0.7)+0.25*m.sin((x*0.8-y*1.3)*s*3.1+seed*2.3)
 fl=grid_quad('floor',SW,SE,NW,NE,30,25,MT['floor'],floor_uv)
+def floor_grime(v):
+    dw=min(v.x+3.0-0.03*(v.y+2.5),2.95-0.03*(v.y+2.5)-v.x,v.y+2.5,2.5-v.y)   # Abstand zur nächsten Wand (grob)
+    k=1.0-0.38*max(0,1-dw/0.55)**1.5                                       # Dreck an den Wänden
+    k*=0.72+0.4*vnoise(v.x,v.y,1.1,1)                                       # Wolkige Abnutzung
+    t=math.exp(-((v.x-0.3)**2)/0.5)*0.12; k*=1-t                             # Laufweg Tür->Schalter
+    return tuple(c*k for c in (1.0,0.96,0.86))+(1,)
+set_vc(fl,floor_grime)
 ce=grid_quad('ceiling',SWt,SEt,NWt,NEt,12,10,MT['ceil'],lambda p:(p.x/2.0,p.y/2.0)); 
 for p in ce.data.polygons: p.flip()
 # Wände mit Öffnungen: Schalterfenster (N), NO-EXIT-Tür (S)
 WIN=(3.25,4.75,1.05,1.95); DOOR=(1.70,2.80,0.0,2.32)
-for k,h in [('N',[WIN]),('E',[]),('S',[DOOR]),('W',[])]: wall_mesh(k,h,MT['wall'])
+def wall_grime(v):
+    z=v.z; k=1.0-0.45*max(0,1-z/0.35)-0.25*max(0,(z-2.3)/0.4)   # Fußleisten-Schmutz unten, Ruß oben
+    k*=0.82+0.3*vnoise(v.x+v.y,z,0.9,3)
+    return hexc(0xffffff) if k>=1 else tuple(c*k for c in hexc(0xf2f0e6)[:3])+(1,)
+for k,h in [('N',[WIN]),('E',[]),('S',[DOOR]),('W',[])]: set_vc(wall_mesh(k,h,MT['wall']),wall_grime)
 def wbox(W,a0,a1,b0,b1,c0,c1,mat,name='wb',bev=0.0):
     o=box(name,((a0+a1)/2,(c0+c1)/2,(b0+b1)/2),(a1-a0,c1-c0,b1-b0),mat,bev=bev); return o
 # Fußleisten
@@ -376,8 +390,8 @@ for i,(dx,dy,r,z) in enumerate([(-0.1,-0.25,0.3,0.452),(0.12,0.1,-0.4,0.452),(0.
     m=box('mag',(0,0,0),(0.21,0.28,0.006),MT['paper']); cell_uv(m,[(i%4)*256,(i//4)*256,256,256],atlas=1024,axis='z'); xf(m,(0,0,0.003),(0,0,r)); 
     c=Vector((dx,dy,z)); R=Matrix.Rotation(math.pi/2+0.12,3,'Z'); c=R@c; xf(m,(-1.6+c.x,0.05+c.y,c.z)); mg.append(m)
 # Papier auf dem Boden (leicht zerknüllt)
-for i in range(16):
-    x=random.uniform(-2.3,1.8); y=random.uniform(-1.9,1.9)
+for i in range(34):
+    x=random.uniform(-2.5,2.4) if i>=16 else random.uniform(-2.3,1.8); y=random.uniform(-2.2,2.2) if i>=16 else random.uniform(-1.9,1.9)
     if abs(x-SOFA[0])<0.6 and abs(y-SOFA[1])<1.1: continue
     q=grid_quad('pap',V((-0.105,-0.148,0)),V((0.105,-0.148,0)),V((-0.105,0.148,0)),V((0.105,0.148,0)),3,4,MT['paper'],lambda p:(0,0))
     cl=[6,7,8,9,14,0,1][i%7]; cell_uv(q,[(cl%4)*256,(cl//4)*256,256,256],atlas=1024,axis='z')
@@ -391,7 +405,7 @@ for i in range(6):
     a=i/6*2*math.pi; r=0.0 if i==0 else 0.2; x=PX+r*math.cos(a); y=PY+r*math.sin(a); z=czz-0.5-random.uniform(0,0.45)
     pp.append(cyl('cord',(x,y,(czz+z)/2+0.1),0.004,czz-z-0.2,MT['metal'],seg=4))
     g=lathe('rg',[(0.075,-0.13),(0.07,-0.05),(0.055,0.06),(0.03,0.1),(0.012,0.11)],MT['redglass'],seg=16,c=(x,y,z)); md=g.modifiers.new('so','SOLIDIFY'); md.thickness=0.004; apply_mods(g); smooth(g); red.append(g); REDL.append((x,y,z-0.04))
-o=join(pp,'pend_metal'); vc_const(o,0x2a2420); o=join(red,'pend_glass'); vc_const(o,0x6a1410)
+o=join(pp,'pend_metal'); vc_const(o,0x2a2420); o=join(red,'pend_glass'); vc_const(o,0x5a2a22)
 # Toter Leuchtstoff-Kasten an der Decke + vertrocknete Topfpflanze (NO-Ecke)
 fz=2.75-(0.5+2.5)*0.03
 o=box('fixture',(0.7,0.5,fz-0.05),(1.25,0.3,0.08),MT['metal']); vc_const(o,0x4a4a44)
@@ -514,7 +528,10 @@ def hy_figures():
     for o in objs.values(): link(o)
     mats={}
     def mat(n):
-        if n not in mats: mats[n]=M('wr_fig_'+n,'fig_%s.png'%n,None,0.78)
+        if n not in mats:
+            mats[n]=M('wr_fig_'+n,'fig_%s.png'%n,None,0.78)
+            im=bpy.data.images.get('fig_%s.png'%n)
+            if im and im.size[0]>576: im.scale(576,768)   # v2: Figurentextur für das GLB verkleinern (Quelle bleibt 768x1024)
         return mats[n]
     def put(n,x,y,yaw,z=0.0,only=None,fwd=0.0):
         R=Matrix.Rotation(yaw,4,'Z'); T=Matrix.Translation((x,y,z))@R@Matrix.Translation((0,fwd,0))
@@ -623,23 +640,34 @@ for o in ALL:
     if o.data.uv_layers[0].name!='UVMap': o.data.uv_layers[0].name='UVMap'
 print('Objekte',len(ALL),'Tris',sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in ALL))
 json.dump({'lamps':LAMPS,'red':REDL,'radio':RADIO,'chairs':CH,'sofa':SOFA,'diver':DIVER},open(HERE+'/layout.json','w'),indent=1)
+COLL=[]
+for o in [o for o in bpy.data.objects if o.type=='MESH']:
+    if o.name.startswith(('floor','wall','ceil','pap','papers','sh_','win','off','shelf','tube','fixture','diffusor','pend','can','cord')) or 'head' in o.name or 'collar' in o.name: continue
+    ws=[o.matrix_world@v.co for v in o.data.vertices]
+    if not ws: continue
+    z0=min(w.z for w in ws); z1=max(w.z for w in ws)
+    if z0>0.25 or z1<0.3: continue
+    x0=min(w.x for w in ws); x1=max(w.x for w in ws); y0=min(w.y for w in ws); y1=max(w.y for w in ws)
+    if x1-x0>2.8 or y1-y0>2.8 or (x1-x0)*(y1-y0)<0.01: continue
+    COLL.append([round(x0+0.03,3),round(x1-0.03,3),round(-y1+0.03,3),round(-y0-0.03,3),o.name])
+print('Kollision',len(COLL),[c[4] for c in COLL])
 # ================================================================== Licht (nur für den Bake; Echtzeit-Lichter macht gfx_warteraum.js)
 def plight(name,loc,col,W,r=0.05,kind='POINT',size=(1,1),rot=(0,0,0)):
     d=bpy.data.lights.new(name,kind); d.color=col; d.energy=W
     if kind=='POINT': d.shadow_soft_size=r
     if kind=='AREA': d.shape='RECTANGLE'; d.size=size[0]; d.size_y=size[1]
     o=bpy.data.objects.new(name,d); o.location=loc; o.rotation_euler=rot; link(o); return o
-WARM=(1.0,0.60,0.30); GREEN=(0.42,1.0,0.36)
-for i,(x,y,z) in enumerate(LAMPS): plight('lamp%d'%i,(x,y,z),WARM,75,0.06)
+WARM=(1.0,0.54,0.24); GREEN=(0.42,1.0,0.36)
+for i,(x,y,z) in enumerate(LAMPS): plight('lamp%d'%i,(x,y,z),WARM,100,0.06)
 SCON=[(WN,1.75,1.62),(WW,2.12,1.72),(WS,3.2,1.78)]
 for i,(W,a,b) in enumerate(SCON): plight('scon%d'%i,WP(W,a,b,0.035),(1.0,0.55,0.25),14,0.02)
-for i,p in enumerate(REDL): plight('red%d'%i,p,(1.0,0.16,0.08),2.5,0.03)
+for i,p in enumerate(REDL): plight('red%d'%i,p,(1.0,0.32,0.18),1.6,0.03)
 plight('shaft',((xa+xb)/2,SY+0.12,1.3),GREEN,260,kind='AREA',size=(xb-xa-0.05,2.4),rot=(-math.pi/2,0,0))
-plight('office',(1.1,3.25,OZ-0.12),(0.62,1.0,0.6),95,kind='AREA',size=(1.8,0.9))
-plight('fill',(0,0,2.55),(0.35,0.62,0.62),22,kind='AREA',size=(5.0,4.0))
+plight('office',(1.1,3.25,OZ-0.12),(0.62,1.0,0.6),80,kind='AREA',size=(1.8,0.9))
+plight('fill',(0,0,2.55),(0.42,0.58,0.56),14,kind='AREA',size=(5.0,4.0))
 plight('noexit_l',((xa+xb)/2,-2.25,2.12),(0.55,1.0,0.5),3.0,0.03)
 plight('radio',(RADIO[0]+0.13,RADIO[1]+0.25,RADIO[2]+0.17),(1.0,0.7,0.35),0.6,0.01)
-w=bpy.data.worlds.new('w'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.02,0.04,0.04,1); w.node_tree.nodes['Background'].inputs[1].default_value=0.18
+w=bpy.data.worlds.new('w'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.03,0.04,0.04,1); w.node_tree.nodes['Background'].inputs[1].default_value=0.18
 # Rauch-/Sound-Ankerpunkte
 def fpt(x,y,yaw,p): return tuple(Matrix.Translation((x,y,0))@Matrix.Rotation(yaw,4,'Z')@V(p))
 ANCH={'smoke':SMOKE or fpt(*CH['club'],wyaw,(0.22,0.25,0.95)),'radio':(RADIO[0],RADIO[1],RADIO[2]+0.15),'office':(1.1,3.2,1.3),'clock':(CX,CY,CZ),'flip':tuple(WP(WN,4.0,2.18,0.2)),'tube':(0.7,0.5,2.6),
@@ -700,7 +728,7 @@ print('Export-Objekte',len(tris),'Tris gesamt',sum(tris.values()))
 bpy.ops.export_scene.gltf(filepath=AS+'/warteraum.glb',export_format='GLB',export_texcoords=True,export_normals=True,export_vertex_color='ACTIVE',export_image_format='WEBP',export_image_quality=88,
     export_materials='EXPORT',export_yup=True,export_apply=False,export_lights=False,export_cameras=False,use_selection=False,export_tangents=False)
 json.dump({'movers':MOV,'anchors':{k:to3(v) for k,v in ANCH.items()},'lamps':[to3(l) for l in LAMPS],'red':[to3(p) for p in REDL],'sconces':[to3(WP(W,a,b,0.035)) for W,a,b in SCON],
-   'window':to3(WP(WN,4.0,1.5,0.3)),'shaft':to3(((xa+xb)/2,-2.6,1.2)),'tris':tris,'lm':LM},open(AS+'/scene.json','w'),indent=1)
+   'window':to3(WP(WN,4.0,1.5,0.3)),'shaft':to3(((xa+xb)/2,-2.6,1.2)),'tris':tris,'lm':LM,'colliders':[c[:4] for c in COLL]},open(AS+'/scene.json','w'),indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=HERE+'/warteraum.blend',compress=True,relative_remap=True)
 bpy.ops.file.make_paths_relative(); bpy.ops.wm.save_mainfile(compress=True)
 print('FERTIG')
