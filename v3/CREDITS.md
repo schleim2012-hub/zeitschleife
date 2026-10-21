@@ -61,3 +61,7 @@
 
 - Spielhalle 1984 Wandpaneel: ambientCG WoodSiding008 (CC0), bearbeitet (assets/tex/arc2/wall_*.jpg)
 - Wohnung (v3/test/era_wohnung.html): Geräusche in assets/sfx/apt/ (Türknarzen, Klinke, Schritte, Röhren-TV, PC-Start, Kassettendeck, Telefon) und Stimmen in assets/vo/apt/ (Mara, Werbesprecher) mit ElevenLabs erzeugt (Sound Effects / TTS, Projekt-Account). Melodie des Kassettenrekorders, Telefonklingeln und Ersatz-Türgeräusche werden im Browser synthetisiert (eigene Erzeugung). Poster „ICH WILL ES GLAUBEN“, Pinnwand, Akten, Zeitschriften, Kassetten, Werbespot: eigene Canvas-Grafik, Parodie-Namen. Texturen: ambientCG (CC0), Möbel: Poly Haven (CC0).
+
+## Wohnung – Akte-X-Büro (Grafik)
+- 90er-PC (CRT, Mini-Tower, Tastatur, Maus), Aktenschrank-Reihe und kassettierte Holztür: eigene Modelle, Blender-Skript `v3/tools/gfx_wohnung/build_office_props.py` (prozedurale Materialien, eigene Erzeugung, keine Fremdlizenz).
+- Lightmap/AO: eigene Blender-Cycles-Bake (`v3/tools/bake`). Schreibtisch, Stuhl, Lampe weiter von Poly Haven (CC0), siehe oben.

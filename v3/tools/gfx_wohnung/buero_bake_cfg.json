@@ -1,0 +1,3 @@
+{"region":[37.9,42.6,-2.1,2.3],"recvMin":1.0,"onlyRecv":["apt_fl","apt_ce","apt_pa","apt_wd","apt_mt"],"emitGain":4,"emitOver":{"off_tube":10},"emitMin":0.04,"lightGain":3,
+ "extraLights":[{"name":"lamp_spill","pos":[40.1,1.25,-0.5],"col":[1.0,0.78,0.5],"I":0.5,"soft":0.15},{"name":"tube_fill","pos":[40.25,2.3,0.4],"col":[0.7,0.8,0.9],"I":0.18,"soft":0.4}],
+ "world":[0.09,0.085,0.08],"sky":false}
