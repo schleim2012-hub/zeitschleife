@@ -67,3 +67,6 @@ if(origTr) window.aptDoorTrans=function(sc,o){ const S=sc.object3D, before=new S
  }catch(e){ console.warn('gfx_buero tür',e); }
  return ok; };
 })();
+// Ausgangstür im Büro (von alpha.js gebaut): additiver Lichtfächer auf dem Boden wirkt auf dem blaugrauen Teppich wie ein heller bläulicher Fleck → hier aus (Tür selbst unverändert)
+(function(){ let n=0; const t=setInterval(()=>{ const g=window.__zsaDoorG; if(++n>60){ clearInterval(t); return; } if(!g||!window.THREE) return; const w=new THREE.Vector3(); g.getWorldPosition(w); if(w.x<38){ clearInterval(t); return; }
+ g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.blending===THREE.AdditiveBlending) o.visible=false; }); clearInterval(t); },500); })();

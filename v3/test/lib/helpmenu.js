@@ -138,8 +138,9 @@ function showVR(){ const sc=document.querySelector('a-scene'); if(!sc||!sc.camer
  if(!vrPanel){ const tex=new T.CanvasTexture(vrCanvas()); tex.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(0.9,0.5625),new T.MeshBasicMaterial({map:tex,fog:false,transparent:true,opacity:0.96}));
   const e=document.createElement('a-entity'); e.classList.add('clickable'); e.id='zshVR'; sc.appendChild(e); const init=()=>{ e.setObject3D('mesh',m); }; e.hasLoaded?init():e.addEventListener('loaded',init);
   e.addEventListener('click',ev=>{ ev.stopPropagation&&ev.stopPropagation(); hideVR(); }); vrPanel={e,m}; }
+ // sc.camera (Kamera im Rig, trägt Snap-Drehung) statt xr.getCamera()
  // einmal vor den Kopf in die Welt stellen (bleibt dann stehen, folgt dem Kopf nicht)
- const c=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera, p=new T.Vector3(), q=new T.Quaternion(); c.getWorldPosition(p); c.getWorldQuaternion(q);
+ const c=sc.camera, p=new T.Vector3(), q=new T.Quaternion(); c.getWorldPosition(p); c.getWorldQuaternion(q);
  const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-4) f.set(0,0,-1); f.normalize();
  const o=vrPanel.e.object3D; o.position.set(p.x+f.x*1.3,Math.max(1.0,p.y-0.15),p.z+f.z*1.3); o.rotation.set(-0.08,Math.atan2(-f.x,-f.z),0); o.visible=true; vrPanel.e.classList.add('clickable'); vrPanel.t=performance.now(); vrPanel.p0=p.clone(); }
 function hideVR(){ if(!vrPanel) return; vrPanel.e.object3D.visible=false; vrPanel.e.classList.remove('clickable'); LS.set('zs_help_vr_seen','1'); }
@@ -151,7 +152,7 @@ function boot(){ el(); const sc=document.querySelector('a-scene');
   const hook=()=>{ ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(h&&id==='hl') h.addEventListener('thumbstickdown',()=>{ if(!sc.is('vr-mode')) return; if(vrPanel&&vrPanel.e.object3D.visible) hideVR(); else showVR(); }); }); };
   sc.hasLoaded?hook():sc.addEventListener('loaded',hook);
   // Tafel verschwindet von selbst, wenn man 2,5 m weggeht
-  setInterval(()=>{ if(!vrPanel||!vrPanel.e.object3D.visible||!sc.camera) return; const c=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; const p=new THREE.Vector3(); c.getWorldPosition(p); if(p.distanceTo(vrPanel.p0)>2.5) hideVR(); },500); }
+  setInterval(()=>{ if(!vrPanel||!vrPanel.e.object3D.visible||!sc.camera) return; const c=sc.camera; const p=new THREE.Vector3(); c.getWorldPosition(p); if(p.distanceTo(vrPanel.p0)>2.5) hideVR(); },500); }
  auto(); }
 window.ZSHelp={open,close,isOpen,showVR,hideVR};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();

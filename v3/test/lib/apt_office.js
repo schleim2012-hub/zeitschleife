@@ -96,11 +96,11 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
  // zweiter PC (aus, staubig) auf Kartons
  { const P2=new T.Group(); P2.position.set(38.72,0.56,1.12); P2.rotation.y=Math.PI/2-0.2; G.add(P2); const b=new K.Batch(); b.put('p',K.roundBox(0.34,0.31,0.3,0.02),0,0.155,0,0xbfb69c); b.put('p',K.roundBox(0.26,0.24,0.16,0.05),0,0.155,-0.18,0xb4ab92); b.box('p',-0.13,0.13,0.04,0.27,0.15,0.156,0x1a1a18); b.build(P2,{p:K.std({color:0xffffff,roughness:0.7})}); }
  // ---------- Diaprojektor: Lichtkegel + Bild an der Ostwand ----------
- const slide=new T.Mesh(new T.PlaneGeometry(0.9,0.9),new T.MeshBasicMaterial({map:AT,transparent:true,opacity:0.55,blending:T.AdditiveBlending,depthWrite:false,fog:false,toneMapped:false}));
+ const slide=new T.Mesh(new T.PlaneGeometry(0.9,0.9),new T.MeshBasicMaterial({map:AT,transparent:true,opacity:0.3,blending:T.AdditiveBlending,depthWrite:false,fog:false,toneMapped:false}));
  { const u=slide.geometry.attributes.uv, [u0,v0,u1,v1]=at(2,5,2,2); for(let i=0;i<u.count;i++) u.setXY(i,u0+u.getX(i)*(u1-u0),v0+u.getY(i)*(v1-v0)); }
  slide.position.set(X1-0.005,1.62,1.2); slide.rotation.y=-Math.PI/2; G.add(slide);
  const beamT=K.canvasTex(64,64,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(200,210,255,0.0)'); g.addColorStop(1,'rgba(200,210,255,0.5)'); x.fillStyle=g; x.fillRect(0,0,w,h); });
- const bg=new T.CylinderGeometry(0.55,0.03,1.9,24,1,true); bg.translate(0,-0.95,0); const beam=new T.Mesh(bg,new T.MeshBasicMaterial({map:beamT,transparent:true,opacity:0.16,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false}));
+ const bg=new T.CylinderGeometry(0.55,0.03,1.9,24,1,true); bg.translate(0,-0.95,0); const beam=new T.Mesh(bg,new T.MeshBasicMaterial({map:beamT,transparent:true,opacity:0.05,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false}));
  beam.position.set(40.58,0.77,1.2); beam.lookAt(X1,1.62,1.2); beam.rotateX(-Math.PI/2); G.add(beam);
  // ---------- Lesbare Akten ----------
  const files=[]; const fileSpots=[[DX-0.25,DY,DZ-0.05,0.15],[DX+0.0,DY,DZ+0.25,-0.35],[42.24,1.32+0.06,-1.18,0.05],[40.35,0.705,1.32,0.4]];
@@ -123,7 +123,7 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
  // ---------- Licht ----------
  const lampS=new T.SpotLight(0xffc27a,4,4.5,0.85,0.6,2); lampS.position.set(DX-0.42,DY+0.42,DZ+0.0); lampS.target.position.set(DX-0.1,DY,DZ-0.1); G.add(lampS); G.add(lampS.target); K.glow(G,DX-0.42,DY+0.38,DZ,0.18,0xffd8a0,0.5);
  const crtL=new T.PointLight(0x50ff90,0,2.6,2); crtL.position.set(DX+0.15,DY+0.4,DZ-0.35); G.add(crtL);
- const projS=new T.SpotLight(0xc8d4ff,1.4,4.2,0.32,0.6,2); projS.position.set(40.6,0.77,1.2); projS.target.position.set(X1,1.62,1.2); G.add(projS); G.add(projS.target);
+ const projS=new T.SpotLight(0xffe2bc,0.45,4.2,0.32,0.6,2); projS.position.set(40.6,0.77,1.2); projS.target.position.set(X1,1.62,1.2); G.add(projS); G.add(projS.target);
  const hemi=new T.HemisphereLight(0x22262a,0x0a0806,0.2); G.add(hemi);
  // ---------- PC: Start + grüne Schrift ----------
  let pcOn=0, pcT0=0, hum=null; const MSG='Folge dem weißen Kaninchen.';
