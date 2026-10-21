@@ -108,6 +108,7 @@ function render(){ const r=el(); let h='';
   h=`<div class="p"><h2>OPTIONEN <span class="x" data-a="close">✕</span></h2><div class="m">
   <button data-a="help">🎮 Steuerung<small>So wird gespielt – Handy, VR und PC</small></button>
   ${isPhone()?`<button data-a="inv"><div class="row"><span>↔ Blick umkehren<small>Wischen bewegt die Welt statt den Blick</small></span><div class="tg ${inv?'on':''}"><i></i></div></div></button>
+  <button data-a="none" style="cursor:default"><div class="row"><span>👆 Blick-Empfindlichkeit<small>Wie weit ein Wisch dreht</small></span><input id="zsh-sens" type="range" min="0.5" max="3" step="0.1" value="${parseFloat(LS.get('zs_touch_sens'))||1.0}" style="width:42%;accent-color:#8a7250"></div></button>
   <button data-a="lowq"><div class="row"><span>🔋 Spar-Grafik<small>Weniger Auflösung, flüssiger auf älteren Handys</small></span><div class="tg ${q?'on':''}"><i></i></div></div></button>`:''}
   <button data-a="fs">⛶ Vollbild an/aus</button>
   <button data-a="menu">← Zurück</button></div></div>`; }
@@ -121,6 +122,7 @@ function render(){ const r=el(); let h='';
   else if(a==='inv'){ LS.set('zs_touch_invert',LS.get('zs_touch_invert')==='1'?'0':'1'); render(); }
   else if(a==='lowq'){ LS.set('zs_touch_lowq',LS.get('zs_touch_lowq')==='1'?'0':'1'); if(window.ZSTouch) ZSTouch.applyQuality(); render(); }
   else if(a==='fs'){ const d=document; if(d.fullscreenElement) d.exitFullscreen&&d.exitFullscreen(); else { const de=d.documentElement; (de.requestFullscreen||de.webkitRequestFullscreen||function(){}).call(de); } } }));
+ const sl=r.querySelector('#zsh-sens'); if(sl){ ['touchstart','touchmove','touchend','click'].forEach(t=>sl.addEventListener(t,e=>e.stopPropagation())); sl.addEventListener('input',()=>LS.set('zs_touch_sens',sl.value)); }
  r.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); tab=b.dataset.t; render(); })); }
 function open(v){ view=v||'menu'; tab=null; render(); el().classList.add('on'); if(v==='help') LS.set('zs_help_seen_v1','1'); }
 function close(){ if(root) root.classList.remove('on'); LS.set('zs_help_seen_v1','1'); }

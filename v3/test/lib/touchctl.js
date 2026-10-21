@@ -17,6 +17,14 @@ const Z=window.ZSTouch={active:false};
   else { paused.forEach(c=>c.resume().catch(()=>{})); media.forEach(m=>m.play().catch(()=>{})); paused=[]; media=[]; } }); })();
 if(off||!(force||(touchDev&&!/OculusBrowser|Quest|Pico/i.test(UA)))) return;
 Z.active=true;
+// ---------- Video/Ton auf dem Handy: blockiertes play() (keine Geste) → stumm weiterlaufen lassen, beim nächsten Tipp Ton an ----------
+(function(){ const MP=HTMLMediaElement.prototype, op=MP.play; if(op.__zs) return; const mutedByUs=new Set(), vids=window.__zsVids=new Set();
+ MP.play=function(){ const el=this; vids.add(el); if(!el.__zsErr){ el.__zsErr=1; el.addEventListener('error',()=>{ const e=el.error; console.warn('[ZSTouch] Medienfehler',el.currentSrc||el.src,e&&e.code,e&&e.message); }); }
+  let pr; try{ pr=op.call(el); }catch(err){ return Promise.reject(err); }
+  return pr&&pr.catch?pr.catch(err=>{ if(err&&err.name==='NotAllowedError'&&!el.muted){ el.muted=true; mutedByUs.add(el); return op.call(el); } throw err; }):pr; };
+ MP.play.__zs=1;
+ const unlock=()=>{ mutedByUs.forEach(el=>{ el.muted=false; }); mutedByUs.clear(); (window.__zsACs||[]).forEach(c=>{ if(c.state==='suspended'&&!document.hidden) c.resume().catch(()=>{}); }); };
+ ['touchend','click','keydown'].forEach(t=>window.addEventListener(t,unlock,{capture:true,passive:true})); })();
 const LS={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}}};
 // Viewport: kein Zoom, bis in die Ränder (Notch/Safe-Area per CSS)
 let vp=document.querySelector('meta[name=viewport]'); if(!vp){ vp=document.createElement('meta'); vp.name='viewport'; document.head.appendChild(vp); }
@@ -59,7 +67,10 @@ const examining=()=>window.ZSX&&(ZSX.active||(ZSX.busy&&ZSX.busy()));
 function mouse(type,x,y,target){ const ev=new MouseEvent(type,{clientX:x,clientY:y,screenX:x,screenY:y,button:0,buttons:type==='mouseup'||type==='click'?0:1,bubbles:true,cancelable:true,view:window}); ev.__tc=1; (target||canvas).dispatchEvent(ev); }
 // A-Frame-Cursor (rayOrigin:mouse) prüft Treffer sonst erst im nächsten Frame → sofort prüfen
 function syncCursor(){ try{ document.querySelectorAll('[cursor]').forEach(e=>{ const c=e.components&&e.components.cursor, r=e.components&&e.components.raycaster; if(c&&c.data.rayOrigin==='mouse'&&r){ r.refreshObjects&&r.dirty&&r.refreshObjects(); r.checkIntersections(); } }); }catch(err){} }
-function clickAt(x,y){ mouse('mousemove',x,y); syncCursor(); mouse('mousedown',x,y); mouse('mouseup',x,y); mouse('click',x,y); }
+function clickAt(x,y){ mouse('mousemove',x,y); syncCursor(); mouse('mousedown',x,y); mouse('mouseup',x,y); mouse('click',x,y); tvHit(x,y); }
+// Röhren-TV (tv.js) prüft das getroffene Mesh; unsichtbare Modellteile davor schlucken den Cursor-Klick → Knopf/Schirm direkt auslösen
+function tvHit(x,y){ try{ const h=pick(x,y); const tv=h&&h.ce&&h.ce.components&&h.ce.components['crt-tv']; if(!tv||!tv.hit) return; if(performance.now()-(tv.lastHit||0)<350) return;
+ const k=new (T().Vector3)(); const kn=tv.knobHit||tv.knob; if(kn){ kn.getWorldPosition(k); if(tv.on&&k.distanceTo(h.point)<0.09){ tv.hit(kn); return; } } tv.hit(tv.screen); }catch(e){} }
 
 function buildUI(){
  const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st); document.body.classList.add('zs-touch');
@@ -89,7 +100,9 @@ function back(){
  if(window.ZSTouch.onBack&&ZSTouch.onBack()) return;   // Haken für Szenen/alpha.js (z.B. Handy zurück ins Inventar)
  walk=null; key('keydown','Escape'); key('keyup','Escape');
 }
+function phoneOut(){ return !!(window.ZSINV&&ZSINV.where&&(ZSINV.where()==='hand'||(window.ZSX&&ZSX.active&&ZSX.cur&&ZSX.cur.obj===(document.getElementById('nokio')||{}).object3D))); }
 function toggleInv(){ const p=document.getElementById('tc-inv-p'); if(p.style.display==='block'){ p.style.display='none'; return; }
+ if(window.ZSINV&&ZSINV.list&&ZSINV.list().length===1&&ZSINV.take){ if(phoneOut()) ZSINV.putAway(); else { walk=null; ZSINV.take(); } return; }
  let h='<b>INVENTAR</b>';
  const inv=window.ZSINV&&ZSINV.list&&ZSINV.list();
  if(inv&&inv.length){ inv.forEach(it=>{ h+=`<div class="it" data-id="${it.id||''}"><span style="font-size:22px">${it.icon||'▪'}</span><span>${it.name||it.id}</span></div>`; }); }
@@ -101,10 +114,12 @@ function toggleInv(){ const p=document.getElementById('tc-inv-p'); if(p.style.di
 
 // ---------- Vollbild + Querformat beim ersten Tippen (bei jedem Raum neu, Browser verlangt eine Geste) ----------
 let fsTried=0;
-function fs(){ if(fsTried>2||document.fullscreenElement||window.matchMedia('(display-mode: fullscreen)').matches) return; fsTried++; const de=document.documentElement; try{ const p=(de.requestFullscreen||de.webkitRequestFullscreen).call(de,{navigationUI:'hide'}); p&&p.then&&p.then(()=>{ screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{}); }).catch(()=>{}); }catch(e){} }
+function fs(){ if(/RewindTestApp/.test(UA)) return; if(fsTried>2||document.fullscreenElement||window.matchMedia('(display-mode: fullscreen)').matches) return; fsTried++; const de=document.documentElement; try{ const p=(de.requestFullscreen||de.webkitRequestFullscreen).call(de,{navigationUI:'hide'}); p&&p.then&&p.then(()=>{ screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{}); }).catch(()=>{}); }catch(e){} }
 
 // ---------- Blick ----------
-const LOOK=()=>2.4/Math.max(320,Math.min(innerWidth,1400));   // ~ volle Bildschirmbreite = 140°
+// volle Bildschirmbreite (CSS-px) = 180° × Empfindlichkeit (Optionen › Blick-Empfindlichkeit, Standard 1.3)
+const SENS=()=>{ const v=parseFloat(LS.get('zs_touch_sens')); return isFinite(v)&&v>0.2?v:1.0; };
+const LOOK=()=>Math.PI*SENS()/Math.max(320,Math.min(window.innerWidth||document.documentElement.clientWidth,1600));
 function look(dx,dy){ const s=LOOK()*(invert?-1:1); const lc=camEl&&camEl.components['look-controls'];
  if(lc&&lc.yawObject){ if(lc.data&&lc.data.enabled===false) return; lc.yawObject.rotation.y-=dx*s; lc.pitchObject.rotation.x=Math.max(-1.25,Math.min(1.25,lc.pitchObject.rotation.x-dy*s)); }
  else if(cam){ cam.rotation.order='YXZ'; cam.rotation.y-=dx*s; cam.rotation.x=Math.max(-1.25,Math.min(1.25,cam.rotation.x-dy*s)); } }
@@ -162,12 +177,14 @@ function tap(x,y){
  const reach=hit.ce?1.15:0.45;
  if(d<=reach+0.35){ clickAt(x,y); return; }
  const p=hit.point.clone();
+ if(!hit.ce){ clickAt(x,y); walkTo(p,reach); return; }   // Tür/Wand: Klick sofort (wie Maus am PC), dann hingehen
  walkTo(p,reach,()=>{ const s=screenOf(p); if(s) clickAt(s[0],s[1]); else clickAt(x,y); });
 }
 
 // ---------- Touch-Gesten auf der 3D-Fläche ----------
 const F={};   // aktive Finger auf dem Canvas
-function onCanvas(e){ const t=e.target; return t===canvas||(t&&t.tagName==='CANVAS'&&t.closest&&t.closest('a-scene')); }
+// Spielfläche = alles außer unseren Knöpfen/Menüs und Bedienelementen (auch Overlays/HUD über dem Canvas)
+function onCanvas(e){ const t=e.target; if(!t||!t.closest) return false; if(t===canvas) return true; if(t.closest('#tc-ui .bt,#tc-joy,#tc-inv-p,#zsh,#zsh-btn,#start,#tc-rot,button,a,input,select,textarea,[onclick]')) return false; return !!document.querySelector('a-scene'); }
 function tstart(e){ if(inXR||!canvas) return; if(!onCanvas(e)) return; e.preventDefault(); e.stopImmediatePropagation(); fs();
  for(const t of e.changedTouches){ F[t.identifier]={x0:t.clientX,y0:t.clientY,x:t.clientX,y:t.clientY,t0:e.timeStamp,moved:false,zsx:examining()}; if(F[t.identifier].zsx){ mouse('mousemove',t.clientX,t.clientY); mouse('mousedown',t.clientX,t.clientY); } } }
 function tmove(e){ if(inXR) return; let mine=false; for(const t of e.changedTouches){ const f=F[t.identifier]; if(!f) continue; mine=true; const dx=t.clientX-f.x, dy=t.clientY-f.y; f.x=t.clientX; f.y=t.clientY;
@@ -194,6 +211,7 @@ function joyTick(dt){ if(!joy[0]&&!joy[1]) return; if(Math.hypot(joy[0],joy[1])<
  const f=new TH.Vector3(joy[0],0,joy[1]).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-6) return; f.normalize().multiplyScalar(Math.hypot(joy[0],joy[1])*1.5*dt); rig.position.add(f); if(window.__br&&__br.collide&&__br.group&&__br.group.visible) __br.collide(rig.position); }
 
 // ---------- Leistung: Pixelratio deckeln ----------
+function hidePhone(){ const n=document.getElementById('nokio'); if(!n||!n.object3D||!window.ZSINV||!ZSINV.where) return; const show=!(ZSINV.where()==='inv'&&!(ZSINV.isOpen&&ZSINV.isOpen())&&!phoneOut()); if(n.object3D.visible!==show) n.object3D.visible=show; }
 let baseSetPR=null;
 Z.applyQuality=function(){ if(!sc||!sc.renderer) return; const R=sc.renderer; const low=LS.get('zs_touch_lowq')==='1'; const cap=low?1.0:1.5;
  if(!baseSetPR){ baseSetPR=R.setPixelRatio.bind(R); R.setPixelRatio=p=>baseSetPR(inXR?p:Math.min(p,Z.cap||cap)); }
@@ -203,8 +221,8 @@ function attach(){ sc=document.querySelector('a-scene'); if(!sc) return; const g
   invert=LS.get('zs_touch_invert')==='1'; Z.applyQuality();
   // A-Frame look-controls bekommt keine Touch-Gesten mehr (wir drehen selbst), Maus bleibt
   if(camEl&&camEl.components['look-controls']) { camEl.setAttribute('look-controls','touchEnabled',false); camEl.setAttribute('look-controls','magicWindowTrackingEnabled',false); const lc=camEl.components['look-controls']; if(lc&&lc.magicWindowObject) lc.magicWindowObject.quaternion.identity(); }
-  let last=performance.now(); const loop=()=>{ const n=performance.now(), dt=Math.min(0.1,(n-last)/1000); last=n; if(!inXR&&rig){ walkTick(dt); joyTick(dt); markTick(); ui.classList.toggle('cine',!!cinema()); } requestAnimationFrame(loop); }; requestAnimationFrame(loop);
-  sc.addEventListener('enter-vr',()=>{ inXR=true; ui.style.display='none'; walk=null; });
+  let last=performance.now(); const loop=()=>{ const n=performance.now(), dt=Math.min(0.1,(n-last)/1000); last=n; if(!inXR&&rig){ hidePhone(); walkTick(dt); joyTick(dt); markTick(); ui.classList.toggle('cine',!!cinema()); } requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  sc.addEventListener('enter-vr',()=>{ inXR=true; ui.style.display='none'; walk=null; const n=document.getElementById('nokio'); if(n&&n.object3D) n.object3D.visible=true; });
   sc.addEventListener('exit-vr',()=>{ inXR=false; ui.style.display=''; Z.applyQuality(); }); };
  if(sc.hasLoaded) go(); else sc.addEventListener('loaded',go);
  addEventListener('storage',()=>{ invert=LS.get('zs_touch_invert')==='1'; });
