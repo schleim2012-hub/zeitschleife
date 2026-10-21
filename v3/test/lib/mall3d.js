@@ -60,7 +60,7 @@ window.buildMall84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Textur
    const top=new T.Mesh(new T.RingGeometry(2.08,2.37,8,1)); top.rotation.x=-Math.PI/2; top.rotation.z=Math.PI/8; top.position.set(0,0.45,FZ); fg.add(top);
    const pts=[[0,0],[0.42,0],[0.42,0.1],[0.2,0.25],[0.16,0.9],[0.24,1.05],[0.5,1.12],[0.95,1.22],[0.98,1.3],[0.85,1.3],[0.3,1.24],[0.12,1.3],[0.1,1.6],[0.07,1.68],[0,1.7]].map(([r,y])=>new T.Vector2(r,y));
    const ped=new T.Mesh(new T.LatheGeometry(pts,24)); ped.position.set(0,0.2,FZ); fg.add(ped);
-   G.add(flat(fg,new T.MeshStandardMaterial({map:ld('../assets/tex/pool/basin_c.jpg',1,1.5),normalMap:ld('../assets/tex/pool/basin_n.jpg',0,1.5),color:0x5a5460,roughness:0.5})));
+   { const bm=flat(fg,new T.MeshStandardMaterial({map:ld('../assets/tex/pool/basin_c.jpg',1,1.5),normalMap:ld('../assets/tex/pool/basin_n.jpg',0,1.5),color:0x5a5460,roughness:0.5})); bm.name='m84_basin'; G.add(bm); }
    const wn=ld('../assets/tex/pool/water_n.jpg',0,1.2); const wM=new T.MeshStandardMaterial({color:0x081320,roughness:0.12,metalness:0.85,envMapIntensity:0.9});
    const wg=new T.CircleGeometry(2.1,8); wg.rotateX(-Math.PI/2); wg.rotateY(Math.PI/8); wg.translate(0,0.36,FZ); const wm=new T.Mesh(wg,wM); G.add(wm); water.n=wn; water.m=wM;
    const bw=new T.CircleGeometry(0.86,24); bw.rotateX(-Math.PI/2); bw.translate(0,1.47,FZ); G.add(new T.Mesh(bw,wM)); const ct=ld('../assets/tex/pool/caustic.jpg',0,1.4); const cg=new T.CircleGeometry(2.08,8); cg.rotateX(-Math.PI/2); cg.rotateY(Math.PI/8); cg.translate(0,0.365,FZ); const cm=new T.Mesh(cg,new T.MeshBasicMaterial({map:ct,color:0x30386a,transparent:true,blending:T.AdditiveBlending,depthWrite:false})); G.add(cm); water.ct=ct;
@@ -79,7 +79,7 @@ window.buildMall84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Textur
  const planters=[[-3.7,-2.6],[3.7,-9.0],[-3.7,-14.5],[3.7,3.2],[-3.7,6.5]];
  planters.forEach(([x,z],i)=>{ const p=new T.Mesh(new T.BoxGeometry(1.0,0.6,1.0)); p.position.set(x,0.3,z); pg.add(p); const tr=new T.Mesh(new T.CylinderGeometry(0.05,0.09,1.6+rnd()*0.6,7)); tr.position.set(x,0.6+0.9,z); tr.rotation.z=(rnd()-0.5)*0.15; tg.add(tr); const ty=2.3+rnd()*0.4;
    for(let j=0;j<9;j++){ const a=j/9*6.28+rnd(); const lf=new T.Mesh(new T.PlaneGeometry(1.3,0.62,4,1)); const pp=lf.geometry.attributes.position; for(let q=0;q<pp.count;q++){ const u=pp.getX(q)+0.65; pp.setZ(q,-u*u*0.35); } lf.geometry.translate(0.65,0,0); lf.position.set(x,ty,z); lf.rotation.set(-0.5-rnd()*0.4,a,0,'YXZ'); lf.rotation.order='YZX'; lf.rotation.z=-0.35-rnd()*0.4; lg.add(lf); } });
- { const lm=flat(lg,leafM); G.add(lm); } G.add(flat(pg,new T.MeshStandardMaterial({map:ld('terr_c.jpg',1,0.8),roughness:0.4}))); G.add(flat(tg,new T.MeshStandardMaterial({color:0x2a2018,roughness:0.9})));
+ { const lm=flat(lg,leafM); G.add(lm); } { const pm=flat(pg,new T.MeshStandardMaterial({map:ld('terr_c.jpg',1,0.8),roughness:0.4})); pm.name='m84_planter'; G.add(pm); } G.add(flat(tg,new T.MeshStandardMaterial({color:0x2a2018,roughness:0.9})));
  // ---- Schmutz: Wischeimer + Warnschild, umgekippter Abfallkorb, Flyer ----
  { const yg=new T.Group(); const sign=new T.Group(); const sp=new T.Mesh(new T.PlaneGeometry(0.32,0.62)); [0.18,-0.18].forEach((r,i)=>{ const m=sp.clone(); m.position.set(1.75+(i?0.02:-0.02),0.3,-2.2+(i?-0.06:0.06)); m.rotation.set(r,0.4,0); m.rotation.order='YXZ'; sign.add(m); });
    const sT=cv(128,256,(x,w,h)=>{ x.fillStyle='#e0a010'; x.fillRect(0,0,w,h); x.fillStyle='#111'; x.beginPath(); x.moveTo(64,40); x.lineTo(110,120); x.lineTo(18,120); x.closePath(); x.fill(); x.fillStyle='#b8a018'; x.font='bold 50px Arial'; x.textAlign='center'; x.fillText('!',64,112); x.fillStyle='#111'; x.font='bold 19px Arial'; x.fillText('VORSICHT',64,160); x.fillText('RUTSCH-',64,185); x.fillText('GEFAHR',64,210); });
@@ -101,12 +101,12 @@ window.buildMall84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Textur
   col:new T.MeshStandardMaterial({map:ld('col_c.jpg',1),roughness:0.25,metalness:0.1,envMap:env,envMapIntensity:0.6}), metal:new T.MeshStandardMaterial({color:0x6a6a72,roughness:0.3,metalness:0.9,envMap:env}),
   glass:glassM, dark:new T.MeshBasicMaterial({color:0x020203}), shut:shutM, sky:new T.MeshBasicMaterial({color:0x0a0e1c}) };
  glassM.envMap=env; water.m.envMap=env; glassM.envMapIntensity=1.4;
- Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.matrixAutoUpdate=false; if(k==='glass') m.renderOrder=2; G.add(m); });
- { const m=new T.Mesh(merge(inQ),new T.MeshBasicMaterial({map:shopT,color:0xffffff})); G.add(m); }
+ Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.name='m84_'+k; m.matrixAutoUpdate=false; if(k==='glass') m.renderOrder=2; G.add(m); });
+ { const m=new T.Mesh(merge(inQ),new T.MeshBasicMaterial({map:shopT,color:0xffffff})); m.name='m84_shopin'; G.add(m); }
  // ---- Neonband unter der Galerie (rosa) + am OG-Geländer (cyan, schwächer) ----
- const tubeM=new T.MeshBasicMaterial({color:0xff5ac0,toneMapped:false}); const tubes=[]; [-1,1].forEach(s=>{ tubes.push(box(0.04,0.04,Z0-Z1,s*(XG-0.13),YG-0.05,(Z0+Z1)/2).toNonIndexed()); }); G.add(new T.Mesh(merge(tubes),tubeM));
+ const tubeM=new T.MeshBasicMaterial({color:0xff5ac0,toneMapped:false}); const tubes=[]; [-1,1].forEach(s=>{ tubes.push(box(0.04,0.04,Z0-Z1,s*(XG-0.13),YG-0.05,(Z0+Z1)/2).toNonIndexed()); }); const tubeMesh=new T.Mesh(merge(tubes),tubeM); tubeMesh.name='m84_tube'; G.add(tubeMesh);
  // Leuchtröhre mit Wackelkontakt unter der Galerie links (kein Licht, nur Emission)
- const flM=new T.MeshBasicMaterial({color:0xd8e8ff,toneMapped:false}); const flu=new T.Mesh(box(0.08,0.05,1.2,-4.0,YG-0.04,-1.5),flM); G.add(flu);
+ const flM=new T.MeshBasicMaterial({color:0xd8e8ff,toneMapped:false}); const flu=new T.Mesh(box(0.08,0.05,1.2,-4.0,YG-0.04,-1.5),flM); flu.name='m84_flu'; G.add(flu);
  // ---- Leuchtschilder: Atlas (1 Draw), Halo im Dunst, Spiegelstreifen am Boden ----
  const halo=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.3,'rgba(255,255,255,0.35)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
  const stT=TL.load('../assets/tex/s41/streak.png'); const signs=[]; const AW=2048,AH=2048; const AT=document.createElement('canvas'); AT.width=AW; AT.height=AH; const ax=AT.getContext('2d'); ax.fillStyle='#000'; ax.fillRect(0,0,AW,AH); let vx=0, hx0=640, hxx=640, hy=0;
@@ -132,18 +132,32 @@ window.buildMall84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Textur
  neon('VIDEOTHEK',0x30d8ff,true,1,-2.4,2.6,0.42); neon('SCHALLPLATTEN',0xff3aa0,false,-1,-8.6,3.45,0.5); neon('EISCAFÉ',0x50ffb0,false,1,-14.8,3.45,0.5,true); neon('MODE',0xff60d0,true,-1,-1.0,2.7,0.4,true);
  neon('RADIO·TV',0xff4030,false,1,-8.6,4.4+2.95,0.42); neon('FOTO',0xffc040,false,-1,-14.8,4.4+2.95,0.42); neon('SPIELWAREN',0x8a6aff,true,-1,-18.6,6.2,0.4); neon('AUSGANG',0x40ff60,false,1,-26.5,2.5,0.32); finishSigns();
  // ---- Licht: nur praktisch ----
- const Lp=new T.PointLight(0xff4ab0,4.5,10,1.6); Lp.position.set(-3.0,3.2,-3.8); G.add(Lp);
- const Lc=new T.PointLight(0x30c8ff,3.2,9,1.6); Lc.position.set(3.4,2.4,-2.6); G.add(Lc);
- const Lf=new T.PointLight(0x8a90ff,1.3,5,1.6); Lf.position.set(0,0.7,FZ); G.add(Lf);
+// Echtzeit-Lichter sitzen exakt an den Leuchten-Meshes (Quest-Budget: 4). Diffuses Licht der Raumhülle kommt aus der Blender-Lightmap (lib/bake_rt.js).
+const BK=!/[?&]nobake=1/.test(location.search)&&window.ZSBake;
+const Lp=new T.PointLight(0xff4ab0,BK?3.6:4.5,BK?9:10,1.6); Lp.position.set(-(XG-0.13),YG-0.12,-2.0); G.add(Lp); // rosa Neonband links, über der Bank
+const Lc=new T.PointLight(0x30c8ff,BK?2.8:3.2,BK?8:9,1.6); Lc.position.set(XW-0.75,2.6,-2.3); G.add(Lc); // VIDEOTHEK-Schild
+const Lf=new T.PointLight(0x8a90ff,1.3,5,1.6); Lf.position.set(0,0.42,FZ); G.add(Lf); // Unterwasserlampe im Brunnen
+const Lu=new T.PointLight(0xd8e8ff,BK?1.6:0,4.5,1.8); Lu.position.set(-4.0,YG-0.12,-1.5); G.add(Lu); // Leuchtstoffröhre mit Wackelkontakt
  [[0,3.0,FZ,4,0.10,0x8070c0],[0,2.0,-12,12,0.10,0x6a4a7a],[0,3,-22,18,0.14,0x3a3050],[0,8.5,-6,10,0.06,0x3a4a7a]].forEach(([x,y,z,s,o,c])=>{ const h=new T.Sprite(new T.SpriteMaterial({map:halo,color:c,transparent:true,opacity:o,depthWrite:false,blending:T.AdditiveBlending})); h.position.set(x,y,z); h.scale.set(s,s*0.6,1); G.add(h); });
- S.add(new T.HemisphereLight(0x2a2440,0x060408,0.45));
+ const HL=new T.HemisphereLight(0x2a2440,0x060408,BK?0.16:0.45); S.add(HL);
  // ---- ferne Gestalt (Wachmann?), reglos, nur als Silhouette vor dem AUSGANG ----
  const fig=(()=>{ const pts=[[0,0],[0.17,0.02],[0.2,0.5],[0.25,1.0],[0.24,1.3],[0.2,1.42],[0.08,1.5],[0.07,1.56],[0.11,1.62],[0.115,1.72],[0.08,1.8],[0,1.82]].map(([r,y])=>new T.Vector2(r,y)); const g=new T.LatheGeometry(pts,12); g.scale(1,1,0.7); const m=new T.Mesh(g,new T.MeshBasicMaterial({color:0x020203})); m.position.set(2.2,0,-24.5); G.add(m); return m; })();
  // ---- Animation ----
  const dp=water.drops.geometry.attributes.position; let flk=1;
+ // Decals (Multiply-Atlas-Zellen: 0 Wasserfleck 1 Dreck 2 Bodenriss 3 Wandriss 4 Feuchte 5 Laufspuren 6 Kaugummi 7 Kantenschmutz 8 Abrieb 9 Rostring 10 Stockflecken 11 Brandfleck)
+ const P2=Math.PI/2, M84DEC=[[7,-4.5,0,2,4,0.6,'y',-P2],[7,-4.5,0,-2,4,0.6,'y',-P2],[7,-4.5,0,-6,4,0.6,'y',-P2],[7,4.5,0,2,4,0.6,'y',P2],[7,4.5,0,-2,4,0.6,'y',P2],[7,4.5,0,-6,4,0.6,'y',P2],
+  [1,-2.3,0,-0.7,1.7,1.2,'y',0.3],[6,-1.55,0,-0.15,0.9,0.9,'y',1],[0,0.8,0,0.7,1.5,1.5,'y',0],[0,-0.7,0,-2.1,1.1,1.1,'y',2],[8,0.3,0,-0.4,0.9,4.2,'y',0.05],
+  [2,1.5,0,-1.2,1.3,1.3,'y',0.7],[2,-1.1,0,1.6,1.0,1.0,'y',2.2],[9,2.15,0,-1.85,0.6,0.6,'y',0],[11,-0.3,0,1.2,0.12,0.12,'y',0],[11,1.1,0,-0.3,0.1,0.1,'y',0],[1,-3.7,0,-2.6,1.7,1.7,'y',0.5],[10,1.2,0,1.9,1.2,1.2,'y',1.3]];
+ for(let i=0;i<8;i++){ const a=i/8*6.283+0.2; M84DEC.push([1,Math.cos(a)*2.5,0,FZ+Math.sin(a)*2.5,1.1,0.9,'y',a+P2]); }
+ [3,-3,-9].forEach(z=>[-1,1].forEach(s=>{ const xi=s*3.05, fi=s<0?'+x':'-x'; M84DEC.push([4,xi,0.28,z,0.5,0.56,fi],[5,xi,3.25,z,0.5,1.3,fi],[4,s*3.3,0.28,z+0.25,0.5,0.56,'+z'],[4,s*3.3,0.28,z-0.25,0.5,0.56,'-z'],[5,s*3.3,3.25,z+0.25,0.5,1.3,'+z']); }));
+ M84DEC.push([3,-3.05,1.7,-3.15,0.45,0.6,'+x',0.4],[4,-4.78,0.3,-1.6,2.2,0.6,'+x'],[4,-4.78,0.3,-3.8,2.2,0.6,'+x'],[4,4.78,0.3,1.4,2.6,0.6,'-x'],[4,4.78,0.3,4.0,2.6,0.6,'-x'],[10,4.78,1.2,2.3,1.3,1.3,'-x'],[5,4.78,2.4,3.3,1.6,1.2,'-x'],[3,4.78,1.0,4.6,0.7,0.7,'-x',1.2]);
+ const M84POST=[[0,4.77,1.55,1.2,0.62,0.86,'-x',0.05],[2,4.77,1.35,3.05,0.6,0.8,'-x',-0.05],[1,4.77,1.65,4.35,0.56,0.76,'-x',0.03],[3,-3.05,1.5,-2.95,0.44,0.6,'+x',0.04],[1,3.05,1.45,3.0,0.44,0.6,'-x',-0.03],[2,-4.77,0.95,-2.6,0.56,0.7,'+x',0.07]];
+  if(BK) MAT.terr.envMapIntensity=0.8;
+ const fx=BK?window.ZSBake.realism(G,sc,{room:'m84',lmGain:0.5,aoInt:0.6,specGain:6,base:'../assets/era1984mall/bake/',tubes:[[-(XG-0.13),YG-0.05,Z0,Z1,0xff5ac0],[XG-0.13,YG-0.05,Z0,Z1,0xff5ac0]],flu:[-4.0,YG-0.04,-1.5,1.2,0xd8e8ff],mats:MAT,decals:M84DEC,posters:M84POST}):null;
+ window.__M84={G,signs,sigM,haloM,FZ,lights:[Lp,Lc,Lf,Lu]};
  const update=(t)=>{ const s=t*0.001; water.ct.offset.set(Math.sin(s*0.3)*0.05,s*0.02); water.ct.rotation=Math.sin(s*0.2)*0.05; water.jt.offset.y=-s*1.4;
   water.dv.forEach((d,i)=>{ d.t+=0.016; if(d.t>1.6){ d.t=0; d.a=rnd()*6.28; d.r=0.1+rnd()*0.9; d.h=2.6+rnd()*1.4; } const k=d.t/1.6; const r=d.r*k*(d.r>0.75?2.1:1.15); dp.setXYZ(i,Math.cos(d.a)*r,1.7+d.h*(4*k*(1-k))*0.9+(k>0.5?-(k-0.5)*1.4:0),FZ+Math.sin(d.a)*r); }); dp.needsUpdate=true;
-  if(Math.random()<0.04) flk=Math.random()<0.5?0.08:1; flM.color.setRGB(0.85*flk,0.9*flk,flk);
+  if(Math.random()<0.04) flk=Math.random()<0.5?0.08:1; flM.color.setRGB(0.85*flk,0.9*flk,flk); Lu.intensity=BK?1.6*flk:0; if(fx&&fx.setFlu&&flk!==fx.k){ fx.k=flk; fx.setFlu(flk); }
   signs.forEach(g=>{ if(!g.flick) return; if(Math.random()<0.015){ g.base=Math.random()<0.3?0.25:1; setSign(g,g.base); } });
   Lf.intensity=1.3+0.2*Math.sin(s*3.1)*Math.sin(s*1.7); fig.scale.set(1,1+0.004*Math.sin(s*1.3),1); };
  AFRAME.registerComponent('m84-tick',{tick(t){ update(t); }}); sc.setAttribute('m84-tick','');
