@@ -60,3 +60,4 @@
 - Küche, Geräte, Kettensäge, Zettel: eigene three.js-Geometrie und Canvas-Texturen nach Petes Referenzbild. Alle Geräusche (Mikrowelle, Hamster-Fiepen, Popcorn, Ding, Kettensäge) live per WebAudio synthetisiert.
 
 - Spielhalle 1984 Wandpaneel: ambientCG WoodSiding008 (CC0), bearbeitet (assets/tex/arc2/wall_*.jpg)
+- Wohnung (v3/test/era_wohnung.html): Geräusche in assets/sfx/apt/ (Türknarzen, Klinke, Schritte, Röhren-TV, PC-Start, Kassettendeck, Telefon) und Stimmen in assets/vo/apt/ (Mara, Werbesprecher) mit ElevenLabs erzeugt (Sound Effects / TTS, Projekt-Account). Melodie des Kassettenrekorders, Telefonklingeln und Ersatz-Türgeräusche werden im Browser synthetisiert (eigene Erzeugung). Poster „ICH WILL ES GLAUBEN“, Pinnwand, Akten, Zeitschriften, Kassetten, Werbespot: eigene Canvas-Grafik, Parodie-Namen. Texturen: ambientCG (CC0), Möbel: Poly Haven (CC0).
