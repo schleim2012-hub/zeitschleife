@@ -33,6 +33,8 @@ const css=`html,body{overscroll-behavior:none;touch-action:none;overflow:hidden;
 a-scene canvas{touch-action:none}
 body.zs-touch #hud{display:none!important}
 body.zs-touch .a-enter-vr,body.zs-touch .a-enter-ar{display:none!important}
+#tc-drop{display:none;right:calc(18px + env(safe-area-inset-right));bottom:calc(112px + env(safe-area-inset-bottom))}#tc-ui.hold #tc-drop{display:block}
+#tc-nk{position:fixed;z-index:49;left:calc(14px + env(safe-area-inset-left));top:12vh;height:58vh;aspect-ratio:3/2;display:none;pointer-events:none;background:#9aa57a;border:6px solid #1c1d1f;border-radius:14px;box-shadow:0 0 0 2px #3a3c40;image-rendering:pixelated;image-rendering:crisp-edges}
 #tc-ui{position:fixed;inset:0;z-index:50;pointer-events:none;font-family:"DejaVu Sans",system-ui,sans-serif}
 #tc-ui .bt{position:absolute;pointer-events:auto;width:62px;height:62px;border-radius:50%;border:1px solid rgba(200,180,140,.38);background:rgba(22,19,16,.62);color:#eadfc8;font:700 22px/60px sans-serif;text-align:center;backdrop-filter:blur(3px);-webkit-tap-highlight-color:transparent}
 #tc-ui .bt:active,#tc-ui .bt.dn{background:rgba(70,58,40,.8)}
@@ -74,7 +76,7 @@ function tvHit(x,y){ try{ const h=pick(x,y); const tv=h&&h.ce&&h.ce.components&&
 
 function buildUI(){
  const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st); document.body.classList.add('zs-touch');
- ui=document.createElement('div'); ui.id='tc-ui'; ui.innerHTML=`<div class="bt" id="tc-b">B<small>zurück</small></div><div class="bt" id="tc-inv">🎒<small>Inventar</small></div>
+ ui=document.createElement('div'); ui.id='tc-ui'; ui.innerHTML=`<div class="bt" id="tc-b">B<small>zurück</small></div><div class="bt" id="tc-inv">🎒<small>Inventar</small></div><div class="bt" id="tc-drop">✋<small>Ablegen</small></div>
  <div id="tc-pad"><div class="bt" id="tc-u">▲</div><div class="bt" id="tc-d">▼</div><div class="bt" id="tc-l">◀</div><div class="bt" id="tc-r">▶</div><div class="bt" id="tc-a">A</div></div><div id="tc-joy"><i></i></div>`;
  document.body.appendChild(ui); if(/[?&]joy=1/.test(Q)) ui.classList.add('joy');
  const r=document.createElement('div'); r.id='tc-rot'; r.innerHTML='<div>↻</div>Bitte das Handy quer halten'; document.body.appendChild(r);
@@ -86,7 +88,8 @@ function buildUI(){
   const u=e=>{ e.preventDefault(); e.stopPropagation(); b.classList.remove('dn'); up&&up(); }; b.addEventListener('touchend',u,{passive:false}); b.addEventListener('touchcancel',u,{passive:false});
   b.addEventListener('click',e=>{ e.stopPropagation(); if(!('ontouchstart' in window)){ dn&&dn(); up&&up(); } }); };
  press('tc-b',back);
- press('tc-inv',toggleInv);
+ press('tc-inv',toggleInv); press('tc-drop',back);
+ const nk=document.createElement('canvas'); nk.id='tc-nk'; nk.width=384; nk.height=256; document.body.appendChild(nk);
  [['tc-u','ArrowUp'],['tc-d','ArrowDown'],['tc-l','ArrowLeft'],['tc-r','ArrowRight']].forEach(([id,c])=>press(id,()=>key('keydown',c),()=>key('keyup',c)));
  press('tc-a',()=>{ key('keydown','Space'); },()=>key('keyup','Space'));
  setupJoy();
@@ -97,9 +100,11 @@ function back(){
  if(document.getElementById('tc-inv-p').style.display==='block'){ toggleInv(); return; }
  if(window.ZSHelp&&ZSHelp.isOpen()){ ZSHelp.close(); return; }
  if(cinema()){ if(ArcadeCinema.close) ArcadeCinema.close(); return; }
+ if(heldNow()){ ZSHeld.drop(); return; }   // gehaltenen Gegenstand ablegen
  if(window.ZSTouch.onBack&&ZSTouch.onBack()) return;   // Haken für Szenen/alpha.js (z.B. Handy zurück ins Inventar)
  walk=null; key('keydown','Escape'); key('keyup','Escape');
 }
+const heldNow=()=>!!(window.ZSHeld&&ZSHeld.active&&ZSHeld.active());
 function phoneOut(){ return !!(window.ZSINV&&ZSINV.where&&(ZSINV.where()==='hand'||(window.ZSX&&ZSX.active&&ZSX.cur&&ZSX.cur.obj===(document.getElementById('nokio')||{}).object3D))); }
 function toggleInv(){ const p=document.getElementById('tc-inv-p'); if(p.style.display==='block'){ p.style.display='none'; return; }
  if(window.ZSINV&&ZSINV.list&&ZSINV.list().length===1&&ZSINV.take){ if(phoneOut()) ZSINV.putAway(); else { walk=null; ZSINV.take(); } return; }
@@ -167,6 +172,7 @@ function tap(x,y){
  if(window.__introV&&!window.__introDone){ clickAt(x,y); return; }   // Intro-Film: nicht laufen
  if(cineOn()){ key('keydown','Space'); setTimeout(()=>key('keyup','Space'),60); return; }
  if(examining()){ clickAt(x,y); return; }
+ if(heldNow()){ const h=pick(x,y); if(h&&h.ce){ clickAt(x,y); return; } ZSHeld.drop(); return; }   // gehalten: Tipp ins Leere = ablegen
  const now=performance.now(), dbl=now-lastTap.t<320&&Math.hypot(x-lastTap.x,y-lastTap.y)<50; lastTap={t:now,x,y};
  const hit=pick(x,y);
  if(dbl&&(!hit||hit.floor)){ walk=null; turn180(); lastTap.t=0; return; }
@@ -212,6 +218,15 @@ function joyTick(dt){ if(!joy[0]&&!joy[1]) return; if(Math.hypot(joy[0],joy[1])<
 
 // ---------- Leistung: Pixelratio deckeln ----------
 function hidePhone(){ const n=document.getElementById('nokio'); if(!n||!n.object3D||!window.ZSINV||!ZSINV.where) return; const show=!(ZSINV.where()==='inv'&&!(ZSINV.isOpen&&ZSINV.isOpen())&&!phoneOut()); if(n.object3D.visible!==show) n.object3D.visible=show; }
+// Ablegen-Knopf, große Nokio-Anzeige (Handy-Schirm scharf in 2D), Kino-Leinwand auf dem Handy groß (nur ohne VR)
+let nkOn=false, cineFov=null;
+function uiTick(){ ui.classList.toggle('hold',heldNow()||examining());
+ const nk=document.getElementById('tc-nk'), N=window.NOKIO, on=!!(nk&&N&&N.canvas&&phoneOut());
+ if(on){ const x=nk.getContext('2d'); x.imageSmoothingEnabled=false; x.drawImage(N.canvas,0,0,nk.width,nk.height); } if(on!==nkOn){ nkOn=on; if(nk) nk.style.display=on?'block':'none'; }
+ const c=sc&&sc.camera; if(!c) return; const cin=cinema();
+ if(cin&&cineFov==null){ let H=1.7, Rr=2.5, A=1.2; sc.object3D.traverse(o=>{ const g=o.geometry&&o.geometry.parameters; if(o.isMesh&&g&&g.openEnded&&g.radiusTop>2&&g.thetaLength&&o.parent&&o.parent.name==='arcCinema'&&g.radiusTop===2.5){ H=g.height; Rr=g.radiusTop; A=g.thetaLength; } });
+  const asp=innerWidth/Math.max(1,innerHeight), tw=Math.tan(A/2)/0.88/asp, th=(H/2)/(Rr*Math.cos(A/2));   /* gekrümmt: Ecken liegen näher -> dort zählt die Höhe; Bild wird nie beschnitten */ cineFov=c.fov; c.fov=2*Math.atan(Math.max(tw,th))*180/Math.PI; c.updateProjectionMatrix(); }
+ else if(!cin&&cineFov!=null){ c.fov=cineFov; cineFov=null; c.updateProjectionMatrix(); } }
 let baseSetPR=null;
 Z.applyQuality=function(){ if(!sc||!sc.renderer) return; const R=sc.renderer; const low=LS.get('zs_touch_lowq')==='1'; const cap=low?1.0:1.5;
  if(!baseSetPR){ baseSetPR=R.setPixelRatio.bind(R); R.setPixelRatio=p=>baseSetPR(inXR?p:Math.min(p,Z.cap||cap)); }
@@ -221,8 +236,8 @@ function attach(){ sc=document.querySelector('a-scene'); if(!sc) return; const g
   invert=LS.get('zs_touch_invert')==='1'; Z.applyQuality();
   // A-Frame look-controls bekommt keine Touch-Gesten mehr (wir drehen selbst), Maus bleibt
   if(camEl&&camEl.components['look-controls']) { camEl.setAttribute('look-controls','touchEnabled',false); camEl.setAttribute('look-controls','magicWindowTrackingEnabled',false); const lc=camEl.components['look-controls']; if(lc&&lc.magicWindowObject) lc.magicWindowObject.quaternion.identity(); }
-  let last=performance.now(); const loop=()=>{ const n=performance.now(), dt=Math.min(0.1,(n-last)/1000); last=n; if(!inXR&&rig){ hidePhone(); walkTick(dt); joyTick(dt); markTick(); ui.classList.toggle('cine',!!cinema()); } requestAnimationFrame(loop); }; requestAnimationFrame(loop);
-  sc.addEventListener('enter-vr',()=>{ inXR=true; ui.style.display='none'; walk=null; const n=document.getElementById('nokio'); if(n&&n.object3D) n.object3D.visible=true; });
+  let last=performance.now(); const loop=()=>{ const n=performance.now(), dt=Math.min(0.1,(n-last)/1000); last=n; if(!inXR&&rig){ hidePhone(); uiTick(); walkTick(dt); joyTick(dt); markTick(); ui.classList.toggle('cine',!!cinema()); } requestAnimationFrame(loop); }; requestAnimationFrame(loop);
+  sc.addEventListener('enter-vr',()=>{ inXR=true; if(cineFov!=null&&sc.camera){ sc.camera.fov=cineFov; cineFov=null; sc.camera.updateProjectionMatrix(); } { const nk=document.getElementById('tc-nk'); if(nk) nk.style.display='none'; nkOn=false; } ui.style.display='none'; walk=null; const n=document.getElementById('nokio'); if(n&&n.object3D) n.object3D.visible=true; });
   sc.addEventListener('exit-vr',()=>{ inXR=false; ui.style.display=''; Z.applyQuality(); }); };
  if(sc.hasLoaded) go(); else sc.addEventListener('loaded',go);
  addEventListener('storage',()=>{ invert=LS.get('zs_touch_invert')==='1'; });
@@ -235,7 +250,7 @@ window.addEventListener('touchcancel',tend,{capture:true,passive:false});
 // Android-Zurück-Taste (App): 'handled' = im Spiel erledigt, 'menu' = Menü geöffnet, 'exit' = Menü war offen → App in den Hintergrund
 Z.androidBack=function(){ try{ const ip=document.getElementById('tc-inv-p');
  if(window.ZSHelp&&ZSHelp.isOpen()){ if(ZSHelp.view&&ZSHelp.view()!=='menu'){ ZSHelp.open('menu'); return 'handled'; } return 'exit'; }
- if((ip&&ip.style.display==='block')||cinema()||examining()){ back(); return 'handled'; }
+ if((ip&&ip.style.display==='block')||cinema()||examining()||heldNow()){ back(); return 'handled'; }
  if(Z.onBack&&Z.onBack()) return 'handled';
  if(window.ZSHelp){ ZSHelp.open('menu'); return 'menu'; } return 'exit'; }catch(e){ return 'exit'; } };
 Z.tap=tap; Z.dbg=()=>({walk:walk&&{p:walk.p,stop:walk.stop,n:walk.n,last:walk.last,exp:walk.exp},rig:rig&&rig.position.toArray(),cine:!!cinema(),ex:!!examining(),xr:inXR}); Z.look=look; Z.pick=pick; Z.walkTo=(x,z)=>walkTo(new (T().Vector3)(x,0,z),0.05);

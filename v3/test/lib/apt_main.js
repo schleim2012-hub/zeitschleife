@@ -100,7 +100,7 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  function pick(rc,src){ if(A.busy) return false; if(ui){ const h=rc.intersectObject(ui.mesh,false); if(h.length){ ui.onHit(h[0].uv); return true; } }
   let best=null; targets().forEach(t=>{ const h=rc.intersectObject(t.hit,!!t.recursive); if(h.length&&h[0].distance<4.5&&(!best||h[0].distance<best.d)) best={d:h[0].distance,t}; }); if(!best){ if(held){ drop(); return true; } if(ui&&ui.kind==='file'){ uiClose(); return true; } return false; }
   if(best.t.grab){ if(held&&held.gb===best.t.grab) drop(); else grabIt(best.t.grab,src); } else best.t.fn(src); return true; }
- A.pick=pick;
+ A.pick=pick; window.ZSHeld={active:()=>!!(held&&held.mouse),drop:()=>drop()};
  [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(A.busy) return; if(held&&held.c===c){ drop(); return; } const rc=zsaRay(sc,c); if(!pick(rc,c)){} });
   c.addEventListener('squeezestart',()=>{ if(A.busy) return; ctrlPose(c,hp,hqq); let best=null; (room().grabs||[]).forEach(g=>{ g.obj.getWorldPosition(tmp); const d=tmp.distanceTo(hp); if(d<0.28&&(!best||d<best.d)) best={d,g}; }); if(best){ grabIt(best.g,c); return; }
    // Grip an Tür / Gerät: anfassen genügt
