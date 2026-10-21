@@ -58,3 +58,5 @@
 - Wandputz: ambientCG "PaintedPlaster017" (CC0, schon im Projekt), blau getönt + Schmutz per Canvas
 - Handschrift auf dem Kühlschrank-Zettel: Font "Kalam" (Indian Type Foundry, SIL Open Font License 1.1, fonts/Kalam-OFL.txt)
 - Küche, Geräte, Kettensäge, Zettel: eigene three.js-Geometrie und Canvas-Texturen nach Petes Referenzbild. Alle Geräusche (Mikrowelle, Hamster-Fiepen, Popcorn, Ding, Kettensäge) live per WebAudio synthetisiert.
+
+- Spielhalle 1984 Wandpaneel: ambientCG WoodSiding008 (CC0), bearbeitet (assets/tex/arc2/wall_*.jpg)

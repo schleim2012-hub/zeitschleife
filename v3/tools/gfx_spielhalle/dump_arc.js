@@ -1,0 +1,6 @@
+const puppeteer=require('puppeteer-core');const fs=require('fs');
+(async()=>{const br=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const pg=await br.newPage(); await pg.goto(process.argv[2],{waitUntil:'load',timeout:90000});
+await pg.waitForFunction(()=>window.__W3&&window.__W3.cabs,{timeout:60000});
+const d=await pg.evaluate(()=>({cabs:window.__W3.cabs.map(c=>({x:c.x,z:c.z,ry:c.ry,tile:c.tile})), meshes:(()=>{const a=[];window.__arcGroup.traverse(o=>{if(o.isMesh||o.isSprite){o.geometry.computeBoundingBox&&o.geometry.computeBoundingBox();const b=o.geometry.boundingBox;a.push({type:o.type,name:o.name,mat:o.material.type,blend:o.material.blending,col:o.material.color&&o.material.color.getHexString(),verts:o.geometry.attributes.position.count,inst:o.count||0,bb:b?[b.min.toArray().map(v=>+v.toFixed(2)),b.max.toArray().map(v=>+v.toFixed(2))]:null,pos:o.position.toArray().map(v=>+v.toFixed(2))});}});return a;})()}));
+fs.writeFileSync(process.argv[3],JSON.stringify(d,null,0)); console.log(d.cabs.length, d.meshes.length); d.meshes.forEach(m=>console.log(JSON.stringify(m))); await br.close();})();
