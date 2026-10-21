@@ -69,5 +69,5 @@ AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0;
  tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
   const c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; if(!window.__B84) return; const p={x:wx,z:wz}; __B84.collide(p); o.position.x+=p.x-wx; o.position.z+=p.z-wz; }});
 </script><script>window.ERAX={covers:[['c6','book',1.6,1.13,-1.8,-15,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']]],
- decoys:[['../assets/items/diddl.glb',-1.4,0.55,-1.35,1,25,['Mara','„Eine Diddl-Maus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
+ decoys:[['../assets/items/springmaus_plush.glb',-1.4,0.55,-1.35,1,200,['Mara','„Eine Springmaus? Zu früh, Süßer. Die kommt erst in neun Jahren. Leg sie hin, bevor sie quietscht.“']]]};</script>
 <script src="era_amb.js?v=1"></script><script>eraAmbStart("../assets/sfx/amb_1984.mp3",0.3)</script><script src="era_extras.js?v=7"></script></body></html>
