@@ -5,7 +5,7 @@
    fern: Silhouetten + abgedunkeltes Foto im lila Dunst. Licht: nur praktisch (2 Neon, 1 Laterne). window.buildStreet41(sceneEl,C) */
 (function(){
 let sd=1989; const rnd=()=>{ sd=(sd*16807)%2147483647; return sd/2147483647; };
-window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/s89/';
+window.buildStreet89=function(sc,C){ const BK=!!window.ZSBake&&!/[?&]nobake=1/.test(location.search), LK=BK?0.6:1; const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/s89/';
  const ld=(f,srgb,rx,ry)=>{ const t=TL.load(B+f); t.wrapS=t.wrapT=T.RepeatWrapping; if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; if(rx) t.repeat.set(rx,ry||rx); return t; };
  const cv=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
  const XF=3.3, Z0=14, Z1=-40;
@@ -36,7 +36,7 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  // Umgebung für nasse Spiegelung (Neon-Farben im Dunkeln)
  const env=(()=>{ const t=cv(512,256,(x,w,h)=>{ x.fillStyle='#07060c'; x.fillRect(0,0,w,h); [['#ff3a28',60],['#30e0ff',180],['#ff40d0',300],['#40ff90',420]].forEach(([c,u])=>{ x.fillStyle=c; x.fillRect(u,70,14,60); }); x.fillStyle='rgba(220,230,160,0.9)'; x.fillRect(250,40,30,8); const g=x.createLinearGradient(0,128,0,256); g.addColorStop(0,'#1a1430'); g.addColorStop(1,'#050408'); x.fillStyle=g; x.fillRect(0,128,w,128); }); t.mapping=T.EquirectangularReflectionMapping; const pm=new T.PMREMGenerator(sc.renderer); const e=pm.fromEquirectangular(t).texture; pm.dispose(); return e; })();
  MAT.asph.envMap=env; MAT.asph.envMapIntensity=0.9; winM.envMap=env; winM.envMapIntensity=1.2;
- Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.matrixAutoUpdate=false; G.add(m); });
+ Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.name='s89_'+k; m.matrixAutoUpdate=false; G.add(m); });
  if(lit.length){ [0,1].forEach(v=>{ const gs=lit.filter(l=>l[1]===v).map(l=>l[0]); if(!gs.length) return; const m=new T.Mesh(merge(gs.map(g=>{ g=g.toNonIndexed(); return g; })),new T.MeshBasicMaterial({color:v?0x6a4a24:0x3a3020})); G.add(m); }); }
  // ---- Neon-Schilder: Glühen, Halo im Dunst, Spiegelstreifen am nassen Boden ----
  const halo=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.3,'rgba(255,255,255,0.35)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
@@ -63,14 +63,14 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  let sigM,haloM,strM; const setSign=(g,k)=>{ const put=(m,i,c)=>{ const a=m.geometry.attributes.color; for(let j=0;j<6;j++) a.setXYZ(i+j,c.r*k,c.g*k,c.b*k); a.needsUpdate=true; }; put(sigM,g.si,{r:1,g:1,b:1}); put(haloM,g.hi,g.hcol); put(strM,g.ri,g.scol); };
  neon('GASTSTÄTTE',0xff3020,true,-1,-3.4,5.0,0.5); neon('KONSUM',0xff7a30,false,1,-4.6,3.3,0.42,true); neon('INTERSHOP',0x3a7aff,false,-1,-8.5,3.2,0.38); neon('HO',0x40ff70,false,1,-8.2,3.0,0.4); neon('FRISEUR',0xff40b0,true,1,-1.0,4.2,0.36,true); finishSigns();
  // Neon-Lichtquellen (praktisch): Rot links vorne, Cyan rechts
- const Lr=new T.PointLight(0x4a78ff,5,9,1.6); Lr.position.set(-2.6,3.4,-8.2); G.add(Lr); const Lc={intensity:0};
+ const Lr=new T.PointLight(0x4a78ff,5*LK,9,1.6); Lr.position.set(-2.6,3.4,-8.2); G.add(Lr); const Lc={intensity:0};
  // ---- Laterne mit Wackelkontakt (links, z -6.5) ----
  const poleM=new T.MeshStandardMaterial({color:0x1c1e1c,roughness:0.5,metalness:0.6});
  const lampGrp=new T.Group(); const pole=new T.Mesh(new T.CylinderGeometry(0.06,0.09,5.2,10)); pole.position.set(-2.55,2.6,-6.2); lampGrp.add(pole); const arm=new T.Mesh(new T.CylinderGeometry(0.04,0.04,1.1,8)); arm.rotation.z=Math.PI/2-0.15; arm.position.set(-2.05,5.15,-6.2); lampGrp.add(arm);
  const headM=new T.MeshBasicMaterial({color:0xffb060,toneMapped:false}); const head=new T.Mesh(new T.CylinderGeometry(0.22,0.14,0.16,14)); head.position.set(-1.5,5.05,-6.2); lampGrp.add(head); G.add(flat(lampGrp,poleM)); const lens=new T.Mesh(new T.CircleGeometry(0.17,14),headM); lens.rotation.x=Math.PI/2; lens.position.set(-1.5,4.965,-6.2); G.add(lens);
  const lhs=new T.Sprite(new T.SpriteMaterial({map:halo,color:0xff9a50,transparent:true,opacity:0.45,blending:T.AdditiveBlending,depthWrite:false})); lhs.position.set(-1.5,4.9,-6.2); lhs.scale.set(3.2,3.2,1); G.add(lhs);
- const Ll=new T.PointLight(0xff9a40,9,12,1.5); Ll.position.set(-1.5,4.7,-6.2); G.add(Ll);
- { const p2=new T.Mesh(new T.CylinderGeometry(0.06,0.09,5.2,10),poleM); p2.position.set(2.6,2.6,1.2); G.add(p2); const h2=new T.Sprite(new T.SpriteMaterial({map:halo,color:0xff9a50,transparent:true,opacity:0.4,blending:T.AdditiveBlending,depthWrite:false})); h2.position.set(2.0,4.95,1.2); h2.scale.set(2.6,2.6,1); G.add(h2); const L2=new T.PointLight(0xff9040,5,9,1.6); L2.position.set(2.0,4.7,1.2); G.add(L2); const hd2=new T.Mesh(new T.CylinderGeometry(0.22,0.14,0.16,14),poleM); hd2.position.set(2.05,5.05,1.2); G.add(hd2); const ln2=new T.Mesh(new T.CircleGeometry(0.17,14),new T.MeshBasicMaterial({color:0xffb060,toneMapped:false})); ln2.rotation.x=Math.PI/2; ln2.position.set(2.05,4.965,1.2); G.add(ln2); const ar2=new T.Mesh(new T.CylinderGeometry(0.04,0.04,0.6,8),poleM); ar2.rotation.z=Math.PI/2; ar2.position.set(2.35,5.15,1.2); G.add(ar2); }
+ const Ll=new T.PointLight(0xff9a40,9*LK,12,1.5); Ll.position.set(-1.5,4.7,-6.2); G.add(Ll);
+ { const p2=new T.Mesh(new T.CylinderGeometry(0.06,0.09,5.2,10),poleM); p2.position.set(2.6,2.6,1.2); G.add(p2); const h2=new T.Sprite(new T.SpriteMaterial({map:halo,color:0xff9a50,transparent:true,opacity:0.4,blending:T.AdditiveBlending,depthWrite:false})); h2.position.set(2.0,4.95,1.2); h2.scale.set(2.6,2.6,1); G.add(h2); const L2=new T.PointLight(0xff9040,5*LK,9,1.6); L2.position.set(2.0,4.7,1.2); G.add(L2); const hd2=new T.Mesh(new T.CylinderGeometry(0.22,0.14,0.16,14),poleM); hd2.position.set(2.05,5.05,1.2); G.add(hd2); const ln2=new T.Mesh(new T.CircleGeometry(0.17,14),new T.MeshBasicMaterial({color:0xffb060,toneMapped:false})); ln2.rotation.x=Math.PI/2; ln2.position.set(2.05,4.965,1.2); G.add(ln2); const ar2=new T.Mesh(new T.CylinderGeometry(0.04,0.04,0.6,8),poleM); ar2.rotation.z=Math.PI/2; ar2.position.set(2.35,5.15,1.2); G.add(ar2); }
  // ---- Kabel über die Gasse ----
  const cabM=new T.MeshStandardMaterial({color:0x080808,roughness:0.5}); const cabG=new T.Group();
  [[-1.5,6.5,7.2],[-5,7.4,6.8],[-9,6.2,7.6],[-13,8,7.2],[-18,6.8,7.4]].forEach(([z,y1,y2])=>{ const a=new T.Vector3(-XF+0.1,y1,z), b=new T.Vector3(XF-0.1,y2,z+(rnd()-0.5)*1.5), m=a.clone().lerp(b,0.5); m.y-=0.9+rnd()*0.6; cabG.add(new T.Mesh(new T.TubeGeometry(new T.QuadraticBezierCurve3(a,m,b),24,0.012,4))); }); G.add(flat(cabG,cabM));
@@ -155,10 +155,18 @@ window.buildStreet89=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  // ---- Ferne Schicht: Foto + Dunst ----
  const far=new T.MeshBasicMaterial({color:0x5a6a90}); TL.load('../assets/era1989/street_backdrop.jpg',t=>{ t.colorSpace=T.SRGBColorSpace; far.map=t; far.needsUpdate=true; }); const fp=new T.Mesh(new T.PlaneGeometry(14,10),far); fp.position.set(0,4.5,-24); G.add(fp);
  [[0,3,-14,16,0.12],[0,2,-22,22,0.15],[0,5,-9,10,0.06]].forEach(([x,y,z,s,o])=>{ const h=new T.Sprite(new T.SpriteMaterial({map:halo,color:0x4a4a6a,transparent:true,opacity:o,depthWrite:false})); h.position.set(x,y,z); h.scale.set(s,s*0.6,1); G.add(h); });
- S.add(new T.HemisphereLight(0x22283a,0x060504,0.5));
+ S.add(new T.HemisphereLight(0x22283a,0x060504,BK?0.3:0.5));
  const persons=[];
+ // ---- Gebackenes Licht (Blender, inkl. West-Flutlicht durch den Mauerdurchbruch) + Decals/Plakatreste (je 1 Draw) ----
+ if(window.ZSBake){ const D=[], PO=[]; let pi=0;
+  [[0.6,1.4,1.3,1],[-1.2,-1.6,1.1,9],[1.5,-6.4,1.2,0],[-0.6,-8.4,1.2,1],[0.3,-10.4,1.4,0],[-1.5,2.8,1.0,0],[1.0,-2.2,0.7,0],[0.8,0.2,1.2,2],[-1.0,-6.8,1.4,2],[1.4,-9.6,1.0,2],[0.3,4.2,1.2,8],[-0.4,-4.0,0.9,11]].forEach(([x,z,w,c],i)=>D.push([c,x,0.004,z,w,w*(c==8?2.5:1),'y',i*1.3]));
+  [-1,1].forEach(sg=>{ for(let z=6;z>-11;z-=3.6) D.push([7,sg*2.05,0.004,z,0.5,3.8,'y',0]); });
+  shops.forEach(([x,z,z1,sg,k])=>{ if(z1>8||z<-12) return; const wx=x-sg*0.006, f=sg>0?'-x':'+x', cz=(z+z1)/2, wl=z-z1;
+   D.push([4,wx,0.35,cz,wl*0.9,0.7,f]); D.push([5,wx,3.0,cz+(k%2?0.6:-0.6),1.2,1.1,f]); if(k%2) D.push([10,wx,4.6,cz-0.8,1.6,1.4,f]); else D.push([3,wx,2.2,z-0.3,0.6,0.9,f,0.4]);
+   if(Math.abs(cz-2.0)<1.6&&sg>0) return; PO.push([(pi++)%4,wx-sg*0.002,1.55,z-0.32,0.42,0.6,f,(k%3-1)*0.05]); });
+  ZSBake.realism(G,sc,{room:'s89',base:'../assets/bake/berlin1989/',texRoot:'../assets/tex/realism/',lmGain:1,aoInt:0.6,specGain:3,decals:D,posters:PO}); }
  // ---- Animation ----
- let flk=1; const update=(t)=>{ const s=t*0.001; if(Math.random()<0.05) flk=Math.random()<0.4?0.05:1; Ll.intensity=9*flk; headM.color.setHex(flk>0.5?0xffb060:0x342818); lhs.material.opacity=0.45*flk;
+ let flk=1; const update=(t)=>{ const s=t*0.001; if(Math.random()<0.05) flk=Math.random()<0.4?0.05:1; Ll.intensity=9*LK*flk; headM.color.setHex(flk>0.5?0xffb060:0x342818); lhs.material.opacity=0.45*flk;
   signs.forEach((g,i)=>{ if(!g.flick) return; if(Math.random()<0.02){ g.base=Math.random()<0.3?0.3:1; setSign(g,g.base); if(i===1) Lc.intensity=7*(0.5+0.5*g.base); } });
   persons.forEach((p,i)=>{ const b=Math.sin(s*1.6+i*1.9); p.scale.set(1+0.008*b,1+0.006*b,1+0.012*b); p.rotation.x=0.015*Math.sin(s*0.4+i); });
   steam.forEach((sp,i)=>{ sp.position.y=0.3+((s*0.25+i*0.4)%2.8); sp.material.opacity=0.08*(1-sp.position.y/3.2); sp.position.x=-0.6+Math.sin(s*0.5+sp.userData.ph)*0.2*sp.position.y; });
