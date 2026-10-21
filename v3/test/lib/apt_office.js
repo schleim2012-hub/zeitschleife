@@ -109,15 +109,15 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
  // ---------- FBI-Parodie-Ausweise (Halli Galli offen, Fix Molder zu) – Untersuchen im Resident-Evil-Stil über ZSX (weltfest, nicht am Kopf) ----------
  const interact=[], cards=[], easeIO=k=>k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
  const idCard=(url,x,z,ry,closed,name)=>K.gltf(url,m=>{ const b=new T.Box3().setFromObject(m), c=new T.Vector3(); b.getCenter(c); m.position.x-=c.x; m.position.z-=c.z; m.position.y-=b.min.y;
-  const g=new T.Group(); g.name='fbi_'+name; g.add(m); g.position.set(x,DY,z); g.rotation.y=ry; G.add(g); m.traverse(o=>{ if(o.isMesh&&o.material) o.material.envMapIntensity=0.2; });
+  const g=new T.Group(); g.name='fbi_'+name; g.add(m); g.position.set(x,DY,z); g.rotation.y=ry; G.add(g); m.traverse(o=>{ if(o.isMesh&&o.material){ const mt=o.material; mt.envMapIntensity=0.2; if(closed&&mt.map){ mt.emissiveMap=mt.map; mt.emissive=new T.Color(0x2a221a); mt.needsUpdate=true; } } }); // zu: dezente warme Aufhellung (Leder im Halbschatten lesbar), kein Leuchten
   const cd={g,m,mx:m.position.x,closed,cover:closed?m.getObjectByName('cover'):null,k:0,to:0,name}; cards.push(cd); interact.push({hit:g,recursive:true,name:'fbi_'+name,fn:(src,c)=>examineCard(cd,src,c)}); });
  const examineCard=(cd,src,c)=>{ const Z=window.ZSX, A=window.__apt; if(!Z||Z.busy()) return; const R=sc.renderer, vr=R.xr.isPresenting; let mode=vr?'laser':'mouse', el=null;
   if(vr&&src==='grip'){ const cp=new T.Vector3(), hp=new T.Vector3(); cd.g.getWorldPosition(cp); let bd=9; document.querySelectorAll('[laser-controls]').forEach(h=>{ h.object3D.getWorldPosition(hp); const d=hp.distanceTo(cp); if(d<bd){ bd=d; el=h; } }); if(el) mode='grip'; }
   Z.examine(cd.g,{mode,src:el,size:cd.closed?0.15:0.2,dist:0.4,face:[0,1,0],up:[0,0,-1],
-   onStart:()=>{ if(A) A.busy=true; if(cd.cover) cd.to=1; },
+   onStart:()=>{ if(A) A.busy=true; if(cd.cover) cd.to=1; cd.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial){ const mt=o.material; mt.emissive=new T.Color(0); mt.emissiveMap=null; mt.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n vec2 zu=vMapUv; float zp=step(0.02,zu.x)*step(zu.x,0.545)*step(0.02,zu.y)*step(zu.y,0.705); totalEmissiveRadiance+=diffuseColor.rgb*(0.18+0.9*(1.0-zp)*(1.0-smoothstep(0.03,0.15,dot(diffuseColor.rgb,vec3(0.333)))));'); }; mt.customProgramCacheKey=()=>'zsCardLift'; mt.needsUpdate=true; } }); }, // ZSX hat die Materialien geklont: Lederrücken beim Untersuchen nicht schwarz
    onEnd:()=>{ if(cd.cover) cd.to=0; setTimeout(()=>{ if(A) A.busy=false; },120); } }); };
  idCard('assets/apartment/office/fbi_id_halli_open.glb',40.05,-0.74,Math.PI+0.2,false,'halli');
- idCard('assets/apartment/office/fbi_id_molder.glb',39.86,-0.62,Math.PI-0.35,true,'molder');
+ idCard('assets/apartment/office/fbi_id_molder.glb',40.24,-0.79,Math.PI-0.35,true,'molder'); // im Lichtkegel der Schreibtischlampe (vorher 39.86/-0.62 im Schatten)
  // Klappe: wie Clip 'open' (0,8 s, cover.rotation.z 0 → π), beim Zurücklegen wieder zu
  let cardLast=0; const cardTick=now=>{ const dt=Math.min(0.1,(now-(cardLast||now))/1000); cardLast=now; cards.forEach(cd=>{ if(!cd.cover||cd.k===cd.to) return; cd.k=cd.to>cd.k?Math.min(cd.to,cd.k+dt/0.8):Math.max(cd.to,cd.k-dt/0.6); const e=easeIO(cd.k); cd.cover.rotation.z=Math.PI*e; cd.m.position.x=cd.mx+0.04275*e; /* offenes Etui bleibt mittig vor dir */ }); };
  // ---------- Licht ----------
