@@ -28,17 +28,19 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  const kHemi=new T.HemisphereLight(0x2a2838,0x0a0806,0.5); KG.add(kHemi);
  const kBefore=new Set(S.children); const KIT=buildMMKitchen(sc,{G:KG,ROOT,L1,L2,hemi:kHemi,hemiBase:0.6}); const kExtra=S.children.filter(o=>!kBefore.has(o));
  const kitDoor=wallDoor(KG,-7.02,0.35,[-1,0],0.85,2.02,false);
+ // Tür zum Wohnzimmer erkennbar machen: etwas Streulicht aufs Holz (kein Leuchten), Zarge bleibt dunkel
+ kitDoor.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.emissive){ o.material=o.material.clone(); o.material.emissive.setHex(o===kitDoor.leaf?0x2a1b0e:0x160e07); } });
  // ---------- Wohnzimmer, Büro ----------
  const LIV=aptBuildLiving(sc,K), OFF=aptBuildOffice(sc,K);
  const livKitDoor=wallDoor(LIV.group,18.0,0.8,[1,0],0.9,2.05,true), livOffDoor=wallDoor(LIV.group,19.0,-2.4,[0,1],0.9,2.05,true), offDoor=wallDoor(OFF.group,38.8,2.2,[0,-1],0.9,2.05,true);
  // ---------- Räume ----------
  const ROOMS={
   bedroom:{name:'Schlafzimmer',objs:null,bounds:[-2.1,2.1,-2.0,2.0],solid:[[-2.1,-1.15,-2.0,0.04],[-1.0,-0.5,-2.0,-1.5],[1.48,2.1,-0.9,0.4],[1.3,2.1,-2.0,-1.6],[-2.1,-1.15,1.05,2.0]],collide:null,doors:[{d:bedDoor,to:'kitchen',via:'s'}]},
-  kitchen:{name:'Küche',objs:[KG,...kExtra],bounds:[-11.5,-7.0,-0.92,2.5],collide:p=>{ const r=0.25; p.x=Math.max(-11.5+r,Math.min(-7.0-r,p.x)); p.z=Math.max(-0.92+r*0.4,Math.min(2.5-r,p.z)); KIT.rects.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r) p.z=b0-r; }); },doors:[{d:kitDoor,to:'living',via:'w'}],tick:(now)=>{ KIT.tick(now,[{on:1},{on:1}],1); if(window.__mmk&&__mmk.doorOpen&&!A.busy&&A.room==='kitchen') useDoor('bedroom','k'); }},
+  kitchen:{name:'Küche',objs:[KG,...kExtra],bounds:[-11.5,-7.0,-0.92,2.5],collide:p=>{ const r=0.25; p.x=Math.max(-11.5+r,Math.min(-7.0-r,p.x)); p.z=Math.max(-0.92+r*0.4,Math.min(2.5-r,p.z)); KIT.rects.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r) p.z=b0-r; }); },doors:[{d:kitDoor,to:'living',via:'w'}],tick:(now)=>{ KIT.tick(now,[{on:1},{on:1}],1.2);   /* Küche ~20 % heller (Pete: man sah fast nichts) */ if(window.__mmk&&__mmk.doorOpen&&!A.busy&&A.room==='kitchen') useDoor('bedroom','k'); }},
   living:{name:'Wohnzimmer',objs:[LIV.group],bounds:[18,23.5,-2.4,2.4],collide:LIV.collide,doors:[{d:livKitDoor,to:'kitchen',via:'e'},{d:livOffDoor,to:'office',via:'n'}],interact:LIV.interact,grabs:LIV.grabs,surf:LIV.surf,tick:(n,dt)=>LIV.tick(n,dt)},
   office:{name:'Büro',objs:[OFF.group],bounds:[38,42.5,-2.0,2.2],collide:OFF.collide,doors:[{d:offDoor,to:'living',via:'o'}],interact:OFF.interact,files:OFF.files,tick:n=>OFF.tick(n)} };
  // Ankunftspunkte: [x,z,Blickrichtung-yaw]
- const SPAWN={bedroom:{k:[1.4,1.15,0],def:[0.3,1.0,0]},kitchen:{s:[-10.0,-0.05,Math.PI],e:[-7.75,0.35,Math.PI/2],def:[-9.2,0.3,Math.PI]},living:{w:[18.8,0.8,-Math.PI/2],o:[19.0,-1.6,Math.PI],def:[19.2,0.2,-Math.PI/2]},office:{n:[38.8,1.45,0],def:[38.8,1.45,0]}};
+ const SPAWN={bedroom:{k:[1.4,1.15,0],def:[0.3,1.0,0]},kitchen:{s:[-10.0,-0.05,-0.75*Math.PI],e:[-7.75,0.35,Math.PI/2],def:[-9.2,0.3,Math.PI]},living:{w:[18.8,0.8,-Math.PI/2],o:[19.0,-1.6,Math.PI],def:[19.2,0.2,-Math.PI/2]},office:{n:[38.8,1.45,0],def:[38.8,1.45,0]}};
  const allObjs=()=>{ Object.values(ROOMS).forEach(r=>r.objs&&r.objs.forEach(o=>o.visible=false)); };
  const classifyBed=()=>{ const known=new Set([rig,KG,LIV.group,OFF.group,...kExtra]); ROOMS.bedroom.objs=S.children.filter(o=>!known.has(o)&&!(o.el&&(o.el.id==='rig'))&&o.name!=='aptTrans'&&!(o.userData&&o.userData.aptUI)); };
  const show=id=>{ if(!ROOMS.bedroom.objs||id==='bedroom') classifyBed(); Object.entries(ROOMS).forEach(([k,r])=>r.objs.forEach(o=>o.visible=(k===id))); A.room=id; if(id!=='kitchen'&&window.__mmk) __mmk.doorOpen=false;
