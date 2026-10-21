@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Simulator-Kabine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=12"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=13"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8e4dc;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .35s}</style></head><body>
 <div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür · Schild „← KIRMES“ hinten = zurück</div>
@@ -53,17 +53,17 @@ if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,c
  tex('../assets/tex/br/carpet_c.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.map=tx; cMat.color.set(0xffffff); cMat.needsUpdate=true; });
  tex('../assets/tex/br/carpet_n.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.normalMap=tx; cMat.normalScale.set(0.7,0.7); cMat.needsUpdate=true; },false);
  tex('../assets/tex/br/carpet_r.jpg',tx=>{ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(1.2,1.2); cMat.roughnessMap=tx; cMat.needsUpdate=true; },false);
- const roll=(len,rad,x,y,z,rx,ry)=>{ const m=new T.Mesh(new T.CylinderGeometry(rad,rad,len,14),cMat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,Math.PI/2); m.castShadow=true; neigh.add(m); return m; };
+ const cRoll=(len,rad,x,y,z,rx,ry)=>{ const m=new T.Mesh(new T.CylinderGeometry(rad,rad,len,14),cMat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,Math.PI/2); m.castShadow=true; neigh.add(m); return m; };
  // Sitz aus Rollen + Rumpf + Kopf (Stapel, nicht billig-Cartoon)
- roll(0.42,0.07,0,0.18,0.02,0,0.2); roll(0.38,0.065,0.02,0.30,-0.02,0.1,-0.15);
- roll(0.36,0.06,-0.02,0.42,0.04,-0.05,0.25);
+ cRoll(0.42,0.07,0,0.18,0.02,0,0.2); cRoll(0.38,0.065,0.02,0.30,-0.02,0.1,-0.15);
+ cRoll(0.36,0.06,-0.02,0.42,0.04,-0.05,0.25);
  const torso=new T.Mesh(new T.BoxGeometry(0.28,0.38,0.22),cMat); torso.position.set(0,0.72,0); torso.castShadow=true; neigh.add(torso);
  const sh=new T.Mesh(new T.BoxGeometry(0.42,0.12,0.18),cMat); sh.position.set(0,0.92,0); neigh.add(sh);
  const armL=new T.Mesh(new T.CylinderGeometry(0.045,0.04,0.32,10),cMat); armL.position.set(-0.22,0.68,0.06); armL.rotation.z=0.35; neigh.add(armL);
  const armR=new T.Mesh(new T.CylinderGeometry(0.045,0.04,0.32,10),cMat); armR.position.set(0.22,0.68,0.04); armR.rotation.z=-0.25; neigh.add(armR);
  const head=new T.Mesh(new T.SphereGeometry(0.11,12,10),cMat); head.position.set(0,1.12,0.02); head.scale.set(1,1.05,0.92); neigh.add(head);
  // zweite Schicht „Teppichkanten“ als dunklere Rollen oben auf dem Kopf (Stapel-Look)
- roll(0.22,0.05,0,1.22,0.02,0.4,0.6);
+ cRoll(0.22,0.05,0,1.22,0.02,0.4,0.6);
  const seat=new T.Mesh(new T.BoxGeometry(0.36,0.08,0.34),std({color:0x1a1816,roughness:0.85,metalness:0.2})); seat.position.set(0,0.12,0.02); neigh.add(seat);
  // eigener Sitzplatz links (Spieler) – schlichte dunkle Bank, damit der Nachbar logisch sitzt
  const mySeat=new T.Group(); mySeat.position.set(-0.05,0,0.12); G.add(mySeat);
