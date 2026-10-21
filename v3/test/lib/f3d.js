@@ -192,33 +192,33 @@ window.mountForum3D=function(sc,cab,hideExtra){ const T=THREE, S=sc.object3D;
   g.font='bold 74px Arial Black, Arial'; g.textAlign='center'; g.textBaseline='middle'; g.shadowColor='#40e0ff'; g.shadowBlur=22; g.fillStyle='#a0f0ff'; g.fillText('FORUM 3D',256,88); g.shadowBlur=0; g.lineWidth=2.5; g.strokeStyle='#fff'; g.strokeText('FORUM 3D',256,88);
   g.font='bold 19px Arial'; g.fillStyle='#f0d030'; g.fillText('GLÜCK · VERZICHT · BANANEN',256,150); g.font='bold 14px Arial'; g.fillStyle='#60a0b0'; g.fillText('SCHLEIFE ELECTRONICS 1984',256,176); }
  const mt=new T.CanvasTexture(mc); mt.colorSpace=T.SRGBColorSpace; const mar=new T.Mesh(new T.PlaneGeometry(0.6,0.24),new T.MeshBasicMaterial({map:mt,toneMapped:false,color:0xd8d8d8})); place(mar,[0,1.71,0.226],0.15,0.004); S.add(mar); (window.__arcCabHide=window.__arcCabHide||[]).push(el,mar,...(hideExtra||[]));
+ // ---------- Steuerung: Automat anklicken -> Kino-Modus (ArcadeCinema in arc3d.js) ----------
  let playing=false; const rig=document.getElementById('rig'), cam=document.getElementById('cam'); let rot0=0, idle=0; const keys={};
  const sub=document.getElementById('sub'); const hint=s=>{ if(!sub) return; sub.textContent=s; sub.style.display='block'; clearTimeout(hint.t); hint.t=setTimeout(()=>sub.style.display='none',3600); };
  const vr=()=>sc.is('vr-mode');
- function onScreen(){ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else if(!vr()) game.fire(); else leave(); }
- function enter(){ playing=true; idle=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
-  const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw); const front=new T.Vector3(Math.sin(cab.ry),0,Math.cos(cab.ry)); const want=new T.Vector3(cab.x,0,cab.z).addScaledVector(front,0.85);
-  if(Math.hypot(cw.x-want.x,cw.z-want.z)>1.1){ rig.object3D.position.x+=want.x-cw.x; rig.object3D.position.z+=want.z-cw.z; }
-  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'f3d',[el,mar,...(hideExtra||[])]); if(h&&!h.__f3dBound){ h.__f3dBound=1; h.addEventListener('click',onScreen); } }
-  hint(vr()?'FORUM 3D · großer Schirm · Stick gehen · Trigger = Banane · B/Y oder Trigger auf Schirm = aufhören':'FORUM 3D · Pfeiltasten/WASD · Leertaste/Klick = Banane · Esc = aufhören'); }
- function leave(){ playing=false; if(window.ArcadeBigScreen) ArcadeBigScreen.hide('f3d'); game.setAxes(0,0,0); for(const k in keys) keys[k]=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
- el.addEventListener('click',onScreen);
- const KM={ArrowUp:'f',KeyW:'f',ArrowDown:'b',KeyS:'b',ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',KeyQ:'sl',KeyE:'sr'};
+ const hb=document.createElement('a-entity'); hb.classList.add('clickable'); hb.setAttribute('geometry','primitive:box;width:0.74;height:1.84;depth:0.9'); hb.setAttribute('material','visible:false');
+ hb.setAttribute('position',(cab.x+Math.sin(cab.ry)*0.04)+' 0.92 '+(cab.z+Math.cos(cab.ry)*0.04)); hb.setAttribute('rotation','0 '+(cab.ry*180/Math.PI)+' 0'); sc.appendChild(hb);
+ function onScreen(){ if(playing||!window.ArcadeCinema||ArcadeCinema.busy()) return; const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw);
+  if(Math.hypot(cw.x-cab.x,cw.z-cab.z)>2.6){ hint('Geh näher an den Automaten.'); return; } enter(); }
+ const act=()=>{ idle=0; if(game.state()==='play') game.fire(); else game.coin(); };
  const keyAxes=()=>game.setAxes((keys.f?1:0)-(keys.b?1:0),(keys.r?1:0)-(keys.l?1:0),(keys.sr?1:0)-(keys.sl?1:0));
- window.addEventListener('keydown',e=>{ if(!playing) return; if(e.code==='Escape'){ leave(); return; } if(e.code==='Space'){ game.fire(); e.preventDefault(); idle=0; return; } if(e.code in KM){ keys[KM[e.code]]=1; keyAxes(); idle=0; e.preventDefault(); } },true);
+ function enter(){ const rm=rig.components['room-move'];
+  const ok=ArcadeCinema.open(sc,{ id:'f3d', tex, lines:256,
+   caption:vr()?'FORUM 3D  ·  linker Stick = gehen / drehen  ·  rechter Stick = drehen  ·  A / Trigger = Banane  ·  B / Y = zurück':'FORUM 3D  ·  Pfeile / WASD  ·  Leertaste / Klick = Banane  ·  Esc = zurück',
+   act, input:(L,R)=>{ idle=0; game.setAxes(-L[1], L[0]*0.8+R[0]*0.8, 0); },
+   onOpen:()=>{ game.coin(); }, onClose:()=>{ playing=false; game.setAxes(0,0,0); for(const k in keys) keys[k]=0; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); } });
+  if(!ok) return; playing=true; idle=0; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
+  hint(vr()?'Kino-Modus · FORUM 3D · B/Y = zurück':'Kino-Modus · FORUM 3D · Pfeiltasten/WASD · Leertaste = Banane · Esc = zurück'); }
+ function leave(){ if(window.ArcadeCinema) ArcadeCinema.close('f3d'); }
+ el.addEventListener('click',onScreen); hb.addEventListener('click',onScreen);
+ const KM={ArrowUp:'f',KeyW:'f',ArrowDown:'b',KeyS:'b',ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',KeyQ:'sl',KeyE:'sr'};
+ window.addEventListener('keydown',e=>{ if(!playing||ArcadeCinema.phase()!=='on') return; if(e.code==='Space'||e.code==='Enter'){ act(); e.preventDefault(); return; } if(e.code in KM){ keys[KM[e.code]]=1; keyAxes(); idle=0; e.preventDefault(); } },true);
  window.addEventListener('keyup',e=>{ if(e.code in KM){ keys[KM[e.code]]=0; if(playing) keyAxes(); } },true);
- let stL=[0,0], stR=[0,0]; const dz=v=>Math.abs(v)<0.18?0:v;
- setTimeout(()=>{ ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(!h) return;
-  h.addEventListener('thumbstickmoved',e=>{ if(!playing) return; const {x:ax,y:ay}=e.detail; if(id==='hl') stL=[dz(ax),dz(ay)]; else stR=[dz(ax),dz(ay)]; idle=0;
-   game.setAxes(-stL[1], stL[0]*0.8+stR[0]*0.8, 0); });
-  h.addEventListener('triggerdown',()=>{ if(playing&&vr()&&game.state()==='play'){ game.fire(); idle=0; } });
-  ['abuttondown','xbuttondown'].forEach(ev=>h.addEventListener(ev,()=>{ if(playing){ if(game.state()==='play') game.fire(); else game.coin(); idle=0; } }));
-  ['bbuttondown','ybuttondown'].forEach(ev=>h.addEventListener(ev,()=>{ if(playing) leave(); })); }); },0);
  let acc=0; const camW=new T.Vector3();
  AFRAME.registerComponent('f3d-tick',{tick(t,dt){ const d=Math.min(dt||16,50)/1000; game.update(d); if(playing){ rig.object3D.rotation.y=rot0; idle+=d; if(idle>45&&game.state()==='attract') leave(); }
   // Quest sparen: im Spiel 30 fps, Attract nur 10 fps und nur wenn man in der Nähe ist
   acc+=d; const cw=cam.object3D.getWorldPosition(camW), near=Math.hypot(camW.x-cab.x,camW.z-cab.z)<6;
   if(acc>=(playing?1/30:1/10)&&(playing||near)){ acc=0; game.draw(); tex.needsUpdate=true; } }}); sc.setAttribute('f3d-tick','');
- window.__F3D=game; return game;
+ window.__F3D=game; window.__F3Dm={enter,leave,hb,playing:()=>playing}; return game;
 };
 })();

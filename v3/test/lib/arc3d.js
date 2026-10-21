@@ -136,73 +136,140 @@ window.buildArcade84=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  return {update,collide,cabs};
 };
 
-/* Großer gebogener Play-Screen (wie Alpha-Intro): 1,6 m vor den Augen, Automat ausgeblendet, Halle stark gedimmt */
-window.ArcadeBigScreen=(function(){
- let mesh=null, mat=null, spill=null, hit=null, scRef=null, owner=null, dimFrom=1, dimTo=1, dimT0=0, dimDur=400, fading=false, showOp=0, wantShow=false, hideList=[];
- const ease=k=>k*k*(3-2*k);
- const SR=1.6; // Screen-Fläche ~1,6 m vor den Augen
+/* Kino-Modus (Spielhalle): Automat anklicken -> sanfte Blende -> das Spiel läuft auf einer gebogenen Leinwand
+   (Zylindersegment ~3 m breit, 2,5 m entfernt), WELTFEST dort verankert, wo man steht (nicht am Kopf). Die Halle wird
+   komplett ausgeblendet (nur Leinwand, Rahmen, dunkle Umgebung, Boden y=0 → ~5 Draw Calls).
+   Eingabe: Gamepads werden jedes Frame gepollt (WebXR inputSources, sonst navigator.getGamepads) – Stick + A/X/Trigger,
+   B/Y/Menü = zurück an dieselbe Stelle. Desktop: Tastatur (im Spiel-Modul) + Klick = Aktion, Esc/Rücktaste = zurück.
+   API: ArcadeCinema.open(sc,{id,tex,caption,act(),input(L,R),onOpen(),onClose()}), .close(id), .active(), .busy() */
+window.ArcadeCinema=(function(){
+ const R_SCR=2.5, W_SCR=3.0;           // Radius (Abstand) und Bogenlänge der Leinwand in m
+ let sc=null, look=null, grp=null, cur=null, phase='off', t0=0, hidden=[], prev={}, rcSaved=[], dimK=1;
+ const D_OUT=320, D_IN=420, ease=k=>k*k*(3-2*k);
+
+ // ===== Leinwand, Rahmen, Umgebung, Boden, Bildunterschrift – alles Optische hier (Grafik-Rewind darf hier polieren) =====
+ function makeCinemaScreen(T,aspect){
+  const g=new T.Group(); g.name='arcCinema';
+  const A=W_SCR/R_SCR, H=W_SCR/aspect, uOp={value:0}, uTime={value:0};
+  // Leinwand: Innenseite eines Zylindersegments, u gespiegelt (von innen gesehen), CRT-Zeilen + Vignette + leichte Glas-Spiegelung
+  const sg=new T.CylinderGeometry(R_SCR,R_SCR,H,72,1,true,Math.PI-A/2,A); { const uv=sg.attributes.uv; for(let i=0;i<uv.count;i++) uv.setX(i,1-uv.getX(i)); }
+  const scrMat=new T.ShaderMaterial({ side:T.BackSide, fog:false, toneMapped:false,
+   uniforms:{ map:{value:null}, uOp, uTime, uLines:{value:256} },
+   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+   fragmentShader:`uniform sampler2D map; uniform float uOp, uTime, uLines; varying vec2 vUv;
+    void main(){ vec2 uv=vUv; vec3 c=texture2D(map,uv).rgb;
+     float sl=0.86+0.14*sin(uv.y*uLines*6.28318);                       // Zeilen, dezent
+     vec2 d=(uv-0.5)*vec2(1.0,1.15); float vig=clamp(1.0-dot(d,d)*0.85,0.0,1.0); vig*=vig;
+     float edge=smoothstep(0.0,0.012,uv.x)*smoothstep(1.0,0.988,uv.x)*smoothstep(0.0,0.015,uv.y)*smoothstep(1.0,0.985,uv.y);
+     vec3 glass=vec3(0.010,0.011,0.014)*(0.6+0.4*smoothstep(0.2,1.0,uv.y));   // schwarzes Glas, nie ganz 0
+     c=(c*sl*vig*1.08+glass)*edge+glass*(1.0-edge)*0.6;
+     c*=0.985+0.015*sin(uTime*37.0);                                       // kaum merkliches Röhrenflimmern
+     gl_FragColor=vec4(c*uOp,1.0);
+     #include <colorspace_fragment>
+    }` });
+  const scr=new T.Mesh(sg,scrMat); scr.name='arcCinemaScreen'; scr.renderOrder=3; g.add(scr);
+  // Rahmen: matter, dunkler Kunststoff mit leicht angestrahlter Innenkante (1 Draw Call, Canvas-Verlauf)
+  const BW=0.14, RF=R_SCR+0.015, AF=(W_SCR+2*BW)/RF, HF=H+2*BW;
+  const fc=document.createElement('canvas'); fc.width=512; fc.height=256; { const x=fc.getContext('2d'); x.fillStyle='#121016'; x.fillRect(0,0,512,256);
+   const ix=BW/(W_SCR+2*BW)*512, iy=BW/HF*256; for(let k=0;k<10;k++){ const a=0.10*(1-k/10); x.strokeStyle=`rgba(120,130,170,${a})`; x.lineWidth=2; x.strokeRect(ix-k*1.6,iy-k*1.6,512-2*ix+k*3.2,256-2*iy+k*3.2); }
+   const gr=x.createLinearGradient(0,0,0,256); gr.addColorStop(0,'rgba(255,255,255,0.025)'); gr.addColorStop(1,'rgba(0,0,0,0.25)'); x.fillStyle=gr; x.fillRect(0,0,512,256);
+   for(let i=0;i<2500;i++){ x.fillStyle=`rgba(255,255,255,${Math.random()*0.025})`; x.fillRect(Math.random()*512,Math.random()*256,1,1); } }
+  const ft=new T.CanvasTexture(fc); ft.colorSpace=T.SRGBColorSpace;
+  const fg=new T.CylinderGeometry(RF,RF,HF,72,1,true,Math.PI-AF/2,AF); { const uv=fg.attributes.uv; for(let i=0;i<uv.count;i++) uv.setX(i,1-uv.getX(i)); }
+  const frMat=new T.MeshBasicMaterial({map:ft,side:T.BackSide,fog:false,toneMapped:false,color:0x000000});
+  const fr=new T.Mesh(fg,frMat); fr.name='arcCinemaFrame'; fr.renderOrder=2; g.add(fr);
+  // Umgebung: dunkler, leicht violetter Raum (nicht schwarz), etwas heller Richtung Leinwand, Dithering gegen Banding
+  const envMat=new T.ShaderMaterial({ side:T.BackSide, fog:false, depthWrite:false, uniforms:{uOp},
+   vertexShader:'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+   fragmentShader:`uniform float uOp; varying vec3 vP;
+    float h(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+    void main(){ float f=max(0.0,-vP.z); float up=vP.y;
+     vec3 c=vec3(0.0065,0.0058,0.0095)+vec3(0.010,0.010,0.017)*pow(f,3.0)*(1.0-abs(up));
+     c*=1.0-0.35*smoothstep(0.2,1.0,abs(up)); c+=(h(gl_FragCoord.xy)-0.5)/255.0;
+     gl_FragColor=vec4(c*uOp,1.0);
+     #include <colorspace_fragment>
+    }` });
+  const env=new T.Mesh(new T.SphereGeometry(9,32,16),envMat); env.name='arcCinemaRoom'; env.renderOrder=0; g.add(env);
+  // Boden y=0: matter Teppich-Ton, nach außen ausblendend, schwacher Leinwand-Widerschein vorn (kein Hotspot)
+  const flMat=new T.ShaderMaterial({ fog:false, transparent:true, depthWrite:false, uniforms:{uOp},
+   vertexShader:'varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+   fragmentShader:`uniform float uOp; varying vec2 vP;
+    void main(){ float r=length(vP); float a=1.0-smoothstep(1.2,4.2,r);
+     float fwd=smoothstep(0.0,2.4,vP.y)*(1.0-smoothstep(2.4,3.4,vP.y))*(1.0-smoothstep(0.6,1.8,abs(vP.x)));
+     vec3 c=vec3(0.011,0.0095,0.014)+vec3(0.010,0.011,0.018)*fwd;
+     gl_FragColor=vec4(c*uOp,a*uOp);
+     #include <colorspace_fragment>
+    }` });
+  const fl=new T.Mesh(new T.CircleGeometry(4.4,48),flMat); fl.rotation.x=-Math.PI/2; fl.position.y=0.002; fl.name='arcCinemaFloor'; fl.renderOrder=1; g.add(fl);
+  // Bildunterschrift unter der Leinwand (Steuerung), matt grau, weltfest
+  const cc=document.createElement('canvas'); cc.width=1024; cc.height=80; const ct=new T.CanvasTexture(cc); ct.colorSpace=T.SRGBColorSpace;
+  const capMat=new T.MeshBasicMaterial({map:ct,transparent:true,fog:false,toneMapped:false,depthWrite:false,color:0x000000});
+  const RC=R_SCR-0.03, cg=new T.CylinderGeometry(RC,RC,0.18,32,1,true,Math.PI-2.3/RC/2,2.3/RC); { const uv=cg.attributes.uv; for(let i=0;i<uv.count;i++) uv.setX(i,1-uv.getX(i)); } capMat.side=T.BackSide; const cap=new T.Mesh(cg,capMat); cap.name='arcCinemaCaption'; cap.renderOrder=4; g.add(cap);
+  const layout=(yc)=>{ scr.position.y=yc; fr.position.y=yc; cap.position.set(0,Math.max(0.12,yc-H/2-BW-0.13),0); };
+  const setCaption=s=>{ const x=cc.getContext('2d'); x.clearRect(0,0,1024,80); let fs=36; do { x.font='600 '+fs+'px Arial, sans-serif'; fs-=2; } while(x.measureText(s||'').width>1000&&fs>18); x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='rgba(190,190,205,0.85)'; x.fillText(s||'',512,41); ct.needsUpdate=true; };
+  const setOpacity=k=>{ uOp.value=k; const c=0.7*k; frMat.color.setRGB(c,c,c); capMat.color.setScalar(k); };
+  return { group:g, H, setMap:t=>{ scrMat.uniforms.map.value=t; }, setLines:n=>{ scrMat.uniforms.uLines.value=n; }, setOpacity, setCaption, layout, tick:t=>{ uTime.value=t*0.001; } };
+ }
+
+ // ===== Halle dimmen (Licht, Nebel, Neon) – wie bisher, damit die Blende weich ist =====
  function applyDim(k){
-  window.__arcDim=k; const L=window.__arcLights, G=window.__arcGlow;
+  dimK=k; window.__arcDim=k; const L=window.__arcLights, G=window.__arcGlow;
   if(L){ L.Lc.intensity=2.6*k; L.Lk.intensity=1.6*k; L.Hemi.intensity=0.9*k; }
-  if(scRef&&scRef.object3D.fog){ const d0=(L&&L.fogD)||0.075; scRef.object3D.fog.density=d0+(0.38-d0)*(1-k); }
-  if(G){ const dk=k*k; // Neon/Emissive stärker als Raumlicht runter
-   G.NS.forEach(([m,hs],i)=>{ const [mo,ho]=G.nsOp[i]; m.material.opacity=mo*dk; m.material.transparent=true; hs.material.opacity=ho*dk; });
-   if(G.scrM) G.scrM.color.setScalar(k);
-   if(G.marM) G.marM.color.setScalar(k);
-   if(G.carp) G.carp.emissiveIntensity=G.carpEm*dk;
-   G.glowHalos.forEach((m,i)=>{ m.opacity=(G.haloOp[i]||1)*dk; });
-  }
-  if(mat) mat.color.setScalar(showOp);
-  if(spill) spill.material.opacity=0.4*showOp;
+  if(sc&&sc.object3D.fog){ const d0=(L&&L.fogD)||0.075; sc.object3D.fog.density=d0+(0.38-d0)*(1-k); }
+  if(G){ const dk=k*k; G.NS.forEach(([m,hs],i)=>{ const [mo,ho]=G.nsOp[i]; m.material.opacity=mo*dk; m.material.transparent=true; hs.material.opacity=ho*dk; });
+   if(G.scrM) G.scrM.color.setScalar(k); if(G.marM) G.marM.color.setScalar(k); if(G.carp) G.carp.emissiveIntensity=G.carpEm*dk; G.glowHalos.forEach((m,i)=>{ m.opacity=(G.haloOp[i]||1)*dk; }); }
  }
- function setHidden(on){ const hide=o=>{ if(!o) return; if(o.isObject3D) o.visible=!on; else if(o.object3D) o.object3D.visible=!on; else if(o.setAttribute){ if(o.object3D) o.object3D.visible=!on; o.setAttribute('visible', !on); } };
-  hideList.forEach(hide); (window.__arcCabHide||[]).forEach(hide);
-  if(window.__arcGroup) window.__arcGroup.visible=!on;
-  const G=window.__arcGlow; if(G&&G.backdrop) G.backdrop.forEach(o=>{ if(o) o.visible=!on; });
-  if(G&&G.NS) G.NS.forEach(([m,hs])=>{ m.visible=!on; hs.visible=!on; });
-  // Props/Extras (Getränkeautomat „KE“ usw.) – alles außer Rig und Play-Screen
-  if(scRef){ const rig=document.getElementById('rig');
-   scRef.querySelectorAll('a-entity').forEach(e=>{
-    if(e===hit||e===rig||(rig&&rig.contains(e))) return;
-    if(e.id==='cam'||e.id==='hl'||e.id==='hr') return;
-    if(e.hasAttribute('gltf-model')||e.classList.contains('clickable')) hide(e);
-   }); } }
- function tickDim(){
-  if(!fading) return; const u=Math.min(1,(performance.now()-dimT0)/dimDur), e=ease(u);
-  const k=dimFrom+(dimTo-dimFrom)*e; showOp=wantShow?e:(1-e); applyDim(k);
-  if(u>=1){ fading=false; if(!wantShow&&mesh){ mesh.visible=false; if(spill) spill.visible=false; if(hit){ hit.object3D.visible=false; hit.setAttribute('visible',false); } showOp=0; setHidden(false); hideList=[]; applyDim(1); } }
-  else requestAnimationFrame(tickDim);
- }
- function geo(){
-  const T=THREE, TOT=100*Math.PI/180, CEN=78*Math.PI/180, SH=SR*CEN*(256/320), SEG=96;
-  const sg=new T.CylinderGeometry(SR,SR,SH,SEG,1,true,Math.PI-TOT/2,TOT); const uv=sg.attributes.uv, n=sg.attributes.position.count, col=new Float32Array(n*3);
-  for(let k=0;k<n;k++){ const u=uv.getX(k), a=(u-0.5)*TOT; let uu,f=1; if(Math.abs(a)<=CEN/2) uu=0.5+a/CEN; else { const e=(Math.abs(a)-CEN/2)/((TOT-CEN)/2); uu=a>0?1-0.03*(1-e):0.03*(1-e); f=Math.pow(1-e,1.8)*0.5; } uv.setX(k,uu); col[k*3]=col[k*3+1]=col[k*3+2]=f; }
-  sg.setAttribute('color',new T.BufferAttribute(col,3)); return sg;
- }
- function ensure(sc,tex){
-  const T=THREE;
-  if(!mesh){ mat=new T.MeshBasicMaterial({map:tex,vertexColors:true,toneMapped:false,fog:false,side:T.DoubleSide,color:0xffffff,depthTest:true});
-   mesh=new T.Mesh(geo(),mat); mesh.scale.x=-1; mesh.visible=false; mesh.renderOrder=6;
-   const fc=document.createElement('canvas'); fc.width=256; fc.height=128; { const x=fc.getContext('2d'); const g=x.createRadialGradient(128,0,4,128,0,140); g.addColorStop(0,'rgba(180,200,230,0.28)'); g.addColorStop(1,'rgba(180,200,230,0)'); x.fillStyle=g; x.fillRect(0,0,256,128); }
-   spill=new T.Mesh(new T.PlaneGeometry(2.4,1.4),new T.MeshBasicMaterial({map:new T.CanvasTexture(fc),transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,opacity:0})); spill.rotation.x=-Math.PI/2; spill.visible=false; spill.renderOrder=5;
-   hit=document.createElement('a-entity'); hit.classList.add('clickable'); hit.setAttribute('geometry','primitive:plane;width:2.4;height:1.7'); hit.setAttribute('material','opacity:0;transparent:true;shader:flat;side:double'); hit.setAttribute('visible',false); }
-  else { mat.map=tex; mat.needsUpdate=true; }
-  if(scRef!==sc){ if(mesh.parent) mesh.parent.remove(mesh); if(spill.parent) spill.parent.remove(spill); sc.object3D.add(mesh); sc.object3D.add(spill); if(hit.parentElement!==sc) sc.appendChild(hit); scRef=sc; }
+ // ===== Welt aus/ein (alles außer Rig und Kino) + Laser/Maus-Raycaster aus, damit nichts Verstecktes angeklickt wird =====
+ function hideWorld(on){
+  const rig=document.getElementById('rig');
+  if(on){ hidden=[]; sc.object3D.children.forEach(o=>{ if(o===grp||(rig&&o===rig.object3D)||!o.visible) return; hidden.push(o); o.visible=false; });
+   rcSaved=[]; [sc,document.getElementById('hl'),document.getElementById('hr')].forEach(el=>{ if(!el||!el.components||!el.components.raycaster) return; const d=el.components.raycaster.data; rcSaved.push([el,d.enabled,d.showLine]); el.setAttribute('raycaster',{enabled:false,showLine:false}); }); }
+  else { hidden.forEach(o=>{ o.visible=true; }); hidden=[]; rcSaved.forEach(([el,en,sl])=>el.setAttribute('raycaster',{enabled:en,showLine:sl})); rcSaved=[]; }
  }
  function place(){
   const T=THREE, cam=document.getElementById('cam').object3D, hp=new T.Vector3(), q=new T.Quaternion();
   cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-6) f.set(0,0,-1); f.normalize();
-  const yaw=Math.atan2(-f.x,-f.z); mesh.position.set(hp.x,hp.y,hp.z); mesh.rotation.set(0,yaw,0); mesh.visible=true;
-  spill.position.set(hp.x+f.x*(SR*0.75), 0.02, hp.z+f.z*(SR*0.75)); spill.rotation.y=yaw; spill.visible=true;
-  if(hit){ const d=SR*0.92; hit.object3D.position.set(hp.x+f.x*d, hp.y, hp.z+f.z*d); hit.object3D.rotation.set(0,yaw,0); hit.object3D.visible=true; hit.setAttribute('visible',true); }
+  grp.position.set(hp.x,0,hp.z); grp.rotation.set(0,Math.atan2(-f.x,-f.z),0);   // Boden bleibt y=0, Leinwand ~Augenhöhe
+  look.layout(Math.min(1.75,Math.max(look.H/2+0.18,hp.y-0.06))); grp.updateMatrixWorld(true);
  }
- return {
-  show(sc,tex,id,hide){ if(owner&&owner!==id) this.hide(owner,true); ensure(sc,tex); owner=id; hideList=(hide||[]).slice(); setHidden(true); place(); wantShow=true; dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=0.015; dimT0=performance.now(); dimDur=400; fading=true; showOp=0; applyDim(dimFrom); requestAnimationFrame(tickDim); return hit; },
-  hide(id,instant){ if(owner&&id&&owner!==id) return; owner=null; wantShow=false; if(instant){ fading=false; showOp=0; setHidden(false); hideList=[]; applyDim(1); if(mesh) mesh.visible=false; if(spill) spill.visible=false; if(hit){ hit.object3D.visible=false; hit.setAttribute('visible',false); } return; }
-   dimFrom=window.__arcDim==null?1:window.__arcDim; dimTo=1; dimT0=performance.now(); dimDur=400; fading=true; requestAnimationFrame(tickDim); },
-  hitEl(){ return hit; },
-  owner(){ return owner; }
- };
+ // ===== Gamepads: WebXR (xr-standard) oder Standard-Gamepad → {L:[x,y],R:[x,y],act,back} =====
+ function readPads(){
+  const o={L:[0,0],R:[0,0],btn:{}}; const R=sc.renderer, s=R&&R.xr&&R.xr.getSession&&R.xr.getSession(); const dz=v=>Math.abs(v)<0.15?0:v;
+  const take=(hand,gp,xr)=>{ const b=gp.buttons||[], ax=gp.axes||[], p=i=>!!(b[i]&&(b[i].pressed||b[i].value>0.6));
+   if(xr){ const h=hand==='left'?'L':'R'; const sx=ax.length>=4?ax[2]:(ax[0]||0), sy=ax.length>=4?ax[3]:(ax[1]||0); o[h]=[dz(sx),dz(sy)];
+    o.btn[h+'trig']=p(0); o.btn[h+'a']=p(4); o.btn[h+'b']=p(5); }
+   else { const dp=[p(15)-p(14),p(13)-p(12)]; o.L=[dz(ax[0]||0)||dp[0],dz(ax[1]||0)||dp[1]]; o.R=[dz(ax[2]||0),dz(ax[3]||0)];
+    o.btn.Ga=p(0)||p(2)||p(7)||p(6); o.btn.Gb=p(1)||p(3); o.btn.Gmenu=p(9)||p(8); } };
+  if(s&&s.inputSources){ for(const src of s.inputSources) if(src.gamepad) take(src.handedness,src.gamepad,true); }
+  else { const gs=(navigator.getGamepads&&navigator.getGamepads())||[]; for(const g of gs) if(g&&g.connected!==false) take(g.hand||(/left/i.test(g.id)?'left':/right/i.test(g.id)?'right':''),g,g.mapping==='xr-standard'); }
+  return o;
+ }
+ const ACT=['Ltrig','Rtrig','La','Ra','Ga'], BACK=['Lb','Rb','Lmenu','Rmenu','Gb','Gmenu'];
+ let lastL=[0,0], lastR=[0,0];
+ function pollInput(){
+  const p=readPads(); let act=false, back=false;
+  ACT.forEach(k=>{ if(p.btn[k]&&!prev[k]) act=true; }); BACK.forEach(k=>{ if(p.btn[k]&&!prev[k]) back=true; }); prev=p.btn;
+  if(phase!=='on'||!cur) return;
+  const moved=p.L[0]||p.L[1]||p.R[0]||p.R[1]||lastL[0]||lastL[1]||lastR[0]||lastR[1]; lastL=p.L; lastR=p.R;
+  if(moved&&cur.input) cur.input(p.L,p.R);
+  if(back){ close(cur.id); return; } if(act&&cur.act) cur.act('pad');
+ }
+ function tick(t){
+  if(!grp) return; look.tick(t); const now=performance.now(), u=Math.min(1,(now-t0)/(phase==='in1'||phase==='out2'?D_OUT:D_IN)), e=ease(u);
+  if(phase==='in1'){ applyDim(1-e); if(u>=1){ hideWorld(true); applyDim(1); grp.visible=true; place(); phase='in2'; t0=now; } }
+  else if(phase==='in2'){ look.setOpacity(e); if(u>=1){ phase='on'; prev=readPads().btn; if(cur.onOpen) cur.onOpen(); } }
+  else if(phase==='out1'){ look.setOpacity(1-e); if(u>=1){ grp.visible=false; hideWorld(false); applyDim(0); phase='out2'; t0=now; const c=cur; cur=null; if(c&&c.onClose) c.onClose(); } }
+  else if(phase==='out2'){ applyDim(e); if(u>=1){ applyDim(1); phase='off'; } }
+  if(phase==='on'||phase==='in2') pollInput();
+ }
+ function ensure(s){ if(grp&&sc===s) return; sc=s; const T=THREE; look=makeCinemaScreen(T,320/256); grp=look.group; grp.visible=false; sc.object3D.add(grp);
+  AFRAME.registerComponent('arc-cinema-tick',{tick(t){ tick(t); }}); sc.setAttribute('arc-cinema-tick','');
+  sc.canvas&&sc.canvas.addEventListener('mousedown',e=>{ if(phase==='on'&&cur&&e.button===0&&!(sc.renderer.xr.isPresenting)&&cur.act){ cur.act('mouse'); e.stopPropagation(); } },true);
+  ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(h) h.addEventListener('menudown',()=>{ if(phase==='on'&&cur) close(cur.id); }); });
+  window.addEventListener('keydown',e=>{ if(phase==='on'&&cur&&(e.code==='Escape'||e.code==='Backspace')){ e.preventDefault(); close(cur.id); } },true); }
+ function open(s,o){ if(phase!=='off') return false; ensure(s); cur=o; look.setMap(o.tex); look.setLines(o.lines||256); look.setCaption(o.caption||''); look.setOpacity(0); phase='in1'; t0=performance.now(); return true; }
+ function close(id){ if(!cur||(id&&cur.id!==id)) return; if(phase==='on'||phase==='in2'){ phase='out1'; t0=performance.now(); } else if(phase==='in1'){ applyDim(1); const c=cur; cur=null; phase='off'; if(c.onClose) c.onClose(); } }
+ return { open, close, active:()=>phase!=='off', busy:()=>phase!=='off', phase:()=>phase, owner:()=>cur&&cur.id, _readPads:()=>readPads(), _poll:()=>pollInput(), _look:()=>look };
 })();
 
 })();

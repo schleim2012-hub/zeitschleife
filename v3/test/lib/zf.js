@@ -128,26 +128,31 @@ window.mountZeitFresser=function(sc,cab,hideExtra){ const T=THREE, S=sc.object3D
   g.font='bold 62px Arial Black, Arial'; g.textAlign='center'; g.textBaseline='middle'; g.shadowColor='#ffa030'; g.shadowBlur=22; g.fillStyle='#ffc050'; g.fillText('ZEIT-FRESSER',256,96); g.shadowBlur=0; g.lineWidth=2.5; g.strokeStyle='#fff'; g.strokeText('ZEIT-FRESSER',256,96);
   g.font='bold 20px Arial'; g.fillStyle='#e0a050'; g.fillText('SCHLEIFE ELECTRONICS 1984',256,160); }
  const mt=new T.CanvasTexture(mc); mt.colorSpace=T.SRGBColorSpace; const mar=new T.Mesh(new T.PlaneGeometry(0.6,0.24),new T.MeshBasicMaterial({map:mt,toneMapped:false,color:0xd8d8d8})); place(mar,[0,1.71,0.226],0.15,0.004); S.add(mar); (window.__arcCabHide=window.__arcCabHide||[]).push(el,mar,...(hideExtra||[]));
- // ---------- Steuerung ----------
+ // ---------- Steuerung: Automat anklicken -> Kino-Modus (ArcadeCinema in arc3d.js) ----------
  let playing=false; const rig=document.getElementById('rig'), cam=document.getElementById('cam'); let rot0=0, idle=0;
  const sub=document.getElementById('sub'); const hint=s=>{ if(!sub) return; sub.textContent=s; sub.style.display='block'; clearTimeout(hint.t); hint.t=setTimeout(()=>sub.style.display='none',3200); };
- const screenPos=new T.Vector3();
- function onScreen(){ if(!playing){ game.coin(); enter(); } else if(game.state()==='attract'||game.state()==='over'){ game.coin(); } else leave(); }
- function enter(){ playing=true; idle=0; const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
-  el.object3D.getWorldPosition(screenPos); const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw); const front=new T.Vector3(Math.sin(cab.ry),0,Math.cos(cab.ry)); const want=new T.Vector3(cab.x,0,cab.z).addScaledVector(front,0.85);
-  if(Math.hypot(cw.x-want.x,cw.z-want.z)>1.1){ rig.object3D.position.x+=want.x-cw.x; rig.object3D.position.z+=want.z-cw.z; }
-  if(window.ArcadeBigScreen){ const h=ArcadeBigScreen.show(sc,tex,'zf',[el,mar,...(hideExtra||[])]); if(h&&!h.__zfBound){ h.__zfBound=1; h.addEventListener('click',onScreen); } }
-  hint(sc.is('vr-mode')?'ZEIT-FRESSER · linker Stick · großer Schirm · Trigger auf Schirm = aufhören':'ZEIT-FRESSER · Pfeiltasten/WASD · Klick/Esc = aufhören'); }
- function leave(){ playing=false; if(window.ArcadeBigScreen) ArcadeBigScreen.hide('zf'); const rm=rig.components['room-move']; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); }
- el.addEventListener('click',onScreen);
+ const vr=()=>sc.is('vr-mode');
+ // ganzer Automat ist klickbar (unsichtbare Box, kein Draw Call); Kabinen bleiben, wo sie sind
+ const hb=document.createElement('a-entity'); hb.classList.add('clickable'); hb.setAttribute('geometry','primitive:box;width:0.74;height:1.84;depth:0.9'); hb.setAttribute('material','visible:false');
+ hb.setAttribute('position',(cab.x+Math.sin(cab.ry)*0.04)+' 0.92 '+(cab.z+Math.cos(cab.ry)*0.04)); hb.setAttribute('rotation','0 '+(cab.ry*180/Math.PI)+' 0'); sc.appendChild(hb);
+ function onScreen(){ if(playing||!window.ArcadeCinema||ArcadeCinema.busy()) return; const cw=new T.Vector3(); cam.object3D.getWorldPosition(cw);
+  if(Math.hypot(cw.x-cab.x,cw.z-cab.z)>2.6){ hint('Geh näher an den Automaten.'); return; } enter(); }
+ const act=()=>{ idle=0; if(game.state()==='attract'||game.state()==='over') game.coin(); };
+ const dirOf=(x,y)=>Math.max(Math.abs(x),Math.abs(y))<0.5?-1:(Math.abs(x)>Math.abs(y)?(x>0?1:3):(y>0?2:0));
+ function enter(){ const rm=rig.components['room-move'];
+  const ok=ArcadeCinema.open(sc,{ id:'zf', tex, lines:256,
+   caption:vr()?'ZEIT-FRESSER  ·  Stick = laufen  ·  A / Trigger = Start  ·  B / Y = zurück':'ZEIT-FRESSER  ·  Pfeile / WASD  ·  Leertaste / Klick = Start  ·  Esc = zurück',
+   act, input:(L,R)=>{ const m=(Math.hypot(R[0],R[1])>Math.hypot(L[0],L[1]))?R:L; const d=dirOf(m[0],m[1]); if(d>=0){ game.setDir(d); idle=0; } },
+   onOpen:()=>{ game.coin(); }, onClose:()=>{ playing=false; if(rm){ rm.ax=[0,0]; rm.play(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',true); } });
+  if(!ok) return; playing=true; idle=0; if(rm){ rm.ax=[0,0]; rm.pause(); } if(cam.components['wasd-controls']) cam.setAttribute('wasd-controls','enabled',false); rot0=rig.object3D.rotation.y;
+  hint(vr()?'Kino-Modus · ZEIT-FRESSER · B/Y = zurück':'Kino-Modus · ZEIT-FRESSER · Pfeiltasten/WASD · Esc = zurück'); }
+ function leave(){ if(window.ArcadeCinema) ArcadeCinema.close('zf'); }
+ el.addEventListener('click',onScreen); hb.addEventListener('click',onScreen);
  const KEY={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
- window.addEventListener('keydown',e=>{ if(!playing) return; if(e.code==='Escape'){ leave(); return; } if(e.code in KEY){ game.setDir(KEY[e.code]); idle=0; e.preventDefault(); } },true);
- setTimeout(()=>{ ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(!h) return;
-  h.addEventListener('thumbstickmoved',e=>{ if(!playing||id!=='hl') return; const {x:ax,y:ay}=e.detail; if(Math.max(Math.abs(ax),Math.abs(ay))<0.55) return; idle=0; game.setDir(Math.abs(ax)>Math.abs(ay)?(ax>0?1:3):(ay>0?2:0)); });
-  ['bbuttondown','ybuttondown'].forEach(ev=>h.addEventListener(ev,()=>{ if(playing) leave(); })); }); },0);
+ window.addEventListener('keydown',e=>{ if(!playing||ArcadeCinema.phase()!=='on') return; if(e.code in KEY){ game.setDir(KEY[e.code]); idle=0; e.preventDefault(); } else if(e.code==='Space'||e.code==='Enter'){ act(); e.preventDefault(); } },true);
  let last=0, acc=0;
  AFRAME.registerComponent('zf-tick',{tick(t,dt){ const d=Math.min(dt||16,50)/1000; game.update(d); if(playing){ rig.object3D.rotation.y=rot0; idle+=d; if(idle>45&&game.state()==='attract') leave(); }
   acc+=d; if(acc>=1/30){ acc=0; game.draw(); tex.needsUpdate=true; } }}); sc.setAttribute('zf-tick','');
- window.__ZF=game; return game;
+ window.__ZF=game; window.__ZFm={enter,leave,hb,playing:()=>playing}; return game;
 };
 })();
