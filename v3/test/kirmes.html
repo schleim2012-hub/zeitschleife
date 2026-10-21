@@ -1,12 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Kirmes-Test – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=14"></script>
-<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kirmes3d.js?v=2"></script>
+<script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/vrgrab.js?v=1"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kirmes3d.js?v=2"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
 <div id="fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .25s"></div>
 <div id="prize" style="display:none;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:15;text-align:center;color:#ffe6a8;font:700 28px sans-serif;text-shadow:0 0 18px #000;background:rgba(0,0,0,.55);padding:18px 28px;border-radius:16px"></div>
-<div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip/Trigger = Ball greifen und werfen, Trigger an der Schießbude = Schuss · Desktop: Klick auf Bude = davor stellen · Simulator-Tür = Kabine · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
+<div id="hud">Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>VR: Grip oder Trigger = Ball nehmen, loslassen = werfen · Laser auf Ball + Trigger = Ball fliegt in die Hand · Gewehr nehmen, Trigger = Schuss, Grip = zurücklegen · L-Stick gehen, R-Stick ↔ drehen, ↑ Teleport · Desktop: Klick auf Bude = davor stellen · Simulator-Tür = Kabine · nah: Wurf/Schuss · Ziehen = Umsehen</small></div>
 <canvas id="ffgrain" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;opacity:.08;mix-blend-mode:overlay"></canvas>
 <script>(()=>{const c=document.getElementById('ffgrain'),x=c.getContext('2d');c.width=320;c.height=180;const d=x.createImageData(320,180);(function f(){for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}x.putImageData(d,0,0);setTimeout(()=>requestAnimationFrame(f),60);})();})();</script>
 <a-scene renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" fog="type:exponential; color:#06050a; density:0.075">
@@ -142,12 +142,21 @@ CMt(M.hand,M.can,0.6,0.1); CMt(M.hand,M.ball,0.8,0.2);
 const floorB=new C.Body({mass:0,material:M.floor}); floorB.addShape(new C.Plane()); floorB.quaternion.setFromAxisAngle(new C.Vec3(1,0,0),-Math.PI/2); world.addBody(floorB);
 function staticBoxFrom(m,w,h,d,mat){ m.updateMatrixWorld(true); const p=new T.Vector3(), q=new T.Quaternion(), sc=new T.Vector3(); m.matrixWorld.decompose(p,q,sc); const b=new C.Body({mass:0,material:mat||M.wood}); b.addShape(new C.Box(new C.Vec3(w/2,h/2,d/2))); b.position.set(p.x,p.y,p.z); b.quaternion.set(q.x,q.y,q.z,q.w); world.addBody(b); return b; }
 const physStep=VR.stepper(1/180);
+// Greifen/Werfen/Fortbewegung: lib/vrgrab.js (Posen direkt aus dem XRFrame, Grip ODER Trigger, 1:1-Halten, Wurf-Regression, Fern-Greifen, Respawn)
+const inStall=(g,p,mx=1.2,z0=-1.05,z1=0.45)=>{ const l=g.worldToLocal(p.clone()); return Math.abs(l.x)<mx&&l.z>z0&&l.z<z1; };
+const VG=VRG.create({scene:sc,rig:document.getElementById('rig').object3D,cam:document.getElementById('cam').object3D,world,handMaterial:M.hand,physH:1/180,throwScale:1.2,throwMax:15,respawnAfter:3,
+ canStand:p=>Math.hypot(p.x,p.z-0.5)<7&&![G1,G2,G3].some(g=>inStall(g,p))&&!inStall(SIM,p,1.15,-2.5,0.1),
+ onTrigger:h=>{ const dir=new T.Vector3(0,0,-1).applyQuaternion(h.rq); if(rayHitsSim(h.rp,dir)) goSim(); }});
 function wcol(g,w,h,d,x,y,z){ const m=box(w,h,d,new T.MeshBasicMaterial({visible:false}),x,y,z,g); g.updateMatrixWorld(true); colliders.push({o:m,inv:m.matrixWorld.clone().invert(),mw:m.matrixWorld.clone(),h:new T.Vector3(w/2,h/2,d/2)}); staticBoxFrom(m,w,h,d,M.wood); }
 [G1,G2,G3].forEach(g=>{ wcol(g,2.2,2.6,0.1,0,1.3,-0.95); wcol(g,2.2,0.08,1.3,0,0.95,0.3); wcol(g,2.2,0.95,0.1,0,0.47,0.36); wcol(g,0.1,2.6,1.3,-1.08,1.3,-0.3); wcol(g,0.1,2.6,1.3,1.08,1.3,-0.3); });
 const ballMat=std({color:0xe8e2d0,roughness:0.55}), ballGeo=new T.SphereGeometry(0.04,20,14);
 function mkBall(p,home,kind){ const m=new T.Mesh(ballGeo,kind==='h'?std({color:0xd8402f,roughness:0.4}):ballMat); m.position.copy(p); S.add(m); const body=new C.Body({mass:0.15,material:M.ball,linearDamping:0.02,angularDamping:0.15,allowSleep:true,sleepSpeedLimit:0.05,sleepTimeLimit:0.6}); body.addShape(new C.Sphere(0.04)); body.position.set(p.x,p.y,p.z); world.addBody(body); body.sleep();
- const b={m,body,home:home.clone(),held:null,kind,t:0,lagP:new T.Vector3(),lagV:new T.Vector3(), get v(){ return new T.Vector3(body.velocity.x,body.velocity.y,body.velocity.z); }, get rest(){ return body.sleepState===C.Body.SLEEPING&&!this.held; }}; balls.push(b);
- body.addEventListener('collide',e=>{ const iv=Math.abs(e.contact.getImpactVelocityAlongNormal()); const o=e.body; if(o.material===M.floor&&iv>1) SND.thud(Math.min(1,iv/5)); else if(o.material===M.wood&&iv>1.2) SND.thud(Math.min(0.6,iv/8)); else if(o.material===M.hand){ const st=ctr.find(s=>s.body===o); if(st) VR.haptic(R,st.hand,Math.min(1,0.2+iv/4),20); } });
+ const b={m,body,home:home.clone(),kind,t:0, get held(){ return this.it.heldBy; }, get v(){ return new T.Vector3(body.velocity.x,body.velocity.y,body.velocity.z); }, get rest(){ return body.sleepState===C.Body.SLEEPING&&!this.it.heldBy; }}; balls.push(b);
+ b.it=VG.addItem({mesh:m,body,radius:0.04,home:{p:home.clone(),q:new T.Quaternion()},ball:b,oob:P=>Math.hypot(P.x,P.z)>12,
+  onGrab:()=>{ b.rattled=false; }, onRelease:(h,it,v)=>{ b.thrown=true; b.t=0; b.lastThrow=v.toArray().map(x=>+x.toFixed(2)); if(b.kind==='d'&&v.length()>1){ dosenThrows++; drawBoard(); } },
+  onRespawn:()=>{ b.thrown=false; b.rattled=false; b.t=0; }});
+ body.addEventListener('collide',e=>{ const iv=Math.abs(e.contact.getImpactVelocityAlongNormal()); const o=e.body; if(o.material===M.floor&&iv>1) SND.thud(Math.min(1,iv/5)); else if(o.material===M.wood&&iv>1.2) SND.thud(Math.min(0.6,iv/8)); else if(o.material===M.hand){ const hh=VG.handOfBody(o); if(hh) VR.haptic(R,hh.side,Math.min(1,0.2+iv/4),20); }
+  else if(o.material===M.can&&b.it.thrownBy&&iv>0.8){ VR.haptic(R,b.it.thrownBy.side,Math.min(1,0.3+iv/6),30); } });
  return b; }
 function local(g,x,y,z){ return g.localToWorld(new T.Vector3(x,y,z)); }
 // Dosen-Pyramide
@@ -157,7 +166,7 @@ const shelfY=1.0; staticBoxFrom(box(0.9,0.04,0.35,std({color:0x3a2a1c}),0,shelfY
 function stackCans(){ cans.forEach(c=>{ S.remove(c.m); world.removeBody(c.body); }); cans.length=0; const rows=[4,3,2,1]; let id=0;
  rows.forEach((n,r)=>{ for(let i=0;i<n;i++){ const x=(i-(n-1)/2)*0.074, y=shelfY+0.06+r*0.1205; const m=new T.Mesh(canGeo,canMat); m.position.copy(local(G1,x,y,-0.55)); m.quaternion.copy(G1.getWorldQuaternion(new T.Quaternion())); S.add(m);
   const body=new C.Body({mass:0.07,material:M.can,linearDamping:0.03,angularDamping:0.12,allowSleep:true,sleepSpeedLimit:0.1,sleepTimeLimit:0.5}); body.addShape(new C.Cylinder(0.035,0.035,0.12,12)); body.position.set(m.position.x,m.position.y,m.position.z); body.quaternion.set(m.quaternion.x,m.quaternion.y,m.quaternion.z,m.quaternion.w); world.addBody(body); body.sleep();
-  body.addEventListener('collide',e=>{ const iv=Math.abs(e.contact.getImpactVelocityAlongNormal()); const now=performance.now(); if(iv>0.5&&now-(body._snd||0)>90){ body._snd=now; SND.clank(Math.min(1,iv/4)); } if(e.body.material===M.hand){ const st=ctr.find(s=>s.body===e.body); if(st) VR.haptic(R,st.hand,Math.min(1,0.25+iv/3),20); } });
+  body.addEventListener('collide',e=>{ const iv=Math.abs(e.contact.getImpactVelocityAlongNormal()); const now=performance.now(); if(iv>0.5&&now-(body._snd||0)>90){ body._snd=now; SND.clank(Math.min(1,iv/4)); } if(e.body.material===M.hand){ const hh=VG.handOfBody(e.body); if(hh) VR.haptic(R,hh.side,Math.min(1,0.25+iv/3),20); } });
   cans.push({m,body,id:id++,r,base:m.position.clone()}); } }); }
 stackCans(); let dosenThrows=0; const dosenBalls=[0,1,2].map(i=>mkBall(local(G1,-0.6+i*0.1,0.995+0.04,0.45),local(G1,-0.6+i*0.1,0.995+0.04,0.45),'d'));
 // Pferderennen: schräges Brett mit Löchern + Rennbahn mit Pferden
@@ -190,7 +199,7 @@ const boardTex=cv(1024,256,()=>{}); const sb=new T.Mesh(new T.PlaneGeometry(2.4,
 
 // ---------- Zeitbonus (Stub für V3-Countdown) + Preise
 window.__loopClock={sec:20*60,bonusUsed:false,add(s){ if(this.bonusUsed) return false; this.bonusUsed=true; this.sec+=s; return true; }};
-let prizesWon={dosen:false,enten:false,pferd:false}; const awarded=[];
+let prizesWon={dosen:false,enten:false,pferd:false}; const awarded=[], prizeItems=[]; let winMsg='', dosenMsg='';
 function softTick(sec=3){ const a=ac(), t0=a.currentTime; const n=Math.floor(sec/0.45);
   for(let i=0;i<n;i++){ const t=t0+i*0.45; const o=a.createOscillator(), g=a.createGain(), f=a.createBiquadFilter();
     o.type='square'; o.frequency.value=i%2?920:780; f.type='bandpass'; f.frequency.value=1100; f.Q.value=4;
@@ -201,10 +210,12 @@ function maraSay(t){ const el=document.getElementById('hud'); el.innerHTML=`Kirm
 function grantPrize(kind,title,bonusMin){
   if(prizesWon[kind]) return; prizesWon[kind]=true;
   const pl=plush([0xff8fb8,0x8fd8ff,0xffe08a][Object.keys(prizesWon).indexOf(kind)%3],2.4);
-  const cam=document.getElementById('cam').object3D; const o=new T.Vector3(); cam.getWorldPosition(o);
-  const q=new T.Quaternion(); cam.getWorldQuaternion(q); const fwd=new T.Vector3(0,0,-1).applyQuaternion(q);
-  pl.position.copy(o).addScaledVector(fwd,0.7).add(new T.Vector3(0,-0.15,0)); S.add(pl); awarded.push(pl);
-  setTimeout(()=>{ S.remove(pl); },4500);
+  const gS={dosen:G1,enten:G2,pferd:G3}[kind]||G2; const pp=local(gS,-0.75,0.995+0.25,0.12); pl.position.copy(pp); pl.quaternion.copy(gS.getWorldQuaternion(new T.Quaternion())); S.add(pl); awarded.push(pl);
+  // Preis bleibt auf der Theke liegen und lässt sich nehmen/werfen
+  const pb=new C.Body({mass:0.3,material:M.ball,linearDamping:0.1,angularDamping:0.5,allowSleep:true}); pb.addShape(new C.Sphere(0.2)); pb.position.set(pp.x,pp.y,pp.z); pb.quaternion.set(pl.quaternion.x,pl.quaternion.y,pl.quaternion.z,pl.quaternion.w); world.addBody(pb);
+  prizeItems.push(VG.addItem({mesh:pl,body:pb,radius:0.2,noRespawn:true,home:{p:pp.clone(),q:pl.quaternion.clone()}}));
+  winMsg=`GEWONNEN: ${title}!`; setTimeout(()=>{ winMsg=''; drawBoard(); },6000);
+  for(const h of [VG.hands.left,VG.hands.right]){ VR.haptic(R,h.side,0.5,60); setTimeout(()=>VR.haptic(R,h.side,0.7,80),160); }
   SND.bell();
   const got=window.__loopClock.add(bonusMin*60);
   if(got) clockTick();
@@ -232,34 +243,28 @@ function goToStall(g){
 }
 
 function drawBoard(){ const c=boardTex.image, x=c.getContext('2d'); x.clearRect(0,0,1024,256); x.fillStyle='rgba(10,5,15,0.8)'; x.fillRect(0,0,1024,256); x.fillStyle='#ffe6a8'; x.font='bold 46px sans-serif';
- x.fillText(`Dosen: ${dosenScore} · Würfe ${dosenThrows}`,30,70); x.fillText(`Enten: ${hitsD} / Schüsse ${shots}`,30,135); x.fillStyle='#ffb0d8'; x.fillText(raceMsg||'Pferderennen: Ball in die Löcher rollen!',30,200); boardTex.needsUpdate=true; }
+ if(winMsg){ x.fillStyle='#7cff8a'; x.font='bold 64px sans-serif'; x.fillText(winMsg,30,150); boardTex.needsUpdate=true; return; }
+ x.fillText(dosenMsg||`Dosen: ${dosenScore}/${cans.length} · Ball ${Math.min(dosenThrows,3)}/3`,30,70); x.fillText(`Enten: ${hitsD}/5 · Schüsse ${shots}`,30,135); x.fillStyle='#ffb0d8'; x.fillText(raceMsg||'Pferderennen: Ball die Rampe hoch in die Löcher rollen!',30,200); boardTex.needsUpdate=true; }
 drawBoard();
-// ---------- Controller (rohe XR-Posen über three.js)
-const ctr=[0,1].map(i=>{ const c=R.xr.getController(i); document.getElementById('rig').object3D.add(c); /* Controller MÜSSEN im selben Rig wie die Kamera hängen */ const hb=new C.Body({mass:0,type:C.Body.KINEMATIC,material:M.hand,allowSleep:false}); hb.addShape(new C.Sphere(0.045)); hb.position.set(0,-10,0); hb.collisionResponse=false; world.addBody(hb);
- const st={c,held:null,tr:new VR.Tracker(),body:hb,hand:i?'right':'left',off:new T.Vector3(),rifle:null}; c.addEventListener('connected',e=>{ if(e.data&&e.data.handedness) st.hand=e.data.handedness; }); 
- const rifle=new T.Group(); const bar=new T.Mesh(new T.CylinderGeometry(0.008,0.008,0.5,10),std({color:0x222222,metalness:0.8,roughness:0.3})); bar.rotation.x=Math.PI/2; bar.position.z=-0.25; rifle.add(bar); const stock=new T.Mesh(new T.BoxGeometry(0.035,0.06,0.2),std({color:0x5a3a20})); stock.position.set(0,-0.02,0.06); rifle.add(stock); rifle.visible=false; c.add(rifle); st.rifle=rifle;
- const ln=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,-1)]),new T.LineBasicMaterial({color:0xffe6a8,transparent:true,opacity:0.5})); ln.scale.z=3; c.add(ln); st.ln=ln;
- c.addEventListener('selectstart',()=>press(st,true)); c.addEventListener('squeezestart',()=>press(st,false)); c.addEventListener('selectend',()=>release(st)); c.addEventListener('squeezeend',()=>release(st)); return st; });
+// ---------- Gewehr der Schießbude: liegt auf der Theke, Grip/Trigger nimmt es (bleibt in der Hand), Trigger = Schuss, Grip = zurücklegen
+const rifle=new T.Group(); (()=>{ const bar=new T.Mesh(new T.CylinderGeometry(0.009,0.009,0.55,10),std({color:0x222222,metalness:0.8,roughness:0.3})); bar.rotation.x=Math.PI/2; bar.position.set(0,0.01,-0.24); rifle.add(bar);
+ const stock=new T.Mesh(new T.BoxGeometry(0.04,0.07,0.3),std({color:0x5a3a20,roughness:0.6})); stock.position.set(0,-0.015,0.08); rifle.add(stock);
+ const sight=new T.Mesh(new T.BoxGeometry(0.006,0.014,0.006),std({color:0xd8b25a,metalness:0.8})); sight.position.set(0,0.027,-0.49); rifle.add(sight); })();
+const rifleHome={p:local(G2,0.72,0.995+0.035,0.12),q:G2.getWorldQuaternion(new T.Quaternion()).multiply(new T.Quaternion().setFromEuler(new T.Euler(0,-0.35,Math.PI/2)))};
+rifle.position.copy(rifleHome.p); rifle.quaternion.copy(rifleHome.q); S.add(rifle);
+const tracer=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,-1)]),new T.LineBasicMaterial({color:0xffe6a8,transparent:true,opacity:0.7})); tracer.visible=false; tracer.frustumCulled=false; S.add(tracer);
+const rifleIt=VG.addItem({mesh:rifle,radius:0.13,sticky:true,alignRay:true,holdOffset:{p:new T.Vector3(0,-0.03,0.06),q:new T.Quaternion()},home:rifleHome,
+ onTrigger:(h)=>{ const o=rifle.localToWorld(new T.Vector3(0,0.01,-0.52)), d=new T.Vector3(0,0,-1).applyQuaternion(rifle.getWorldQuaternion(new T.Quaternion())); shoot(null,h,d,o); },
+ onRelease:(h,it)=>{ VG.respawn(it); }, oob:p=>!nearG2(p)&&p.distanceTo(rifleHome.p)>4});
+const ctr=VG.hands; // Abwärtskompatibilität (Tests)
 function nearG2(p){ const l=G2.worldToLocal(p.clone()); return Math.abs(l.x)<1.6&&l.z>-0.2&&l.z<2.4; }
-function press(st,trigger){ ac(); const p=new T.Vector3(); st.c.getWorldPosition(p);
- if(trigger&&!st.held){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q); if(rayHitsSim(p,new T.Vector3(0,0,-1).applyQuaternion(q))){ goSim(); return; } }
- if(trigger&&st.rifle.visible){ shoot(st.c,st); return; }
- let best=null,bd=0.22; for(const b of balls){ if(b.held) continue; const d=b.m.position.distanceTo(p); if(d<bd){ bd=d; best=b; } }
- if(!best&&!trigger){ // Gravity Gloves: Griff + grob auf einen Ball zeigen → Ball fliegt in die Hand
-  const q=new T.Quaternion(); st.c.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); let pb=null,pa=0.32;
-  for(const b of balls){ if(b.held) continue; const to=b.m.position.clone().sub(p), dd=to.length(); if(dd>5) continue; const a=Math.acos(Math.min(1,f.dot(to.normalize()))); if(a<pa){ pa=a; pb=b; } }
-  if(pb){ const bp=new T.Vector3().copy(pb.body.position), dd=bp.distanceTo(p), tf=Math.max(0.3,Math.min(0.6,dd*0.13)); const v=p.clone().sub(bp).divideScalar(tf); v.y+=0.5*9.81*tf;
-   pb.body.type=C.Body.DYNAMIC; pb.body.wakeUp(); pb.body.velocity.set(v.x,v.y,v.z); st.pull=pb; st.pullT=performance.now(); VR.haptic(R,st.hand,0.2,20); }
-  return; }
- if(best){ st.pull=null; const bp=new T.Vector3().copy(best.body.position); const dir=bp.clone().sub(p); if(dir.length()<1e-3) dir.set(0,0,-1); dir.setLength(0.055); const q=new T.Quaternion(); st.c.getWorldQuaternion(q); st.off.copy(dir).applyQuaternion(q.invert());
-  best.held=st; st.held=best; best.body.type=C.Body.KINEMATIC; best.body.wakeUp(); best.lagP.copy(bp); best.lagV.set(0,0,0); VR.haptic(R,st.hand,0.35,30); } }
-function release(st){ st.pull=null; const b=st.held; if(!b) return; st.held=null; b.held=null; const p=new T.Vector3(); st.c.getWorldPosition(p); const off=new T.Vector3().copy(b.body.position).sub(p);
- const est=st.tr.estimate(off,{stepBack:1,tangential:0.6,scale:1.04,max:15}); b.body.type=C.Body.DYNAMIC; b.body.wakeUp(); b.body.velocity.set(est.v.x,est.v.y,est.v.z); b.body.angularVelocity.set(est.w.x*0.5,est.w.y*0.5,est.w.z*0.5); b.t=0;
- b.thrown=true; b.lastThrow=est.v.toArray().map(x=>+x.toFixed(2)); st.noHitUntil=performance.now()+180; if(b.kind==='d') { dosenThrows++; drawBoard(); } }
 // Schuss (VR: Controller-Ray; Desktop: Kamera)
 const rc=new T.Raycaster();
-function shoot(src,st,dirOv){ shots++; SND.pop(); if(st) VR.haptic(R,st.hand,0.9,45); /* Rückstoß */ const o=new T.Vector3(), q=new T.Quaternion(); src.getWorldPosition(o); src.getWorldQuaternion(q); rc.set(o,dirOv||new T.Vector3(0,0,-1).applyQuaternion(q)); const hit=rc.intersectObjects(ducks.filter(d=>!d.down).map(d=>d.m),false)[0];
- if(hit){ const d=ducks.find(dd=>dd.m===hit.object); d.down=1; hitsD++; SND.clank(1); setTimeout(()=>{ d.down=0; },4000); if(hitsD>=5) grantPrize('enten','Plüsch von der Schießbude',1); } drawBoard(); }
+function shoot(src,st,dirOv,orig){ shots++; SND.pop(); if(st) VR.haptic(R,st.side||st.hand,0.9,45); /* Rückstoß */ const o=new T.Vector3(), q=new T.Quaternion(); if(orig) o.copy(orig); else { src.getWorldPosition(o); src.getWorldQuaternion(q); } const dir=(dirOv||new T.Vector3(0,0,-1).applyQuaternion(q)).clone().normalize(); rc.set(o,dir);
+ const live=ducks.filter(d=>!d.down); let hit=rc.intersectObjects(live.map(d=>d.m),false)[0];
+ if(!hit){ /* Zielhilfe: knapp (≤ 6 cm) an der Entenmitte vorbei zählt noch */ let best=null,bd=0.06; for(const d of live){ const c=d.m.getWorldPosition(new T.Vector3()).sub(o), al=c.dot(dir); if(al<0) continue; const pd=c.addScaledVector(dir,-al).length(); if(pd<bd){ bd=pd; best=d; } } if(best) hit={object:best.m}; }
+ if(st){ tracer.position.copy(o); tracer.quaternion.setFromUnitVectors(new T.Vector3(0,0,-1),dir); tracer.scale.set(1,1,4); tracer.visible=true; setTimeout(()=>tracer.visible=false,60); }
+ if(hit){ const d=ducks.find(dd=>dd.m===hit.object); if(st){ const sd=st.side; setTimeout(()=>VR.haptic(R,sd,0.5,30),90); } d.down=1; hitsD++; SND.clank(1); setTimeout(()=>{ d.down=0; },4000); if(hitsD>=5) grantPrize('enten','Plüsch von der Schießbude',1); } drawBoard(); }
 // Desktop: Klick
 const camEl=document.getElementById('cam');
 const stalls=[{g:G1,kind:'d'},{g:G2,kind:'s'},{g:G3,kind:'h'}];
@@ -280,36 +285,38 @@ sc.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting) return; ac(); cons
    if(st.kind==='d'&&cans.length){ // Desktop: Ziel = Punkt auf dem Blickstrahl auf Höhe des Dosenturms, ballistisch gelöst (7.5 m/s), Maus-Zielen bleibt wirksam
      const c0=new T.Vector3(); cans.forEach(c=>c0.add(c.m.position)); c0.divideScalar(cans.length);
      const tt=Math.max(0.2,c0.clone().sub(sp0).dot(dir)); const tgt=sp0.clone().addScaledVector(dir,tt); const fl=tgt.distanceTo(sp0)/7.5;
-     v0=tgt.sub(sp0).divideScalar(fl); v0.y+=0.5*9.81*fl; } b.body.type=C.Body.DYNAMIC; b.body.wakeUp(); b.body.position.set(sp0.x,sp0.y,sp0.z); b.body.velocity.set(v0.x,v0.y,v0.z); b.t=0; b.thrown=true; if(st.kind==='d'){ dosenThrows++; drawBoard(); } return; }
+     v0=tgt.sub(sp0).divideScalar(fl); v0.y+=0.5*9.81*fl; } b.body.type=C.Body.DYNAMIC; b.body.wakeUp(); b.body.position.set(sp0.x,sp0.y,sp0.z); b.body.velocity.set(v0.x,v0.y,v0.z); b.t=0; b.thrown=true; b.it.thrown=true; b.it.idleT=0; if(st.kind==='d'){ dosenThrows++; drawBoard(); } return; }
  // fallback: approach nearest in look cone
  for(const st of stalls){ const p=st.g.getWorldPosition(new T.Vector3()); p.y=o.y; const to=p.clone().sub(o).normalize(); if(dir.dot(to)>0.85&&o.distanceTo(p)>2.2){ goToStall(st.g); return; } }
 });
 [G1,G2,G3].forEach(g=>g.traverse(o=>o.userData.stall=g)); // auch unsichtbare Kollider/Brett-Teile gehören zur Bude
-window.__k={simDoor,rayHitsSim,scoreRace:p=>score(p),world,physFrame,resetBall,stackCans,press,release,ctr,balls,cans,ducks,horses,shoot,board,holes,G1,G2,G3,goToStall,grantPrize,get score(){return {dosenScore,hitsD,shots,raceMsg,prizesWon:{...prizesWon},clock:window.__loopClock.sec,bonusUsed:window.__loopClock.bonusUsed}}};
+window.__k={simDoor,rayHitsSim,scoreRace:p=>score(p),world,physFrame,VG,rifleIt,get dosenThrows(){return dosenThrows},resetBall,stackCans,ctr,balls,cans,ducks,horses,shoot,board,holes,G1,G2,G3,goToStall,grantPrize,get score(){return {dosenScore,hitsD,shots,raceMsg,prizesWon:{...prizesWon},clock:window.__loopClock.sec,bonusUsed:window.__loopClock.bonusUsed}}};
 // ---------- Simulation
 const tmp=new T.Vector3(); let last=performance.now();
 function ctrPose(st){ const p=new T.Vector3(), q=new T.Quaternion(); st.c.getWorldPosition(p); st.c.getWorldQuaternion(q); return {p,q}; }
-function resetBall(b){ const body=b.body; body.type=C.Body.DYNAMIC; body.position.set(b.home.x,b.home.y,b.home.z); body.velocity.set(0,0,0); body.angularVelocity.set(0,0,0); body.sleep(); b.t=0; b.thrown=false; b.held=null; b.rattled=false; }
-function physFrame(dt,now){ const pres=R.xr.isPresenting;
- for(const st of ctr){ if(!st.pull||st.held) continue; const hp=new T.Vector3(); st.c.getWorldPosition(hp); if(hp.distanceTo(st.pull.m.position)<0.2) press(st,false); else if(now-st.pullT>1500) st.pull=null; }
- for(const st of ctr){ const {p,q}=ctrPose(st); st.pose={p,q}; st.tr.push(p,q,now/1000); const live=pres&&p.lengthSq()>1e-6; const tgt=live?p:new T.Vector3(0,-10,0);
-  const cur=new T.Vector3().copy(st.body.position), d=tgt.clone().sub(cur); st.body.collisionResponse=live&&!st.held&&now>(st.noHitUntil||0);
-  if(d.length()>0.28||dt<=0){ /* Snap-Back >28 cm */ st.body.position.set(tgt.x,tgt.y,tgt.z); st.body.velocity.set(0,0,0); } else st.body.velocity.set(d.x/dt,d.y/dt,d.z/dt); }
- physStep(dt,h=>{
-  for(const b of balls){ if(!b.held) continue; const st=b.held, tgt=st.off.clone().applyQuaternion(st.pose.q).add(st.pose.p); VR.lagFollow(b.lagP,b.lagV,tgt,0.15,h); b.body.position.set(b.lagP.x,b.lagP.y,b.lagP.z); b.body.velocity.set(b.lagV.x,b.lagV.y,b.lagV.z); }
+function resetBall(b){ VG.respawn(b.it); b.t=0; b.thrown=false; b.rattled=false; }
+// Dosenwerfen: 3 Bälle pro Runde; liegen nach dem 3. Wurf nicht alle Dosen, wird nach kurzer Pause neu gestapelt
+let dosenWait=0; function stepDosenRound(dt){ if(stepCansScore.busy) return; const db=balls.filter(b=>b.kind==='d');
+ if(dosenThrows>=3&&dosenScore<cans.length){ const flying=db.some(b=>b.it.heldBy||b.it.pulling||(b.thrown&&b.t<2.5)); if(flying) return; dosenWait+=dt; if(dosenWait<0.3) return;
+  dosenWait=0; stepCansScore.busy=true; dosenMsg=`${dosenScore}/${cans.length} – nochmal! Neue Runde …`; drawBoard(); SND.thud(0.5);
+  setTimeout(()=>{ stackCans(); dosenScore=0; dosenThrows=0; dosenMsg=''; db.forEach(b=>resetBall(b)); drawBoard(); stepCansScore.busy=false; },2500); } }
+function physFrame(dt,now){
+ VG.update(dt,now);
+ VG.step(dt,h=>{
   world.step(h);
   // Pferderennen: Kugel fällt in ein Loch, wenn sie langsam genug darüberrollt (zu schnell = springt drüber)
-  for(const b of balls){ if(b.kind!=='h'||b.held||b.body.sleepState===C.Body.SLEEPING) continue; const P=b.body.position; const l=board.worldToLocal(new T.Vector3(P.x,P.y,P.z)); if(l.y>0.08||Math.abs(l.x)>0.62||Math.abs(l.z)>0.45) continue;
-   const sp=b.body.velocity.length(); for(const [hx,hz,pts,,vmax] of holes){ const dh=Math.hypot(l.x-hx,l.z-hz); if(dh<0.045&&sp<vmax){ score(pts); SND.ding(); resetBall(b); break; }
-     if(dh<0.05&&sp<vmax*1.6&&!b.rattled){ b.rattled=true; const v=b.body.velocity; v.set(v.x*0.8+(Math.random()-0.5)*0.25,v.y,v.z*0.8); SND.clank&&SND.clank(0.25); } } }
+  for(const b of balls){ if(b.kind!=='h'||b.it.heldBy||b.it.pulling||b.body.sleepState===C.Body.SLEEPING) continue; const P=b.body.position; const l=board.worldToLocal(new T.Vector3(P.x,P.y,P.z)); if(l.y>0.08||Math.abs(l.x)>0.62||Math.abs(l.z)>0.45) continue;
+   const sp=b.body.velocity.length(); for(const [hx,hz,pts,,vmax] of holes){ const dh=Math.hypot(l.x-hx,l.z-hz); if(dh<0.05&&sp<vmax*1.3){ score(pts); SND.ding(); const th=b.it.thrownBy; if(th){ VR.haptic(R,th.side,0.4,40); setTimeout(()=>VR.haptic(R,th.side,0.5,50),120); } resetBall(b); break; }
+     if(dh<0.055&&sp<vmax*2&&!b.rattled){ b.rattled=true; const v=b.body.velocity; v.set(v.x*0.8+(Math.random()-0.5)*0.25,v.y,v.z*0.8); SND.clank&&SND.clank(0.25); } } }
  });
- for(const b of balls){ const P=b.body.position; b.m.position.set(P.x,P.y,P.z); b.m.quaternion.set(b.body.quaternion.x,b.body.quaternion.y,b.body.quaternion.z,b.body.quaternion.w);
-  if(!b.held&&b.thrown){ b.t+=dt; if(b.t>7||P.y<-1||Math.hypot(P.x,P.z)>12||(b.t>1.5&&b.body.sleepState===C.Body.SLEEPING&&P.y<0.2)) resetBall(b); } }
+ for(const it of prizeItems){ if(it.heldBy||it.pulling) continue; const P=it.body.position, Q=it.body.quaternion; it.mesh.position.set(P.x,P.y,P.z); it.mesh.quaternion.set(Q.x,Q.y,Q.z,Q.w); }
+ for(const b of balls){ if(b.it.heldBy||b.it.pulling) continue; const P=b.body.position; b.m.position.set(P.x,P.y,P.z); b.m.quaternion.set(b.body.quaternion.x,b.body.quaternion.y,b.body.quaternion.z,b.body.quaternion.w); if(b.thrown) b.t+=dt; }
+ stepDosenRound(dt);
  for(const c of cans){ const P=c.body.position, Q=c.body.quaternion; c.m.position.set(P.x,P.y,P.z); c.m.quaternion.set(Q.x,Q.y,Q.z,Q.w); }
  stepCansScore(); }
 function stepCansScore(){ const shelfTop=local(G1,0,shelfY,-0.55).y;
  const cnt=cans.filter(c=>{ const P=c.body.position; const up=new C.Vec3(0,1,0); const u=c.body.quaternion.vmult(up); return P.y<shelfTop-0.02||Math.hypot(P.x-c.base.x,P.z-c.base.z)>0.12||u.y<0.5; }).length;
- if(cnt!==dosenScore){ dosenScore=cnt; drawBoard(); if(cnt===cans.length&&!stepCansScore.busy){ stepCansScore.busy=true; SND.bell(); grantPrize('dosen','Plüsch vom Dosenwerfen',2); setTimeout(()=>{ stackCans(); dosenScore=0; dosenThrows=0; drawBoard(); stepCansScore.busy=false; },3500); } } }
+ if(cnt!==dosenScore){ dosenScore=cnt; drawBoard(); if(cnt===cans.length&&!stepCansScore.busy){ stepCansScore.busy=true; SND.bell(); grantPrize('dosen','Plüsch vom Dosenwerfen',2); setTimeout(()=>{ stackCans(); dosenScore=0; dosenThrows=0; balls.filter(b=>b.kind==='d').forEach(b=>resetBall(b)); drawBoard(); stepCansScore.busy=false; },3500); } } }
 // KI-Pferde „würfeln“ wie echte Kirmes-Gegner: alle 2,0–3,6 s ein Treffer (1–5 Punkte), das Rennen startet mit deinem ersten Wurf
 let raceStarted=false; const aiNext=[0,0,0,0];
 function score(p){ if(!raceOn) return; raceStarted=true; horses[0].x+=p*0.1; raceMsg=`+${p} – dein Pferd: ${Math.round(Math.min(1,horses[0].x)*100)} %`; drawBoard(); }
@@ -319,7 +326,7 @@ function stepRace(dt,t){ if(!raceOn) return; horses.forEach((h,i)=>{ if(!h.me&&r
  const w=horses.find(h=>h.x>=1); if(w){ raceOn=false; raceMsg=w.me?'Dein Pferd gewinnt! 🏆':'Verloren – nochmal!'; if(w.me){ SND.bell(); grantPrize('pferd','Plüsch vom Pferderennen',2); } drawBoard(); setTimeout(()=>{ horses.forEach(h=>{ h.x=0; h.tx=null; }); aiNext.fill(0); raceStarted=false; raceOn=true; raceMsg=''; drawBoard(); },5000); } }
 function stepDucks(t){ for(const d of ducks){ const sp=d.row?0.12:-0.16; let u=((d.ph+t*sp)%1+1)%1; const x=-0.95+u*1.9; d.g.position.set(x,d.row?1.87:1.47,d.row?-0.75:-0.6); const tg=d.down?-1.45:0; d.av=(d.av||0)+((tg-(d.rx||0))*90-(d.av||0)*7)*(1/60); d.rx=(d.rx||0)+d.av*(1/60); d.g.rotation.x=d.rx; } }
 function tick(){ const now=performance.now(), dt=Math.min(0.033,(now-last)/1000); last=now; const t=now/1000;
- const pres=R.xr.isPresenting; for(const st of ctr){ const p=new T.Vector3(); st.c.getWorldPosition(p); st.rifle.visible=pres&&nearG2(p)&&!st.held&&isAimingAt(st); st.ln.visible=pres&&st.rifle.visible; }
+ if(window.__pauseTick) return;
  physFrame(dt,now);
  stepDucks(t); stepRace(dt,t); dustP.rotation.y+=dt*0.01; const da=dustP.geometry.attributes.position; for(let i=0;i<da.count;i++){ let y=da.getY(i)+dt*0.02; if(y>3.2) y=0.2; da.setY(i,y);} da.needsUpdate=true; glows.forEach((g,i)=>g.material.opacity=0.6+0.12*Math.sin(t*3+i)); bulbs.forEach((b,i)=>b.material.color.offsetHSL(0,0,0)); }
 function isAimingAt(st){ const q=new T.Quaternion(); st.c.getWorldQuaternion(q); const d=new T.Vector3(0,0,-1).applyQuaternion(q); const p=new T.Vector3(); st.c.getWorldPosition(p); const to=new T.Vector3(); G2.getWorldPosition(to); to.y=1.6; to.sub(p).normalize(); return d.dot(to)>0.9; }
