@@ -106,6 +106,20 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
  const files=[]; const fileSpots=[[DX-0.25,DY,DZ-0.05,0.15],[DX+0.0,DY,DZ+0.25,-0.35],[42.24,1.32+0.06,-1.18,0.05],[40.35,0.705,1.32,0.4]];
  (window.APT_FILES||[]).forEach((f,i)=>{ const s=fileSpots[i]; if(!s) return; const m=new T.Mesh(new T.BoxGeometry(0.24,0.014,0.32),[mAt,mAt,mAt,mAt,mAt,mAt]); const u=m.geometry.attributes.uv, [u0,v0,u1,v1]=at(i*2%8,3+Math.floor(i/4),2,1); for(let k=0;k<u.count;k++) u.setXY(k,u0+u.getX(k)*(u1-u0),v0+u.getY(k)*(v1-v0));
   m.position.set(s[0],s[1]+0.007,s[2]); m.rotation.y=s[3]+Math.PI/2; G.add(m); files.push({hit:m,file:f}); });
+ // ---------- FBI-Parodie-Ausweise (Halli Galli offen, Fix Molder zu) – Untersuchen im Resident-Evil-Stil über ZSX (weltfest, nicht am Kopf) ----------
+ const interact=[], cards=[], easeIO=k=>k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+ const idCard=(url,x,z,ry,closed,name)=>K.gltf(url,m=>{ const b=new T.Box3().setFromObject(m), c=new T.Vector3(); b.getCenter(c); m.position.x-=c.x; m.position.z-=c.z; m.position.y-=b.min.y;
+  const g=new T.Group(); g.name='fbi_'+name; g.add(m); g.position.set(x,DY,z); g.rotation.y=ry; G.add(g); m.traverse(o=>{ if(o.isMesh&&o.material) o.material.envMapIntensity=0.2; });
+  const cd={g,m,mx:m.position.x,closed,cover:closed?m.getObjectByName('cover'):null,k:0,to:0,name}; cards.push(cd); interact.push({hit:g,recursive:true,name:'fbi_'+name,fn:(src,c)=>examineCard(cd,src,c)}); });
+ const examineCard=(cd,src,c)=>{ const Z=window.ZSX, A=window.__apt; if(!Z||Z.busy()) return; const R=sc.renderer, vr=R.xr.isPresenting; let mode=vr?'laser':'mouse', el=null;
+  if(vr&&src==='grip'){ const cp=new T.Vector3(), hp=new T.Vector3(); cd.g.getWorldPosition(cp); let bd=9; document.querySelectorAll('[laser-controls]').forEach(h=>{ h.object3D.getWorldPosition(hp); const d=hp.distanceTo(cp); if(d<bd){ bd=d; el=h; } }); if(el) mode='grip'; }
+  Z.examine(cd.g,{mode,src:el,size:cd.closed?0.15:0.2,dist:0.4,face:[0,1,0],up:[0,0,-1],
+   onStart:()=>{ if(A) A.busy=true; if(cd.cover) cd.to=1; },
+   onEnd:()=>{ if(cd.cover) cd.to=0; setTimeout(()=>{ if(A) A.busy=false; },120); } }); };
+ idCard('assets/apartment/office/fbi_id_halli_open.glb',40.05,-0.74,Math.PI+0.2,false,'halli');
+ idCard('assets/apartment/office/fbi_id_molder.glb',39.86,-0.62,Math.PI-0.35,true,'molder');
+ // Klappe: wie Clip 'open' (0,8 s, cover.rotation.z 0 → π), beim Zurücklegen wieder zu
+ let cardLast=0; const cardTick=now=>{ const dt=Math.min(0.1,(now-(cardLast||now))/1000); cardLast=now; cards.forEach(cd=>{ if(!cd.cover||cd.k===cd.to) return; cd.k=cd.to>cd.k?Math.min(cd.to,cd.k+dt/0.8):Math.max(cd.to,cd.k-dt/0.6); const e=easeIO(cd.k); cd.cover.rotation.z=Math.PI*e; cd.m.position.x=cd.mx+0.04275*e; /* offenes Etui bleibt mittig vor dir */ }); };
  // ---------- Licht ----------
  const lampS=new T.SpotLight(0xffc27a,4,4.5,0.85,0.6,2); lampS.position.set(DX-0.42,DY+0.42,DZ+0.0); lampS.target.position.set(DX-0.1,DY,DZ-0.1); G.add(lampS); G.add(lampS.target); K.glow(G,DX-0.42,DY+0.38,DZ,0.18,0xffd8a0,0.5);
  const crtL=new T.PointLight(0x50ff90,0,2.6,2); crtL.position.set(DX+0.15,DY+0.4,DZ-0.35); G.add(crtL);
@@ -122,10 +136,11 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
    if(tl>LINES.length*0.45+0.6){ const k=Math.min(MSG.length,Math.floor((tl-LINES.length*0.45-0.6)*11)); x.font='bold 19px "DejaVu Sans Mono","Courier New",monospace'; x.fillText(MSG.slice(0,k)+((Math.floor(t*2)%2)?'█':' '),12,y+12); if(k>=MSG.length&&!drawPC.done){ drawPC.done=1; try{ localStorage.setItem('zs_apt_rabbit','1'); }catch(e){} window.__apt&&(__apt.rabbit=true); } }
    x.shadowBlur=0; x.fillStyle='rgba(0,0,0,0.28)'; for(let yy=0;yy<H;yy+=3) x.fillRect(0,yy,W,1); crtL.intensity=0.35+0.03*Math.sin(now*0.05); }
   pcScr.material.color.setHex(0xffffff); pcT.needsUpdate=true; };
- const tick=(now)=>{ if(pcOn) drawPC(now); lampS.intensity=4*(0.99+0.01*Math.sin(now*0.017)); projS.intensity=1.4*(0.97+0.03*Math.sin(now*0.09)); slide.material.opacity=0.52+0.03*Math.sin(now*0.09); };
+ const tick=(now)=>{ cardTick(now); if(pcOn) drawPC(now); lampS.intensity=4*(0.99+0.01*Math.sin(now*0.017)); projS.intensity=1.4*(0.97+0.03*Math.sin(now*0.09)); slide.material.opacity=0.52+0.03*Math.sin(now*0.09); };
  const solid=[[39.72,41.28,-0.88,-0.12],[41.95,42.5,-1.9,0.0],[38,38.45,-1.92,-0.6],[40.1,40.6,0.9,1.5],[38.45,38.95,0.9,1.3],[41.6,42.1,0.5,0.9],[40.3,40.8,-1.45,-1.0]];
  const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const c=[[p.x-(a0-r),'x',a0-r],[(a1+r)-p.x,'x',a1+r],[p.z-(b0-r),'z',b0-r],[(b1+r)-p.z,'z',b1+r]].filter(e=>e[1]==='x'?(e[2]>=X0+r-1e-3&&e[2]<=X1-r+1e-3):(e[2]>=Z0+r-1e-3&&e[2]<=Z1-r+1e-3)).sort((u,v)=>u[0]-v[0])[0]; if(c) p[c[1]]=c[2]; } } };
+ interact.unshift({hit:pcHit,fn:pcPress,name:'pc'}); // PC bleibt Eintrag 0 (gfx_wohnung_buero.js)
  return {group:G,lights:[lampS,crtL,projS,hemi],collide,X0,X1,Z0,Z1,doors:{living:{pos:[DN.x,Z1-0.02],face:[0,-1],w:DN.w,spawn:[DN.x,Z1-0.8],yaw:0}},
-  interact:[{hit:pcHit,fn:pcPress,name:'pc'}],files,tick,pcIsOn:()=>pcOn};
+  interact,files,tick,pcIsOn:()=>pcOn};
 };
 })();
