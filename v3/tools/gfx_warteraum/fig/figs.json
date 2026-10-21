@@ -28,7 +28,7 @@
    }
   },
   "tris": {
-   "oma_body": 7941,
+   "oma_body": 8173,
    "oma_head": 1059,
    "oma_page": 2
   }
@@ -62,7 +62,7 @@
    }
   },
   "tris": {
-   "brand_body": 8158,
+   "brand_body": 8635,
    "brand_head": 362,
    "brand_arm": 480
   }
@@ -96,7 +96,7 @@
    }
   },
   "tris": {
-   "jaeger_body": 6434,
+   "jaeger_body": 8666,
    "jaeger_head": 2242,
    "jaeger_foot": 324
   }
@@ -130,7 +130,7 @@
    }
   },
   "tris": {
-   "taucher_body": 6841,
+   "taucher_body": 8073,
    "taucher_head": 1583,
    "taucher_foot": 576
   }
@@ -152,7 +152,7 @@
    }
   },
   "tris": {
-   "gruen_body": 8382,
+   "gruen_body": 8819,
    "gruen_head": 618
   }
  },
@@ -173,7 +173,7 @@
    }
   },
   "tris": {
-   "assi_body": 1835,
+   "assi_body": 2346,
    "assi_head": 5591,
    "assi_legs": 1574
   }
@@ -207,7 +207,7 @@
    }
   },
   "tris": {
-   "frl_body": 6523,
+   "frl_body": 7587,
    "frl_head": 1635,
    "frl_arm": 842
   }

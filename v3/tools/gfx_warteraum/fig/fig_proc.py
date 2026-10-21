@@ -38,12 +38,24 @@ for n,cf in FIGS.items():
     nrm=np.array([p.normal[:] for p in me.polygons])
     cpx=((ox+sx*cen[:,0])/R).astype(int).clip(0,W//R); cpy=((oy-s*cen[:,2])/R).astype(int).clip(0,H//R)
     vis=cen[:,1] <= zb[cpy,cpx]+0.035/k
-    shade=np.where(vis,1.0,0.55)*np.where(nrm[:,1]>0.35,0.6,1.0)   # verdeckt / nach hinten gewandt -> dunkler
+    shade=np.where(vis,1.0,0.6)   # verdeckt -> dunkler
+    # v2: Seitenflächen nehmen ihre Farbe etwas aus dem Inneren der Silhouette (gegen Hintergrund-/Stuhl-Bluten),
+    # Seiten werden zur Rückseite hin dunkler (Szenenfarbe), Rückseiten deutlich dunkel.
+    vn=np.array([x.normal[:] for x in me.vertices]); INS=cf.get('inset',0.03)/k
+    vi_=v-vn*INS*np.clip(np.abs(vn[:,0])+np.maximum(vn[:,1],0),0,1)[:,None]
+    px=ox+sx*vi_[:,0]; py=oy-s*vi_[:,2]
+    if cf.get('fixred'):   # Taucher: rote Stuhlfarbe auf seitlichen Anzug-Flächen -> nächstes nicht-rotes Pixel nehmen
+        Z=np.load(os.path.join(os.path.dirname(__file__),'fit',n+'_red.npz')); red,dist,near=Z['red'],Z['dist'],Z['near']   # aus fit_red (cv2, Systempython)
+        ix=np.clip(px.astype(int),0,W-1); iy=np.clip(py.astype(int),0,H-1)
+        m=(red[iy,ix]>0)&(np.abs(vn[:,0])>0.3)&(dist[iy,ix]<45)
+        yy,xx=near[iy[m],ix[m]].T; px[m]=xx; py[m]=yy; print('fixred',int(m.sum()))
+    side=np.clip(vn[:,1],-1,1)   # >0 = vom Betrachter weg
+    vshade=np.clip(1.0-0.55*np.clip(side+0.15,0,1)-0.18*np.abs(vn[:,0])**2,0.3,1.0)
     me.color_attributes.new('Col','BYTE_COLOR','CORNER'); col=me.color_attributes['Col']; uv=me.uv_layers['UVMap']
     for p in me.polygons:
         for li in p.loop_indices:
             vi=me.loops[li].vertex_index; uv.data[li].uv=(px[vi]/W,1-py[vi]/H)
-            c=shade[p.index]; col.data[li].color=(c,c,c,1)
+            c=shade[p.index]*vshade[vi]; col.data[li].color=(c,c*1.02,c*1.03,1)
     # Pixel -> Mesh
     def p2m(x,y): return ((x-ox)/sx,(oy-y)/s)
     def inbox(b,depth):
@@ -73,6 +85,30 @@ for n,cf in FIGS.items():
         for p in me.polygons:
             if lab.data[p.index].value==0 and p.center.z<zc: lab.data[p.index].value=9
     print('SPLIT',[(c[0],len(c[1])) for c in clean],flush=True); objs={}
+    # Kragen: Faces des Teils, die bis zu 3 Ringe vom Schnitt entfernt sind, als geschrumpfte Kopie im Körper
+    vf={}
+    for p in me.polygons:
+        for vv in p.vertices: vf.setdefault(vv,[]).append(p.index)
+    collars=[]
+    for i,(key,fs,pv,ax) in enumerate(clean):
+        S=set(fs); ring=set()
+        front={f for f in fs if any(lab.data[g].value!=i+1 for vv in me.polygons[f].vertices for g in vf[vv])}
+        ring|=front
+        for _ in range(3):
+            nxt=set()
+            for f in front:
+                for vv in me.polygons[f].vertices:
+                    for g in vf[vv]:
+                        if g in S and g not in ring: nxt.add(g)
+            ring|=nxt; front=nxt
+        collars.append(sorted(ring))
+    def dup(faces,name):
+        bm=bmesh.new(); bm.from_mesh(o.data); bm.faces.ensure_lookup_table(); keep=set(faces)
+        bmesh.ops.delete(bm,geom=[f for f in bm.faces if f.index not in keep],context='FACES')
+        bm.normal_update()
+        for vv in bm.verts: vv.co-=vv.normal*(0.004/k)
+        me2=bpy.data.meshes.new(name); bm.to_mesh(me2); bm.free(); ob=bpy.data.objects.new(name,me2); sc.collection.objects.link(ob); return ob
+    collar_objs=[dup(r,n+'_collar%d'%i) for i,r in enumerate(collars) if r]
     def split(val,name):
         idx=[p.index for p in o.data.polygons if o.data.attributes['part'].data[p.index].value==val]
         return sep(o,idx,name) if idx else None
@@ -84,8 +120,12 @@ for n,cf in FIGS.items():
     allv=v
     cx,cy=(allv[:,0].min()+allv[:,0].max())/2,(allv[:,1].min()+allv[:,1].max())/2
     M=Matrix.Scale(k,4)@Matrix.Rotation(math.pi,4,'Z')@Matrix.Translation((-cx,-cy,-zmn))
-    for ob in [o]+([legs] if legs else []):
+    for ob in [o]+([legs] if legs else [])+collar_objs:
         ob.data.transform(M)
+    if collar_objs:
+        for x in bpy.context.selected_objects: x.select_set(False)
+        for x in collar_objs+[o]: x.select_set(True)
+        bpy.context.view_layer.objects.active=o; bpy.ops.object.join()
     out={'k':k,'parts':{}}
     for key,(ob,pv,ax) in objs.items():
         pw=M@V(pv); ob.data.transform(Matrix.Translation(-pw)@M); ob.location=(0,0,0)

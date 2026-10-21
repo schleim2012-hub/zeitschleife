@@ -38,13 +38,14 @@ h=base*0.55+fine*0.12-pits*0.65
 h=(h-h.min())/(h.max()-h.min())
 hb=blur(h,1.2)
 # Farbe: Graphit-Teal in Senken, Silber-Trockenpinsel auf Graten, Lack-Tönung
-teal_dark=col(0x0f2523); teal=col(0x23413c); silver=col(0x8f9e96)
+teal_dark=col(0x17221f); teal=col(0x34423d); silver=col(0x8a918a)
 ridge=np.clip((hb-0.55)*3.2,0,1)**1.4*(0.5+0.5*fnoise(N,1.6,3))
 blotch=fnoise(N,2.6,4)
 c=lerp(teal_dark[None,None,:],teal[None,None,:],np.clip(hb*1.3,0,1)[...,None])
 c=lerp(c,silver[None,None,:],(ridge*0.55)[...,None])
 c*=(0.75+0.4*blotch)[...,None]
-c=lerp(c,c*col(0xb8c890)[None,None,:],0.35)  # gelblich-grüner Lack
+c=lerp(c,c*col(0xb8c890)[None,None,:],0.15)  # leicht gelblicher Lack (grau-teal bleibt)
+c=lerp(c,c*col(0x6a6450)[None,None,:],(np.clip((fnoise(N,2.8,21)-0.5)*2.2,0,1)*0.5)[...,None])  # Nikotin-/Schmutzwolken
 c*=(1-0.55*pits)[...,None]
 save(c,'wall_col.png'); save(normal_from_h(hb,9.0),'wall_nrm.png')
 # Rauheit/Metall in einen Kanal: (glTF metallicRoughness: G=rough, B=metal)
@@ -59,24 +60,37 @@ for i in range(900):
     x0,y0=rng.uniform(0,N,2); a=rng.uniform(0,6.28); L=rng.uniform(10,120)
     d.line([x0,y0,x0+math.cos(a)*L,y0+math.sin(a)*L],fill=int(rng.uniform(40,140)),width=1)
 scratch=np.asarray(img).astype(float)/255
-white=col(0xcfcbb2); green=col(0x1f4a33)
+white=col(0xa59c78); green=col(0x1d3a2a)   # vergilbtes Weiß, dunkles Grün (wenig Kontrast wie im Film)
 c=np.where(tile[...,None]==0,white,green)
-per=np.zeros((N,N)); 
+per=np.zeros((N,N)); tilt=np.zeros((N,N))
 for tx in range(4):
-    for ty in range(4): per[ty*T:(ty+1)*T,tx*T:(tx+1)*T]=rng.uniform(-0.06,0.06)
+    for ty in range(4):
+        per[ty*T:(ty+1)*T,tx*T:(tx+1)*T]=rng.uniform(-0.08,0.08)
+        a=rng.uniform(0,6.28); k=rng.uniform(0.0,0.6)   # leicht schief verlegte Fliesen
+        yy,xx=np.mgrid[0:T,0:T]/T-0.5; tilt[ty*T:(ty+1)*T,tx*T:(tx+1)*T]=k*(np.cos(a)*xx+np.sin(a)*yy)
 c=c*(1+per[...,None])
-grime=np.clip((wear-0.45)*2.0,0,1)
-c=lerp(c,c*col(0x6b6440),grime[...,None]*0.55)
-c*=(0.85+0.2*spots)[...,None]
-c=lerp(c,col(0x3a3a2a)[None,None,:],scratch[...,None]*0.25)
+grime=np.clip((wear-0.40)*1.8,0,1)
+c=lerp(c,c*col(0x5a5236),grime[...,None]*0.7)
+c*=(0.78+0.3*spots)[...,None]
+c=lerp(c,col(0x2a281c)[None,None,:],scratch[...,None]*0.35)
+# Absatz-Schrammen (kurze dunkle Bögen)
+img=Image.new('L',(N,N),0); d=ImageDraw.Draw(img)
+for i in range(420):
+    x0,y0=rng.uniform(0,N,2); r_=rng.uniform(8,40); a0=rng.uniform(0,360)
+    d.arc([x0-r_,y0-r_*0.4,x0+r_,y0+r_*0.4],a0,a0+rng.uniform(30,120),fill=int(rng.uniform(60,170)),width=int(rng.uniform(2,5)))
+scuff=blur(np.asarray(img).astype(float)/255,1.0)
+c=lerp(c,col(0x141210)[None,None,:],scuff[...,None]*0.45)
+# Flecken (alte Pfützen/Kaffee)
+st=np.clip((fnoise(N,3.0,22)-0.62)*4,0,1); c=lerp(c,c*col(0x7a6a40),st[...,None]*0.5)
 gx=np.minimum(x%T,T-1-x%T); gy=np.minimum(y%T,T-1-y%T); g=np.minimum(gx,gy)
-grout=np.clip(1-g/4.0,0,1)
-c=lerp(c,col(0x1c1a14)[None,None,:],grout[...,None]*0.85)
-# Rand der Fliesen dunkler (Schmutz in den Kanten)
-edge=np.clip(1-g/28.0,0,1)**2
-c*=(1-0.25*edge)[...,None]
+grout=np.clip(1-g/6.0,0,1)
+c=lerp(c,col(0x17140e)[None,None,:],grout[...,None]*0.9)
+# Schmutz in den Kanten, ausgefranst
+edge=np.clip(1-g/(40.0*(0.6+0.8*wear)),0,1)**1.6
+c*=(1-0.4*edge)[...,None]
+c=lerp(c,c.mean(2,keepdims=True)*col(0x9a9070),0.25)   # leicht entsättigt / vergilbt
 save(c,'floor_col.png')
-hf=1-grout*0.8-scratch*0.1+wear*0.05; save(normal_from_h(blur(hf[::2,::2],0.8),6.0),'floor_nrm.png')
+hf=1-grout*0.8-scratch*0.1-scuff*0.15+wear*0.05+tilt*0.35; save(normal_from_h(blur(hf[::2,::2],0.8),6.0),'floor_nrm.png')
 rough=np.dstack([np.zeros((N//2,N//2)),(0.45+0.45*grime[::2,::2]+0.3*grout[::2,::2]).clip(0,1),np.zeros((N//2,N//2))]); save(rough,'floor_mr.png')
 
 # ---------- Decke: Akustikputz, vergilbt, Wasserflecken ----------
