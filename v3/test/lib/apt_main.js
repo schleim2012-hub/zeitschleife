@@ -12,7 +12,7 @@ const A=window.__apt={room:null,rabbit:(()=>{ try{ return localStorage.getItem('
 AFRAME.registerComponent('apt-world',{init(){ const sc=this.el; sc.hasLoaded?setup(sc):sc.addEventListener('loaded',()=>setup(sc)); },tick(t,dt){ if(A.tick) A.tick(t,dt); }});
 function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT); aptLoadSFX(ROOT);
  const rig=document.getElementById('rig').object3D, camEl=document.getElementById('cam');
- const head=new T.Vector3(), hq=new T.Quaternion(); const getHead=()=>{ const c=R.xr.isPresenting?R.xr.getCamera():sc.camera; c.getWorldPosition(head); c.getWorldQuaternion(hq); return head; };
+ const head=new T.Vector3(), hq=new T.Quaternion(); const getHead=()=>{ /* sc.camera = Kopf im Rig (inkl. Snap-Drehung); xr.getCamera() trägt beim Tick die Rig-Drehung nicht -> Stick lief nach Snap in Weltachsen */ const c=sc.camera; c.updateWorldMatrix(true,false); c.getWorldPosition(head); c.getWorldQuaternion(hq); return head; };
  const before=new Set(S.children);
  // ---------- Schlafzimmer ----------
  const B84=build84(sc); const TVYAW=2.75; /* TV in der Ecke am Bettende (vorn links), Front schräg zum Kopfende des Betts */ const bedExtra=new T.Group(); bedExtra.name='bedExtra'; S.add(bedExtra);

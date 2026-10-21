@@ -3,7 +3,7 @@
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=1')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=m1525')+'"><\/script>'); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
@@ -145,7 +145,7 @@ window.zsaDoor=function(sceneEl,cfg,onOpen){ const T=THREE, S=sceneEl.object3D; 
   if(opened){ const k=Math.min(1,(now-t0)/600); hinge.rotation.y=-0.14-1.15*k*k*(3-2*k); L.intensity=1.4*k; glowP.material.opacity=0.3+0.5*k; return; }
   if(shake&&now-shake<350){ hinge.rotation.y=(locked?0:-0.14)+Math.sin((now-shake)*0.09)*0.012*(1-(now-shake)/350); }
   else if(!locked) hinge.rotation.y=-0.14+0.012*Math.sin(now*0.0011);
-  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head);
+  const cam=sceneEl.camera; if(!cam) return; cam.getWorldPosition(head);
   knob.getWorldPosition(knobW); loc.copy(head); g.worldToLocal(loc); const inDoor=Math.abs(loc.x)<0.45&&loc.z<0.25&&loc.z>-0.5; if(inDoor&&!inside){ inside=true; return open(); } if(!inDoor) inside=false;
   if(!R.xr.isPresenting) return; for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(knobW)<0.17) return open(); } };
  (window.__zsaSteps=window.__zsaSteps||[]).push(step);
@@ -186,7 +186,7 @@ window.zsaKey=function(sceneEl,cfg,onFound){ const T=THREE, S=sceneEl.object3D; 
  const gripEls=new Set(); const hookG=()=>document.querySelectorAll('[laser-controls],[hand-controls],[oculus-touch-controls]').forEach(el=>{ if(gripEls.has(el)) return; gripEls.add(el); el.addEventListener('gripdown',()=>{ if(found) return; el.object3D.getWorldPosition(hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.45) take(); }); }); hookG(); [1000,4000].forEach(ms=>setTimeout(hookG,ms));
  sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||found||!enabled||(window.ZSX&&ZSX.busy())) return; if(zsaMouseRay(sceneEl,e).intersectObject(hitS,false).length) take(); });
  (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found||!enabled) return; const now=performance.now(); if(hidden) syncA(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.55:0; spr.material.rotation=now*0.002;
-  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<(hidden?0.6:0.75)&&now-enT>1400) return take();
+  const cam=sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<(hidden?0.6:0.75)&&now-enT>1400) return take();
   if(R.xr.isPresenting) for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(kp)<0.32) return take(); } });
  holder.userData.take=take; holder.userData.enabled=()=>enabled; return holder; };
 // Sprachzeilen (ElevenLabs, Kap. 6 Verzweigungskonzept). VO_AT: wann sie in der Alpha laufen (enter = nach Betreten + delay s, key = Schlüssel gefunden)
@@ -217,7 +217,7 @@ window.zsaSay=function(id,sec){ const v=VO[id]; if(!v) return; const sc=document
  if(subM){ S.remove(subM); subM=null; } const c=document.createElement('canvas'); c.width=1024; c.height=72; const x=c.getContext('2d'); x.font='500 30px sans-serif'; const t=v[0]+': '+v[1]; let fs=30; while(x.measureText(t).width>980&&fs>18){ fs-=2; x.font='500 '+fs+'px sans-serif'; } const w=Math.min(1010,x.measureText(t).width+40);
  x.fillStyle='rgba(0,0,0,0.45)'; x.fillRect(512-w/2,6,w,60); x.fillStyle='#d9c79e'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,512,37);
  const tx=new T.CanvasTexture(c); tx.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(1.0,0.07),new T.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,toneMapped:false,fog:false}));
- const cam=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; const hp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize();
+ const cam=sc.camera; const hp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize();
  m.position.copy(hp).addScaledVector(f,1.8); m.position.y=hp.y-0.42; m.lookAt(hp.x,m.position.y,hp.z); m.renderOrder=5; S.add(m); subM=m;
  const hold=()=>Math.max(3.2,(isFinite(a.duration)?a.duration:4)+0.8); setTimeout(()=>{ const t0=performance.now(); const fd=()=>{ const k=Math.min(1,(performance.now()-t0)/800); m.material.opacity=1-k; if(k<1) requestAnimationFrame(fd); else if(subM===m){ S.remove(m); subM=null; } }; fd(); },(sec||hold())*1000); };
 window.zsaVO=VO;

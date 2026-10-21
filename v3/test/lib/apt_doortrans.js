@@ -25,7 +25,7 @@ window.aptSND=SND;
 if(window.AFRAME&&!AFRAME.systems['apt-ticker']) AFRAME.registerSystem('apt-ticker',{tick(){ const L=window.__aptTicks; if(!L||!L.length) return; for(let i=L.length-1;i>=0;i--){ let r; try{ r=L[i](); }catch(e){ console.error(e); r=false; } if(r===false) L.splice(i,1); } }});
 let busy=false;
 window.aptDoorTrans=function(sc,o){ if(busy) return false; busy=true; o=o||{}; const TH=T(), S=sc.object3D, R=sc.renderer;
- const cam=()=>R.xr.isPresenting?R.xr.getCamera():sc.camera; const head=new TH.Vector3(), q=new TH.Quaternion(); cam().getWorldPosition(head); cam().getWorldQuaternion(q);
+ const cam=()=>sc.camera; const head=new TH.Vector3(), q=new TH.Quaternion(); cam().getWorldPosition(head); cam().getWorldQuaternion(q);
  const fwd=new TH.Vector3(0,0,-1).applyQuaternion(q); fwd.y=0; if(fwd.lengthSq()<1e-4) fwd.set(0,0,-1); fwd.normalize();
  // Schwarze Kugel um den Kopf (weltfest), deckt alles ab
  const blackM=new TH.MeshBasicMaterial({color:0x000000,side:TH.BackSide,transparent:true,opacity:0,depthTest:false,depthWrite:false,fog:false});

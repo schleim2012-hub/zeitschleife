@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Simulator-Kabine</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=14"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/alpha.js?v=m1525"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=1"></script><script src="lib/kring.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8e4dc;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .35s}</style></head><body>
 <div id="hud"><b>Simulator-Kabine</b><br>VR: L-Stick gehen · R-Stick drehen · Laser+Trigger auf die Tür = einsteigen/aussteigen<br>Desktop: WASD · Klick auf die Tür · Schild „← KIRMES“ hinten = zurück</div>
@@ -165,12 +165,13 @@ if(window.worldDust) worldDust(S,{count:35,rMin:0.9,rMax:2.4,yMin:0.5,yMax:2.6,c
  window.__sim={go,get inside(){return inside;},scr,wall,board,AUD};
 });
 // Fortbewegung: L-Stick gehen (außen), R-Stick Snap-Drehen; innen sitzt man (keine Bewegung)
+window.zsSnapTurn=window.zsSnapTurn||function(rigO,s,sc){ /* Snap-Drehung um den KOPF (nicht um den Rig-Ursprung), sonst springt man seitlich weg */ const cam=(sc||document.querySelector('a-scene')).camera, a=new THREE.Vector3(), b=new THREE.Vector3(); cam.getWorldPosition(a); rigO.rotation.y-=s*Math.PI/6; rigO.updateMatrixWorld(true); cam.getWorldPosition(b); rigO.position.x+=a.x-b.x; rigO.position.z+=a.z-b.z; };
 AFRAME.registerComponent('sim-move',{init(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ const hl=document.getElementById('hl'), hr=document.getElementById('hr');
-  hl.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; }); hr.addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
+  hl.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; }); hr.addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; zsSnapTurn(this.el.object3D,Math.sign(x),this.el.sceneEl); } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
  tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000, cam=document.getElementById('cam'); const c=cam.object3D.position;
   if(inside){ cam.setAttribute('wasd-controls','enabled',false); c.x=Math.max(-0.35,Math.min(0.35,c.x)); c.z=Math.max(-0.3,Math.min(0.5,c.z)); return; }
   cam.setAttribute('wasd-controls','enabled',true);
-  const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new THREE.Quaternion(); cam.object3D.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
+  const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new THREE.Quaternion(); this.el.sceneEl.camera.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
   // Halle begrenzen, Kabine ist fest (nicht durchlaufen)
   const wx=o.position.x+c.x, wz=o.position.z+c.z; let nx=Math.max(OUT.x-5,Math.min(OUT.x+5,wx)), nz=Math.max(OUT.z-7,Math.min(OUT.z+3,wz));
   const kx0=OUT.x-1.4, kx1=OUT.x+1.4, kz0=OUT.z-3.4-3.5, kz1=OUT.z-3.4+0.3; if(nx>kx0&&nx<kx1&&nz>kz0&&nz<kz1){ const dz1=kz1-nz, dx0=nx-kx0, dx1=kx1-nx; const m=Math.min(dz1,dx0,dx1); if(m===dz1) nz=kz1; else if(m===dx0) nx=kx0; else nx=kx1; }

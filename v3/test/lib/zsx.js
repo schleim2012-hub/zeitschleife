@@ -9,7 +9,7 @@ const BASE=(document.currentScript&&document.currentScript.src||'').replace(/zsx
 const Z=window.ZSX={active:false,endT:0,hold:false,cur:null,stick:{},revealed:[],
  busy(){ return Z.active||performance.now()-Z.endT<350||Z.hold; }};
 const scn=()=>document.querySelector('a-scene');
-function head(p,q){ const s=scn(), R=s.renderer, cam=R.xr.isPresenting?R.xr.getCamera():s.camera; cam.getWorldPosition(p); if(q) cam.getWorldQuaternion(q); return p; }
+function head(p,q){ const s=scn(), R=s.renderer, cam=s.camera; cam.getWorldPosition(p); if(q) cam.getWorldQuaternion(q); return p; }
 // ---------- leise Klänge (WebAudio, kein Asset)
 const AC=()=>{ try{ return window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); }catch(e){ return null; } };
 function noise(dur,type,f,q,vol,env,delay){ const ac=AC(); if(!ac) return; try{ac.resume();}catch(e){} const n=Math.max(1,Math.floor(ac.sampleRate*dur)), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);

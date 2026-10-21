@@ -52,9 +52,9 @@ function build3D(video){ const T=window.THREE, grp=new T.Group(), inner=new T.Gr
  return G3={grp,inner,wtex,tun,cap,lines,geo,st,pos,video}; }
 // Blickrichtung (nur Yaw) des Kopfes: in XR die echte Headset-Kamera, sonst die A-Frame-Kamera
 function viewYaw(sceneEl){ const T=window.THREE, r=sceneEl.renderer, q=new T.Quaternion();
- const cam=(r&&r.xr&&r.xr.isPresenting)?r.xr.getCamera():sceneEl.camera; cam.getWorldQuaternion(q);
+ const cam=sceneEl.camera; cam.getWorldQuaternion(q);
  const d=new T.Vector3(0,0,-1).applyQuaternion(q); return Math.atan2(-d.x,-d.z); }
-function headPos(sceneEl){ const T=window.THREE, r=sceneEl.renderer, p=new T.Vector3(); const cam=(r&&r.xr&&r.xr.isPresenting)?r.xr.getCamera():sceneEl.camera; cam.getWorldPosition(p); return p; }
+function headPos(sceneEl){ const T=window.THREE, r=sceneEl.renderer, p=new T.Vector3(); const cam=sceneEl.camera; cam.getWorldPosition(p); return p; }
 function hyperspace(sceneEl,o={}){ const dur=o.duration||2.6; if(!G3) build3D(o.video); const {grp,wtex,tun,cap,lines,geo,st,pos,video}=G3;
  // Zentriert auf die aktuelle Blickrichtung: Position = Kopf, Rotation = nur Yaw (Horizont bleibt gerade, kein Kippen/Rollen)
  const yaw=o.yaw!=null?o.yaw:viewYaw(sceneEl); grp.position.copy(headPos(sceneEl)); grp.rotation.set(0,yaw,0); G3.yaw=yaw;

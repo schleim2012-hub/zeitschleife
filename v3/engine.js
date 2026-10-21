@@ -682,12 +682,12 @@ function physStep(dt){ for(let i=phys.length-1;i>=0;i--){ const q=phys[i]; if(q.
   q.g.position.copy(propG.worldToLocal(q.p.clone())); q.g.rotation.x+=dt*4; } }
 // ---------- Blick-Reaktionen: lange auf eine Figur starren löst eine Reaktion aus (datengetrieben: hotspot.gaze)
 let gazeH=null, gazeT=0; const rcG=new THREE.Raycaster();
-function gazeStep(dt){ if(mode!=='play'){ gazeT=0; return; } const T=THREE, cam=(sceneEl.renderer.xr.isPresenting?sceneEl.renderer.xr.getCamera():sceneEl.camera), q=new T.Quaternion(); cam.getWorldQuaternion(q);
+function gazeStep(dt){ if(mode!=='play'){ gazeT=0; return; } const T=THREE, cam=sceneEl.camera, q=new T.Quaternion(); cam.getWorldQuaternion(q);
  rcG.set(eyePos(),new T.Vector3(0,0,-1).applyQuaternion(q)); const h=rcG.intersectObjects(hitMeshes,false).map(x=>x.object.userData.hs).find(s=>s&&s.gaze&&(s.when===undefined||cond(s.when)));
  if(h!==gazeH){ gazeH=h; gazeT=0; } if(!h) return; gazeT+=dt; const k=S.node+':'+h.id; if(gazeT>=(h.gaze.sec||4)){ gazeT=0; if(!S.gazed[k]){ S.gazed[k]=1; run(h.gaze.do); } else if(h.id==='mara') bark('gazeMara'); } }
 // ---------- Raumklang als Hinweis: piepsende Items und summende Lampe, positionsgenau (WebAudio-Panner, HRTF)
 let beepT=0, humNode=null;
-function audioListener(){ if(!actx) return; const T=THREE, cam=(sceneEl.renderer.xr.isPresenting?sceneEl.renderer.xr.getCamera():sceneEl.camera), p=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(p); cam.getWorldQuaternion(q);
+function audioListener(){ if(!actx) return; const T=THREE, cam=sceneEl.camera, p=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(p); cam.getWorldQuaternion(q);
  const f=new T.Vector3(0,0,-1).applyQuaternion(q), u=new T.Vector3(0,1,0).applyQuaternion(q), L=actx.listener;
  if(L.positionX){ L.positionX.value=p.x; L.positionY.value=p.y; L.positionZ.value=p.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } else { L.setPosition(p.x,p.y,p.z); L.setOrientation(f.x,f.y,f.z,u.x,u.y,u.z); } }
 function panAt(g){ const p=new THREE.Vector3(); g.getWorldPosition(p); const pn=actx.createPanner(); pn.panningModel='HRTF'; pn.distanceModel='inverse'; pn.refDistance=0.6; pn.rolloffFactor=1.4; pn.positionX?(pn.positionX.value=p.x,pn.positionY.value=p.y,pn.positionZ.value=p.z):pn.setPosition(p.x,p.y,p.z); pn.connect(actx.destination); return pn; }

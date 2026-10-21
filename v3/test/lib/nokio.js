@@ -98,7 +98,7 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
   if(!N.looking) return; if(N.mode==='snake'){ const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[k]; if(m){ gTurn(...m); e.preventDefault(); } return; }
   if(k==='ArrowDown'||k==='ArrowRight'||k==='Enter'){ press(); e.preventDefault(); } else if(k==='ArrowUp'||k==='ArrowLeft'){ back1(); e.preventDefault(); } });
  const hp=V(), pp=V(); let last=performance.now(), acc=0, idleT=0;
- const tick=()=>{ const now=performance.now(), dt=Math.min(0.1,(now-last)/1000); last=now; const R=sc.renderer, cam=R.xr.isPresenting?R.xr.getCamera():sc.camera;
+ const tick=()=>{ const now=performance.now(), dt=Math.min(0.1,(now-last)/1000); last=now; const R=sc.renderer, cam=sc.camera;
   const ex=!!(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D); let near=false; if(cam&&el.object3D.parent){ cam.getWorldPosition(hp); el.object3D.getWorldPosition(pp); near=R.xr.isPresenting&&hp.distanceTo(pp)<0.36; }
   const look=ex||near; if(look&&!N.looking) open(); if(!look&&N.looking){ N.looking=false; if(N.mode==='snake') N.mode='menu'; }
   if(window.ZSX) ZSX.noRotate=ex&&N.mode==='snake';
