@@ -4,7 +4,7 @@
    fern: Silhouetten + abgedunkeltes Foto im lila Dunst. Licht: nur praktisch (2 Neon, 1 Laterne). window.buildStreet41(sceneEl,C) */
 (function(){
 let sd=2041; const rnd=()=>{ sd=(sd*16807)%2147483647; return sd/2147483647; };
-window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/s41/';
+window.buildStreet41=function(sc,C){ const BK=!!window.ZSBake&&!/[?&]nobake=1/.test(location.search), LK=BK?0.6:1; const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/s41/';
  const ld=(f,srgb,rx,ry)=>{ const t=TL.load(B+f); t.wrapS=t.wrapT=T.RepeatWrapping; if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; if(rx) t.repeat.set(rx,ry||rx); return t; };
  const cv=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
  const XF=3.3, Z0=14, Z1=-40;
@@ -35,7 +35,7 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  // Umgebung für nasse Spiegelung (Neon-Farben im Dunkeln)
  const env=(()=>{ const t=cv(512,256,(x,w,h)=>{ x.fillStyle='#07060c'; x.fillRect(0,0,w,h); [['#ff3a28',60],['#30e0ff',180],['#ff40d0',300],['#40ff90',420]].forEach(([c,u])=>{ x.fillStyle=c; x.fillRect(u,70,14,60); }); x.fillStyle='rgba(220,230,160,0.9)'; x.fillRect(250,40,30,8); const g=x.createLinearGradient(0,128,0,256); g.addColorStop(0,'#1a1430'); g.addColorStop(1,'#050408'); x.fillStyle=g; x.fillRect(0,128,w,128); }); t.mapping=T.EquirectangularReflectionMapping; const pm=new T.PMREMGenerator(sc.renderer); const e=pm.fromEquirectangular(t).texture; pm.dispose(); return e; })();
  MAT.asph.envMap=env; MAT.asph.envMapIntensity=0.9; winM.envMap=env; winM.envMapIntensity=1.2;
- Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.matrixAutoUpdate=false; G.add(m); });
+ Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(merge(gs),MAT[k]); m.name='s41_'+k; m.matrixAutoUpdate=false; G.add(m); });
  if(lit.length){ [0,1].forEach(v=>{ const gs=lit.filter(l=>l[1]===v).map(l=>l[0]); if(!gs.length) return; const m=new T.Mesh(merge(gs.map(g=>{ g=g.toNonIndexed(); return g; })),new T.MeshBasicMaterial({color:v?0x6a4a28:0x1f4a50})); G.add(m); }); }
  // ---- Neon-Schilder: Glühen, Halo im Dunst, Spiegelstreifen am nassen Boden ----
  const halo=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.3,'rgba(255,255,255,0.35)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
@@ -63,13 +63,13 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  neon('HOTEL',0xff3a24,true,-1,-3.2,4.6,0.62); neon('BAR42',0x30e0ff,true,1,-6.1,3.7,0.56,true); neon('SOYLENT',0x50ff90,true,1,-12.5,5.0,0.6); neon('PFANDLEIHE',0xff40d0,false,-1,-9.5,3.25,0.42); neon('KARAOKE',0xff5aa0,true,-1,-16,4.6,0.55,true); neon('+',0x40ff80,false,1,-17.5,3.4,0.7);
  neon('OFFEN',0xff2a2a,false,1,-1.25,1.8,0.22); finishSigns();
  // Neon-Lichtquellen (praktisch): Rot links vorne, Cyan rechts
- const Lr=new T.PointLight(0xff3a28,7,10,1.6); Lr.position.set(-2.7,4.2,-3.0); G.add(Lr); const Lc=new T.PointLight(0x30d8ff,7,9,1.5); Lc.position.set(2.2,2.6,-7.0); G.add(Lc);
+ const Lr=new T.PointLight(0xff3a28,7*LK,10,1.6); Lr.position.set(-2.7,4.2,-3.0); G.add(Lr); const Lc=new T.PointLight(0x30d8ff,7*LK,9,1.5); Lc.position.set(2.2,2.6,-7.0); G.add(Lc);
  // ---- Laterne mit Wackelkontakt (links, z -6.5) ----
  const poleM=new T.MeshStandardMaterial({color:0x1c1e1c,roughness:0.5,metalness:0.6});
  const lampGrp=new T.Group(); const pole=new T.Mesh(new T.CylinderGeometry(0.06,0.09,5.2,10)); pole.position.set(-2.55,2.6,-6.2); lampGrp.add(pole); const arm=new T.Mesh(new T.CylinderGeometry(0.04,0.04,1.1,8)); arm.rotation.z=Math.PI/2-0.15; arm.position.set(-2.05,5.15,-6.2); lampGrp.add(arm);
  const headM=new T.MeshBasicMaterial({color:0xe8f0b0,toneMapped:false}); const head=new T.Mesh(new T.CylinderGeometry(0.22,0.14,0.16,14)); head.position.set(-1.5,5.05,-6.2); lampGrp.add(head); G.add(flat(lampGrp,poleM)); const lens=new T.Mesh(new T.CircleGeometry(0.17,14),headM); lens.rotation.x=Math.PI/2; lens.position.set(-1.5,4.965,-6.2); G.add(lens);
  const lhs=new T.Sprite(new T.SpriteMaterial({map:halo,color:0xd8e098,transparent:true,opacity:0.45,blending:T.AdditiveBlending,depthWrite:false})); lhs.position.set(-1.5,4.9,-6.2); lhs.scale.set(3.2,3.2,1); G.add(lhs);
- const Ll=new T.PointLight(0xd8e4a0,9,12,1.5); Ll.position.set(-1.5,4.7,-6.2); G.add(Ll);
+ const Ll=new T.PointLight(0xd8e4a0,9*LK,12,1.5); Ll.position.set(-1.5,4.7,-6.2); G.add(Ll);
  // ---- Kabel über die Gasse ----
  const cabM=new T.MeshStandardMaterial({color:0x080808,roughness:0.5}); const cabG=new T.Group();
  [[-1.5,6.5,7.2],[-5,7.4,6.8],[-9,6.2,7.6],[-13,8,7.2],[-18,6.8,7.4]].forEach(([z,y1,y2])=>{ const a=new T.Vector3(-XF+0.1,y1,z), b=new T.Vector3(XF-0.1,y2,z+(rnd()-0.5)*1.5), m=a.clone().lerp(b,0.5); m.y-=0.9+rnd()*0.6; cabG.add(new T.Mesh(new T.TubeGeometry(new T.QuadraticBezierCurve3(a,m,b),24,0.012,4))); }); G.add(flat(cabG,cabM));
@@ -102,7 +102,7 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  // ---- Ferne Schicht: Foto + Dunst ----
  const far=new T.MeshBasicMaterial({color:0x6a5a90}); TL.load('../assets/era2041/street_backdrop.jpg',t=>{ t.colorSpace=T.SRGBColorSpace; far.map=t; far.needsUpdate=true; }); const fp=new T.Mesh(new T.PlaneGeometry(14,10),far); fp.position.set(0,4.5,-34); G.add(fp);
  [[0,3,-14,16,0.12],[0,2,-22,22,0.15],[0,5,-9,10,0.06]].forEach(([x,y,z,s,o])=>{ const h=new T.Sprite(new T.SpriteMaterial({map:halo,color:0x5a4a8a,transparent:true,opacity:o,depthWrite:false})); h.position.set(x,y,z); h.scale.set(s,s*0.6,1); G.add(h); });
- S.add(new T.HemisphereLight(0x2a2244,0x060508,0.5));
+ S.add(new T.HemisphereLight(0x2a2244,0x060508,BK?0.3:0.5));
  // ---- 3D-Passanten (Mantel, Silhouette im Gegenlicht) ----
  const coatM=new T.MeshStandardMaterial({color:0x040405,roughness:1}); const persons=[];
  const person=(i)=>{ const woman=i===0; const g=new T.Group();
@@ -120,9 +120,17 @@ window.buildStreet41=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.Text
  { const dg=new T.Group(); const body=new T.Mesh(new T.BoxGeometry(1.7,1.05,0.95)); body.position.set(0,0.6,0); dg.add(body); const lid=new T.Mesh(new T.BoxGeometry(1.75,0.06,1.0)); lid.position.set(0,1.16,-0.05); lid.rotation.x=-0.12; dg.add(lid); [[-0.7,0.4],[0.7,0.4],[-0.7,-0.4],[0.7,-0.4]].forEach(([x,z])=>{ const w=new T.Mesh(new T.CylinderGeometry(0.07,0.07,0.05,10)); w.rotation.z=Math.PI/2; w.position.set(x,0.07,z); dg.add(w); }); for(let k=0;k<4;k++){ const r=new T.Mesh(new T.BoxGeometry(1.72,0.04,0.02)); r.position.set(0,0.3+k*0.22,0.48); dg.add(r); }
   const dmM=new T.MeshStandardMaterial({map:shutM.map,color:0x2a4a3a,roughness:0.55,metalness:0.6}); const dump=flat(dg,dmM); dump.position.set(1.35,0,-4.15); dump.rotation.y=0.08; G.add(dump); }
  const hz=new T.Sprite(new T.SpriteMaterial({map:halo,color:0x3a3060,transparent:true,opacity:0.18,depthWrite:false})); hz.position.set(1.4,1.0,-4.6); hz.scale.set(3.5,2.2,1); G.add(hz);
+ // ---- Gebackenes Licht (Blender) + Decals/Plakatreste (je 1 Draw) ----
+ if(window.ZSBake){ const D=[], PO=[]; let pi=0;
+  [[0.6,1.4,1.3,1],[-1.2,-1.6,1.1,9],[1.5,-5.2,1.4,0],[-0.6,-8.4,1.2,1],[0.2,-11.5,1.6,0],[-1.5,2.8,1.0,0],[1.0,-2.2,0.6,6],[-0.4,-4.6,0.5,6],[0.8,0.2,1.2,2],[-1.0,-6.8,1.4,2],[1.6,-9.6,1.0,2],[-0.2,-13.5,1.3,1],[0.3,4.2,1.2,8]].forEach(([x,z,w,c],i)=>D.push([c,x,0.004,z,w,w*(c==8?2.5:1),'y',i*1.3]));
+  [-1,1].forEach(sg=>{ for(let z=6;z>-16;z-=3.6) D.push([7,sg*2.05,0.004,z,0.5,3.8,'y',0]); });
+  shops.forEach(([x,z,z1,sg,k])=>{ if(z1>8||z<-17) return; const wx=x-sg*0.006, f=sg>0?'-x':'+x', cz=(z+z1)/2, wl=z-z1;
+   D.push([4,wx,0.35,cz,wl*0.9,0.7,f]); D.push([5,wx,3.0,cz+(k%2?0.6:-0.6),1.2,1.1,f]); if(k%2) D.push([10,wx,4.6,cz-0.8,1.6,1.4,f]); else D.push([3,wx,2.2,z-0.3,0.6,0.9,f,0.4]);
+   if(Math.abs(cz-2.0)<1.6&&sg>0) return; PO.push([(pi++)%4,wx-sg*0.002,1.55,z-0.32,0.42,0.6,f,(k%3-1)*0.05]); });
+  ZSBake.realism(G,sc,{room:'s41',base:'../assets/bake/gasse2041/',texRoot:'../assets/tex/realism/',lmGain:1,aoInt:0.6,specGain:3,decals:D,posters:PO}); }
  // ---- Animation ----
- let flk=1; const update=(t)=>{ const s=t*0.001; if(Math.random()<0.05) flk=Math.random()<0.4?0.05:1; Ll.intensity=9*flk; headM.color.setHex(flk>0.5?0xe8f0b0:0x30342a); lhs.material.opacity=0.45*flk;
-  signs.forEach((g,i)=>{ if(!g.flick) return; if(Math.random()<0.02){ g.base=Math.random()<0.3?0.3:1; setSign(g,g.base); if(i===1) Lc.intensity=7*(0.5+0.5*g.base); } });
+ let flk=1; const update=(t)=>{ const s=t*0.001; if(Math.random()<0.05) flk=Math.random()<0.4?0.05:1; Ll.intensity=9*LK*flk; headM.color.setHex(flk>0.5?0xe8f0b0:0x30342a); lhs.material.opacity=0.45*flk;
+  signs.forEach((g,i)=>{ if(!g.flick) return; if(Math.random()<0.02){ g.base=Math.random()<0.3?0.3:1; setSign(g,g.base); if(i===1) Lc.intensity=7*LK*(0.5+0.5*g.base); } });
   persons.forEach((p,i)=>{ const b=Math.sin(s*1.6+i*1.9); p.scale.set(1+0.008*b,1+0.006*b,1+0.012*b); p.rotation.x=0.015*Math.sin(s*0.4+i); });
   steam.forEach((sp,i)=>{ sp.position.y=0.3+((s*0.25+i*0.4)%2.8); sp.material.opacity=0.08*(1-sp.position.y/3.2); sp.position.x=0.9+Math.sin(s*0.5+sp.userData.ph)*0.2*sp.position.y; });
   drone.position.set(Math.sin(s*0.12)*1.8,7.5+Math.sin(s*0.5)*0.2,-9+Math.cos(s*0.12)*4); drone.rotation.y=s*0.3; led.visible=(s%1.2)<0.15; };
