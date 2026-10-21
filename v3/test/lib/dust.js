@@ -2,7 +2,7 @@
 // Verlässt ein Teilchen den Bereich, taucht es woanders im Raum wieder auf (unsichtbar weit weg/ausgeblendet) – nichts klebt am Blick.
 window.worldDust=function(sceneEl,o={}){ const T=THREE, S=sceneEl.object3D, N=o.count||70, rMin=o.rMin||1.0, rMax=o.rMax||4.0, yMin=o.yMin==null?0.3:o.yMin, yMax=o.yMax||3.2;
  const pos=new Float32Array(N*3), vel=new Float32Array(N*3), age=new Float32Array(N), col=new Float32Array(N*3); const c0=new T.Color(o.color||0xffd8a0), c1=new T.Color(o.color2||o.color||0xffb070);
- const head=new T.Vector3(); const getHead=()=>{ const r=sceneEl.renderer; const cam=(r&&r.xr&&r.xr.isPresenting)?r.xr.getCamera():sceneEl.camera; if(cam) cam.getWorldPosition(head); return head; };
+ const head=new T.Vector3(); const getHead=()=>{ const r=sceneEl.renderer; const cam=sceneEl.camera; if(cam) cam.getWorldPosition(head); return head; };
  const spawn=(i,h)=>{ const a=Math.random()*Math.PI*2, d=rMin+Math.random()*(rMax-rMin); pos[i*3]=h.x+Math.cos(a)*d; pos[i*3+1]=yMin+Math.random()*(yMax-yMin); pos[i*3+2]=h.z+Math.sin(a)*d;
   vel[i*3]=(Math.random()-0.5)*0.05; vel[i*3+1]=(Math.random()-0.35)*0.03; vel[i*3+2]=(Math.random()-0.5)*0.05; age[i]=0; };
  const h0=new T.Vector3(0,1.6,0); for(let i=0;i<N;i++){ spawn(i,h0); age[i]=Math.random()*6; }

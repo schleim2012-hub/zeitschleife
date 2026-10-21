@@ -69,7 +69,7 @@ window.buildCorn=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureL
  const v=new T.Vector3(), q=new T.Quaternion(), f=new T.Vector3(), u=new T.Vector3(); const base=ufo.position.clone();
  const update=(t)=>{ const k=t*0.001; ufo.position.y=base.y+Math.sin(k*0.5)*0.2; ufo.rotation.y=k*0.08; ufo.rotation.z=Math.sin(k*0.4)*0.015;
   reds.forEach((m,i)=>{ const on=((Math.floor(k*3)-i)%16+16)%16<5; m.material.color.setHex(on?0xc02010:0x300806); m.userData.h.material.opacity=on?0.5:0.05; });
-  if(pan&&ac){ ufo.getWorldPosition(v); pan.positionX.value=v.x; pan.positionY.value=v.y; pan.positionZ.value=v.z; const c=sc.renderer.xr.isPresenting?sc.renderer.xr.getCamera():sc.camera; c.getWorldPosition(v); c.getWorldQuaternion(q); f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); const L=ac.listener; if(L.positionX){ L.positionX.value=v.x; L.positionY.value=v.y; L.positionZ.value=v.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } } };
+  if(pan&&ac){ ufo.getWorldPosition(v); pan.positionX.value=v.x; pan.positionY.value=v.y; pan.positionZ.value=v.z; const c=sc.camera; c.getWorldPosition(v); c.getWorldQuaternion(q); f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); const L=ac.listener; if(L.positionX){ L.positionX.value=v.x; L.positionY.value=v.y; L.positionZ.value=v.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } } };
  AFRAME.registerComponent('corn-tick',{tick(t){ update(t); }}); sc.setAttribute('corn-tick','');
  const shift=dz=>{ base.z+=dz; ufo.position.z=base.z; endG.position.z+=dz; };
  return {ufo,P,update,shift};

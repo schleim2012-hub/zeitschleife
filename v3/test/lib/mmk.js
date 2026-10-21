@@ -253,7 +253,7 @@ window.buildMMKitchen=function(sc,o){
  let kinLast=-1, relocated=false, sawDone=false, enteredAt=0, lookAcc=0, lastNow=0; const head=new T.Vector3(), hf=new T.Vector3(), cq=new T.Quaternion(), np=new T.Vector3(), LP=sc.object3D;
  let compiled=false; const tick=(now,st,Kw)=>{ const dt=lastNow?Math.min(0.1,(now-lastNow)/1000):0.016; lastNow=now; if(!o.G.visible) return;
   if(!compiled){ compiled=true; try{ R.compile(S,sc.camera); }catch(e){} } // Shader einmal vorab, kein Ruckler beim Türöffnen
-  const cam=R.xr.isPresenting?R.xr.getCamera():sc.camera; if(!cam) return; cam.getWorldPosition(head); cam.getWorldQuaternion(cq); hf.set(0,0,-1).applyQuaternion(cq);
+  const cam=sc.camera; if(!cam) return; cam.getWorldPosition(head); cam.getWorldQuaternion(cq); hf.set(0,0,-1).applyQuaternion(cq);
   const kin=(head.x>X0-0.6&&head.x<X1+0.6)?cl((head.z+1.3)/0.6,0,1):0; ST.inside=kin;
   const showIn=kin>0||(ST.doorOpen&&Math.hypot(head.x-DX,head.z+1)<7); if(IN.visible!==showIn) IN.visible=showIn; // Draw Calls sparen
   // Tür: aufschwingen, wenn man davorsteht

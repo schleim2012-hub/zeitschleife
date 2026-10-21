@@ -86,8 +86,8 @@ AFRAME.registerComponent('warteraum',{
  loco(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ const L=document.getElementById('hl'), Rr=document.getElementById('hr');
   L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });
   Rr&&Rr.addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; const rig=document.getElementById('rig').object3D, h0=this.head().clone(); rig.rotation.y-=Math.sign(x)*Math.PI/6; rig.updateMatrixWorld(true); const h1=this.head(); rig.position.x+=h0.x-h1.x; rig.position.z+=h0.z-h1.z; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
- head(){ const r=this.el.renderer, c=r.xr.isPresenting?r.xr.getCamera():this.el.camera; const v=new THREE.Vector3(); c.getWorldPosition(v); return v; },
- locoTick(d){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const r=this.el.renderer, c=r.xr.isPresenting?r.xr.getCamera():this.el.camera, q=new THREE.Quaternion(); c.getWorldQuaternion(q);
+ head(){ const r=this.el.renderer, c=this.el.camera; /* Hauptspiel-Bot: Kopf inkl. Rig-Drehung (xr.getCamera() ohne Rig) */ const v=new THREE.Vector3(); c.getWorldPosition(v); return v; },
+ locoTick(d){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const r=this.el.renderer, c=this.el.camera, q=new THREE.Quaternion(); c.getWorldQuaternion(q);
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const rt=new THREE.Vector3(-f.z,0,f.x); const rig=document.getElementById('rig').object3D; const sp=1.4*d;
   rig.position.addScaledVector(f,-y*sp).addScaledVector(rt,x*sp); },
  clamp(){ const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D; const R0=0.22; let p={x:h.x,z:h.z};
@@ -123,7 +123,7 @@ AFRAME.registerComponent('warteraum',{
   this.listen=true; window.__wr.audio=true; },
  play(n,p,vol){ if(!this.ac) return; this.load(n).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; s.playbackRate.value=0.92+Math.random()*0.16; const g=this.ac.createGain(); g.gain.value=vol; s.connect(g); g.connect(this.pan(p)); s.start(); }).catch(()=>{}); },
  sfx(k){ if(!this.ac||!this.S) return; const A=this.S.anchors; if(k==='flip') this.play('flip',A.flip,0.6); else if(k==='stamp') this.play('stamp',A.office,0.35); else if(k==='page') this.play('page',A.oma,0.35); },
- audioTick(){ if(!this.listen) return; const L=this.ac.listener, r=this.el.renderer, c=r.xr.isPresenting?r.xr.getCamera():this.el.camera; const p=new THREE.Vector3(), q=new THREE.Quaternion(); c.getWorldPosition(p); c.getWorldQuaternion(q);
+ audioTick(){ if(!this.listen) return; const L=this.ac.listener, r=this.el.renderer, c=this.el.camera; const p=new THREE.Vector3(), q=new THREE.Quaternion(); c.getWorldPosition(p); c.getWorldQuaternion(q);
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(q), u=new THREE.Vector3(0,1,0).applyQuaternion(q);
   if(L.positionX){ L.positionX.value=p.x; L.positionY.value=p.y; L.positionZ.value=p.z; L.forwardX.value=f.x; L.forwardY.value=f.y; L.forwardZ.value=f.z; L.upX.value=u.x; L.upY.value=u.y; L.upZ.value=u.z; } else { L.setPosition(p.x,p.y,p.z); L.setOrientation(f.x,f.y,f.z,u.x,u.y,u.z); } }
 });
