@@ -1,6 +1,6 @@
 /* Warteraum (Jenseits-Bürgeramt) – eigene Testszene, nur Laufen + Umschauen.
    Geometrie/Material/Lightmap aus Blender (tools/gfx_warteraum/build_room.py): assets/warteraum/warteraum.glb (UV0 Texturen, UV1 Lightmap) + lm.jpg + scene.json.
-   Echtzeit-Lichter (4): Hemi teal, warme Stehlampe, grünes Schalterlicht (flackert leicht), rotes Pendel. Alles andere ist gebacken.
+   Echtzeit-Lichter (4): Hemi teal, 2 kalte Neonröhren (eine flackert weich), grünes Schalterlicht. Tischlampen + rotes Pendel aus der Lightmap (kalt getönt, 0.68).
    Figuren-Hybrid: statische Körper (gebacken), bewegliche Teile (Kopf/Unterarm/Fuß/Buchseite) per Code um ihr Gelenk gedreht.
    Ton (WebAudio, positionsabhängig, startet nach der ersten Geste/VR-Start): Radio mit Fahrstuhlmusik (Kleinlautsprecher-Filter + Knistern),
    Leuchtstoff-Brummen, Uhr, Fallblatt-Klack + Ding, Husten/Blättern/Knarzen, dumpfe Stimmen/Schreibmaschine/Stempel aus dem Hinterbüro.
@@ -14,30 +14,49 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=1'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0);
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',0.68); // 0.68: düsterer, Neonröhren übernehmen die Lichtinseln
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=1'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
-    if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI; }
+    if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
+     // Neon-Stimmung: Lightmap leicht kalt-grünlich getönt (Bake bleibt, nur der Anteil im Shader)
+     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','lightMapTexel.rgb * lightMapIntensity * vec3(0.84,0.97,0.90)')); }; m.customProgramCacheKey=()=>'wrlm'; }
     if(m.metalness>0.2) m.metalness=0.35; m.needsUpdate=true; });
    // Sonder-Materialien
    const swap=(name,mk)=>{ const old=M[name]; if(!old) return; const nm=mk(old); root.traverse(o=>{ if(o.isMesh&&o.material===old) o.material=nm; }); M[name]=nm; };
    swap('wr_emit',o=>new T.MeshBasicMaterial({color:new T.Color(0x6cd858).multiplyScalar(0.9),vertexColors:false,fog:false}));
    swap('wr_glass',o=>new T.MeshStandardMaterial({color:0x9ab0a8,roughness:0.1,metalness:0,transparent:true,opacity:0.13,depthWrite:false}));
-   if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xc07a38); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.55; M.wr_shade.side=T.DoubleSide; }
+   if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xc07a38); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.4; M.wr_shade.side=T.DoubleSide; }
    if(M.wr_noexit){ M.wr_noexit.emissive=new T.Color(0xb8d8a8); M.wr_noexit.emissiveMap=M.wr_noexit.map; M.wr_noexit.emissiveIntensity=0.5; }
-   if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.16; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
+   if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.24; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
    swap('wr_flip',o=>new T.MeshBasicMaterial({map:ft,color:0x9a9a90}));
    self.drawFlip(4,4,1);
-   // Lichter (max 4)
-   const hemi=new T.HemisphereLight(0x2c4c48,0x0a100e,0.35); sc.object3D.add(hemi);
-   const L0=S.lamps[0]; const warm=new T.PointLight(0xffa860,1.6,4.5,2); warm.position.set(L0[0],L0[1]-0.05,L0[2]); sc.object3D.add(warm);
-   const gw=S.window; const green=new T.PointLight(0x78ff60,0.8,4.5,2); green.position.set(gw[0],gw[1],gw[2]); sc.object3D.add(green);
-   const rp=S.red[0]; const red=new T.PointLight(0xff3010,0.5,3,2); red.position.set(rp[0],rp[1]-0.1,rp[2]); sc.object3D.add(red);
-   self.L={hemi,warm,green,red};
+   // Lichter (max 4): Hemi + 2 Neonröhren + grünes Fenster. Tischlampen/Rot kommen aus der Lightmap.
+   const hemi=new T.HemisphereLight(0x2e4a46,0x090e0d,0.26); sc.object3D.add(hemi);
+   const gw=S.window; const green=new T.PointLight(0x78ff60,0.7,4.5,2); green.position.set(gw[0],gw[1],gw[2]); sc.object3D.add(green);
+   // Deckenleuchten (Rasterleuchte mit Prismen-Abdeckung, 2 Röhren) – 2 Draws (InstancedMesh Gehäuse + Abdeckung)
+   const ch=z=>2.6+(z+2.68)/5.18*0.15-0.005; // Deckenhöhe (Decke fällt nach -z ab)
+   const FX=[[0.8,-1.45,1.0],[0.8,0.55,1.0],[-1.65,-0.85,0.62],[-1.65,1.35,0.42]]; // x,z,Helligkeit (1 = mit Lichtquelle)
+   const hc=document.createElement('canvas'); hc.width=256; hc.height=64; const hx=hc.getContext('2d');
+   hx.fillStyle='#7f978a'; hx.fillRect(0,0,256,64);
+   [20,44].forEach(y=>{ const g=hx.createLinearGradient(0,y-12,0,y+12); g.addColorStop(0,'rgba(235,255,240,0)'); g.addColorStop(0.5,'rgba(240,255,244,1)'); g.addColorStop(1,'rgba(235,255,240,0)'); hx.fillStyle=g; hx.fillRect(4,y-12,248,24); });
+   hx.globalAlpha=0.16; hx.fillStyle='#203028'; for(let i=0;i<256;i+=4) hx.fillRect(i,0,1,64); for(let j=0;j<64;j+=4) hx.fillRect(0,j,256,1); hx.globalAlpha=1;
+   const eg=hx.createLinearGradient(0,0,256,0); eg.addColorStop(0,'rgba(20,30,24,.55)'); eg.addColorStop(0.06,'rgba(0,0,0,0)'); eg.addColorStop(0.94,'rgba(0,0,0,0)'); eg.addColorStop(1,'rgba(20,30,24,.55)'); hx.fillStyle=eg; hx.fillRect(0,0,256,64);
+   const dt=new T.CanvasTexture(hc); dt.colorSpace=T.SRGBColorSpace; dt.anisotropy=8;
+   const hous=new T.InstancedMesh(new T.BoxGeometry(1.3,0.07,0.36),new T.MeshStandardMaterial({color:0x3a3f3a,roughness:0.55,metalness:0.35}),FX.length);
+   const dg=new T.PlaneGeometry(1.22,0.28); dg.rotateX(Math.PI/2);
+   const diff=new T.InstancedMesh(dg,new T.MeshBasicMaterial({map:dt,color:0xffffff,fog:false}),FX.length);
+   const mtx=new T.Matrix4(), col=new T.Color(); const TUBE=new T.Color(0xc8e8d2);
+   FX.forEach(([x,z,k],i)=>{ const y=ch(z); mtx.makeTranslation(x,y-0.035,z); hous.setMatrixAt(i,mtx); mtx.makeTranslation(x,y-0.072,z); diff.setMatrixAt(i,mtx); diff.setColorAt(i,col.copy(TUBE).multiplyScalar(k)); });
+   diff.instanceColor.setUsage(T.DynamicDrawUsage); [hous,diff].forEach(o=>{ o.frustumCulled=false; sc.object3D.add(o); });
+   const tA=new T.PointLight(0xd6f5e0,2.4,5.2,2); tA.position.set(FX[0][0],ch(FX[0][1])-0.3,FX[0][1]); sc.object3D.add(tA);
+   const tB=new T.PointLight(0xd6f5e0,2.1,5.0,2); tB.position.set(FX[1][0],ch(FX[1][1])-0.3,FX[1][1]); sc.object3D.add(tB);
+   self.neon={diff,tB,base:2.1,col:TUBE,lvl:1,tgt:1,next:3,hold:0};
+   const warm=null, red=null;
+   self.L={hemi,warm,green,red,tA,tB};
    // Rauchfaden (1 Draw: Points)
    const sm=S.anchors.smoke, N=14, g=new T.BufferGeometry(), P=new Float32Array(N*3), A=new Float32Array(N);
    g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(A,1));
@@ -60,6 +79,9 @@ AFRAME.registerComponent('warteraum',{
    cx.fillStyle='#050505'; cx.fillRect(x,y+h/2-1.5,w,3); }
   this.flip.tex.needsUpdate=true; },
  tick(t,dt){ if(!this.mov) return; const T=THREE, s=t/1000, d=Math.min(dt||16,50)/1000;
+  // Neonröhre 2: leises, weiches Flackern (Einbrüche auf 70-85 %, nie aus, kein Stroboskop)
+  const N=this.neon; if(N){ N.next-=d; if(N.next<=0){ if(N.hold>0){ N.tgt=0.7+Math.random()*0.15; N.hold--; N.next=0.09+Math.random()*0.12; } else { N.tgt=1; N.hold=Math.random()<0.5?1+(Math.random()*3|0):0; N.next=N.hold?0.12:2.5+Math.random()*5; } }
+   const nl=N.lvl+(N.tgt-N.lvl)*Math.min(1,d*14); if(Math.abs(nl-N.lvl)>0.002){ N.lvl=nl; N.tB.intensity=N.base*nl; N.diff.setColorAt(1,new T.Color().copy(N.col).multiplyScalar(0.55+0.45*nl)); N.diff.instanceColor.needsUpdate=true; } }
   // Figuren-Idle (langsam, zufällige Phase)
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
@@ -77,7 +99,7 @@ AFRAME.registerComponent('warteraum',{
   // Rauch
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
-  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.8*f)-this.L.green.intensity)*0.3; }
+  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.7*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
