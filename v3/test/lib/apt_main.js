@@ -44,7 +44,7 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
  const show=id=>{ if(!ROOMS.bedroom.objs||id==='bedroom') classifyBed(); Object.entries(ROOMS).forEach(([k,r])=>r.objs.forEach(o=>o.visible=(k===id))); A.room=id; if(id!=='kitchen'&&window.__mmk) __mmk.doorOpen=false;
   try{ const tv=tvEl.components['crt-tv']; if(tv&&id!=='bedroom'&&tv.on&&tv.video) tv.video.pause(); }catch(e){} uiClose(); };
  const placeAt=(x,z,yaw)=>{ rig.rotation.set(0,yaw,0); rig.updateMatrixWorld(true); const c=camEl.object3D.position, off=new T.Vector3(c.x,0,c.z).applyAxisAngle(new T.Vector3(0,1,0),yaw); rig.position.set(x-off.x,0,z-off.z); if(!R.xr.isPresenting){ const lc=camEl.components['look-controls']; if(lc){ lc.yawObject.rotation.y=0; lc.pitchObject.rotation.x=0; } camEl.object3D.rotation.set(0,0,0); } };
- const go=(id,via)=>{ show(id); const s=(SPAWN[id][via])||SPAWN[id].def; const pp={x:s[0],z:s[1]}; hardClamp(ROOMS[id],pp); placeAt(pp.x,pp.z,s[2]); A.arrivedAt=performance.now(); if(id==='living'&&A.rabbit&&!A.rang){ A.rang=true; setTimeout(ring,2500); } };
+ const go=(id,via)=>{ show(id); const s=(SPAWN[id][via])||SPAWN[id].def; const pp={x:s[0],z:s[1]}; hardClamp(ROOMS[id],pp); placeAt(pp.x,pp.z,s[2]); A.arrivedAt=performance.now(); A.doorArmed=false; if(id==='living'&&A.rabbit&&!A.rang){ A.rang=true; setTimeout(ring,2500); } };
  function useDoor(to,via){ if(A.busy) return; A.busy=true; drop(); aptDoorTrans(sc,{hide:()=>allObjs(),swap:()=>go(to,via),done:()=>{ A.busy=false; if(window.__mmk) __mmk.doorOpen=false; }}); }
  A.go=go; A.useDoor=useDoor; A.ROOMS=ROOMS; A.LIV=LIV; A.OFF=OFF; A.KIT=KIT; A.placeAt=placeAt;
  // ---------- Tür-Mesh (Blatt, Klinke) ----------
@@ -115,7 +115,12 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
   if(!A.busy&&(Math.abs(ax[0])>0.15||Math.abs(ax[1])>0.15)){ getHead(); const f=new T.Vector3(ax[0],0,ax[1]).applyQuaternion(hq); f.y=0; rig.position.addScaledVector(f,1.4*d); }
   rig.updateMatrixWorld(true); getHead(); const p={x:head.x,z:head.z}; for(let it=0;it<2;it++){ r.collide&&r.collide(p); hardClamp(r,p); } rig.position.x+=p.x-head.x; rig.position.z+=p.z-head.z;
   // Tür durch Hingehen (nur wenn man darauf zuläuft)
-  if(!A.busy&&now-(A.arrivedAt||0)>1500) (r.doors||[]).forEach(dd=>{ const u=dd.d.g.userData; const dx=head.x-u.x, dz=head.z-u.z; const dist=dx*u.n[0]+dz*u.n[1], lat=Math.abs(dx*u.n[1]-dz*u.n[0]); if(dist<0.42&&dist>-0.2&&lat<u.w/2) useDoor(dd.to,dd.via); });
+  // scharf erst, wenn man nach der Ankunft einmal >0,85 m von allen Türen weg war (sonst: Umdrehen/Zurücklehnen in VR = sofort zurück in den alten Raum)
+  //  Auslösezone etwas breiter als das Türblatt (±w/2+0,2 m, 0,5 m tief): Sessel/Kartons neben den Türen schieben einen sonst knapp an der Zone vorbei
+  { let near=false;
+   (r.doors||[]).forEach(dd=>{ const u=dd.d.g.userData; const dx=head.x-u.x, dz=head.z-u.z; const dist=dx*u.n[0]+dz*u.n[1], lat=Math.abs(dx*u.n[1]-dz*u.n[0]); if(dist<0.85&&dist>-0.3&&lat<u.w/2+0.35) near=true;
+    if(!A.busy&&A.doorArmed&&now-(A.arrivedAt||0)>800&&dist<0.5&&dist>-0.25&&lat<u.w/2+0.2) useDoor(dd.to,dd.via); });
+   if(!near) A.doorArmed=true; }
   r.tick&&r.tick(now,d);
   // gehaltener Gegenstand
   if(held){ const o=held.gb.obj; if(held.mouse){ const c=sc.camera; c.getWorldPosition(tmp); c.getWorldQuaternion(tq); o.position.copy(new T.Vector3(0.12,-0.16,-0.45).applyQuaternion(tq).add(tmp)); o.quaternion.copy(tq).multiply(new T.Quaternion().setFromEuler(new T.Euler(0.5,0,0))); }

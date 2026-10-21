@@ -44,12 +44,11 @@ window.aptDoorTrans=function(sc,o){ if(busy) return false; busy=true; o=o||{}; c
  add(new TH.BoxGeometry(0.08,H+0.08,0.14),mFr,-W/2-0.04,(H+0.08)/2,0); add(new TH.BoxGeometry(0.08,H+0.08,0.14),mFr,W/2+0.04,(H+0.08)/2,0); add(new TH.BoxGeometry(W+0.16,0.08,0.14),mFr,0,H+0.04,0);
  const hinge=new TH.Group(); hinge.position.set(-W/2,0,0); D.add(hinge); const leaf=add(new TH.BoxGeometry(W,H,0.045),mLeaf,W/2,H/2,0,hinge);
  const knob=new TH.Group(); knob.position.set(W-0.08,1.0,0.04); hinge.add(knob); add(new TH.BoxGeometry(0.03,0.16,0.012),mBr,0,-0.02,0,knob); const lever=add(new TH.BoxGeometry(0.12,0.022,0.022),mBr,-0.05,0,0.03,knob);
- // dahinter: kaum Licht, warmer Schimmer (nur sichtbar, wenn die Tür aufgeht)
- const glowT=cv(128,256,(x,w,h)=>{ const g=x.createRadialGradient(w/2,h*0.62,4,w/2,h*0.62,h*0.55); g.addColorStop(0,'rgba(255,196,120,0.55)'); g.addColorStop(0.5,'rgba(120,80,40,0.18)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,w,h); });
- const mGlow=M({map:glowT,blending:TH.AdditiveBlending,depthWrite:false,opacity:0}); add(new TH.PlaneGeometry(W*0.98,H*0.98),mGlow,0,H/2,-0.3);
+ // dahinter: die offene Türöffnung ist tiefschwarz (opake Fläche im Rahmen, deckt alles dahinter ab – früher warmer Schimmer = „beiges Bild“)
+ const mHole=new TH.MeshBasicMaterial({color:0x000000,fog:false,toneMapped:false}); const hole=add(new TH.PlaneGeometry(W+0.02,H+0.01),mHole,0,(H+0.01)/2,-0.035); hole.renderOrder=-1;
  const floorT=cv(128,128,(x,w,h)=>{ const g=x.createRadialGradient(w/2,h/2,2,w/2,h/2,w/2); g.addColorStop(0,'rgba(60,44,28,0.9)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,w,h); });
  const fl=add(new TH.PlaneGeometry(2.4,2.4),M({map:floorT,depthWrite:false}),0,0.002,0.5); fl.rotation.x=-Math.PI/2;
- const setB=k=>mats.forEach(m=>{ if(m===mGlow) return; m.color.copy(m.userData.c).multiplyScalar(k); });
+ const setB=k=>mats.forEach(m=>{ m.color.copy(m.userData.c).multiplyScalar(k); });
  const ease=k=>k<0?0:k>1?1:k*k*(3-2*k);
  const t0=performance.now(); let phase=0, swapped=false, t1=0; const DOOR_T=2.9;
  const doSwap=()=>{ if(swapped) return; swapped=true; D.visible=false; try{ o.swap&&o.swap(); }catch(e){ console.error(e); } };
@@ -57,14 +56,13 @@ window.aptDoorTrans=function(sc,o){ if(busy) return false; busy=true; o=o||{}; c
  const ctrls=[0,1].map(i=>R.xr.getController(i)); const onSel=()=>abort(); const onKey=e=>{ if(e.code==='Space'||e.code==='Escape') abort(); };
  setTimeout(()=>{ ctrls.forEach(c=>c.addEventListener('selectstart',onSel)); sc.canvas&&sc.canvas.addEventListener('click',onSel); window.addEventListener('keydown',onKey); },350);
  const cleanup=()=>{ ctrls.forEach(c=>c.removeEventListener('selectstart',onSel)); sc.canvas&&sc.canvas.removeEventListener('click',onSel); window.removeEventListener('keydown',onKey);
-  S.remove(ball); S.remove(D); D.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); mats.forEach(m=>{ m.map&&m.map.dispose(); m.dispose(); }); blackM.dispose(); busy=false; o.done&&o.done(); };
+  S.remove(ball); S.remove(D); D.traverse(m=>{ if(m.geometry) m.geometry.dispose(); }); mats.forEach(m=>{ m.map&&m.map.dispose(); m.dispose(); }); mHole.dispose(); blackM.dispose(); busy=false; o.done&&o.done(); };
  SND.step(0.05,0.35);
  const frame=()=>{ const now=performance.now(), t=(now-t0)/1000; cam().getWorldPosition(head); ball.position.copy(head);
   if(phase===0){ blackM.opacity=ease(t/0.45); if(t>=0.45){ phase=1; blackM.opacity=1; o.hide&&o.hide(); D.visible=true; setB(0); const E=window.aptSFX&&window.aptHasSFX&&aptHasSFX('door_creak'); if(E){ aptSFX('door_latch',0.7,false,0.3); aptSFX('door_creak',0.65,false,0.6); aptSFX('steps',0.6,false,1.25); } else { SND.latch(0.35); SND.creak(0.62,1.85); SND.step(1.05,0.42); SND.step(1.6,0.45); SND.step(2.15,0.48); } } }
   else if(phase===1){ const k=t-0.45; ball.visible=false; // Umfeld = schwarzer Hintergrund
    setB(0.15+0.85*ease(k/0.5)*(k<2.45?1:1-ease((k-2.45)/0.45)));
    lever.rotation.z=k>0.35&&k<0.75?-0.45*Math.sin(Math.PI*(k-0.35)/0.4):0; hinge.rotation.y=-1.35*ease((k-0.6)/1.9);
-   mGlow.opacity=0.85*ease((k-0.8)/1.2)*(k<2.45?1:1-ease((k-2.45)/0.45));
    if(k>=DOOR_T){ phase=2; ball.visible=true; blackM.opacity=1; doSwap(); t1=now; } }
   else if(phase===2||phase===3){ ball.visible=true; const k=(now-t1)/1000; if(phase===3&&k<0.05){ D.visible=false; } if(k<0.25){ blackM.opacity=1; } else { blackM.opacity=1-ease((k-0.25)/0.55); }
    if(k>=0.8){ cleanup(); return false; } }
