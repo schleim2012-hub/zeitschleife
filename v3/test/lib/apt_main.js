@@ -130,6 +130,7 @@ function setup(sc){ const T=THREE, S=sc.object3D, R=sc.renderer, K=aptKit(ROOT);
   if(ui&&getHead().distanceTo(ui.anchor)>1.6){ if(ui.kind==='phone') hang(); else uiClose(); }
   if(A.debugHUD) A.debugHUD(); };
  // Start: Schlafzimmer (oder ?room=…)
- const q=new URLSearchParams(location.search).get('room'); setTimeout(()=>{ go(ROOMS[q]?q:'bedroom'); A.ready=true; },60);
+ // Im Spiel ist das Schlafzimmer = Kinderzimmer 1984 (eigene Szene davor) -> man kommt durch dessen Tür direkt in die Küche (wie aus dem Schlafzimmer)
+ setTimeout(()=>{ const U=new URLSearchParams(location.search); let q=U.get('room'); if(!ROOMS[q]&&window.ZSA&&ZSA.on&&ZSA.cur().id==='wohnung') q='kitchen'; go(ROOMS[q]?q:'bedroom',U.get('via')||(q==='kitchen'?'s':undefined)); A.ready=true; },60);
 }
 })();

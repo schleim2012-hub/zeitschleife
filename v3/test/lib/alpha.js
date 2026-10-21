@@ -8,12 +8,12 @@ const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (S
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
  {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.94, face:[1.5,0]}, key:{x:-1.3,z:-0.9}},
+ {id:'wohnung',    page:'test/era_wohnung.html',   title:'Wohnung',            door:{x:42.42, z:1.55, face:[40,1.55], attach:'office', wood:true}}, // direkt nach dem Kinderzimmer; Ausgang im Büro (Ostwand), Tür hängt an OFF.group -> nur im Büro sichtbar
  {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.25,z:-0.55,y:0.52, hide:{type:'drawer', x:-2.55, z:0.45, ry:90, plate:'FUNDSACHEN', inNote:'Fundsache, Bank am Brunnen. Abgeholt: nie.'}}, keyNote:'Abgeschlossen. Was hier verloren geht, landet bei den Fundsachen. – M.'},
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
  {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8, hide:{type:'locker', x:-2.75, z:0.75, ry:90, num:37, inNote:'Fach 37. Seit Jahren nicht abgeholt.'}}, keyNote:'Abgeschlossen. Fach 37. Frag nicht, woher ich das weiß. – M.'},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:0.9, z:2.25, face:[0.9,0]}, key:{x:0.6,z:-1.15}},
  {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:3.22, z:1.6, face:[0,1.6]}, key:{x:-2.2,z:0.6, hide:{type:'tin', x:-1.95, y:0.345, z:-1.05, ry:-20, cap:'Etwas klappert heraus.'}}, keyNote:'Abgeschlossen. Hier versteckt man Wichtiges im Kaffee. – M.'},
- {id:'wohnung',    page:'test/era_wohnung.html',   title:'Wohnung',            door:{x:42.42, z:1.55, face:[40,1.55], attach:'office', wood:true}}, // Ausgang im Büro (Ostwand), Tür hängt an OFF.group -> nur im Büro sichtbar
  {id:'era2041',    page:'test/era2041.html',       title:'Stadt 2041',         door:{x:3.22, z:2.0, face:[0,2.0]}, key:{x:2.2,z:-1.0}},
  {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.6, face:[1.9,0]}, key:{x:-1.3,z:-1.3, hide:{type:'drawer', dark:true, x:-1.0, z:-1.55, ry:0, inNote:'Ersatzschlüssel. Nicht für dich. – Hausverwaltung'}}, keyNote:'Abgeschlossen. Ersatzschlüssel? Schublade. Wie immer. – M.'},
  {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
@@ -26,9 +26,13 @@ const SIDES={ warteraum:{page:'test/era_warteraum.html', from:'backrooms', title
   spawn:{x:0.75, z:1.75, yaw:0} } };          // Ankunft vor der NO-EXIT-Tür, Blick in den Raum (-z)
 const KEY='zs_alpha_v1', P=new URLSearchParams(location.search), inTest=/\/test\//.test(location.pathname), ROOT=inTest?'../':'';
 const ls=()=>{ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } };
-const save=st=>{ try{ localStorage.setItem(KEY,JSON.stringify(Object.assign(ls(),st,{t:Date.now()}))); }catch(e){} };
+const save=st=>{ if(st&&st.step!=null&&!st.id&&typeof STEPS!=='undefined'&&STEPS[st.step]) st=Object.assign({},st,{id:STEPS[st.step].id}); try{ localStorage.setItem(KEY,JSON.stringify(Object.assign(ls(),st,{t:Date.now()}))); }catch(e){} };
 const on=P.get('alpha')==='1'||/alpha\.html$/.test(location.pathname);
-let step=P.has('step')?+P.get('step'):(ls().step||0); step=Math.max(0,Math.min(STEPS.length-1,step|0));
+// Spielstand: ab jetzt mit Raum-id (Reihenfolge darf sich ändern). Alte Stände nur mit Index -> über die damalige Liste auf die id abbilden.
+const OLD_V1=['intro','backrooms','era1984','era1984mall','arcade','pool','cornfield','era1989','era2041','apartment','basket','kirmes','sim','end'], OLD_V2=OLD_V1.slice(0,8).concat(['wohnung'],OLD_V1.slice(8)); // V2 = 21.10. 15:50–17:45
+const idxOf=id=>STEPS.findIndex(s=>s.id===id);
+const savedStep=()=>{ const o=ls(); if(o.id&&idxOf(o.id)>=0) return idxOf(o.id); const n=o.step|0; const old=(o.t||0)>=1792590000000?OLD_V2:OLD_V1; const k=idxOf(old[n]); return k>=0?k:n; };
+let step=P.has('step')?+P.get('step'):savedStep(); step=Math.max(0,Math.min(STEPS.length-1,step|0));
 const url=i=>{ const s=STEPS[i]; return ROOT+s.page+'?alpha=1&step='+i+(s.page==='alpha.html'?'#'+s.id:''); };
 function fadeOut(cb){
  // Weicher VHS-Rückspul (~0,5 s): nur Rauschen + Tracking am Rand, kein RGB-Split, kein Vollbild-Strobo (Quest-tauglich).
