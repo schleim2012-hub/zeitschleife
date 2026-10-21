@@ -9,3 +9,9 @@ Laufzeit: `test/lib/gfx_wohnung_buero.js` (hängt sich an `aptBuildOffice` + `ap
    Empfänger nur Raumhülle (apt_fl/ce/pa/wd/mt); die zufällig verteilten Akten/Ordner (apt_at/apt_pl) ändern sich pro Laden und bekommen keine Lightmap.
    Ändert sich Geometrie in apt_office.js → neu dumpen + backen (sonst greift die Vertexzahl-Prüfung, Raum bleibt ohne Lightmap).
 3. Prüfen: `node shoot_buero.js URL OUTDIR` (POS=door,mid,desk; Draw Calls je Blick) · `node interact_buero.js URL OUTDIR` (PC-Klick/Kaninchen, Akten, Tür, Überblendung).
+
+## Portierung (Unity o. ä.)
+- `.blend`-Quellen je Prop: `tools/gfx_wohnung/blend/<name>.blend` (Texturen eingepackt, Material = Principled mit Basisfarb-Textur).
+- Texturen in Originalauflösung, verlustfrei: `assets/apartment/<raum>/src/<name>_col.png` (Farbe), `_ao.png` (AO), `_tex.png` (Farbe×AO = im GLB als JPG).
+- Lightmaps: `assets/bake/<raum>/lm.jpg|ao.jpg` (Laufzeit) + `src/lm.exr|ao.exr` (Half-Float, linear) + `src/lm.png|ao.png`; UV1 in `uv1.bin`/`uv1.json`. Erzeugen: `python3 lm_export.py <bake-out> ../../assets/bake/<raum>`.
+- Helfer für alle Props: `props_lib.py` (Blender).
