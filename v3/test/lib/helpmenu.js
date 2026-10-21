@@ -97,12 +97,18 @@ function el(){ if(root) return root; const st=document.createElement('style'); s
  root=document.createElement('div'); root.id='zsh'; root.addEventListener('click',e=>{ if(e.target===root) close(); }); document.body.appendChild(root);
  ['touchstart','touchmove','touchend','mousedown','mouseup','click','pointerdown'].forEach(t=>root.addEventListener(t,e=>e.stopPropagation()));
  return root; }
+function v3Url(q){ const p=location.pathname, i=p.indexOf('/v3/'); const U=new URLSearchParams(location.search), keep=['touch','app'].filter(k=>U.has(k)).map(k=>'&'+k+'='+encodeURIComponent(U.get(k))).join(''); return location.origin+(i>=0?p.slice(0,i):'')+'/v3/alpha.html?alpha=1'+q+keep; }
+function leaveXR(cb){ const sc=document.querySelector('a-scene'); if(sc&&sc.is&&sc.is('vr-mode')){ try{ const r=sc.exitVR(); if(r&&r.then){ r.then(cb,cb); return; } }catch(e){} setTimeout(cb,300); return; } cb(); }
+function toTitle(){ leaveXR(()=>{ location.href=v3Url('&title=1'); }); }
+function newGame(){ try{ Object.keys(localStorage).filter(k=>/^zs_alpha|^zs_apt_rabbit/.test(k)).forEach(k=>localStorage.removeItem(k)); }catch(e){} if(window.ZSA&&ZSA.reset) ZSA.reset(); location.href=v3Url('&step=0')+'#intro'; }
 function startUrl(){ const p=location.pathname, i=p.indexOf('/v3/'); return location.origin+(i>=0?p.slice(0,i):'')+'/start.html'; }
 function render(){ const r=el(); let h='';
  if(view==='menu'){ h=`<div class="p"><h2>REWIND <span class="x" data-a="close">✕</span></h2><div class="m">
   <button data-a="close">▶ Weiter spielen</button>
   <button data-a="opt">⚙️ Optionen<small>Steuerung, Einstellungen</small></button>
   <button data-a="reload">↻ Raum neu laden</button>
+  ${window.ZSA&&ZSA.on?`<button data-a="title">⏮ Zum Titelbild<small>Spielstand bleibt – dort „Weiterspielen“</small></button>
+  <button data-a="newq">✦ Neues Spiel<small>Von vorn mit dem Intro</small></button>`:''}
   <button data-a="start">⌂ Zur Testseite</button></div></div>`; }
  else if(view==='opt'){ const inv=LS.get('zs_touch_invert')==='1', q=LS.get('zs_touch_lowq')==='1';
   h=`<div class="p"><h2>OPTIONEN <span class="x" data-a="close">✕</span></h2><div class="m">
@@ -112,13 +118,17 @@ function render(){ const r=el(); let h='';
   <button data-a="lowq"><div class="row"><span>🔋 Spar-Grafik<small>Weniger Auflösung, flüssiger auf älteren Handys</small></span><div class="tg ${q?'on':''}"><i></i></div></div></button>`:''}
   <button data-a="fs">⛶ Vollbild an/aus</button>
   <button data-a="menu">← Zurück</button></div></div>`; }
+ else if(view==='newq'){ h=`<div class="p"><h2>NEUES SPIEL? <span class="x" data-a="close">✕</span></h2><div class="m">
+  <button data-a="none" style="cursor:default">Dein Spielstand wird gelöscht und Rewind beginnt wieder mit dem Intro.</button>
+  <button data-a="newgo">✦ Ja, neues Spiel</button>
+  <button data-a="menu">← Abbrechen</button></div></div>`; }
  else { const t=tab||dev(); const P=PAGES[t];
   h=`<div class="p"><h2>STEUERUNG <span class="x" data-a="close">✕</span></h2><div class="tabs">${['phone','vr','pc'].map(k=>`<button data-t="${k}" class="${k===t?'sel':''}">${PAGES[k][0]}${k===dev()?' · dieses Gerät':''}</button>`).join('')}</div>
   <div class="g">${P[1].join('')}</div><div class="note">${P[2]}</div><div class="m" style="margin-top:12px"><button data-a="close" style="text-align:center">Verstanden – los geht's</button></div></div>`; }
  r.innerHTML=h;
  r.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); const a=b.dataset.a;
   if(a==='close') close(); else if(a==='opt') {view='opt';render();} else if(a==='menu'){view='menu';render();} else if(a==='help'){view='help';tab=null;render();}
-  else if(a==='reload') location.reload(); else if(a==='start') location.href=startUrl();
+  else if(a==='reload') location.reload(); else if(a==='title') toTitle(); else if(a==='newq'){view='newq';render();} else if(a==='newgo') newGame(); else if(a==='start') location.href=startUrl();
   else if(a==='inv'){ LS.set('zs_touch_invert',LS.get('zs_touch_invert')==='1'?'0':'1'); render(); }
   else if(a==='lowq'){ LS.set('zs_touch_lowq',LS.get('zs_touch_lowq')==='1'?'0':'1'); if(window.ZSTouch) ZSTouch.applyQuality(); render(); }
   else if(a==='fs'){ const d=document; if(d.fullscreenElement) d.exitFullscreen&&d.exitFullscreen(); else { const de=d.documentElement; (de.requestFullscreen||de.webkitRequestFullscreen||function(){}).call(de); } } }));
@@ -135,17 +145,22 @@ function vrCanvas(){ const W=1024,H=640,cv=document.createElement('canvas'); cv.
  x.fillStyle='#d8c8a8'; x.font='700 46px sans-serif'; x.fillText('STEUERUNG · VR',44,82);
  const rows=[['L-Stick','gehen'],['R-Stick ◀ ▶','30° drehen'],['R-Stick ▲','Teleport-Bogen'],['Grip','greifen & halten'],['Trigger + Laser','benutzen, Tür, Automat'],['A / X','Aktion'],['B / Y','zurück · Handy weglegen'],['L-Stick drücken','diese Tafel']];
  x.font='600 34px sans-serif'; rows.forEach(([a,b],i)=>{ const y=150+i*58; x.fillStyle='#f0e4cc'; x.fillText(a,60,y); x.fillStyle='#b8a888'; x.fillText(b,440,y); });
- x.fillStyle='#8a7a60'; x.font='26px sans-serif'; x.fillText('Trigger auf die Tafel = schließen',60,H-36); return cv; }
+ x.fillStyle='#8a7a60'; x.font='26px sans-serif'; x.fillText('Trigger auf die Tafel = schließen · unten: Titelbild / Neues Spiel',60,H-36); return cv; }
 function showVR(){ const sc=document.querySelector('a-scene'); if(!sc||!sc.camera||!window.THREE) return; const T=THREE;
  if(!vrPanel){ const tex=new T.CanvasTexture(vrCanvas()); tex.colorSpace=T.SRGBColorSpace; const m=new T.Mesh(new T.PlaneGeometry(0.9,0.5625),new T.MeshBasicMaterial({map:tex,fog:false,transparent:true,opacity:0.96}));
   const e=document.createElement('a-entity'); e.classList.add('clickable'); e.id='zshVR'; sc.appendChild(e); const init=()=>{ e.setObject3D('mesh',m); }; e.hasLoaded?init():e.addEventListener('loaded',init);
-  e.addEventListener('click',ev=>{ ev.stopPropagation&&ev.stopPropagation(); hideVR(); }); vrPanel={e,m}; }
+  e.addEventListener('click',ev=>{ ev.stopPropagation&&ev.stopPropagation(); hideVR(); }); vrPanel={e,m};
+  const mkBtn=(txt,x,fn)=>{ const cv=document.createElement('canvas'); cv.width=512; cv.height=128; const draw=t=>{ const g=cv.getContext('2d'); g.fillStyle='#231e18'; g.fillRect(0,0,512,128); g.strokeStyle='#6a5a40'; g.lineWidth=6; g.strokeRect(4,4,504,120); g.fillStyle='#e8dcc4'; g.font='600 40px sans-serif'; g.textAlign='center'; g.fillText(t,256,78); bt.needsUpdate=true; };
+   const bt=new T.CanvasTexture(cv); bt.colorSpace=T.SRGBColorSpace; draw(txt); const bm=new T.Mesh(new T.PlaneGeometry(0.4,0.1),new T.MeshBasicMaterial({map:bt,fog:false}));
+   const be=document.createElement('a-entity'); be.classList.add('clickable'); e.appendChild(be); const bi=()=>{ be.setObject3D('mesh',bm); be.object3D.position.set(x,-0.36,0.01); }; be.hasLoaded?bi():be.addEventListener('loaded',bi);
+   be.addEventListener('click',ev=>{ ev.stopPropagation&&ev.stopPropagation(); fn(draw); }); return be; };
+  let arm=0; vrPanel.btns=[mkBtn('⏮ Titelbild',-0.22,()=>toTitle()), mkBtn('✦ Neues Spiel',0.22,draw=>{ if(performance.now()-arm>4000){ arm=performance.now(); draw('Nochmal = löschen'); setTimeout(()=>draw('✦ Neues Spiel'),4000); return; } newGame(); })]; }
  // sc.camera (Kamera im Rig, trägt Snap-Drehung) statt xr.getCamera()
  // einmal vor den Kopf in die Welt stellen (bleibt dann stehen, folgt dem Kopf nicht)
  const c=sc.camera, p=new T.Vector3(), q=new T.Quaternion(); c.getWorldPosition(p); c.getWorldQuaternion(q);
  const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-4) f.set(0,0,-1); f.normalize();
- const o=vrPanel.e.object3D; o.position.set(p.x+f.x*1.3,Math.max(1.0,p.y-0.15),p.z+f.z*1.3); o.rotation.set(-0.08,Math.atan2(-f.x,-f.z),0); o.visible=true; vrPanel.e.classList.add('clickable'); vrPanel.t=performance.now(); vrPanel.p0=p.clone(); }
-function hideVR(){ if(!vrPanel) return; vrPanel.e.object3D.visible=false; vrPanel.e.classList.remove('clickable'); LS.set('zs_help_vr_seen','1'); }
+ const o=vrPanel.e.object3D; o.position.set(p.x+f.x*1.3,Math.max(1.0,p.y-0.15),p.z+f.z*1.3); o.rotation.set(-0.08,Math.atan2(-f.x,-f.z),0); o.visible=true; vrPanel.e.classList.add('clickable'); (vrPanel.btns||[]).forEach(b=>b.classList.add('clickable')); vrPanel.t=performance.now(); vrPanel.p0=p.clone(); }
+function hideVR(){ if(!vrPanel) return; vrPanel.e.object3D.visible=false; vrPanel.e.classList.remove('clickable'); (vrPanel.btns||[]).forEach(b=>b.classList.remove('clickable')); LS.set('zs_help_vr_seen','1'); }
 
 function boot(){ el(); const sc=document.querySelector('a-scene');
  const auto=()=>{ if(!LS.get('zs_help_seen_v1')&&!(sc&&sc.is&&sc.is('vr-mode'))) setTimeout(()=>{ if(!LS.get('zs_help_seen_v1')) open('help'); },isPhone()?600:900); };
@@ -156,6 +171,6 @@ function boot(){ el(); const sc=document.querySelector('a-scene');
   // Tafel verschwindet von selbst, wenn man 2,5 m weggeht
   setInterval(()=>{ if(!vrPanel||!vrPanel.e.object3D.visible||!sc.camera) return; const c=sc.camera; const p=new THREE.Vector3(); c.getWorldPosition(p); if(p.distanceTo(vrPanel.p0)>2.5) hideVR(); },500); }
  auto(); }
-window.ZSHelp={open,close,isOpen,showVR,hideVR,view:()=>view};
+window.ZSHelp={open,close,isOpen,showVR,hideVR,toTitle,newGame,view:()=>view};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();
 })();

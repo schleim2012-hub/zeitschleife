@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1021t7"></script><script src="test/lib/helpmenu.js?v=1021t7"></script><script src="test/lib/alpha.js?v=m1741"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1021t7"></script><script src="test/lib/helpmenu.js?v=1021u2"></script><script src="test/lib/alpha.js?v=m1741"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
 <style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
 #start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:18px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
 #start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
@@ -15,9 +15,11 @@ window.zsSnapTurn=window.zsSnapTurn||function(rigO,s,sc){ /* Snap-Drehung um den
 AFRAME.registerComponent('stick-move',{init(){ this.ax=[0,0]; this.snap=0; const sc=this.el.sceneEl; sc.addEventListener('thumbstickmoved',e=>{ const h=e.target.getAttribute('laser-controls'); if(h&&h.hand==='left') this.ax=[e.detail.x,e.detail.y]; else { if(Math.abs(e.detail.x)>0.7&&!this.snap){ this.snap=1; zsSnapTurn(this.el.object3D,Math.sign(e.detail.x),sc); } if(Math.abs(e.detail.x)<0.3) this.snap=0; } }); },
  tick(t,dt){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const cam=this.el.sceneEl.camera; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new THREE.Vector3(-f.z,0,f.x); const o=this.el.object3D.position; o.addScaledVector(f,-y*dt*0.0016).addScaledVector(r,x*dt*0.0016); if(window.__br) __br.collide(o); }});
 const sc=document.querySelector('a-scene'), mode=(ZSA.cur().id); // intro | backrooms | end
-document.getElementById('reset').onclick=e=>{ e.stopPropagation(); ZSA.reset(); location.href='alpha.html?alpha=1&step=0#intro'; };
-if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITER: '+ZSA.cur().title;  }
-else if(mode!=='intro'){ document.getElementById('go').textContent=mode==='end'?'▶ ZUM ENDE':'▶ WEITER ('+ZSA.cur().title+')'; }
+{ const rs=document.getElementById('reset'), hasSave=ZSA.step>0; rs.textContent=hasSave?'✦ Neues Spiel':'Von vorn beginnen'; if(hasSave){ rs.style.cssText='position:absolute;bottom:22px;font-size:15px;opacity:.85;border:1px solid #4a3e2c;padding:9px 20px;text-decoration:none;letter-spacing:2px'; } let arm=0;
+ rs.onclick=e=>{ e.stopPropagation(); e.preventDefault&&e.preventDefault(); if(hasSave&&performance.now()-arm>4000){ arm=performance.now(); rs.textContent='Wirklich? Spielstand wird gelöscht – nochmal tippen'; setTimeout(()=>{ if(performance.now()-arm>=3900) rs.textContent='✦ Neues Spiel'; },4000); return; } ZSHelp&&ZSHelp.newGame?ZSHelp.newGame():(ZSA.reset(),location.href='alpha.html?alpha=1&step=0#intro'); };
+ ['touchstart','touchend','mousedown'].forEach(t=>rs.addEventListener(t,e=>e.stopPropagation())); }
+if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITERSPIELEN: '+ZSA.cur().title;  }
+else if(mode!=='intro'){ document.getElementById('go').textContent=mode==='end'?'▶ ZUM ENDE':'▶ WEITERSPIELEN ('+ZSA.cur().title+')'; }
 sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
  if(window.worldDust) worldDust(sc,{count:60,rMin:0.9,rMax:3.6,yMin:0.2,yMax:2.8,color:0xe8e0b0,color2:0xc8c090,opacity:0.32});
  // ---------- Backrooms in 3D (echte Geometrie, Boden y=0) ----------
