@@ -2,17 +2,19 @@
 // Jeder Raum bekommt eine Tür in der Welt (kein Leucht-Hotspot): anfassen, hindurchgehen oder mit Laser/Klick öffnen → nächster Raum.
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
+// Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=1')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1')+'"><\/script>'); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
  {id:'era1984',    page:'test/era1984.html',       title:'Kinderzimmer 1984',  door:{x:1.5, z:1.94, face:[1.5,0]}, key:{x:-1.3,z:-0.9}},
- {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.25,z:-0.55,y:0.52}},
+ {id:'era1984mall',page:'test/era1984mall.html',   title:'Mall 1984',          door:{x:1.9, z:2.3, face:[0,0]}, key:{x:-2.25,z:-0.55,y:0.52, hide:{type:'drawer', x:-2.55, z:0.45, ry:90, plate:'FUNDSACHEN', inNote:'Fundsache, Bank am Brunnen. Abgeholt: nie.'}}, keyNote:'Abgeschlossen. Was hier verloren geht, landet bei den Fundsachen. – M.'},
  {id:'arcade',     page:'test/era_arcade.html',    title:'Spielhalle 1984',    door:{x:1.9, z:2.3, face:[0,0]}, key:{x:1.25,z:-0.95}},
- {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8}},
+ {id:'pool',       page:'test/era_pool.html',      title:'Hallenbad',          door:{x:1.9, z:2.88, face:[1.9,0]}, key:{x:-1.6,z:0.8, hide:{type:'locker', x:-2.75, z:0.75, ry:90, num:37, inNote:'Fach 37. Seit Jahren nicht abgeholt.'}}, keyNote:'Abgeschlossen. Fach 37. Frag nicht, woher ich das weiß. – M.'},
  {id:'cornfield',  page:'test/era_cornfield.html', title:'Maisfeld',           door:{x:0.9, z:2.25, face:[0.9,0]}, key:{x:0.6,z:-1.15}},
- {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:3.22, z:1.6, face:[0,1.6]}, key:{x:-2.2,z:0.6}},
+ {id:'era1989',    page:'test/era1989.html',       title:'Ostberlin 1989',     door:{x:3.22, z:1.6, face:[0,1.6]}, key:{x:-2.2,z:0.6, hide:{type:'tin', x:-1.95, y:0.345, z:-1.05, ry:-20, cap:'Etwas klappert heraus.'}}, keyNote:'Abgeschlossen. Hier versteckt man Wichtiges im Kaffee. – M.'},
  {id:'era2041',    page:'test/era2041.html',       title:'Stadt 2041',         door:{x:3.22, z:2.0, face:[0,2.0]}, key:{x:2.2,z:-1.0}},
- {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.6, face:[1.9,0]}, key:{x:-1.3,z:-1.3}},
+ {id:'apartment',  page:'test/era_apartment.html', title:'Apartment 2041',     door:{x:1.9, z:2.6, face:[1.9,0]}, key:{x:-1.3,z:-1.3, hide:{type:'drawer', dark:true, x:-1.0, z:-1.55, ry:0, inNote:'Ersatzschlüssel. Nicht für dich. – Hausverwaltung'}}, keyNote:'Abgeschlossen. Ersatzschlüssel? Schublade. Wie immer. – M.'},
  {id:'basket',     page:'test/basket.html',        title:'Hinterhof',          door:{x:-2.6,z:4.6, face:[0,2.2]}, key:{x:1.5,z:3.6}},
  {id:'kirmes',     page:'test/kirmes.html',        title:'Kirmes',             door:{x:-3.4,z:2.6, face:[0,0.4]}, key:{x:-1.2,z:1.6}},
  {id:'sim',        page:'test/sim.html',           title:'Simulator',          door:{x:14.3,z:4.9, face:[12,3.4]}, key:{x:11.0,z:4.4}},
@@ -137,7 +139,7 @@ window.zsaDoor=function(sceneEl,cfg,onOpen){ const T=THREE, S=sceneEl.object3D; 
  const R=sceneEl.renderer;
  const hits=[leaf,inner,glowP];
  [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(zsaRay(sceneEl,c).intersectObjects(hits,true).length) open(); }); });
- sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting) return; if(zsaMouseRay(sceneEl,e).intersectObjects(hits,true).length) open(); });
+ sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||(window.ZSX&&ZSX.busy())) return; if(zsaMouseRay(sceneEl,e).intersectObjects(hits,true).length) open(); });
  let inside=false;
  const step=()=>{ const now=performance.now();
   if(opened){ const k=Math.min(1,(now-t0)/600); hinge.rotation.y=-0.14-1.15*k*k*(3-2*k); L.intensity=1.4*k; glowP.material.opacity=0.3+0.5*k; return; }
@@ -163,27 +165,30 @@ window.zsaKey=function(sceneEl,cfg,onFound){ const T=THREE, S=sceneEl.object3D; 
  const place=()=>{ if(cfg.y!=null){ holder.position.set(cfg.x,cfg.y,cfg.z); return; }
   const rc=new T.Raycaster(new T.Vector3(cfg.x,2.2,cfg.z),new T.Vector3(0,-1,0),0,4); const objs=[]; const mine=o=>{ while(o){ if(o===holder) return true; o=o.parent; } return false; }; S.traverse(o=>{ if(o.isMesh&&o.visible&&!mine(o)&&!(o.material&&(o.material.visible===false||o.material.transparent||o.material.side===T.BackSide))) objs.push(o); });
   const h=rc.intersectObjects(objs,false).find(x=>x.face&&Math.abs(x.face.normal.y)>0.3); holder.position.set(cfg.x,h?h.point.y+0.006:0.006,cfg.z); };
- place(); setTimeout(place,1500); setTimeout(place,5000);
+ let enabled=!cfg.hide, enT=0; const hidden=cfg.hide&&window.ZSX&&ZSX.hide; if(!hidden){ enabled=true; place(); setTimeout(place,1500); setTimeout(place,5000); }
  // kleiner Lichtfleck + gelegentliches Glitzern (in der Welt, kein Hotspot)
  const gl=document.createElement('canvas'); gl.width=gl.height=64; const gx=gl.getContext('2d'); const gg=gx.createRadialGradient(32,32,0,32,32,32); gg.addColorStop(0,'rgba(255,240,200,1)'); gg.addColorStop(0.25,'rgba(255,220,150,0.35)'); gg.addColorStop(1,'rgba(255,200,120,0)'); gx.fillStyle=gg; gx.fillRect(0,0,64,64);
  const spr=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(gl),transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0})); spr.scale.set(0.035,0.035,1); spr.position.y=0.015; holder.add(spr);
  const kl=new T.PointLight(0xffd8a0,0.14,0.7,2); kl.position.y=0.3; holder.add(kl);
  const hitS=new T.Mesh(new T.SphereGeometry(0.22,10,8),new T.MeshBasicMaterial({visible:false})); holder.add(hitS);
+ if(hidden) kl.intensity=0;
  let found=false; const R=sceneEl.renderer, head=new T.Vector3(), hp=new T.Vector3(), kp=new T.Vector3();
- const take=()=>{ if(found) return; found=true; SND.chime(); holder.visible=false; try{ kE.parentNode&&kE.parentNode.removeChild(kE); }catch(e){} onFound&&onFound(); };
+ const take=()=>{ if(found||!enabled) return; found=true; SND.chime(); holder.visible=false; try{ kE.parentNode&&kE.parentNode.removeChild(kE); }catch(e){} onFound&&onFound(); };
  [0,1].forEach(i=>{ const c=R.xr.getController(i); c.addEventListener('selectstart',()=>{ if(found) return; const rc=zsaRay(sceneEl,c); if(rc.intersectObject(hitS,false).length) return take(); holder.getWorldPosition(kp); const d=kp.clone().sub(rc.ray.origin); if(d.length()<7&&rc.ray.direction.angleTo(d)<0.12) take(); }); c.addEventListener('squeezestart',()=>{ if(found) return; zsaCtrlPos(sceneEl,c,hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.45) take(); }); });
  // A-Frame-Pfad (wie die greifbaren Raum-Gegenstände): unsichtbare .clickable-Kugel → laser-controls/cursor-Klick; Grip über die A-Frame-Controller-Entities
- const kE=document.createElement('a-entity'); kE.classList.add('clickable'); kE.id='zsaKeyHit'; sceneEl.appendChild(kE);
+ const kE=document.createElement('a-entity'); if(!hidden) kE.classList.add('clickable'); kE.id='zsaKeyHit'; sceneEl.appendChild(kE);
  const hitA=new T.Mesh(new T.SphereGeometry(0.22,10,8),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,colorWrite:false}));
  const syncA=()=>{ holder.getWorldPosition(kp); kE.object3D.position.copy(kp); };
  const initA=()=>{ kE.setObject3D('mesh',hitA); syncA(); kE.addEventListener('click',take); }; kE.hasLoaded?initA():kE.addEventListener('loaded',initA);
  [1600,5200].forEach(ms=>setTimeout(syncA,ms));
+ const enable=()=>{ if(enabled) return; enabled=true; enT=performance.now(); kl.intensity=0.14; holder.visible=true; syncA(); kE.classList.add('clickable'); };
+ if(hidden) ZSX.hide(sceneEl,cfg,holder,enable);
  const gripEls=new Set(); const hookG=()=>document.querySelectorAll('[laser-controls],[hand-controls],[oculus-touch-controls]').forEach(el=>{ if(gripEls.has(el)) return; gripEls.add(el); el.addEventListener('gripdown',()=>{ if(found) return; el.object3D.getWorldPosition(hp); holder.getWorldPosition(kp); if(hp.distanceTo(kp)<0.45) take(); }); }); hookG(); [1000,4000].forEach(ms=>setTimeout(hookG,ms));
- sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||found) return; if(zsaMouseRay(sceneEl,e).intersectObject(hitS,false).length) take(); });
- (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found) return; const now=performance.now(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.55:0; spr.material.rotation=now*0.002;
-  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<0.75) return take();
+ sceneEl.canvas&&sceneEl.canvas.addEventListener('click',e=>{ if(R.xr.isPresenting||found||!enabled||(window.ZSX&&ZSX.busy())) return; if(zsaMouseRay(sceneEl,e).intersectObject(hitS,false).length) take(); });
+ (window.__zsaSteps=window.__zsaSteps||[]).push(()=>{ if(found||!enabled) return; const now=performance.now(); if(hidden) syncA(); const ph=(now%4200)/4200; spr.material.opacity=ph<0.12?Math.sin(ph/0.12*Math.PI)*0.55:0; spr.material.rotation=now*0.002;
+  const cam=R.xr.isPresenting?R.xr.getCamera():sceneEl.camera; if(!cam) return; cam.getWorldPosition(head); holder.getWorldPosition(kp); if(Math.hypot(head.x-kp.x,head.z-kp.z)<(hidden?0.6:0.75)&&now-enT>1400) return take();
   if(R.xr.isPresenting) for(let i=0;i<2;i++){ zsaCtrlPos(sceneEl,R.xr.getController(i),hp); if(hp.distanceTo(kp)<0.32) return take(); } });
- holder.userData.take=take; return holder; };
+ holder.userData.take=take; holder.userData.enabled=()=>enabled; return holder; };
 // Sprachzeilen (ElevenLabs, Kap. 6 Verzweigungskonzept). VO_AT: wann sie in der Alpha laufen (enter = nach Betreten + delay s, key = Schlüssel gefunden)
 const VO={
  v_2041_baum_e:['Erzähler','Kein Tor. Ein Baum. Irgendwer hat 1972 was richtig gemacht.'],
@@ -222,7 +227,7 @@ if(s.door) document.addEventListener('DOMContentLoaded',()=>{ const sc=document.
   const kc=s.key; const cfg=Object.assign({},s.door,{locked:!!kc,note:s.door.note||(kc?(s.keyNote||'Abgeschlossen. Der Schlüssel liegt hier irgendwo. – M.'):null)});
   const d=window.__zsaDoorG=zsaDoor(sc,cfg,()=>goStep(step+1));
   const at=VO_AT[s.id]||[]; at.filter(e=>e[1]==='enter').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000));
-  const onKey=()=>at.filter(e=>e[1]==='key').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000));
+  const onKey=()=>{ at.filter(e=>e[1]==='key').forEach(e=>setTimeout(()=>zsaSay(e[0]),e[2]*1000)); if(window.NOKIO&&NOKIO.onKey) NOKIO.onKey(); };
   if(kc){ window.__zsaKeyG=zsaKey(sc,kc,()=>{ d.userData.unlock(); onKey(); }); setTimeout(()=>{ if(d.userData.isLocked()){ d.userData.unlock(); } },150000); /* Sicherheitsnetz: nach 2,5 min gibt die Schleife nach */ }
  },300); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
 })();

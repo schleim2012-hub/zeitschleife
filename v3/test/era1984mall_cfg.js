@@ -15,6 +15,6 @@ window.ERA={ amb:'../assets/sfx/amb_mall.mp3', ambVol:0.3, pools:[], world3d:'bu
 };
 window.ERAX={
  stands:[[2.6,0.3,-70,1.45,2.25,0x15101a,[['p2',0.9,1.45,-0.35,['Mara','„Der Weiße Hai im Badesee. Hab ich gesehen. Der Hai war ein Schwimmreifen mit Gefühlen.“']],['p3',0.9,1.45,0.35,['Mara','„Neon Cola, seit 1984. Schmeckt wie Kopfschmerzen in Pink.“']]]]],
- covers:[['c6','book',-2.3,0.47,-0.95,80,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']],['c4','mag',-2.28,0.47,-0.22,100,['Mara','„Neon Nostalgie. Wer Heimweh nach den Achtzigern hat, war nie wirklich da.“']]],
+ covers:[['c6','book',-2.3,0.47,-0.95,80,['Mara','„Tetris-Tante. Räumt jede Zeile ab. Nur nicht dein Zimmer.“']],['c4','mag',-2.28,0.47,-0.22,100,['Mara','„Neon Nostalgie. Wer Heimweh nach den Achtzigern hat, war nie wirklich da.“'],{back:'Umkleide 3, hinten links. Falls ich wieder einschlafe: Weck mich nicht vor 1996. – M.',cap:'Hinten drauf, mit Kuli: „Umkleide 3, hinten links. Falls ich wieder einschlafe: Weck mich nicht vor 1996. – M.“',w:0.15,h:0.1}]],
  decoys:[['../assets/items/gameboy.glb',2.1,0,-0.75,1,-30,['Mara','„Ein Gameboy? 1984? Der kommt erst in fünf Jahren. Steck den weg, bevor das Raum-Zeit-Kontinuum klagt.“']],['../assets/items/tama.glb',-2.2,0,-1.55,1,20,['Mara','„Ein Tamagotchi. Das ist aus meiner Zeit. Wenn es piept, hat es Hunger. Wie du.“']]]
 };

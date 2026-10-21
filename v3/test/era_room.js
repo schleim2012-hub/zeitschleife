@@ -77,7 +77,10 @@ S.addEventListener('loaded',()=>{
  // grabbables (GLB)
  const items=[]; let held=null, grabs=0;
  (C.items||[]).forEach(([glb,x,y,z,sc,ry,line])=>{ const el=document.createElement('a-entity'); el.classList.add('clickable'); el.setAttribute('gltf-model',glb); el.setAttribute('scale',`${sc} ${sc} ${sc}`); el.setAttribute('position',`${x} ${y} ${z}`); el.setAttribute('rotation',`0 ${ry} 0`); S.appendChild(el);
-  const it={el,y0:y,vy:0,line}; items.push(it); el.addEventListener('click',e=>{ grab(it,e.detail&&e.detail.cursorEl); }); });
+  const it={el,y0:y,vy:0,line}; items.push(it); el.addEventListener('click',e=>{ const src=e.detail&&e.detail.cursorEl;
+   // Laser/Klick = Untersuchen (lib/zsx.js), Grip = in die Hand nehmen/werfen
+   if(window.ZSX&&held!==it){ if(ZSX.busy()) return; const vr=src&&HND[src.id]; it.falling=false; it.v=null; if(ZSX.examine(el.object3D,{mode:vr?'laser':'mouse',src:vr?src:null,size:0.09})&&it.line&&!it.said){ it.said=1; say(it.line[0],it.line[1],it.line[2]); } return; }
+   grab(it,src); }); });
  // Greifen/Werfen: VR = Gewichts-Lag + Wurf-Schätzer (lib/vrphys.js), Desktop = an Kamera
  const HND={hl:{id:'hl',hand:'left'},hr:{id:'hr',hand:'right'}}; let heldBy=null; const hq=new T.Quaternion(), hp=new T.Vector3();
  const HAP=(h,i,ms)=>{ if(window.VRP) VRP.haptic(S.renderer,h,i,ms); };
@@ -91,7 +94,7 @@ S.addEventListener('loaded',()=>{
   held=null; heldBy=null; }
  // Squeeze-Griff in Reichweite (natürlicher als Laser), Loslassen = Wurf
  ['hl','hr'].forEach(id=>{ const el=document.getElementById(id);
-  el.addEventListener('gripdown',()=>{ if(held) return; const p=new T.Vector3(); el.object3D.getWorldPosition(p); let best=null,bd=0.3; items.forEach(it=>{ const q=new T.Vector3(); it.el.object3D.getWorldPosition(q); const d=q.distanceTo(p); if(d<bd){bd=d;best=it;} }); if(best) grab(best,el); });
+  el.addEventListener('gripdown',()=>{ if(held||(window.ZSX&&ZSX.active)) return; const p=new T.Vector3(); el.object3D.getWorldPosition(p); let best=null,bd=0.3; items.forEach(it=>{ const q=new T.Vector3(); it.el.object3D.getWorldPosition(q); const d=q.distanceTo(p); if(d<bd){bd=d;best=it;} }); if(best) grab(best,el); });
   el.addEventListener('gripup',()=>{ if(held&&heldBy&&heldBy.id===id) drop(); }); });
  S.addEventListener('click',e=>{ if(held&&e.target===S) drop(); });
  ['hl','hr'].forEach(id=>document.getElementById(id).addEventListener('triggerdown',()=>{ const rc=document.getElementById(id).components.raycaster; if(held&&(!rc||!rc.intersectedEls.length)) drop(); }));
@@ -139,7 +142,7 @@ S.addEventListener('loaded',()=>{
  (C.ph||[]).forEach(([n,x,y,z,ry,sc])=>{ blob(x,y,z,1.1*sc); const e=document.createElement('a-entity'); e.setAttribute('gltf-model','../assets/props/ph/'+n+'/'+n+'.gltf'); e.setAttribute('position',x+' '+y+' '+z); e.setAttribute('rotation','0 '+ry+' 0'); e.setAttribute('scale',sc+' '+sc+' '+sc); S.appendChild(e); });
  let shimT=0; if(shim) setInterval(()=>{ shimT+=80; shim(shimT); },80);
 });
-AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ document.getElementById('hl').addEventListener('thumbstickmoved',e=>{this.ax=[e.detail.x,e.detail.y];}); document.getElementById('hr').addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
- tick(t,dt){ const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
+AFRAME.registerComponent('room-move',{init(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ document.getElementById('hl').addEventListener('thumbstickmoved',e=>{this.ax=[e.detail.x,e.detail.y];}); document.getElementById('hr').addEventListener('thumbstickmoved',e=>{ const x=e.detail.x; if(window.ZSX&&ZSX.active) return; if(Math.abs(x)>0.7&&!this.snap){ this.snap=1; this.el.object3D.rotation.y-=Math.sign(x)*Math.PI/6; } if(Math.abs(x)<0.3) this.snap=0; }); },0); },
+ tick(t,dt){ if(window.ZSX&&ZSX.active) return; const o=this.el.object3D, d=Math.min(dt,50)/1000; const [x,y]=this.ax; if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const cam=document.getElementById('cam').object3D; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(x,0,y).applyQuaternion(q); f.y=0; o.position.addScaledVector(f,1.4*d); }
   const B=window.ERA.bounds, c=document.getElementById('cam').object3D.position; const wx=o.position.x+c.x, wz=o.position.z+c.z; o.position.x+=Math.max(B[0],Math.min(B[1],wx))-wx; o.position.z+=Math.max(B[2],Math.min(B[3],wz))-wz; if(window.__W3&&__W3.collide){ const r=__W3.collide(o.position.x+c.x,o.position.z+c.z); if(r){ o.position.x+=r[0]; o.position.z+=r[1]; } } }});
 })();

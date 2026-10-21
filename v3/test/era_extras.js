@@ -65,16 +65,21 @@ function go(){
  function mk(el,mesh,x,y,z,ry,flat,line){ const it={el,home:[x,y,z,ry,flat],line,said:0,flip:0}; all.push(it);
   el.addEventListener('loaded',()=>{ el.setObject3D('mesh',mesh); place(it); }); el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); pick(it,e.detail&&e.detail.cursorEl); }); return it; }
  function place(it){ const [x,y,z,ry,flat]=it.home, o=it.el.object3D; G.attach(o); o.position.set(x,y,z); o.rotation.set(flat?-Math.PI/2:0,0,0); o.rotateOnWorldAxis(new T.Vector3(0,1,0),R(ry)); }
- function pick(it,src){ if(held.it===it){ place(it); held.it=null; return; } if(held.it) place(held.it);
+ function pick(it,src){ if(window.ZSX){ if(ZSX.busy()) return; const vr=src&&(src.id==='hl'||src.id==='hr'); const flat=it.home[4];
+   if(ZSX.examine(it.el.object3D,{mode:it.gripBy?'grip':(vr?'laser':'mouse'),src:it.gripBy||(vr?src:null),face:flat?[0,0,1]:null,size:flat?0.16:0.09,secret:it.secret})){ it.gripBy=null; if(it.line){ const L=Array.isArray(it.line[0])?it.line[Math.min(it.said,it.line.length-1)]:(it.said?null:it.line); it.said++; if(L) setTimeout(()=>say(L),450); } } it.gripBy=null; return; }
+  if(held.it===it){ place(it); held.it=null; return; } if(held.it) place(held.it);
   const par=(src&&(src.id==='hl'||src.id==='hr'))?src.object3D:cam(); par.attach(it.el.object3D); const o=it.el.object3D;
   if(par===cam()) o.position.set(0.02,-0.06,-0.38); else o.position.set(0,0.02,-0.12); o.rotation.set(par===cam()?0:-0.6,Math.PI,0); it.flip=performance.now(); held.it=it;
   if(it.line){ const L=Array.isArray(it.line[0])?it.line[Math.min(it.said,it.line.length-1)]:(it.said?null:it.line); it.said++; if(L) setTimeout(()=>say(L),450); } }
- (X.covers||[]).forEach(([img,kind,x,y,z,ry,line])=>{ const [w,h,d,col]=K[kind]; const fm=new T.MeshStandardMaterial({color:0xd0c8c4,roughness:kind==='vhs'?0.35:0.7}); tex(PW+img+'.jpg',fm);
+ (X.covers||[]).forEach(([img,kind,x,y,z,ry,line,sec])=>{ const [w,h,d,col]=K[kind]; const fm=new T.MeshStandardMaterial({color:0xd0c8c4,roughness:kind==='vhs'?0.35:0.7}); tex(PW+img+'.jpg',fm);
   const sm=new T.MeshStandardMaterial({color:col,roughness:0.7}); const pageM=new T.MeshStandardMaterial({color:0xcbbf9e,roughness:0.9});
   const side=kind==='book'?pageM:sm; const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),[side,sm,side,side,fm,sm]);
-  const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el); mk(el,mesh,x,y+d/2,z,ry,true,line); });
+  const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el); const it=mk(el,mesh,x,y+d/2,z,ry,true,line);
+  // Geheimnis auf der Rückseite (Zettel/Beleg) – nur sichtbar, wenn man das Ding umdreht
+  if(sec&&window.ZSX){ const nw=Math.min(w*0.8,sec.w||0.13), nh=Math.min(h*0.6,sec.h||0.1); const n=ZSX.noteMesh(sec.back,nw,nh,{head:sec.head,stamp:sec.stamp,tape:!sec.head,fs:sec.fs}); n.rotation.y=Math.PI; n.rotation.z=sec.rot||0.06; n.position.set(sec.dx||0,sec.dy||0,-d/2-0.0009); mesh.add(n); it.secret={axis:[0,0,-1],cap:sec.cap||sec.back,id:img}; } });
  (X.decoys||[]).forEach(([glb,x,y,z,sc,ry,line])=>{ const el=document.createElement('a-entity'); el.classList.add('clickable'); el.setAttribute('gltf-model',glb); el.setAttribute('scale',`${sc} ${sc} ${sc}`); S.appendChild(el);
   const it={el,home:[x,y,z,ry,false],line,said:0,flip:0}; all.push(it); el.addEventListener('model-loaded',()=>place(it)); place(it); el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); pick(it,e.detail&&e.detail.cursorEl); }); });
+ if(window.ZSX){ const seen=new Set(); const hg=()=>['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(!h||seen.has(h)) return; seen.add(h); h.addEventListener('gripdown',()=>{ if(ZSX.busy()||(window.__era&&__era.held)) return; const a=new T.Vector3(); h.object3D.getWorldPosition(a); let best=null,bd=0.25; all.forEach(it=>{ const q=new T.Vector3(); it.el.object3D.getWorldPosition(q); const dd=q.distanceTo(a); if(dd<bd){ bd=dd; best=it; } }); if(best){ best.gripBy=h; pick(best,h); } }); }); hg(); setTimeout(hg,2000); }
  AFRAME.registerComponent('erax-tick',{tick(t){ const it=held.it; if(!it||!it.flip) return; const k=Math.min(1,(performance.now()-it.flip)/650); const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2; it.el.object3D.rotation.y=Math.PI*(1-e); if(k>=1) it.flip=0; }}); S.setAttribute('erax-tick','');
  window.eraX={all,held,place};
 }
