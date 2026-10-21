@@ -154,6 +154,6 @@ function boot(){ el(); const sc=document.querySelector('a-scene');
   // Tafel verschwindet von selbst, wenn man 2,5 m weggeht
   setInterval(()=>{ if(!vrPanel||!vrPanel.e.object3D.visible||!sc.camera) return; const c=sc.camera; const p=new THREE.Vector3(); c.getWorldPosition(p); if(p.distanceTo(vrPanel.p0)>2.5) hideVR(); },500); }
  auto(); }
-window.ZSHelp={open,close,isOpen,showVR,hideVR};
+window.ZSHelp={open,close,isOpen,showVR,hideVR,view:()=>view};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();
 })();

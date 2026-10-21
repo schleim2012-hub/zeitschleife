@@ -9,6 +9,12 @@ const Q=location.search, UA=navigator.userAgent||'';
 const force=/[?&]touch=1/.test(Q), off=/[?&]touch=0/.test(Q);
 const touchDev=(('ontouchstart' in window)||navigator.maxTouchPoints>0)&&window.matchMedia&&matchMedia('(pointer:coarse)').matches;
 const Z=window.ZSTouch={active:false};
+// Ton aus, wenn die Seite/App in den Hintergrund geht (alle AudioContexts + Videos/Audios merken und anhalten)
+(function(){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC||AC.__zsWrapped) return; const all=window.__zsACs=[];
+ const W=function(...a){ const c=new AC(...a); all.push(c); return c; }; W.prototype=AC.prototype; W.__zsWrapped=true; try{ Object.setPrototypeOf(W,AC); }catch(e){}
+ window.AudioContext=W; if(window.webkitAudioContext) window.webkitAudioContext=W; let paused=[], media=[];
+ document.addEventListener('visibilitychange',()=>{ if(document.hidden){ paused=all.filter(c=>c.state==='running'); paused.forEach(c=>c.suspend().catch(()=>{})); media=[...document.querySelectorAll('video,audio')].filter(m=>!m.paused); media.forEach(m=>m.pause()); }
+  else { paused.forEach(c=>c.resume().catch(()=>{})); media.forEach(m=>m.play().catch(()=>{})); paused=[]; media=[]; } }); })();
 if(off||!(force||(touchDev&&!/OculusBrowser|Quest|Pico/i.test(UA)))) return;
 Z.active=true;
 const LS={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}}};
@@ -208,6 +214,12 @@ window.addEventListener('touchend',()=>fs(),{capture:true,passive:true});
 window.addEventListener('touchmove',tmove,{capture:true,passive:false});
 window.addEventListener('touchend',tend,{capture:true,passive:false});
 window.addEventListener('touchcancel',tend,{capture:true,passive:false});
+// Android-Zurück-Taste (App): 'handled' = im Spiel erledigt, 'menu' = Menü geöffnet, 'exit' = Menü war offen → App in den Hintergrund
+Z.androidBack=function(){ try{ const ip=document.getElementById('tc-inv-p');
+ if(window.ZSHelp&&ZSHelp.isOpen()){ if(ZSHelp.view&&ZSHelp.view()!=='menu'){ ZSHelp.open('menu'); return 'handled'; } return 'exit'; }
+ if((ip&&ip.style.display==='block')||cinema()||examining()){ back(); return 'handled'; }
+ if(Z.onBack&&Z.onBack()) return 'handled';
+ if(window.ZSHelp){ ZSHelp.open('menu'); return 'menu'; } return 'exit'; }catch(e){ return 'exit'; } };
 Z.tap=tap; Z.dbg=()=>({walk:walk&&{p:walk.p,stop:walk.stop,n:walk.n,last:walk.last,exp:walk.exp},rig:rig&&rig.position.toArray(),cine:!!cinema(),ex:!!examining(),xr:inXR}); Z.look=look; Z.pick=pick; Z.walkTo=(x,z)=>walkTo(new (T().Vector3)(x,0,z),0.05);
 domReady(()=>{ buildUI(); attach(); });
 })();
