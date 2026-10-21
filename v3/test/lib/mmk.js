@@ -262,7 +262,7 @@ window.buildMMKitchen=function(sc,o){
   // Helligkeit: draußen hell (Backrooms-Hemi), drinnen fast dunkel – fließend über die Schwelle
   if(Math.abs(kin-kinLast)>0.002||Kw!==tick.k){ tick.k=Kw; const f=(0.07+0.93*kin)*Kw; kMats.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(f)); mGl.color.setHex(0x6f7686).multiplyScalar(Kw); kinLast=kin;
    if(window.__brSnd&&__brSnd.out){ try{ __brSnd.out.gain.setTargetAtTime(1-0.65*kin,__brSnd.out.context.currentTime,0.3); }catch(e){} } if(fridgeG) fridgeG.gain.setTargetAtTime(kin,fridgeG.context.currentTime,0.3); }
-  hemi.intensity=(o.hemiBase||1.15)*Kw*(1-0.955*kin); spot.intensity=11*Kw*kin; moonM.opacity=0.42*kin*Kw;
+  hemi.intensity=(o.hemiBase||1.15)*Kw*(1-0.955*kin); spot.intensity=(o.BK?6:11)*Kw*kin; moonM.opacity=0.42*kin*Kw;
   // Flacker- und Mikrowellenlicht: Backrooms-Lichter wandern mit (kein zusätzlicher Shader-Lichtplatz)
   if(kin>0.5&&!relocated){ relocated=true; L1.position.copy(mwLightPos); L1.color.setHex(0xffb35c); L1.distance=3.4; L2.position.copy(BULB).y-=0.06; L2.color.setHex(0xffcf90); L2.distance=3.6; }
   else if(kin<=0.5&&relocated){ relocated=false; L1.position.copy(L1home.p); L1.color.copy(L1home.c); L1.distance=L1home.d; L2.position.copy(L2home.p); L2.color.copy(L2home.c); L2.distance=L2home.d; }

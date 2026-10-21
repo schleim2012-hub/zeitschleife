@@ -13,7 +13,7 @@ const W=[ [-4,3,1,3],[2.6,3,4,3], [4,-4,4,-1.45],[4,-0.35,4,3], [-4,-4,-4,-2.5],
 const PIL=[[-1.7,-1.6,0.5],[2.4,1.3,0.45],[-3.6,-9.6,0.5],[3.6,-13.6,0.5]]; // Pfeiler x,z,size
 const BOUND={x0:-11.7,x1:5.7,z0:-19.6,z1:8.7};
 let seed=11; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
-window.buildBackrooms=function(sc,o){ o=o||{}; const T=THREE, S=sc.object3D, ROOT=o.root||'', TL=new T.TextureLoader(); const G=new T.Group(); G.name='br3d'; S.add(G);
+window.buildBackrooms=function(sc,o){ o=o||{}; const BK=!!window.ZSBake&&!/[?&]nobake=1/.test(location.search); const HEMI=o.hemi||(BK?0.2:1.15); const T=THREE, S=sc.object3D, ROOT=o.root||'', TL=new T.TextureLoader(); const G=new T.Group(); G.name='br3d'; S.add(G);
  const tex=(f,rep,srgb)=>{ const t=TL.load(ROOT+'assets/tex/br/'+f); t.wrapS=t.wrapT=T.RepeatWrapping; if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; return t; };
  // ---------- Röhren (Troffer 1,2 × 0,6, Decke) ----------
  const tubes=[]; const inR=(x,z,m)=>R.some(r=>x>r[0]+m&&x<r[1]-m&&z>r[2]+m&&z<r[3]-m);
@@ -82,7 +82,7 @@ wall(-10.45,-1,-9.55,-1,[2.05,2.3,2.6,H]); // Sturz über der Küchentür
  const mRail=new T.MeshStandardMaterial({color:0xb8b090,roughness:0.6,metalness:0.3,vertexColors:true});
  const mBase=new T.MeshStandardMaterial({color:0x3a2c1c,roughness:0.7,metalness:0,vertexColors:true});
  const add=(B,m)=>{ const me=new T.Mesh(toGeo(B),m); me.matrixAutoUpdate=false; me.userData.keep=true; G.add(me); return me; };
- add(FB,mFloor); add(CB,mCeil); add(WB,mWall); add(RB,mRail); add(BB,mBase);
+ add(FB,mFloor).name='br_floor'; add(CB,mCeil).name='br_ceil'; add(WB,mWall).name='br_wall'; add(RB,mRail).name='br_rail'; add(BB,mBase).name='br_base';
  // Löcher in der Decke: schwarzer Schacht + ein paar Kabel / Rohr; hängende Platten
  const voidM=new T.MeshBasicMaterial({color:0x020202}); const cabM=new T.MeshStandardMaterial({color:0x111111,roughness:0.6});
  holes.forEach(([x,z,x2,z2],k)=>{ const b=new T.Mesh(new T.BoxGeometry(x2-x,0.5,z2-z),voidM); b.geometry.groups=[]; b.material.side=T.BackSide; b.position.set((x+x2)/2,H+0.25,(z+z2)/2); G.add(b);
@@ -104,24 +104,24 @@ wall(-10.45,-1,-9.55,-1,[2.05,2.3,2.6,H]); // Sturz über der Küchentür
  tubes.forEach(t=>{ const tilt=(rnd()-0.5)*0.01; // nichts ganz gerade
   box(frameB,t.x,H-0.008,t.z,1.2,0.016,0.6,col(0.35)); 
   const P=[[t.x-0.57,H-0.02,t.z-0.27+tilt],[t.x+0.57,H-0.02,t.z-0.27-tilt],[t.x+0.57,H-0.02,t.z+0.27-tilt],[t.x-0.57,H-0.02,t.z+0.27+tilt]];
-  if(t.state==='flick'){ const g=new T.BufferGeometry(); const B=mk(); quad(B,P,[0,-1,0],[[0,0],[1,0],[1,1],[0,1]],[[1,1,1],[1,1,1],[1,1,1],[1,1,1]]); const m=new T.Mesh(toGeo(B),mOn.clone()); m.material.vertexColors=false; G.add(m); flickMeshes.push(m); t.mesh=m; }
+  if(t.state==='flick'){ const g=new T.BufferGeometry(); const B=mk(); quad(B,P,[0,-1,0],[[0,0],[1,0],[1,1],[0,1]],[[1,1,1],[1,1,1],[1,1,1],[1,1,1]]); const m=new T.Mesh(toGeo(B),mOn.clone()); m.material.vertexColors=false; m.name='br_flick'+flickMeshes.length; G.add(m); flickMeshes.push(m); t.mesh=m; }
   else quad(TB[t.state==='dead'?'dead':(t.I<1?'weak':'on')],P,[0,-1,0],[[0,0],[1,0],[1,1],[0,1]],[[1,1,1],[1,1,1],[1,1,1],[1,1,1]]); });
  const mOnV=mOn.clone(); add(TB.on,mOnV); add(TB.weak,mWeak); add(TB.dead,mDead); add(frameB,mFrame);
  // ---------- wenige echte Lichter (Spieler-Nähe + Flackerer) ----------
- const hemi=new T.HemisphereLight(0xfff4d0,0x3a3010,o.hemi||1.15); S.add(hemi);
+ const hemi=new T.HemisphereLight(0xfff4d0,0x3a3010,HEMI); S.add(hemi);
  const pl=[]; const mkPL=(t,I)=>{ const L=new T.PointLight(0xfff0c0,I,6,2); L.position.set(t.x,H-0.25,t.z); S.add(L); pl.push(L); return L; };
- const L0=mkPL(sp,1.6), L1=mkPL(fl1,1.1), L2=mkPL(fl2,1.0);
+ const L0=mkPL(sp,BK?0.7:1.6), L1=mkPL(fl1,1.1), L2=mkPL(fl2,1.0); // alle drei sitzen an Troffern; mit Lightmap trägt L0 nur Glanz/Props
 // ---------- versteckte Küche (mmk.js) hinter der angelehnten Tür im linken Seitengang ----------
-const KIT=window.buildMMKitchen?buildMMKitchen(sc,{G,ROOT,L1,L2,hemi,hemiBase:o.hemi||1.15}):null; const XW=KIT?KIT.walls:[], XR=KIT?KIT.rects:[];
+const KIT=window.buildMMKitchen?buildMMKitchen(sc,{G,ROOT,L1,L2,hemi,hemiBase:HEMI,BK}):null; const XW=KIT?KIT.walls:[], XR=KIT?KIT.rects:[];
  // ---------- Set-Dressing ----------
  const decal=(draw,w,h,x,y,z,rx,ry)=>{ const c=document.createElement('canvas'); c.width=c.height=256; draw(c.getContext('2d')); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace;
-  const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshStandardMaterial({map:t,transparent:true,depthWrite:false,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-2})); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,0); G.add(m); return m; };
+  const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshStandardMaterial({map:t,transparent:true,depthWrite:false,roughness:0.6,polygonOffset:true,polygonOffsetFactor:-2})); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,0); m.name='br_olddecal'; G.add(m); return m; };
  const stain=x=>{ const cx=128, cy=128; for(let i=0;i<70;i++){ const a=rnd()*6.28, rr=Math.pow(rnd(),0.7)*80, px=cx+Math.cos(a)*rr*1.2, py=cy+Math.sin(a)*rr*0.8, r=10+rnd()*28; const g=x.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(38,28,8,0.07)'); g.addColorStop(1,'rgba(38,28,8,0)'); x.fillStyle=g; x.fillRect(px-r,py-r,2*r,2*r); }
   x.strokeStyle='rgba(30,22,6,0.10)'; x.lineWidth=3; x.beginPath(); for(let k=0;k<=40;k++){ const a=k/40*6.283, r=70+Math.sin(a*3+rnd())*12+rnd()*6; x.lineTo(cx+Math.cos(a)*r*1.2,cy+Math.sin(a)*r*0.8); } x.stroke();
   const g=x.createRadialGradient(cx,cy,60,cx,cy,128); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,1)'); x.globalCompositeOperation='destination-out'; x.fillStyle=g; x.fillRect(0,0,256,256); x.globalCompositeOperation='source-over'; };
- [[0.8,-1.2,1.6],[-2.6,1.6,1.2],[0.2,-7.5,1.8],[-0.4,-15,2.2],[-8,-1.7,1.4],[3.4,-14,1.6],[1.7,6.5,1.4],[-3,-10.5,1.5]].forEach(([x,z,s])=>decal(stain,s,s*(0.7+rnd()*0.5),x,0.004,z,-Math.PI/2));
+ if(!BK) [[0.8,-1.2,1.6],[-2.6,1.6,1.2],[0.2,-7.5,1.8],[-0.4,-15,2.2],[-8,-1.7,1.4],[3.4,-14,1.6],[1.7,6.5,1.4],[-3,-10.5,1.5]].forEach(([x,z,s])=>decal(stain,s,s*(0.7+rnd()*0.5),x,0.004,z,-Math.PI/2));
  const drip=x=>{ for(let i=0;i<6;i++){ const cx=40+rnd()*176, w=10+rnd()*30, len=60+rnd()*190; const g=x.createLinearGradient(0,0,0,len); g.addColorStop(0,'rgba(70,52,16,0.55)'); g.addColorStop(1,'rgba(70,52,16,0)'); x.fillStyle=g; x.fillRect(cx-w/2,0,w,len); } const g=x.createLinearGradient(0,0,0,40); g.addColorStop(0,'rgba(60,44,12,0.5)'); g.addColorStop(1,'rgba(60,44,12,0)'); x.fillStyle=g; x.fillRect(0,0,256,40); };
- [[-4+WT/2+0.005,1.8,1.2,Math.PI/2],[-1+WT/2+0.005,-6.5,1.4,Math.PI/2],[1-WT/2-0.005,-17,1.6,-Math.PI/2],[0.6,-4+WT/2+0.005,1.3,0],[-1.5,3-WT/2-0.005,1.2,Math.PI]].forEach(([x,z,w,ry])=>decal(drip,w,1.3,x,H-0.66,z,0,ry));
+ if(!BK) [[-4+WT/2+0.005,1.8,1.2,Math.PI/2],[-1+WT/2+0.005,-6.5,1.4,Math.PI/2],[1-WT/2-0.005,-17,1.6,-Math.PI/2],[0.6,-4+WT/2+0.005,1.3,0],[-1.5,3-WT/2-0.005,1.2,Math.PI]].forEach(([x,z,w,ry])=>decal(drip,w,1.3,x,H-0.66,z,0,ry));
  // Müll: zerknülltes Papier, Dosen, Verlängerungskabel
  const paperM=new T.MeshStandardMaterial({color:0xcfc8b0,roughness:0.9,flatShading:true}); const paper=(x,z,s)=>{ const g=new T.IcosahedronGeometry(s,1); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const f=0.7+rnd()*0.5; p.setXYZ(i,p.getX(i)*f,p.getY(i)*f*0.8,p.getZ(i)*f); } g.computeVertexNormals(); const m=new T.Mesh(g,paperM); m.position.set(x,s*0.7,z); m.rotation.set(rnd()*3,rnd()*3,0); G.add(m); };
  [[1.2,-2.9,0.04],[-2.9,2.3,0.035],[0.5,-9,0.045],[-0.6,-13.5,0.04],[-7.5,-2,0.035],[2.1,7.6,0.04],[3.2,-0.2,0.03]].forEach(a=>paper(...a));
@@ -153,6 +153,17 @@ const KIT=window.buildMMKitchen?buildMMKitchen(sc,{G,ROOT,L1,L2,hemi,hemiBase:o.
  let fakeDoor=null;
 // Forced Perspective: kleinere Tür am Ende des hinteren Gangs
  if(window.zsaDoor){ const d=zsaDoor(sc,{x:1.8,z:8.88,face:[1.8,0],locked:true,light:0.18}); d.scale.setScalar(0.8); d.userData.fake=true; fakeDoor=d; }
+ // ---------- Gebackenes Licht (Blender-Lightmap) + Decals in einem Atlas (statt 13 Einzel-Decals) ----------
+ if(window.ZSBake){ const P2=Math.PI/2, F=WT/2, hy=H-0.66, D=[];
+  [[0.8,-1.2,1.7,0],[-2.6,1.6,1.3,1],[0.2,-7.5,1.9,0],[-0.4,-15,2.2,1],[-8,-1.7,1.5,0],[3.4,-14,1.7,1],[1.7,6.5,1.5,0],[-3,-10.5,1.6,1],[2.6,-2.6,1.2,6]].forEach(([x,z,s,c],i)=>D.push([c,x,0,z,s,s*0.8,'y',i*1.3]));
+  [[-4+F,1.8,'+x',1.2],[-1+F,-6.5,'+x',1.4],[1-F,-17,'-x',1.6],[0.6,-4+F,'+z',1.3],[-1.5,3-F,'-z',1.2],[4-F,1.6,'-x',1.4],[-1+F,-19.5,'+x',1.2]].forEach(([x,z,f,w])=>{ const fx=f==='+x'||f==='-x'; D.push([5,fx?x:x,hy,fx?z:z,w,1.3,f]); });
+  [[-4+F,0.2,'+x',2.4],[-4+F,2.0,'+x',1.6],[-2.2,3-F,'-z',2.4],[4-F,1.6,'-x',2.4],[-1+F,-8,'+x',3],[1-F,-6,'-x',3],[1-F,-19,'-x',3],[-1+F,-14,'+x',2.5],[0.5,-4+F,'+z',1.6]].forEach(([x,z,f,w])=>D.push([4,x,0.3,z,w,0.6,f]));
+  [[-4+0.3,0.9,-P2,3.6],[4-0.3,1.2,P2,3.4],[-1.4,3-0.3,0,4.6],[-1+0.3,-10,-P2,8],[1-0.3,-12,P2,8],[-0.5,-4+0.3,Math.PI,5]].forEach(([x,z,r,w])=>D.push([7,x,0,z,w,0.6,'y',r]));
+  [[1.2,0.9,0],[-2.4,-2.2,10],[0.1,-8.5,0],[-0.3,-19,10],[2.0,5.5,0],[-6,-1.7,0],[3.2,-13.2,10]].forEach(([x,z,c],i)=>D.push([c,x,H-0.002,z,c?1.0:1.3,c?1.0:1.1,'-y',i]));
+  D.push([8,0,0,-10.5,0.9,6,'y',0.02],[8,0.1,0,-1.5,0.9,3.5,'y',-0.04],[3,-4+F,1.4,-3.1,0.6,0.7,'+x',0.5],[3,1-F,1.2,-9.4,0.7,0.8,'-x',2.1],[9,-3.4,0,1.55,0.45,0.45,'y',0],[11,0.9,0,-2.3,0.12,0.12,'y',0]);
+  // Küche (mmk.js): X -11.5..-7.0, Z -0.92..2.5, Höhe 2.6
+  D.push([0,-9.4,0,1.1,1.5,1.2,'y',0.4],[7,-11.2,0,0.8,3.2,0.6,'y',-P2],[7,-9.2,0,-0.62,4.4,0.6,'y',Math.PI],[4,-11.5,0.3,0.8,2.6,0.6,'+x'],[0,-9.1,2.598,0.2,1.2,1.0,'-y',0.3],[10,-11.0,2.598,2.1,1.0,1.0,'-y',1],[5,-11.5,1.9,1.9,1.0,1.2,'+x']);
+  window.ZSBake.realism(G,sc,{room:'br',base:ROOT+'assets/bake/backrooms/',texRoot:ROOT+'assets/tex/realism/',lmGain:0.55,aoInt:0.8,specGain:4,vcKeep:0,vcNames:['br_floor','br_ceil','br_wall'],decals:D}); }
  // ---------- Kollision ----------
  const collide=(p,r)=>{ r=r||0.28; for(let it=0;it<2;it++){ for(const [ax,az,bx,bz] of W.concat(XW)){ const vx=bx-ax, vz=bz-az, l=vx*vx+vz*vz; let u=((p.x-ax)*vx+(p.z-az)*vz)/l; u=Math.max(0,Math.min(1,u)); const cx=ax+u*vx, cz=az+u*vz; const dx=p.x-cx, dz=p.z-cz, d=Math.hypot(dx,dz); const m=r+WT/2; if(d<m&&d>1e-5){ p.x=cx+dx/d*m; p.z=cz+dz/d*m; } }
    for(const [x,z,s] of PIL){ const h=s/2+r; const dx=p.x-x, dz=p.z-z; if(Math.abs(dx)<h&&Math.abs(dz)<h){ if(h-Math.abs(dx)<h-Math.abs(dz)) p.x=x+Math.sign(dx)*h; else p.z=z+Math.sign(dz)*h; } }

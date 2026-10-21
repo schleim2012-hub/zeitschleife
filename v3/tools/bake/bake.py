@@ -7,7 +7,7 @@ bpy.ops.wm.read_factory_settings(use_empty=True); sc=bpy.context.scene
 sc.render.engine='CYCLES'; sc.cycles.device='CPU'; sc.cycles.samples=SPP; sc.cycles.use_denoising=False
 sc.cycles.max_bounces=4; sc.cycles.diffuse_bounces=3; sc.cycles.glossy_bounces=0; sc.cycles.transmission_bounces=0; sc.cycles.transparent_max_bounces=0
 sc.render.threads_mode='FIXED'; sc.render.threads=8
-w=bpy.data.worlds.new('W'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.004,0.004,0.008,1); w.light_settings.distance=1.2
+w=bpy.data.worlds.new('W'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=tuple(D.get('world',[0.004,0.004,0.008]))+(1,); w.light_settings.distance=1.2
 def mat_diffuse(name,col):
     m=bpy.data.materials.new(name); m.use_nodes=True; nt=m.node_tree; nt.nodes.clear(); o=nt.nodes.new('ShaderNodeOutputMaterial'); d=nt.nodes.new('ShaderNodeBsdfDiffuse'); d.inputs[0].default_value=(*col,1); nt.links.new(d.outputs[0],o.inputs[0]); return m
 def mat_emit(name,col,s):
@@ -38,9 +38,14 @@ for name,d in D['occ'].items():
 for e in D['emit']:
     ob=mk('E_'+e['name'],e['P'],None,weld=False); ob.data.materials.append(mat_emit('ME_'+e['name'],e['col'],e['str']))
 # Oberlicht: schwacher Nachthimmel
-sky=mk('E_sky',[-3.2,9.4,12, 3.2,9.4,12, 3.2,9.4,-32, -3.2,9.4,12, 3.2,9.4,-32, -3.2,9.4,-32]); sky.data.materials.append(mat_emit('ME_sky',(0.25,0.35,0.8),0.25))
+if D.get('sky',True):
+  sky=mk('E_sky',[-3.2,9.4,12, 3.2,9.4,12, 3.2,9.4,-32, -3.2,9.4,12, 3.2,9.4,-32, -3.2,9.4,-32]); sky.data.materials.append(mat_emit('ME_sky',(0.25,0.35,0.8),0.25))
 for pnt in D['points']:
-    L=bpy.data.lights.new(pnt['name'],'POINT'); L.energy=pnt['w']; L.color=pnt['col'][:3]; L.shadow_soft_size=0.15; o=bpy.data.objects.new(pnt['name'],L); o.location=pnt['pos']; sc.collection.objects.link(o)
+    kind='SPOT' if pnt.get('spot') else 'POINT'; L=bpy.data.lights.new(pnt['name'],kind); L.energy=pnt['w']; L.color=pnt['col'][:3]; L.shadow_soft_size=pnt.get('soft',0.12)
+    o=bpy.data.objects.new(pnt['name'],L); o.location=pnt['pos']; sc.collection.objects.link(o)
+    if kind=='SPOT':
+        sp=pnt['spot']; L.spot_size=min(3.1,2*sp['angle']); L.spot_blend=max(0.0,min(1.0,sp.get('pen',0.3)))
+        d=mathutils.Vector(sp['tgt'])-mathutils.Vector(pnt['pos']); o.rotation_euler=d.to_track_quat('-Z','Y').to_euler()
 # Lightmap-UVs: ein gemeinsamer Atlas über alle Empfänger
 for ob in recv:
     uv=ob.data.uv_layers.new(name='LM'); ob.data.uv_layers.active=uv
@@ -65,6 +70,7 @@ for ob in recv:
     me=ob.data; uv=me.uv_layers['LM'].data; arr=[]
     for poly in me.polygons:
         for li in poly.loop_indices: arr+= [uv[li].uv[0],uv[li].uv[1]]
-    buf+=struct.pack('<%df'%len(arr),*arr); man['meshes'][ob.name]={'offset':off,'count':len(arr)//2}; off+=len(arr)*4
+    buf+=struct.pack('<%df'%len(arr),*arr); man['meshes'][ob.name]={'offset':off,'count':len(arr)//2}
+    if 'c' in D['recv'].get(ob.name,{}): man['meshes'][ob.name]['c']=D['recv'][ob.name]['c']; off+=len(arr)*4
 open(os.path.join(OUT,'uv1.bin'),'wb').write(buf); json.dump(man,open(os.path.join(OUT,'uv1.json'),'w'))
 print('done',time.time()-t0)
