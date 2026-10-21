@@ -56,8 +56,8 @@ save({step});
 // Quest: nach Seitenwechsel ggf. direkt wieder in VR (WebXR-Navigation)
 if(navigator.xr&&navigator.xr.addEventListener) navigator.xr.addEventListener('sessiongranted',()=>{ const sc=document.querySelector('a-scene'); if(sc){ const go=()=>sc.enterVR(); sc.hasLoaded?go():sc.addEventListener('loaded',go); } });
 // kleine Desktop-Anzeige (nur DOM, in VR unsichtbar)
-document.addEventListener('DOMContentLoaded',()=>{ const d=document.createElement('div'); d.style.cssText='position:fixed;right:12px;bottom:12px;z-index:30;font:600 12px sans-serif;color:#c9b89a;background:rgba(0,0,0,.45);padding:5px 9px;border-radius:6px;letter-spacing:.5px';
- d.textContent='ALPHA · '+step+'/'+(STEPS.length-1)+' · '+STEPS[step].title+' · Tür = weiter'; document.body.appendChild(d); });
+document.addEventListener('DOMContentLoaded',()=>{ const d=document.createElement('div'); d.id='zsaHud'; d.style.cssText='position:fixed;right:12px;bottom:12px;z-index:30;font:600 12px sans-serif;color:#c9b89a;background:rgba(0,0,0,.45);padding:5px 9px;border-radius:6px;letter-spacing:.5px';
+ d.textContent='ALPHA · '+step+'/'+(STEPS.length-1)+' · '+(SD?SD.title+' (Abstecher)':STEPS[step].title)+(window.ZSTouch&&ZSTouch.active?' · Tür antippen = weiter':' · Tür = weiter'); document.body.appendChild(d); });
 // ---------- Tür in der Welt (Holz-PBR, Zarge, abgegriffene Messingklinke, Lichtspalt unten), optional abgeschlossen bis der Schlüssel gefunden ist
 const AC=()=>{ try{ return window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); }catch(e){ return null; } };
 const noiseSnd=(dur,f,q,vol,shape)=>{ const ac=AC(); if(!ac) return; const n=Math.floor(ac.sampleRate*dur), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++){ const k=i/n; d[i]=(Math.random()*2-1)*vol*(shape?shape(k,i):Math.sin(Math.PI*k)); } const s=ac.createBufferSource(); s.buffer=b; const fl=ac.createBiquadFilter(); fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=q; s.connect(fl); fl.connect(ac.destination); s.start(); };
