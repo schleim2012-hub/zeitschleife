@@ -61,5 +61,13 @@ window.ZSBake={ realism(G,sc,o){ const T=THREE, TL=new T.TextureLoader(), out={}
   deco(o.decals,4,new T.MeshBasicMaterial({map:t,side:T.DoubleSide,transparent:true,premultipliedAlpha:true,blending:T.MultiplyBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,fog:false,toneMapped:false})); }
  if(o.posters){ const t=TL.load(R+'posters.png'); t.colorSpace=T.SRGBColorSpace; t.anisotropy=4;
   deco(o.posters,2,new T.MeshStandardMaterial({map:t,alphaTest:0.5,roughness:0.85,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1})); }
- return out; } };
+ return out; } ,
+ // Statische Meshes (Liste von Objekten/Gruppen) nach Material-Objekt zusammenführen → weniger Draw Calls. Nur opake, nicht instanzierte Meshes; Ergebnis hängt an G.
+ mergeByMaterial(G,objs,name){ const T=THREE; G.updateMatrixWorld(true); const inv=new T.Matrix4().copy(G.matrixWorld).invert(); const by=new Map(); let n=0;
+  objs.forEach(o=>o&&o.traverse(m=>{ if(!m.isMesh||m.isInstancedMesh||m.isSkinnedMesh||Array.isArray(m.material)||m.material.transparent||!m.visible) return; (by.get(m.material)||by.set(m.material,[]).get(m.material)).push(m); }));
+  by.forEach((ms,mat)=>{ if(ms.length<2) return; const gs=ms.map(m=>{ let g=m.geometry.clone(); g.applyMatrix4(new T.Matrix4().multiplyMatrices(inv,m.matrixWorld)); if(g.index) g=g.toNonIndexed(); return g; });
+   const keys=['position','normal','uv','color'].filter(k=>gs.every(g=>g.attributes[k])); let N=0; gs.forEach(g=>N+=g.attributes.position.count); const r=new T.BufferGeometry();
+   keys.forEach(k=>{ const sz=gs[0].attributes[k].itemSize, a=new Float32Array(N*sz); let o=0; gs.forEach(g=>{ a.set(g.attributes[k].array,o); o+=g.attributes[k].array.length; }); r.setAttribute(k,new T.BufferAttribute(a,sz)); });
+   r.computeBoundingSphere(); ms.forEach(m=>m.parent&&m.parent.remove(m)); const mm=new T.Mesh(r,mat); mm.name=(name||'merged')+'_'+(n++); mm.matrixAutoUpdate=false; G.add(mm); });
+  return n; } };
 })();

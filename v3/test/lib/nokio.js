@@ -73,7 +73,9 @@ function build(){ const g=new T.Group(); const W=0.048, H=0.113, D=0.02;
  { const c=document.createElement('canvas'); c.width=128; c.height=24; const x=c.getContext('2d'); x.fillStyle='#c9ccd0'; x.font='700 18px "Helvetica Neue",Arial,sans-serif'; x.textAlign='center'; x.fillText('NOKIO',64,19);
   const t2=new T.CanvasTexture(c); t2.colorSpace=T.SRGBColorSpace; const lg=new T.Mesh(new T.PlaneGeometry(0.016,0.003),new T.MeshBasicMaterial({map:t2,transparent:true,depthWrite:false})); lg.position.set(0,0.0465,D/2+0.0022); g.add(lg); }
  const nav=new T.Mesh(new T.CylinderGeometry(0.0085,0.0085,0.003,20),face); nav.rotation.x=Math.PI/2; nav.scale.set(1.4,1,0.55); nav.position.set(0,-0.002,D/2+0.001); g.add(nav);
- const kg=new T.CylinderGeometry(0.0043,0.0043,0.0025,14); for(let r=0;r<4;r++) for(let c=0;c<3;c++){ const k=new T.Mesh(kg,key); k.rotation.x=Math.PI/2; k.scale.set(1.25,1,0.85); k.position.set((c-1)*0.0115,-0.016-r*0.0085,D/2+0.0005); g.add(k); }
+ { // 12 Tasten als EIN Mesh (1 Draw statt 12)
+  const kg=new T.CylinderGeometry(0.0043,0.0043,0.0025,14).toNonIndexed(), o=new T.Object3D(), parts=[]; for(let r=0;r<4;r++) for(let c=0;c<3;c++){ o.rotation.set(Math.PI/2,0,0); o.scale.set(1.25,1,0.85); o.position.set((c-1)*0.0115,-0.016-r*0.0085,D/2+0.0005); o.updateMatrix(); parts.push(kg.clone().applyMatrix4(o.matrix)); }
+  const mg=new T.BufferGeometry(); ['position','normal','uv'].forEach(k=>{ const sz=kg.attributes[k].itemSize, arr=new Float32Array(parts.length*kg.attributes[k].array.length); parts.forEach((q,i)=>arr.set(q.attributes[k].array,i*kg.attributes[k].array.length)); mg.setAttribute(k,new T.BufferAttribute(arr,sz)); }); mg.computeBoundingSphere(); g.add(new T.Mesh(mg,key)); }
  const ant=new T.Mesh(new T.BoxGeometry(0.03,0.004,0.004),shell); ant.position.set(0,H/2-0.004,-0.004); g.add(ant);
  return g; }
 // ---------- Montage + Logik

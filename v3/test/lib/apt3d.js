@@ -4,7 +4,7 @@
    Komfort: keine Kamerabewegung, kein Blitz, Welt bleibt ruhig. Licht: 3 Quellen (Fenster-Spot, Grün unterm Sofa, TV-Flimmern). window.buildApt(sceneEl,C) */
 (function(){
 let sd=41; const rnd=()=>{ sd=(sd*16807)%2147483647; return sd/2147483647; };
-window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/apt/';
+window.buildApt=function(sc,C){ const BK=!!window.ZSBake&&!/[?&]nobake=1/.test(location.search); const T=THREE, S=sc.object3D, TL=new T.TextureLoader(), G=new T.Group(); S.add(G); const B='../assets/tex/apt/';
  const ld=(f,srgb,rep)=>{ const t=TL.load(B+f); t.wrapS=t.wrapT=T.RepeatWrapping; if(srgb) t.colorSpace=T.SRGBColorSpace; t.anisotropy=4; if(rep) t.repeat.set(rep,rep); return t; };
  const X=2.9, ZF=-2.45, ZB=2.65, H=2.5;
  const sm=(a,b,x)=>{ x=Math.min(1,Math.max(0,(x-a)/(b-a))); return x*x*(3-2*x); };
@@ -32,7 +32,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
   ceil:new T.MeshStandardMaterial({map:ld('ceil_c.jpg',1),roughness:0.95,vertexColors:true}),
   wall:new T.MeshStandardMaterial({map:ld('wall_c.jpg',1),normalMap:ld('wall_n.jpg'),roughness:0.9,vertexColors:true}) };
  const mergeArr=gs=>{ let n=0; gs.forEach(g=>n+=g.attributes.position.count); const r=new T.BufferGeometry(); ['position','normal','uv','color'].forEach(k=>{ const sz=gs[0].attributes[k].itemSize, a=new Float32Array(n*sz); let o=0; gs.forEach(g=>{ a.set(g.attributes[k].array,o); o+=g.attributes[k].array.length; }); r.setAttribute(k,new T.BufferAttribute(a,sz)); }); return r; };
- Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(mergeArr(gs),MAT[k]); m.matrixAutoUpdate=false; G.add(m); });
+ Object.entries(bins).forEach(([k,gs])=>{ const m=new T.Mesh(mergeArr(gs),MAT[k]); m.name='apt_'+k; m.matrixAutoUpdate=false; G.add(m); });
  // ---- Fenster: rechts = Stadt 2041 (Schichten), vorne = Mond ----
  const cv=(w,h,draw)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
  const cityT=cv(1024,512,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'#03050c'); g.addColorStop(0.6,'#0b1430'); g.addColorStop(1,'#1a1030'); x.fillStyle=g; x.fillRect(0,0,w,h);
@@ -40,6 +40,8 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
    for(let k=0;k<bw*bh/220;k++) if(Math.random()<0.3){ x.fillStyle=['rgba(255,190,120,','rgba(120,220,255,','rgba(255,80,200,'][Math.floor(Math.random()*3)]+(0.3+Math.random()*0.5)+')'; x.fillRect(bx+Math.random()*(bw-3),h-bh+Math.random()*bh,2,3); } } }
   const n=x.createLinearGradient(0,h*0.6,0,h); n.addColorStop(0,'rgba(0,0,0,0)'); n.addColorStop(1,'rgba(180,60,200,0.25)'); x.fillStyle=n; x.fillRect(0,0,w,h); });
  const city=new T.Mesh(new T.PlaneGeometry(9,4.5),new T.MeshBasicMaterial({map:cityT,fog:false})); city.position.set(X+3,1.4,-1.15); city.rotation.y=-Math.PI/2; G.add(city);
+ // Bild mit Tiefe (Grok B1: Blick aus dem 20. Stock in die Straßenschlucht, Depth Anything V2) ersetzt die Canvas-Stadt; 1 Draw, echte Parallaxe. Fällt zurück auf die Canvas-Stadt, falls es nicht lädt.
+ if(window.DepthBG&&!/[?&]nodepth=1/.test(location.search)) DepthBG.create(G,{img:'../assets/apartment/win2041.jpg',depth:'../assets/apartment/win2041_depth.png',position:[X+0.12,1.45,-1.15],rotY:-90,hfov:100,aspect:2.106,near:22,far:420,fade:0.05,grid:[128,64]}).then(()=>{ city.visible=false; }).catch(e=>console.warn('apt: Fensterbild fehlt',e));
  const skyT=cv(256,256,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'#0a1630'); g.addColorStop(1,'#18305a'); x.fillStyle=g; x.fillRect(0,0,w,h); const r=x.createRadialGradient(150,90,0,150,90,70); r.addColorStop(0,'rgba(255,250,230,1)'); r.addColorStop(0.28,'rgba(255,250,230,1)'); r.addColorStop(0.32,'rgba(170,200,255,0.35)'); r.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=r; x.fillRect(0,0,w,h); });
  const sky=new T.Mesh(new T.PlaneGeometry(2.2,1.6),new T.MeshBasicMaterial({map:skyT,fog:false})); sky.position.set(0,1.7,ZF-1.2); G.add(sky);
  const frameM=new T.MeshStandardMaterial({color:0x3a3a36,roughness:0.6,metalness:0.3}); const glassM=new T.MeshStandardMaterial({color:0x223040,roughness:0.08,metalness:0,transparent:true,opacity:0.18,depthWrite:false});
@@ -84,7 +86,10 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  const foot=new T.Mesh(new T.CylinderGeometry(0.13,0.15,0.03,20),frameM); foot.rotation.z=Math.PI/2-0.06; foot.position.set(1.22,0.12,0); lampG.add(foot);
  const shadeM=new T.MeshStandardMaterial({color:0xa08860,roughness:0.9,side:T.DoubleSide,emissive:0x40200a,emissiveIntensity:0.6}); const shade=new T.Mesh(new T.CylinderGeometry(0.12,0.2,0.24,20,1,true),shadeM); shade.rotation.z=Math.PI/2+0.25; shade.position.set(-0.17,0.17,0); lampG.add(shade);
  const lbulb=new T.Mesh(new T.SphereGeometry(0.03,10,8),new T.MeshBasicMaterial({color:0xffb060,toneMapped:false})); lbulb.position.set(-0.12,0.16,0); lampG.add(lbulb);
- const lampL=new T.PointLight(0xff9a48,0.9,2.6,2); lampL.position.set(-1.7,0.25,2.05); G.add(lampL); let lampOn=1;
+ const LK=BK?0.55:0.9, RK=BK?0.6:1; // mit Lightmap tragen die Echtzeit-Lichter nur noch Flackern/Glanz
+ const lampL=new T.PointLight(0xff9a48,LK,2.6,2); lampL.position.set(-1.7,0.25,2.05); G.add(lampL); let lampOn=1;
+ // statische Kleinteile (Klima-Lamellen, Koffer, Kabel, Vorhänge, Rahmen, Fußleisten) nach Material zusammenführen → weniger Draw Calls
+ if(window.ZSBake) ZSBake.mergeByMaterial(G,G.children.slice(),'apt_st');
  // ---- DAS SOFA ----
  const sofa=new T.Group(); sofa.position.set(0,0,-1.97); G.add(sofa); const SB={x:0,z:-1.97};
  const fab=new T.MeshStandardMaterial({map:ld('sofa_c.jpg',1),normalMap:ld('sofa_n.jpg'),normalScale:new T.Vector2(0.6,0.6),roughness:0.93});
@@ -124,27 +129,38 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  const endcap=new T.Mesh(new T.CircleGeometry(0.2,16),new T.MeshBasicMaterial({color:0x000000})); endcap.scale.y=0.35; endcap.position.set(0,0.37,-0.4); sofa.add(endcap);
  // Speichelfäden zwischen Ober- und Unterkiefer (2 Segmente mit Durchhang), nur offen sichtbar
  const salM=new T.MeshStandardMaterial({color:0xe8e2d8,roughness:0.03,metalness:0.1,transparent:true,opacity:0.75,depthWrite:false,emissive:0x202020});
- const segG=new T.CylinderGeometry(1,1,1,5,1,true); const strands=[]; for(let i=0;i<9;i++){ const x=-0.66+i*0.165+(rnd()-0.5)*0.06; const a=new T.Object3D(), b=new T.Object3D(); a.position.set(x,0.52-1.0,-0.05+0.3); up.add(a); b.position.set(x*0.98,0.49-0.38,-0.2-0.41); lo.add(b); const r=0.003+rnd()*0.003, sag=0.03+rnd()*0.06; const sg=[]; for(let k=0;k<5;k++){ const m=new T.Mesh(segG,salM); m.visible=false; sofa.add(m); sg.push(m); } strands.push({a,b,r,sag,sg}); }
+ const segG=new T.CylinderGeometry(1,1,1,5,1,true); const strands=[]; const SI=new T.InstancedMesh(segG,salM,45); SI.visible=false; SI.frustumCulled=false; sofa.add(SI); const sDum=new T.Object3D(); /* 45 Fadensegmente = 1 Draw */ for(let i=0;i<9;i++){ const x=-0.66+i*0.165+(rnd()-0.5)*0.06; const a=new T.Object3D(), b=new T.Object3D(); a.position.set(x,0.52-1.0,-0.05+0.3); up.add(a); b.position.set(x*0.98,0.49-0.38,-0.2-0.41); lo.add(b); const r=0.003+rnd()*0.003, sag=0.03+rnd()*0.06; strands.push({a,b,r,sag,i0:i*5}); }
  const va=new T.Vector3(), vb=new T.Vector3(), vm=new T.Vector3(), Y=new T.Vector3(0,1,0);
  const seg=(m,p,q,r)=>{ const d=q.clone().sub(p); const L=d.length(); m.position.copy(p).addScaledVector(d,0.5); m.quaternion.setFromUnitVectors(Y,d.normalize()); m.scale.set(r,L,r); };
  const P0=new T.Vector3(), P1=new T.Vector3(); const pt=(o,t,out)=>{ out.copy(va).lerp(vb,t); out.y-=o.sag*open*4*t*(1-t); out.z+=0.03*4*t*(1-t); return out; };
- const strandUpd=()=>{ const vis=open>0.25; sofa.updateMatrixWorld(); strands.forEach(o=>{ o.sg.forEach(m=>m.visible=vis); if(!vis) return; o.a.getWorldPosition(va); o.b.getWorldPosition(vb); sofa.worldToLocal(va); sofa.worldToLocal(vb); for(let k=0;k<5;k++){ pt(o,k/5,P0); pt(o,(k+1)/5,P1); const th=1-0.55*Math.sin((k+0.5)/5*Math.PI); seg(o.sg[k],P0,P1,o.r*th); } }); };
+ const strandUpd=()=>{ const vis=open>0.25; SI.visible=vis; if(!vis) return; sofa.updateMatrixWorld(); strands.forEach(o=>{ o.a.getWorldPosition(va); o.b.getWorldPosition(vb); sofa.worldToLocal(va); sofa.worldToLocal(vb); for(let k=0;k<5;k++){ pt(o,k/5,P0); pt(o,(k+1)/5,P1); const th=1-0.55*Math.sin((k+0.5)/5*Math.PI); seg(sDum,P0,P1,o.r*th); sDum.updateMatrix(); SI.setMatrixAt(o.i0+k,sDum.matrix); } }); SI.instanceMatrix.needsUpdate=true; };
 
 
  const tongue=LO(new T.Mesh((()=>{ const g=new T.SphereGeometry(1,28,14); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i), z=p.getZ(i); let yy=y; if(y>0) yy=y*(1-0.55*Math.exp(-x*x*18)); yy+= 0.15*Math.sin(x*7+z*5)*Math.max(0,y); p.setXYZ(i,x*(1-0.25*Math.max(0,z)),yy,z); } g.computeVertexNormals(); return g; })(),tongueM),0,0.41,-0.2); tongue.scale.set(0.3,0.06,0.2); tongue.rotation.x=0.15;
  const tL=teeth(30,0.495,-0.15,false,0.025); tL.position.set(0,-0.38,-0.41); tL.scale.set(1,1.2,1); lo.add(tL);
+ // Sofa-Teile je Gruppe (Gestell / Oberkiefer / Unterkiefer) nach Material zusammenführen: Beine 4→1, Gestell 4→1, Rollen 2→1, Kissen+Lippe je 3→1 (Animation bleibt, die Gruppen bewegen sich weiter)
+ if(window.ZSBake){ const ms=o=>o.children.filter(c=>c.isMesh&&!c.isInstancedMesh); ZSBake.mergeByMaterial(sofa,ms(sofa),'apt_sf'); ZSBake.mergeByMaterial(up,ms(up),'apt_su'); ZSBake.mergeByMaterial(lo,ms(lo),'apt_sl'); }
  // grüner Schein unter dem Sofa
  const gc=cv(128,128,x=>{ const g=x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); });
  const glow=new T.Mesh(new T.PlaneGeometry(2.2,1.0),new T.MeshBasicMaterial({map:gc,color:0x3aa860,transparent:true,opacity:0.35,blending:T.AdditiveBlending,depthWrite:false})); glow.rotation.x=-Math.PI/2; glow.position.set(0,0.004,-1.75); G.add(glow);
  const gL=new T.PointLight(0x50ff80,0.7,1.1,2); gL.position.set(0,0.02,-1.45); G.add(gL);
  // Mondlicht durchs rechte Fenster auf das Sofa + weicher Dunst-Schacht
- const spot=new T.SpotLight(0xb4c4e4,11,7,0.66,0.9,1.4); spot.position.set(X-0.1,1.75,-1.15); spot.target.position.set(-0.2,0.5,-1.95); G.add(spot); G.add(spot.target);
+ const spot=new T.SpotLight(0xb4c4e4,BK?6:11,7,0.66,0.9,1.4); spot.position.set(X-0.1,1.75,-1.15); spot.target.position.set(-0.2,0.5,-1.95); G.add(spot); G.add(spot.target);
  const shaftT=cv(64,256,(x,w,h)=>{ const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(255,255,255,0.9)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,w,h); const s=x.createLinearGradient(0,0,w,0); s.addColorStop(0,'rgba(0,0,0,1)'); s.addColorStop(0.5,'rgba(0,0,0,0)'); s.addColorStop(1,'rgba(0,0,0,1)'); x.globalCompositeOperation='destination-out'; x.fillStyle=s; x.fillRect(0,0,w,h); });
  const shaft=new T.Mesh(new T.CylinderGeometry(0.45,1.2,3.0,16,1,true),new T.MeshBasicMaterial({map:shaftT,color:0x5a80c0,transparent:true,opacity:0.07,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}));
  { const a=spot.position.clone(), b=spot.target.position.clone(), d=b.clone().sub(a); shaft.position.copy(a.clone().addScaledVector(d,0.5)); shaft.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),d.normalize()); } G.add(shaft);
  // TV-Flimmern
  const tvL=new T.PointLight(0x9ab8ff,0.9,3.5,2); tvL.position.set(1.3,1.0,-0.45); G.add(tvL);
- S.add(new T.HemisphereLight(0x2a2a34,0x0a0806,0.7));
+ S.add(new T.HemisphereLight(0x2a2a34,0x0a0806,BK?0.35:0.7));
+ // ---- Gebackenes Licht (Blender) + Decals (1 Draw) ----
+ if(window.ZSBake){ const P2=Math.PI/2, D=[
+  [0,0.9,0,0.4,1.4,1.1,'y',0.5],[1,-0.3,0,-0.9,1.3,1.0,'y',2.0],[6,0.4,0,1.6,0.9,0.9,'y',0.3],[11,-1.4,0,1.2,0.13,0.13,'y',0],[11,-1.0,0,1.65,0.1,0.1,'y',0],[11,-1.6,0,0.75,0.12,0.12,'y',0],[9,1.2,0,-0.5,0.55,0.55,'y',0],[8,0.2,0,0.6,0.8,3.2,'y',0.08],[2,1.6,0,1.3,1.1,1.1,'y',0.9],
+  [7,-2.6,0,0,4.8,0.6,'y',-P2],[7,2.6,0,0.6,3.6,0.6,'y',P2],[7,0,0,2.35,5.4,0.6,'y',0],[7,0,0,-2.15,5.4,0.5,'y',Math.PI],
+  [4,-2.9,0.3,-0.6,3.0,0.6,'+x'],[4,-2.9,0.3,1.8,1.6,0.6,'+x'],[4,1.4,0.3,2.65,2.6,0.6,'-z'],[4,-1.6,0.3,2.65,2.2,0.6,'-z'],[4,1.8,0.3,-2.45,2.0,0.6,'+z'],[4,2.9,0.3,1.2,2.4,0.6,'-x'],
+  [5,0,1.25,-2.45,0.9,0.9,'+z'],[5,2.9,0.85,-1.15,1.1,0.7,'-x'],[10,-2.9,2.1,-2.1,1.0,0.9,'+x'],[10,2.9,2.15,2.3,1.2,0.9,'-x'],[10,-2.5,2.15,2.65,1.0,0.8,'-z'],[3,-2.9,1.5,0.6,0.8,0.9,'+x',0.7],[3,1.0,1.8,2.65,0.7,0.8,'-z',2.0],
+  [0,2.3,H-0.002,-1.2,1.3,1.1,'-y',0.4],[10,-2.4,H-0.002,-1.9,1.1,1.0,'-y',1],[0,-0.6,H-0.002,1.3,1.4,1.2,'-y',2],[5,-2.2,2.2,-2.45,1.2,0.6,'+z']];
+  const PO=[[1,-2.9,1.45,-1.6,0.5,0.7,'+x',0.06],[3,1.2,1.5,2.65,0.5,0.66,'-z',-0.05],[0,-2.0,1.55,2.65,0.45,0.62,'-z',0.08]];
+  ZSBake.realism(G,sc,{room:'apt',base:'../assets/bake/apartment/',lmGain:1,aoInt:0.7,specGain:4,vcKeep:0,vcNames:['apt_floor','apt_ceil','apt_wall'],decals:D,posters:PO}); }
  // ---- Klick-Ziel (Laser/Maus) ----
  const hit=document.createElement('a-entity'); hit.setAttribute('geometry','primitive:box;width:2.1;height:1.0;depth:0.95'); hit.setAttribute('material','visible:false'); hit.setAttribute('position','0 0.5 -1.97'); hit.classList.add('clickable'); sc.appendChild(hit);
  // ---- Ton: Knurren + Zuschnappen (räumlich am Sofa) ----
@@ -163,7 +179,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
  // ---- Zustände ----
  let open=0, lunge=0, fired=false, t0=-1, twitchAt=8000+rnd()*6000, twitchT=-1, forced=null;
  const ease=x=>1-Math.pow(1-Math.min(1,Math.max(0,x)),3);
- const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.26*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.28*open; flesh.emissiveIntensity=0.1+0.2*open; tongue.position.y=0.41-0.38+0.05*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=0.7-0.3*open; strandUpd(); };
+ const pose=()=>{ up.rotation.x=-0.42*open; up.position.y=1.0+0.26*open; up.position.z=-0.3+0.04*open; lo.rotation.x=-0.28*open; flesh.emissiveIntensity=0.1+0.2*open; tongue.position.y=0.41-0.38+0.05*open; sofa.position.z=SB.z+0.3*lunge; sofa.position.y=0.03*lunge; sofa.rotation.x=0.05*lunge; glow.material.opacity=0.35+0.25*open; gL.intensity=(0.7-0.3*open)*RK; strandUpd(); };
  const fire=()=>{ if(fired) return; fired=true; t0=performance.now(); growl(); window.__sofaFired=true; };
  hit.addEventListener('click',fire);
  const cam=()=>document.getElementById('cam').object3D, cp=new T.Vector3();
@@ -174,7 +190,7 @@ window.buildApt=function(sc,C){ const T=THREE, S=sc.object3D, TL=new T.TextureLo
    lunge = e<0.22 ? ease(e/0.22) : e<0.55 ? 1 : 1-ease((e-0.55)/1.6); if(e>2.3){ t0=-1; lunge=0; open=0; } pose(); return; }
   // Leerlauf: seltenes Zucken (Fuge öffnet sich minimal, knarzt)
   if(!fired&&t>twitchAt){ twitchT=t; twitchAt=t+7000+rnd()*9000; creak(); } if(twitchT>0){ const k=(t-twitchT)/1000; open=k<0.35?0.07*Math.sin(k/0.35*Math.PI):0; if(k>0.4) twitchT=-1; pose(); }
-  tvL.intensity=0.7+0.35*Math.random(); if(Math.random()<0.03) lampOn=Math.random()<0.25?0.15:1; lampL.intensity=0.9*lampOn*(0.85+0.15*Math.random()); lbulb.material.color.setHex(lampOn>0.5?0xffb060:0x402810); };
+  tvL.intensity=(0.7+0.35*Math.random())*RK; if(Math.random()<0.03) lampOn=Math.random()<0.25?0.15:1; lampL.intensity=LK*lampOn*(0.85+0.15*Math.random()); lbulb.material.color.setHex(lampOn>0.5?0xffb060:0x402810); };
  AFRAME.registerComponent('apt-tick',{tick(t){ update(t); }}); sc.setAttribute('apt-tick','');
  window.__sofa={ fire, set:(o,l)=>{ forced=[o,l]; }, release:()=>{ forced=null; open=0; lunge=0; pose(); } };
  // ---- Kollision (Spieler-Kopf, Radius 0.25) ----
