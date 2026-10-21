@@ -51,7 +51,9 @@ const cinema=()=>window.ArcadeCinema&&ArcadeCinema.phase&&ArcadeCinema.phase()!=
 const cineOn=()=>window.ArcadeCinema&&ArcadeCinema.phase&&ArcadeCinema.phase()==='on';
 const examining=()=>window.ZSX&&(ZSX.active||(ZSX.busy&&ZSX.busy()));
 function mouse(type,x,y,target){ const ev=new MouseEvent(type,{clientX:x,clientY:y,screenX:x,screenY:y,button:0,buttons:type==='mouseup'||type==='click'?0:1,bubbles:true,cancelable:true,view:window}); ev.__tc=1; (target||canvas).dispatchEvent(ev); }
-function clickAt(x,y){ mouse('mousemove',x,y); mouse('mousedown',x,y); mouse('mouseup',x,y); mouse('click',x,y); }
+// A-Frame-Cursor (rayOrigin:mouse) prüft Treffer sonst erst im nächsten Frame → sofort prüfen
+function syncCursor(){ try{ document.querySelectorAll('[cursor]').forEach(e=>{ const c=e.components&&e.components.cursor, r=e.components&&e.components.raycaster; if(c&&c.data.rayOrigin==='mouse'&&r){ r.refreshObjects&&r.dirty&&r.refreshObjects(); r.checkIntersections(); } }); }catch(err){} }
+function clickAt(x,y){ mouse('mousemove',x,y); syncCursor(); mouse('mousedown',x,y); mouse('mouseup',x,y); mouse('click',x,y); }
 
 function buildUI(){
  const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st); document.body.classList.add('zs-touch');
@@ -71,6 +73,8 @@ function buildUI(){
  [['tc-u','ArrowUp'],['tc-d','ArrowDown'],['tc-l','ArrowLeft'],['tc-r','ArrowRight']].forEach(([id,c])=>press(id,()=>key('keydown',c),()=>key('keyup',c)));
  press('tc-a',()=>{ key('keydown','Space'); },()=>key('keyup','Space'));
  setupJoy();
+ // kleine Alpha-Anzeige (unten rechts) nach oben links, damit sie nicht unter den Knöpfen liegt
+ const mvA=()=>{ document.querySelectorAll('body > div').forEach(d=>{ if(/^ALPHA ·/.test(d.textContent||'')&&!d.id){ d.style.right='auto'; d.style.bottom='auto'; d.style.left='calc(12px + env(safe-area-inset-left))'; d.style.top='calc(12px + env(safe-area-inset-top))'; d.style.opacity='.7'; } }); }; mvA(); setTimeout(mvA,1500);
 }
 function back(){
  if(document.getElementById('tc-inv-p').style.display==='block'){ toggleInv(); return; }
@@ -139,6 +143,7 @@ function walkTick(dt){ if(!walk) return; if(inXR||cinema()||examining()){ walk=n
 
 let lastTap={t:0,x:0,y:0};
 function tap(x,y){
+ if(window.__introV&&!window.__introDone){ clickAt(x,y); return; }   // Intro-Film: nicht laufen
  if(cineOn()){ key('keydown','Space'); setTimeout(()=>key('keyup','Space'),60); return; }
  if(examining()){ clickAt(x,y); return; }
  const now=performance.now(), dbl=now-lastTap.t<320&&Math.hypot(x-lastTap.x,y-lastTap.y)<50; lastTap={t:now,x,y};
@@ -199,6 +204,7 @@ function attach(){ sc=document.querySelector('a-scene'); if(!sc) return; const g
  addEventListener('storage',()=>{ invert=LS.get('zs_touch_invert')==='1'; });
  setInterval(()=>{ invert=LS.get('zs_touch_invert')==='1'; },1000); }
 window.addEventListener('touchstart',tstart,{capture:true,passive:false});
+window.addEventListener('touchend',()=>fs(),{capture:true,passive:true});
 window.addEventListener('touchmove',tmove,{capture:true,passive:false});
 window.addEventListener('touchend',tend,{capture:true,passive:false});
 window.addEventListener('touchcancel',tend,{capture:true,passive:false});

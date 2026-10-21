@@ -28,6 +28,7 @@ body.zs-touch #zsh-btn{width:54px;height:54px;font-size:26px;line-height:52px}
 #zsh .c svg{flex:0 0 40px;width:40px;height:40px}
 #zsh .c b{display:block;font-size:15px;color:#f0e4cc}
 #zsh .c span{font-size:13px;opacity:.75;line-height:1.3}
+@media (max-height:520px){#zsh .p{padding:12px 16px 14px}#zsh h2{font-size:18px;margin-bottom:8px}#zsh .g{grid-template-columns:repeat(3,1fr);gap:6px}#zsh .c{padding:6px 8px;gap:8px}#zsh .c svg{flex-basis:30px;width:30px;height:30px}#zsh .c b{font-size:13px}#zsh .c span{font-size:11.5px}#zsh .tabs{margin-bottom:8px}#zsh .tabs button{padding:6px 10px;font-size:13px}#zsh .m button{padding:10px 14px;font-size:15px}}
 #zsh .note{font-size:12px;opacity:.55;margin-top:10px}
 #zsh .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 #zsh .tg{width:54px;height:30px;border-radius:15px;background:#3a3124;position:relative;flex:0 0 54px;border:1px solid #5a4a32}
