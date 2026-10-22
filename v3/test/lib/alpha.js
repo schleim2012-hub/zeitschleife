@@ -3,8 +3,8 @@
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z2')+'"><\/script>'); }
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z2')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z3')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z3')+'"><\/script>'); }
 // Keine automatischen Steuerungs-Tafeln (Pete, 22.10.): die festen #hud-Kästen der Räume ausblenden; Hilfe nur über ☰ › Steuerung
 { const st=document.createElement('style'); st.textContent='#hud{display:none!important}'; (document.head||document.documentElement).appendChild(st); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
@@ -126,7 +126,7 @@ const side=P.get('side'), SD=SIDES[side]||null;
 function goSide(id){ const d=SIDES[id]; if(!d) return; save({step,side:id}); const go=()=>fadeOut(()=>{ location.href=ROOT+d.page+'?alpha=1&step='+step+'&side='+id; }); const c=CUTS[id+'_entry'];
  if(c&&!P.has('nocut')&&!window.__zsCutOn){ window.__zsCutOn=true; playCut(c).then(go); } else go(); }
 function backFromSide(){ save({step,side:null}); fadeOut(()=>{ location.href=url(step).replace('#','&from='+side+'#'); }); }
-window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url,CUTS,playCut};
+window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); try{ localStorage.removeItem('zs_alpha_nokio'); }catch(e){} /* neue Schleife: Handy liegt wieder im Kinderzimmer */ },url,CUTS,playCut};
 if(!on) return;
 save({step});
 // Quest: nach Seitenwechsel ggf. direkt wieder in VR (WebXR-Navigation)

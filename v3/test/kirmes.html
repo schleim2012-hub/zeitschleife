@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Kirmes-Test – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z1"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z2"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z3"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z3"></script>
 <script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/vrgrab.js?v=1"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=m1552"></script><script src="lib/kirmes3d.js?v=2"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
@@ -199,7 +199,7 @@ const boardTex=cv(1024,256,()=>{}); const sb=new T.Mesh(new T.PlaneGeometry(2.4,
 
 // ---------- Zeitbonus (Stub für V3-Countdown) + Preise
 window.__loopClock={sec:20*60,bonusUsed:false,add(s){ if(this.bonusUsed) return false; this.bonusUsed=true; this.sec+=s; return true; }};
-let prizesWon={dosen:false,enten:false,pferd:false}; const awarded=[], prizeItems=[]; let winMsg='', dosenMsg='';
+let prizesWon={dosen:false,enten:false,pferd:false}; const awarded=[], prizeItems=[]; let winMsg='', dosenMsg=''; window.__zsTest={grantPrize:(...a)=>grantPrize(...a),winMsg:()=>winMsg}; /* Test-Haken (headless) */
 function softTick(sec=3){ const a=ac(), t0=a.currentTime; const n=Math.floor(sec/0.45);
   for(let i=0;i<n;i++){ const t=t0+i*0.45; const o=a.createOscillator(), g=a.createGain(), f=a.createBiquadFilter();
     o.type='square'; o.frequency.value=i%2?920:780; f.type='bandpass'; f.frequency.value=1100; f.Q.value=4;
@@ -220,7 +220,7 @@ function grantPrize(kind,title,bonusMin){
   const got=window.__loopClock.add(bonusMin*60);
   if(got) clockTick();
   const bonusTxt=got?` +${bonusMin}:00 auf die Schleife!`:' (Zeitbonus schon verbraucht)';
-  document.getElementById('prize').style.display='block'; document.getElementById('prize').textContent=`🧸 ${title}${bonusTxt}`;
+  document.getElementById('prize').style.display='block'; document.getElementById('prize').textContent=`🧸 ${title}${bonusTxt}`; winMsg=`GEWONNEN: ${title}!\n`+(got?`+${bonusMin}:00 Minuten auf die Schleife`:'kein Zeitbonus mehr'); /* neutrale Anzeige statt Mara */
   maraSay(got?`Schön! ${title} – und ${bonusMin} Minuten extra.`:`Schön! ${title}. Mehr Zeit gibt's diesmal nicht.`);
   setTimeout(()=>{ document.getElementById('prize').style.display='none'; },4200);
   drawBoard();
@@ -243,7 +243,7 @@ function goToStall(g){
 }
 
 function drawBoard(){ const c=boardTex.image, x=c.getContext('2d'); x.clearRect(0,0,1024,256); x.fillStyle='rgba(10,5,15,0.8)'; x.fillRect(0,0,1024,256); x.fillStyle='#ffe6a8'; x.font='bold 46px sans-serif';
- if(winMsg){ x.fillStyle='#7cff8a'; x.font='bold 64px sans-serif'; x.fillText(winMsg,30,150); boardTex.needsUpdate=true; return; }
+ if(winMsg){ x.fillStyle='#7cff8a'; const wl=winMsg.split('\n'); let fs=56; x.font='bold '+fs+'px sans-serif'; while(fs>30&&x.measureText(wl[0]).width>964){ fs-=2; x.font='bold '+fs+'px sans-serif'; } x.fillText(wl[0],30,wl[1]?105:150); if(wl[1]){ x.fillStyle='#ffe6a8'; x.font='bold 48px sans-serif'; x.fillText(wl[1],30,190); } boardTex.needsUpdate=true; return; }
  x.fillText(dosenMsg||`Dosen: ${dosenScore}/${cans.length} · Ball ${Math.min(dosenThrows,3)}/3`,30,70); x.fillText(`Enten: ${hitsD}/5 · Schüsse ${shots}`,30,135); x.fillStyle='#ffb0d8'; x.fillText(raceMsg||'Pferderennen: Ball die Rampe hoch in die Löcher rollen!',30,200); boardTex.needsUpdate=true; }
 drawBoard();
 // ---------- Gewehr der Schießbude: liegt auf der Theke, Grip/Trigger nimmt es (bleibt in der Hand), Trigger = Schuss, Grip = zurücklegen

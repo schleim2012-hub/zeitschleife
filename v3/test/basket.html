@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Basketball-Hinterhof – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z1"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z2"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z3"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z3"></script>
 <script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/vrgrab.js?v=1"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=m1552"></script><script src="lib/hof3d.js?v=4"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#e8f0ff;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:10px;max-width:460px}
 #score{position:fixed;right:14px;top:12px;z-index:5;color:#ffd27a;font:700 28px sans-serif;text-shadow:0 0 12px #000}
@@ -194,9 +194,11 @@ function drawBoard(){ const x=sbC.getContext('2d'); x.fillStyle='#0d0b10'; x.fil
 drawBoard();
 const maraLines=['Netter Wurf. Fast wie 89.','Swish. Die Straße hat es gehört.','Noch einer – dann glaub ich dir die Zeitreise.','Nicht schlecht für jemanden aus der Zukunft.'];
 function mara(t){ if(window.ZSMARA&&ZSMARA.route('Mara','„'+t+'“')!=='room') return; boardMsg='Mara: „'+t+'“'; drawBoard(); const el=document.getElementById('hud'); el.innerHTML=`Basketball-Hinterhof (1989)<br><small style="color:#ffb0d8">Mara: „${t}“</small>`; setTimeout(()=>{el.innerHTML='Basketball-Hinterhof (1989)<br><small>VR: Grip/Trigger = Ball · L-Stick gehen · R-Stick ↔ drehen, ↑ Teleport</small>';},4500);}
+window.__zsTest={setScore:n=>setScore(n),board:()=>boardMsg}; /* Test-Haken (headless) */
 function setScore(n){score=n; streak++; mara(maraLines[score%maraLines.length]);
  if(streak>=3&&!prizeGiven){ prizeGiven=true; const got=window.__loopClock.add(90); SND.bell(); if(got) SND.clock();
   document.getElementById('prize').style.display='block'; document.getElementById('prize').textContent=got?'🏀 Serie! +1:30 auf die Schleife':'🏀 Serie! (Zeitbonus schon verbraucht)';
+  boardMsg=got?'Serie! +1:30 Minuten auf die Schleife':'Serie! Zeitbonus schon verbraucht'; drawBoard(); /* neutrale Anzeige statt Mara */
   mara(got?'Drei hintereinander – ich schenk dir anderthalb Minuten.':'Drei hintereinander. Mehr Zeit gibt\'s diesmal nicht.');
   setTimeout(()=>{document.getElementById('prize').style.display='none';},4200);} drawBoard(); }
 const rigEl=document.getElementById('rig'); const rig=rigEl.object3D; const cam=document.getElementById('cam').object3D;

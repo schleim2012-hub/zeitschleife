@@ -22,7 +22,7 @@ const LINES={
  'geheinervonunssollteaufwachen':{room:'—', trig:'nicht eingeplant (VO-Tabelle)', via:'', text:'„Geh. Einer von uns sollte aufwachen.“'},
  'ichhabdasgebautichwolltenurdassjemandmit':{room:'—', trig:'nicht eingeplant (VO-Tabelle)', via:'', text:'„Ich hab das gebaut. Ich wollte nur, dass jemand mitkommt.“'},
  'kennenwirunsdusiehstnettausbleibdoch':{room:'—', trig:'nicht eingeplant (VO-Tabelle)', via:'', text:'„Kennen wir uns? Du siehst nett aus. Bleib doch.“'},
- 'dietürmitdemkinderzimmerlichtdafängtsan':{room:'backrooms', trig:'erstes Aufwachen +0,9s', via:'', text:'„Die Tür mit dem Kinderzimmer-Licht. Da fängt’s an.“'},
+ 'dietürmitdemkinderzimmerlichtdafängtsan':{room:'backrooms', trig:'erstes Aufwachen +0,9s → jetzt ERZÄHLER (alpha_hub1_e.mp3), Mara-Fassung aus', via:'off', text:'„Die Tür mit dem Kinderzimmer-Licht. Da fängt’s an.“'},
  'weiterdietürwartet':{room:'backrooms', trig:'Rückkehr in die Backrooms', via:'', text:'„Weiter. Die Tür wartet.“'},
  'dasbandistzuendeoderfängtesgeradeerstan':{room:'end', trig:'Ende-Seite +0,8s', via:'', text:'„Das Band ist zu Ende. Oder fängt es gerade erst an?“'},
  'süßaberdieuhrticktcasanova':{room:'era1984', trig:'Betreten +2,5s', via:'', text:'„Süß. Aber die Uhr tickt, Casanova.“'},
@@ -85,13 +85,13 @@ const LINES={
 };
 const key=t=>String(t||'').toLowerCase().replace(/[^a-zäöüß0-9]+/g,'').slice(0,40);
 const room=()=>{ try{ if(window.ZSA&&ZSA.on) return ZSA.cur().id; }catch(e){} const p=location.pathname.split('/').pop().replace('.html',''); return ({era_pool:'pool',era_cornfield:'cornfield',era_arcade:'arcade',era_apartment:'apartment',kirmes:'kirmes',basket:'basket',sim:'sim'})[p]||p; };
-const phoneOwned=()=>{ try{ if(!window.NOKIO) return false; if(!NOKIO.ready) return true; /* Handy lädt noch → Anruf wartet */ if(window.ZSINV&&ZSINV.list) return ZSINV.list().some(i=>(i&&i.id||i)==='nokio'); return true; }catch(e){ return false; } };
+const phoneOwned=()=>{ try{ if(!window.NOKIO) return false; if(NOKIO.owned) return NOKIO.owned(); /* erst gefunden im Kinderzimmer 1984 */ if(!NOKIO.ready) return true; /* Handy lädt noch → Anruf wartet */ if(window.ZSINV&&ZSINV.list) return ZSINV.list().some(i=>(i&&i.id||i)==='nokio'); return true; }catch(e){ return false; } };
 const log=window.__maraLog=[];
 function viaFor(text){ const r=room(), e=LINES[key(text)]; let v=(e&&e.via)||(PRESENT[r]?'room':'phone'); if(v==='phone'&&!phoneOwned()) v='off'; return v; }
 // ---------- Anrufe ----------
 const Q=[]; let cur=null;
 const AC=()=>{ try{ return window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); }catch(e){ return null; } };
-function next(){ if(cur||!Q.length) return; if(!window.NOKIO||!NOKIO.ready){ setTimeout(next,1000); return; } cur=Q.shift(); cur.state='ring'; cur.rings=0; NOKIO.call=cur; ring(); }
+function next(){ if(cur||!Q.length) return; if(!window.NOKIO||!NOKIO.ready){ setTimeout(next,1000); return; } cur=Q.shift(); if(!phoneOwned()){ cur=null; setTimeout(next,0); return; } cur.state='ring'; cur.rings=0; NOKIO.call=cur; ring(); }
 function ring(){ if(!cur||cur.state!=='ring') return; if(cur.rings>=4){ cur.state='missed'; NOKIO.redraw&&NOKIO.redraw(); return; } cur.rings++; try{ NOKIO.ring&&NOKIO.ring(); NOKIO.buzz&&NOKIO.buzz(); }catch(e){} cur.rt=setTimeout(ring,3600); }
 const answering=()=>!!(window.NOKIO&&(NOKIO.looking||NOKIO.where==='hand'));
 setInterval(()=>{ if(!cur||cur.state==='talk') return; if(answering()){ clearTimeout(cur.rt); talk(cur.state==='missed'); } },150);

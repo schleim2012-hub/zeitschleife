@@ -1,6 +1,7 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 – 1984 Zimmer</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z1"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z2"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z3"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z3"></script>
+<script>window.NOKIO_SPOT={p:[1.58,0.76,-0.555],ry:0.5}; /* Nokio-Fundort: Schreibtisch, halb unter dem Comic (nokio.js) */</script>
 <script src="../tv.js?v=5"></script><script src="lib/dust.js?v=m1552"></script><script src="lib/k84.js?v=1"></script>
 <script src="lib/gfx_kinderzimmer.js?v=1"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffd6f0;font:600 14px/1.35 sans-serif;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;max-width:470px}
@@ -39,7 +40,7 @@ S.addEventListener('loaded',()=>{
   el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); if(flat){ el.object3D.position.set(x,y+d/2,z); el.object3D.rotation.set(-Math.PI/2,0,0); el.object3D.rotateOnWorldAxis(new T.Vector3(0,1,0),ry); } else { el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; } });
   const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
- item('c1',0.105,0.19,0.025,-0.38,0,-1.82,0.25,0x111111); item('c2',0.15,0.22,0.035,-0.25,0,-1.8,0.1,0x3a1d12,0xcbbf9e); item('c3',0.19,0.27,0.006,-1.45,0.55,-0.55,-0.35,0xd8d0c0,0xd8d0c0,true);
+ item('c1',0.105,0.19,0.025,-0.38,0,-1.82,0.25,0x111111); item('c2',0.15,0.22,0.035,-0.25,0,-1.8,0.1,0x3a1d12,0xcbbf9e); { const c3=item('c3',0.19,0.27,0.006,1.62,0.76,-0.72,0.2,0xd8d0c0,0xd8d0c0,true); /* Comic liegt halb auf dem Nokio (Fundort) */ c3.el.addEventListener('loaded',()=>{ const o=c3.el.object3D; o.position.y+=0.016; o.rotateOnWorldAxis(new T.Vector3(Math.cos(0.2),0,-Math.sin(0.2)),-0.08); /* Kante liegt auf dem Handy, andere Kante auf dem Tisch */ }); }
  item('c4',0.15,0.22,0.035,1.85,1.13,-1.8,-0.1,0x5a2a1a); item('c5',0.19,0.28,0.07,1.7,0.76,-0.05,-0.4,0xd8c070);
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }

@@ -218,7 +218,7 @@ function joyTick(dt){ if(!joy[0]&&!joy[1]) return; if(Math.hypot(joy[0],joy[1])<
  const f=new TH.Vector3(joy[0],0,joy[1]).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-6) return; f.normalize().multiplyScalar(Math.hypot(joy[0],joy[1])*1.5*dt); rig.position.add(f); if(window.__br&&__br.collide&&__br.group&&__br.group.visible) __br.collide(rig.position); }
 
 // ---------- Leistung: Pixelratio deckeln ----------
-function hidePhone(){ const n=document.getElementById('nokio'); if(!n||!n.object3D||!window.ZSINV||!ZSINV.where) return; const show=!(ZSINV.where()==='inv'&&!(ZSINV.isOpen&&ZSINV.isOpen())&&!phoneOut()); if(n.object3D.visible!==show) n.object3D.visible=show; }
+function hidePhone(){ const n=document.getElementById('nokio'); if(!n||!n.object3D||!window.ZSINV||!ZSINV.where) return; if(ZSINV.where()==='none'){ n.object3D.visible=false; return; } const show=!(ZSINV.where()==='inv'&&!(ZSINV.isOpen&&ZSINV.isOpen())&&!phoneOut()); if(n.object3D.visible!==show) n.object3D.visible=show; }
 // Ablegen-Knopf, große Nokio-Anzeige (Handy-Schirm scharf in 2D), Kino-Leinwand auf dem Handy groß (nur ohne VR)
 let nkOn=false, cineFov=null;
 function uiTick(){ ui.classList.toggle('hold',heldNow()||examining());

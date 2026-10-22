@@ -17,6 +17,13 @@ const SMS={ // pro Raum (ZSA-Step-id): at: 'enter' (+delay s) | 'key' (Schlüsse
  kirmes:[{at:'enter',d:20,from:'MARA',ts:'17.08.1991 19:30',text:'Zuckerwatte-Stand. Da hab ich dich zum ersten Mal verloren.'}],
  sim:[{at:'enter',d:12,from:'TESTBAND',ts:'--.--.2079 --:--',text:'Teilnehmerin 7: Begleitperson liest Nachrichten. Weiter beobachten.'}] };
 const N=window.NOKIO={SMS,inbox:[],unread:0,idx:0,page:0,mode:'idle',ready:false};
+// Besitz (Pete): das Handy muss erst GEFUNDEN werden – es liegt im Kinderzimmer 1984 (window.NOKIO_SPOT der Seite), passend zur SMS „Hab dir mein altes Handy dagelassen“.
+// Gemerkt in localStorage 'zs_alpha_nokio' (Neues Spiel / Zurückspulen löscht es). Alte Spielstände HINTER dem Kinderzimmer behalten das Handy.
+const OWNK='zs_alpha_nokio';
+N.owned=()=>{ if(N._own) return true; try{ if(localStorage.getItem(OWNK)==='1') return (N._own=true); }catch(e){}
+ const Z=window.ZSA; if(Z&&Z.on&&Z.STEPS){ const i=Z.STEPS.findIndex(s=>s.id==='era1984'); if(i>=0&&Z.step>i){ try{ localStorage.setItem(OWNK,'1'); }catch(e){} return true; } return false; }
+ return !window.NOKIO_SPOT; }; // Einzelseiten zum Testen: Handy vorhanden, außer auf der Fundort-Seite
+N.setOwned=()=>{ try{ localStorage.setItem(OWNK,'1'); }catch(e){} };
 const EXO={size:0.21,dist:0.34,face:[0,0,1],up:[0,1,0]};
 // ---------- LCD: 96×64 Pixel, harte Schwelle (keine Kantenglättung), Pixelgitter, grüne Hintergrundbeleuchtung
 const LW=96, LH=64, SC=4; const lc=document.createElement('canvas'); lc.width=LW; lc.height=LH; const lx=lc.getContext('2d',{willReadFrequently:true});
@@ -100,8 +107,8 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
   const S=sc.object3D, hd=V(), hq=new T.Quaternion(); let bodyYaw=null, panel=null, inHand=null;
   const headYaw=()=>{ sc.camera.getWorldPosition(hd); sc.camera.getWorldQuaternion(hq); const f=V(0,0,-1).applyQuaternion(hq); return Math.atan2(-f.x,-f.z); };
   const exam=()=>!!(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D);
-  const toInv=()=>{ if(exam()) ZSX.end(); S.attach(el.object3D); el.object3D.scale.setScalar(1); inHand=null; N.where='inv'; place(true); };
-  const toHand=h=>{ const c=ctl(h||'left')||ctl('right'); if(!c) return; closePanel(); c.object3D.add(el.object3D); el.object3D.position.set(0.0,0.035,0.06); el.object3D.rotation.set(-1.25,0,0); el.object3D.scale.setScalar(1); inHand=h||'left'; N.where='hand'; beep(1200,0.03,0.008); };
+  const toInv=()=>{ if(!N.owned()) return; if(exam()) ZSX.end(); S.attach(el.object3D); el.object3D.scale.setScalar(1); inHand=null; N.where='inv'; place(true); };
+  const toHand=h=>{ if(!N.owned()) return; const c=ctl(h||'left')||ctl('right'); if(!c) return; closePanel(); c.object3D.add(el.object3D); el.object3D.position.set(0.0,0.035,0.06); el.object3D.rotation.set(-1.25,0,0); el.object3D.scale.setScalar(1); inHand=h||'left'; N.where='hand'; beep(1200,0.03,0.008); };
   // Gürtel-Pose: Kopf-xz, 0,62 m unter Augenhöhe, links vorne; Körper-Gier folgt dem Blick erst ab 40° (kein Mitdrehen bei jedem Blick)
   const place=force=>{ if(N.where!=='inv'||panel) return; const y=headYaw(); if(bodyYaw===null||force) bodyYaw=y; let d=y-bodyYaw; d=Math.atan2(Math.sin(d),Math.cos(d)); if(Math.abs(d)>0.7) bodyYaw+=d-Math.sign(d)*0.7;
    const fy=Math.max(0.35,hd.y-0.62), o=V(-0.2,0,-0.2).applyAxisAngle(V(0,1,0),bodyYaw); const sh=(N.unread||(N.call&&N.call.state==='ring'))?Math.sin(performance.now()*0.09)*0.0025*(Math.sin(performance.now()*0.012)>0?1:0):0;
@@ -112,16 +119,25 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
    for(let k=0;k<4;k++){ x.strokeStyle=k?'#2a261f':'#5a5040'; x.lineWidth=3; x.strokeRect(24+k*120,70,104,130); }
    const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; const bd=new T.Mesh(new T.PlaneGeometry(0.36,0.18),new T.MeshBasicMaterial({map:t,color:0xb0a898,fog:false})); g.add(bd); g.userData.board=bd; return g; };
   function openPanel(){ if(panel||N.where==='hand'||exam()) return; const y=headYaw(); panel=mkPanel(); const f=V(-Math.sin(y),0,-Math.cos(y)); const vr=sc.is('vr-mode'), dd=vr?0.48:0.55; panel.position.set(hd.x+f.x*dd,Math.max(0.6,hd.y-(vr?0.38:0.2)),hd.z+f.z*dd); panel.rotation.set(vr?-0.55:-0.3,y,0,'YXZ'); S.add(panel);
-   panel.add(el.object3D); el.object3D.position.set(-0.111,0.004,0.012); el.object3D.rotation.set(0,0,0); el.object3D.scale.setScalar(0.95); panel.userData.at=hd.clone(); N.where='inv'; beep(700,0.04,0.008); }
+   panel.userData.at=hd.clone(); if(!N.owned()){ beep(700,0.04,0.008); return; } /* noch kein Handy: leeres Brett */ panel.add(el.object3D); el.object3D.position.set(-0.111,0.004,0.012); el.object3D.rotation.set(0,0,0); el.object3D.scale.setScalar(0.95); N.where='inv'; beep(700,0.04,0.008); }
   function closePanel(){ if(!panel) return; const p=panel; panel=null; if(el.object3D.parent===p){ S.attach(el.object3D); place(true); } S.remove(p); p.traverse(o=>{ o.geometry&&o.geometry.dispose(); }); }
-  const take=h=>{ if(sc.is('vr-mode')) toHand(h); else { closePanel(); if(window.ZSX&&!ZSX.busy()&&ZSX.examine(el.object3D,Object.assign({mode:'mouse'},EXO))) open(); } };
+  const take=h=>{ if(!N.owned()) return; if(sc.is('vr-mode')) toHand(h); else { closePanel(); if(window.ZSX&&!ZSX.busy()&&ZSX.examine(el.object3D,Object.assign({mode:'mouse'},EXO))) open(); } };
   const mRay=e=>{ if(window.zsaMouseRay) return zsaMouseRay(sc,e); const r=sc.canvas.getBoundingClientRect(), rc=new T.Raycaster(); rc.setFromCamera({x:(e.clientX-r.left)/r.width*2-1,y:-(e.clientY-r.top)/r.height*2+1},sc.camera); return rc; };
   const cRay=c=>{ const rcC=c.components&&c.components.raycaster; if(rcC&&rcC.raycaster){ rcC.updateOriginDirection&&rcC.updateOriginDirection(); return rcC.raycaster; } const rc=new T.Raycaster(), p=V(), q=new T.Quaternion(); c.object3D.getWorldPosition(p); c.object3D.getWorldQuaternion(q); rc.set(p,V(0,0,-1).applyQuaternion(q)); return rc; }; // Laser-Strahl wie sichtbar (laser-controls-Offset)
   window.ZSINV={items:['nokio'],open:openPanel,close:closePanel,toggle:()=>panel?closePanel():openPanel(),take:take,putAway:toInv,isOpen:()=>!!panel,where:()=>N.where,
-   list:()=>[{id:'nokio',icon:'📱',name:'Nokio'+(N.unread?' – '+N.unread+' neue SMS':'')}], select:id=>{ if(id==='nokio') take(); }}; // Touch-Leiste (touchctl.js) zeigt die Liste als eigenes Menü
+   list:()=>N.owned()?[{id:'nokio',icon:'📱',name:'Nokio'+(N.unread?' – '+N.unread+' neue SMS':'')}]:[], select:id=>{ if(id==='nokio') take(); }}; // Touch-Leiste (touchctl.js) zeigt die Liste als eigenes Menü
   const backHook=()=>{ if(N.where==='hand'||exam()){ toInv(); return true; } if(panel){ closePanel(); return true; } return false; };
   const hookTouch=()=>{ if(window.ZSTouch&&ZSTouch.onBack!==backHook&&!ZSTouch.onBack) ZSTouch.onBack=backHook; }; hookTouch(); setTimeout(hookTouch,1500); setTimeout(hookTouch,5000);
-  const vrMode=on=>{ el.classList.toggle('clickable',!on); }; // VR: Handy wird übers Inventar genommen (in die Hand), nicht per ZSX-Untersuchen
+  const vrMode=on=>{ el.classList.toggle('clickable',!on||N.where==='world'); }; // liegt es noch im Zimmer: auch in VR per Laser nehmbar // VR: Handy wird übers Inventar genommen (in die Hand), nicht per ZSX-Untersuchen
+  // ---------- Fundort: liegt flach auf dem Schreibtisch, halb unter einem Comic – kein Leuchten, kein Hotspot; Nehmen = ins Inventar + SMS
+  const pickup=()=>{ if(N.where!=='world') return; N.setOwned(); N.where='inv'; vrMode(sc.is('vr-mode')); beep(1200,0.03,0.008);
+   try{ ['left','right'].forEach(h=>hap(sc.renderer,h,0.35,90)); }catch(e){} examinable(); toInv();
+   (SMS.era1984||[]).filter(m=>m.at==='enter').forEach(m=>setTimeout(()=>receive(m),1600)); N.onPickup&&N.onPickup(); };
+  N.pickup=pickup;
+  const SP=window.NOKIO_SPOT;
+  if(!N.owned()&&SP){ N.where='world'; S.attach(el.object3D); el.object3D.position.set(SP.p[0],SP.p[1]+0.0105,SP.p[2]); el.object3D.rotation.set(-Math.PI/2,SP.ry||0,0,'YXZ'); el.object3D.scale.setScalar(1); el.classList.add('clickable');
+   el.addEventListener('click',e=>{ if(N.where!=='world') return; e.stopPropagation&&e.stopPropagation(); pickup(); }); }
+  else if(!N.owned()){ N.where='none'; el.object3D.visible=false; }
   toInv(); sc.addEventListener('enter-vr',()=>{ closePanel(); if(!exam()) toInv(); vrMode(true); }); sc.addEventListener('exit-vr',()=>{ closePanel(); if(!exam()) toInv(); vrMode(false); });
   // VR-Tasten: Y (links) = Inventar auf/zu, B (rechts) = Handy zurück; Trigger aufs Handy im Brett = nehmen; Griff an der Hüfte = nehmen
   const busyX=()=>window.ArcadeCinema&&ArcadeCinema.active&&ArcadeCinema.active();
@@ -129,7 +145,7 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
    c.addEventListener('ybuttondown',()=>{ if(busyX()||(window.ZSX&&(ZSX.active||performance.now()-(ZSX.endT||0)<300))) return; if(N.where==='hand') toInv(); else if(panel) closePanel(); else openPanel(); });
    c.addEventListener('bbuttondown',()=>{ if(busyX()) return; if(N.where==='hand'||exam()) toInv(); else if(panel) closePanel(); });
    const near=()=>{ const p=V(); c.object3D.getWorldPosition(p); const q=V(); el.object3D.getWorldPosition(q); return p.distanceTo(q)<0.16; };
-   c.addEventListener('gripdown',()=>{ if(N.where==='inv'&&!exam()&&near()) toHand(side); });
+   c.addEventListener('gripdown',()=>{ if(N.where==='world'){ const p=V(); c.object3D.getWorldPosition(p); const q=V(); el.object3D.getWorldPosition(q); if(p.distanceTo(q)<0.2) pickup(); return; } if(N.where==='inv'&&!exam()&&near()) toHand(side); });
    c.addEventListener('triggerdown',()=>{ if(!panel||N.where!=='inv') return; const rc=cRay(c); const hb=rc.intersectObject(panel.userData.board,false)[0]; const hit=rc.intersectObject(el.object3D,true).length||(hb&&hb.uv&&hb.uv.x<0.27); /* Handy oder sein Fach */ if(hit||near()) toHand(side); }); });
   bind(); setTimeout(bind,2000);
   // Desktop/Touch: Klick auf das Handy im Brett
@@ -139,21 +155,22 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
   (function loop(){ requestAnimationFrame(loop); if(sc.renderer&&sc.renderer.xr.isPresenting) return; step(); })(); sc.renderer&&sc.renderer.xr.addEventListener&&sc.renderer.xr.addEventListener('sessionstart',()=>{ const s=sc.renderer.xr.getSession(); const f=()=>{ if(!sc.renderer.xr.isPresenting) return; step(); s.requestAnimationFrame(f); }; s.requestAnimationFrame(f); });
   function step(){ if(exam()) return; if(panel){ headYaw(); if(hd.distanceTo(panel.userData.at)>1.3) closePanel(); return; } place(false); }
   N.inv={toInv,toHand,openPanel,closePanel};
-  if(window.ZSX) ZSX.makeExaminable(el,Object.assign({grip:1e-4,onPick:()=>open(),onEnd:()=>setTimeout(()=>{ if(!exam()&&N.where!=='hand') toInv(); },0)},EXO)); };
+  function examinable(){ if(!window.ZSX||el.__zsx) return; el.__zsx=1; ZSX.makeExaminable(el,Object.assign({grip:1e-4,onPick:()=>open(),onEnd:()=>setTimeout(()=>{ if(!exam()&&N.where!=='hand') toInv(); },0)},EXO)); }
+  if(N.owned()) examinable(); };
  el.hasLoaded?mount():el.addEventListener('loaded',mount);
  // Nachrichten planen
- const list=(step&&SMS[step])||[]; list.filter(m=>m.at==='enter').forEach(m=>setTimeout(()=>receive(m),(m.d||10)*1000));
+ const list=(step&&SMS[step])||[]; if(N.owned()) list.filter(m=>m.at==='enter').forEach(m=>setTimeout(()=>receive(m),(m.d||10)*1000));
  N.onKey=()=>list.filter(m=>m.at==='key').forEach(m=>setTimeout(()=>receive(m),(m.d||2)*1000));
  // Tasten: A/X = weiter/wählen (nur wenn das Handy angeschaut wird), Pfeile/Enter auf dem Desktop, H = Handy nehmen
  const nextBtn=()=>{ if(!N.looking) return; press(); };
  const hk=()=>document.querySelectorAll('[laser-controls]').forEach(c=>{ if(c.__nk) return; c.__nk=1; ['abuttondown','xbuttondown'].forEach(ev=>c.addEventListener(ev,nextBtn)); c.addEventListener('thumbstickmoved',e=>{ if(N.mode==='snake'&&N.looking){ const {x,y}=e.detail; if(Math.abs(x)>0.6) gTurn(Math.sign(x),0); else if(Math.abs(y)>0.6) gTurn(0,Math.sign(y)); } }); }); hk(); setTimeout(hk,2000);
- window.addEventListener('keydown',e=>{ const k=e.key; if(k==='h'||k==='H'){ if(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D) ZSX.end(); else if(window.ZSX&&!ZSX.busy()&&ZSX.examine(el.object3D,Object.assign({mode:'mouse'},EXO))) open(); return; }
+ window.addEventListener('keydown',e=>{ const k=e.key; if(k==='h'||k==='H'){ if(!N.owned()) return; if(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D) ZSX.end(); else if(window.ZSX&&!ZSX.busy()&&ZSX.examine(el.object3D,Object.assign({mode:'mouse'},EXO))) open(); return; }
   if(!N.looking) return; if(N.mode==='snake'){ const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[k]; if(m){ gTurn(...m); e.preventDefault(); } return; }
   if(k==='ArrowDown'||k==='ArrowRight'||k==='Enter'){ press(); e.preventDefault(); } else if(k==='ArrowUp'||k==='ArrowLeft'){ back1(); e.preventDefault(); } });
  const hp=V(), pp=V(); let last=performance.now(), acc=0, idleT=0;
  const tick=()=>{ const now=performance.now(), dt=Math.min(0.1,(now-last)/1000); last=now; const R=sc.renderer, cam=sc.camera;
   const ex=!!(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D); let near=false; if(cam&&el.object3D.parent){ cam.getWorldPosition(hp); el.object3D.getWorldPosition(pp); near=R.xr.isPresenting&&hp.distanceTo(pp)<0.36; }
-  const look=ex||near; if(look&&!N.looking) open(); if(!look&&N.looking){ N.looking=false; if(N.mode==='snake') N.mode='menu'; }
+  const look=N.where!=='world'&&N.where!=='none'&&(ex||near); if(look&&!N.looking) open(); if(!look&&N.looking){ N.looking=false; if(N.mode==='snake') N.mode='menu'; }
   if(window.ZSX) ZSX.noRotate=ex&&N.mode==='snake';
   const ringing=!!(N.call&&N.call.state!=='talk'); const tgt=look?1:((N.unread||ringing)?0.55+0.45*Math.max(0,Math.sin(now*0.006)):0.12); back+=(tgt-back)*Math.min(1,dt*6);
   if(N.mode==='snake'&&N.looking){ acc+=dt; if(acc>0.16){ acc=0; if(!G.dead) gStep(); } }
@@ -164,7 +181,7 @@ function press(){ beep(1860,0.03,0.01); if(N.mode==='read'){ if(N.page<N.pages-1
  else if(N.mode==='menu'){ if(N.sel===0&&N.inbox.length){ N.mode='read'; N.idx=0; N.page=0; } else if(N.sel===0){ N.sel=1; } else gStart(); }
  else if(N.mode==='snake'){ if(G.dead) gStart(); } else N.mode=N.inbox.length?'read':'menu'; redraw(); }
 function back1(){ if(N.mode==='read'){ if(N.page>0) N.page--; else if(N.idx>0){ N.idx--; N.page=0; } } else if(N.mode==='menu'){ N.sel=(N.sel+1)%2; } redraw(); }
-function receive(m){ N.inbox.push(m); N.unread++; buzz(); setTimeout(ring,250); /* toast() aus: keine Tipp-Einblendung mehr (Pete) */ if(N.looking){ N.mode='read'; N.idx=N.inbox.length-1; N.page=0; N.unread=Math.max(0,N.unread-1); } redraw(); }
+function receive(m){ if(!N.owned()) return; N.inbox.push(m); N.unread++; buzz(); setTimeout(ring,250); /* toast() aus: keine Tipp-Einblendung mehr (Pete) */ if(N.looking){ N.mode='read'; N.idx=N.inbox.length-1; N.page=0; N.unread=Math.max(0,N.unread-1); } redraw(); }
 N.receive=receive; N.ring=ring; N.buzz=buzz; N.redraw=redraw; N.press=press; N.back=back1; N.open=open; N.snake={start:gStart,turn:gTurn,state:G};
 document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(setup,400); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
 })();
