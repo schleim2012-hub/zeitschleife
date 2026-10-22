@@ -3,7 +3,7 @@
    - Schreibtisch (Kiefer, Schubladen-Container, Schreibunterlage, Stifteköcher) statt Platte + 4 Stäben; Stuhl, Lampe, Kassette bleiben.
    - TV-Rollwagen (Chrom, schwarze Böden, Rollen, Videorekorder) statt Batch-Kisten; Fernseher (crt-tv) unverändert.
    - Neu: weiße Lack-Kommode mit Radiorekorder + Kassetten an der linken Wand (Kollision ergänzt).
-   - Fensterblick: Foto-Parallax in 2 Ebenen (Hof/Fassaden + Räder/Tonnen/Wäsche, Depth Anything V2, aus Grok C2), Schmutz-/Regenglas, Alu-Jalousie, seltene Scheinwerfer-/Lampen-Bewegung.
+   - Fensterblick: kleiner echter Hinterhof aus Foto-Ebenen (Perchance B_01 Rückgebäude/Himmel, C Seitenflügel, A Tonnen, Grok C2 Boden/EG; 2 Draw Calls), Schmutz-/Regenglas, Jalousie, Korn, Scheinwerfer/Lampe.
    - Neu: Kiefer-Kleiderschrank (Koffer/Schuhkarton oben, Poster an der Tür), Kram (Turnschuhe, Rucksack, Wäschehaufen, Comic-Stapel, Papierkorb),
      Pinnwand + Wandkalender Okt. 1989 (Text per PIL), geflochtener Flickenteppich statt Ring-Kreis, Bettdecke ohne durchstoßende Matratze, Kissen neu, Neon gedämpft.
    - Sperrzonen: ROOMS.bedroom.solid (apt_main, Hook über window.__apt) mit ~0,34 m Abstand zu allen großen Möbeln (0,12 Rand + 0,22 Kopfradius aus hardClamp).
@@ -32,41 +32,44 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  setTimeout(wagen,0);
  // ---- 3) Fensterblick: Canvas-Schichten (hinter der Wand) raus, Bild+Tiefe rein ----
  G.children.filter(o=>o.isMesh&&o.material&&o.material.isMeshBasicMaterial&&o.material.fog===false&&o.position.z<-3).forEach(o=>{ G.remove(o); });
- // Foto-Parallax aus EINEM Foto (Grok C2 „Hinterhof von oben“, tools/gfx_wohnung/gen_window_layers.py): Ebene A = Hof/Fassaden (Objekte per Inpaint/Klon entfernt,
- // Leinwand oben/unten fotografisch geklont), Ebene B = Fahrräder/Tonnen/Wäscheleine (RGBA, eigene Tiefe). Beide als Strahlen-Gitter (Depth Anything V2, 1=nah).
- const BK='../sky/backdrop/', ldI=s=>new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=s; });
- const pix=im=>{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); return {w:c.width,h:c.height,d:x.getImageData(0,0,c.width,c.height).data}; };
- const samp=(P,u,v)=>{ const fx=Math.min(Math.max(u,0),1)*(P.w-1), fy=(1-Math.min(Math.max(v,0),1))*(P.h-1), x0=Math.floor(fx), y0=Math.floor(fy), x1=Math.min(x0+1,P.w-1), y1=Math.min(y0+1,P.h-1), ax=fx-x0, ay=fy-y0, p=(xx,yy)=>P.d[(yy*P.w+xx)*4];
-   return ((p(x0,y0)*(1-ax)+p(x1,y0)*ax)*(1-ay)+(p(x0,y1)*(1-ax)+p(x1,y1)*ax)*ay)/255; };
- const U={uT:{value:0},uSweep:{value:new T.Vector2(0.5,0)},uLamp:{value:new T.Vector3(0.6,0.64,1)}};
- const mod=(mat,rect)=>{ mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U,{uRect:{value:new T.Vector4(rect[0],rect[2],rect[1]-rect[0],rect[3]-rect[2])}});
-   sh.fragmentShader='uniform vec2 uSweep; uniform vec3 uLamp; uniform vec4 uRect;\n'+sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
-   #ifdef USE_MAP
-   vec2 fu=uRect.xy+vMapUv*uRect.zw;
-   float sw=uSweep.y*exp(-pow((fu.x-uSweep.x)/0.075,2.0))*smoothstep(0.27,0.36,fu.y)*(1.0-smoothstep(0.52,0.62,fu.y));
-   vec2 dl=(fu-uLamp.xy)*vec2(1.0,1.06); float gl=exp(-dot(dl,dl)/0.0035);
-   diffuseColor.rgb*=1.0+sw*vec3(1.0,0.93,0.78)+(uLamp.z-1.0)*gl;
-   #endif`); }; mat.customProgramCacheKey=()=>'szhof'+rect.join(','); };
- const grid=(M,P,rect,gx,gy,fade,mat)=>{ const g=new T.PlaneGeometry(1,1,gx,gy), pos=g.attributes.position, uv=g.attributes.uv, v3=new T.Vector3(), col=new Float32Array(pos.count*3), b=1/M.far, a=1/M.near-b;
-   for(let i=0;i<pos.count;i++){ const lu=uv.getX(i), lv=uv.getY(i), u=rect[0]+lu*(rect[1]-rect[0]), v=rect[2]+lv*(rect[3]-rect[2]), r=1/(a*samp(P,lu,lv)+b);
-     v3.set((u-0.5)*2*M.tx,(v-0.5)*2*M.ty_full,-1).normalize().multiplyScalar(r); pos.setXYZ(i,v3.x,v3.y,v3.z);
-     const e=Math.min(u,1-u,v*1.5,(1-v)*1.5), k=fade>0?Math.min(1,Math.max(0,e/fade)):1, s2=k*k*(3-2*k); col.set([s2,s2,s2],i*3); }
-   g.setAttribute('color',new T.BufferAttribute(col,3)); g.computeBoundingSphere(); const m=new T.Mesh(g,mat); m.frustumCulled=false; m.name='depthbg'; return m; };
- const mkView=()=>{ info.pending++;
-  Promise.all([fetch(BK+'sz_hof_layers.json').then(r=>r.json()),ldI(BK+'sz_hof_base_depth.png'),ldI(BK+'sz_hof_obj_depth.png')]).then(([M,dA,dB])=>{
-   const TINT=0xdcdce2;   // draußen dunkler als das Zimmer
-   const mA=new T.MeshBasicMaterial({color:TINT,fog:false,vertexColors:true}), mB=new T.MeshBasicMaterial({color:TINT,fog:false,vertexColors:true,alphaTest:0.5,side:T.DoubleSide});
-   const tb=(f,cb)=>TL.load(BK+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; cb(t); });
-   tb('sz_hof_base.jpg',t=>{ mA.map=t; mA.needsUpdate=true; }); tb('sz_hof_obj.png',t=>{ mB.map=t; mB.needsUpdate=true; });
-   const RA=[0,1,0,1], RB=M.obj_rect_uv; mod(mA,RA); mod(mB,RB); U.uLamp.value.set(M.lamp_uv[0],M.lamp_uv[1],1);
-   const A=grid(M,pix(dA),RA,64,104,0.06,mA), B=grid(M,pix(dB),RB,80,46,0,mB);
-   const g=new T.Group(); g.name='sz_hof'; g.position.set(0.45,1.6,-2.0-0.6); A.rotation.x=B.rotation.x=M.pitch; g.add(A); g.add(B); G.add(g);
-   // leise Bewegung: ab und zu Scheinwerfer eines Autos in der Durchfahrt (weicher Streifen über Hof + Rückfassade), Hoflampe flackert selten kurz
+ // Fensterblick = kleiner echter Hinterhof aus Foto-Ebenen (tools/gfx_wohnung/gen_window_courtyard.py): Rückgebäude (Perchance B_01 + EG aus Grok C2), Hofboden (C2 entzerrt,
+ // nasse Spiegelung gebacken), Seitenflügel (Perchance C), Tonnen (Perchance A, freigestellt), Himmel (B_01). 1 Atlas + 1 Himmel = 2 Draw Calls. Korn/Scheinwerfer/Lampe im Shader.
+ const HB='../'+SB+'hof/';
+ const U={uT:{value:0},uSweep:{value:new T.Vector2(0,0)},uLamp:{value:1},uLampP:{value:new T.Vector3()},uGrain:{value:0.09}};
+ const mod=(mat,sky)=>{ mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U);
+   sh.vertexShader='varying vec3 vWP;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\n vWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+   sh.fragmentShader=(sky?'#define HOF_SKY\n':'')+'varying vec3 vWP; uniform float uT; uniform vec2 uSweep; uniform float uLamp; uniform vec3 uLampP; uniform float uGrain;\n'+sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+   float fx=1.0;
+   #ifndef HOF_SKY
+   float sw=uSweep.y*exp(-pow((vWP.x-uSweep.x)/1.1,2.0))*(1.0-smoothstep(-0.8,0.6,vWP.y));
+   vec3 dl=vWP-uLampP; float gl=exp(-dot(dl,dl)/3.0);
+   fx=1.0+sw+(uLamp-1.0)*gl;
+   #endif
+   float gr=fract(sin(dot(floor(gl_FragCoord.xy)+vec2(floor(uT*24.0)*37.0,floor(uT*24.0)*11.0),vec2(12.9898,78.233)))*43758.5453);
+   diffuseColor.rgb*=fx*(1.0+(gr-0.5)*uGrain);`); }; mat.customProgramCacheKey=()=>sky?'szsky':'szhof'; };
+ const quads=(list)=>{ const P=[],UV=[],I=[]; list.forEach(([a,b,c,d,r])=>{ const n=P.length/3; [a,b,c,d].forEach(p=>P.push(...p));
+   const e=1.5/2048, u0=r[0]+e,u1=r[0]+r[2]-e,vt=1-r[1]-e,vb=1-(r[1]+r[3])+e; UV.push(u0,vb,u1,vb,u1,vt,u0,vt); I.push(n,n+1,n+2,n,n+2,n+3); });
+   const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(P,3)); g.setAttribute('uv',new T.Float32BufferAttribute(UV,2)); g.setIndex(I); g.computeBoundingSphere(); return g; };
+ const mkView=()=>{ info.pending++; fetch(HB+'hof.json').then(r=>r.json()).then(M=>{ const R=M.rects, {Y0,ZW,ZB,XL,XR,YTOP,YSIDE}=M;
+   const Q=[ [[XL,Y0,ZB],[XR,Y0,ZB],[XR,YTOP,ZB],[XL,YTOP,ZB],R.back],                       // Rückgebäude
+     [[XL,Y0,ZW],[XR,Y0,ZW],[XR,Y0,ZB],[XL,Y0,ZB],R.floor],                                   // Hofboden (Bildzeile 0 = hinten)
+     [[XL,Y0,ZW],[XL,Y0,ZB],[XL,YSIDE,ZB],[XL,YSIDE,ZW],R.left],                              // Seitenflügel links (u: vorn→hinten)
+     [[XR,Y0,ZB],[XR,Y0,ZW],[XR,YSIDE,ZW],[XR,YSIDE,ZB],R.right] ];                           // rechts (u: hinten→vorn)
+   M.objs.forEach(([n,x,z])=>{ const r=R[n], h=r[4], w=h*r[5]*(r[2]/r[3])/(r[2]/r[3]); const ww=h*r[5]; const ang=Math.atan2(0.45-x,-2.2-z), cx=Math.cos(ang)*ww/2, cz=-Math.sin(ang)*ww/2;
+     Q.push([[x-cx,Y0,z-cz],[x+cx,Y0,z+cz],[x+cx,Y0+h,z+cz],[x-cx,Y0+h,z-cz],r]); });
+   const TINT=0xe8e6ea, mN=new T.MeshBasicMaterial({color:TINT,fog:false,alphaTest:0.5,side:T.DoubleSide}); mN.alphaToCoverage=true; mod(mN,false);
+   const mS=new T.MeshBasicMaterial({color:0xc4c4ca,fog:false}); mod(mS,true);
+   TL.load(HB+'sz_hof_atlas.png',t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; mN.map=t; mN.needsUpdate=true; });
+   TL.load(HB+'sz_hof_himmel.jpg',t=>{ t.colorSpace=T.SRGBColorSpace; mS.map=t; mS.needsUpdate=true; });
+   const near=new T.Mesh(quads(Q),mN); near.name='depthbg'; near.frustumCulled=false;
+   const SK=[0,0,1,1]; const sky=new T.Mesh(quads([[[-95,-12,-60],[95,-12,-60],[95,95,-60],[-95,95,-60],SK],[[-95,95,-60],[95,95,-60],[95,95,40],[-95,95,40],[0,0,1,0.04]]]),mS); sky.name='depthbg'; sky.frustumCulled=false;
+   G.add(sky); G.add(near); U.uLampP.value.set(...M.lamp);
+   // leise Bewegung: ab und zu Scheinwerfer (Auto in der Durchfahrt) über Hof/EG, Hoflampe flackert selten; Korn läuft mit 24 fps
    let nx=performance.now()+9000, s0=0, dir=1, fl=0;
-   A.onBeforeRender=()=>{ const t=performance.now(); if(t>nx&&!s0){ s0=t; dir=Math.random()<0.5?1:-1; nx=t+30000+Math.random()*25000; }
-     if(s0){ const k=(t-s0)/3400; if(k>=1){ s0=0; U.uSweep.value.y=0; } else { U.uSweep.value.set(dir>0?0.12+k*0.8:0.92-k*0.8,0.42*Math.sin(Math.PI*k)); } }
-     if(fl<=0&&Math.random()<0.0025) fl=6+Math.floor(Math.random()*10); let z=1; if(fl>0){ fl--; z=Math.random()<0.5?0.55:0.85; } U.uLamp.value.z+= (z-U.uLamp.value.z)*0.5; };
-   info.view=true; info.layers=2; info.hofU=U; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
+   near.onBeforeRender=()=>{ const t=performance.now(); U.uT.value=t/1000; if(t>nx&&!s0){ s0=t; dir=Math.random()<0.5?1:-1; nx=t+30000+Math.random()*25000; }
+     if(s0){ const k=(t-s0)/3400; if(k>=1){ s0=0; U.uSweep.value.y=0; } else { U.uSweep.value.set(dir>0?XL+k*(XR-XL):XR-k*(XR-XL),0.5*Math.sin(Math.PI*k)); } }
+     if(fl<=0&&Math.random()<0.0025) fl=6+Math.floor(Math.random()*10); let z=1; if(fl>0){ fl--; z=Math.random()<0.5?0.5:0.85; } U.uLamp.value+=(z-U.uLamp.value)*0.5; };
+   info.view=true; info.layers='hof'; info.hofU=U; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
  mkView();
  // Glas: Grauschleier, Schmutzrand, Kalkflecken, Tropfen, schwache Raumspiegelung (statt glattem Dunkelglas) + außen laufende Regenrinnsale
  const glass=G.children.find(o=>o.isMesh&&o.geometry.type==='PlaneGeometry'&&near(o.geometry.parameters.width,1.2)&&o.material.transparent&&near(o.material.opacity,0.28));
@@ -74,7 +77,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
   const rm=new T.MeshBasicMaterial({transparent:true,depthWrite:false,fog:false,color:0xc0c0c0,opacity:0.3}); const rg=new T.Mesh(glass.geometry,rm); rg.name='sz_regen'; rg.position.copy(glass.position); rg.position.z-=0.004; G.add(rg);
   tx('sz_regen.png',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(3,0.8); rm.map=t; rm.needsUpdate=true; let l=performance.now(); rg.onBeforeRender=()=>{ const n=performance.now(); t.offset.y=(t.offset.y+(n-l)*0.000018)%1; l=n; }; });
   // 80er Alu-Jalousie, halb heruntergelassen, Lamellen schräg gestellt (1 InstancedMesh = 1 Draw Call); verdeckt den oberen Bildrand
-  const bz=glass.position.z+0.075, N=17, IM=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:0xb9b2a2,roughness:0.5,metalness:0.35}),N+4), o3=new T.Object3D(); let n=0;
+  const bz=glass.position.z+0.075, N=12, IM=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:0xb9b2a2,roughness:0.5,metalness:0.35}),N+4), o3=new T.Object3D(); let n=0;
   const set=(x,y,z,sx,sy,sz,rx)=>{ o3.position.set(x,y,z); o3.rotation.set(rx||0,0,0); o3.scale.set(sx,sy,sz); o3.updateMatrix(); IM.setMatrixAt(n++,o3.matrix); };
   set(0.45,2.035,bz,1.17,0.03,0.045,0);                                   // Oberschiene
   for(let k=0;k<N;k++) set(0.45,2.005-k*0.0185,bz,1.14,0.0025,0.025,0.55); // Lamellen

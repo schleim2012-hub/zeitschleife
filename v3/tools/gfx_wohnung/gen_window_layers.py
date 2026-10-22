@@ -125,4 +125,5 @@ meta={'lamp_uv':[float(lx/W),float(1-(K+ly)/Ht)],'hfov':88,'pitch':PITCH,'near':
       'obj_rect_uv':[x0/W,x1/W,1-(K+y1)/Ht,1-(K+y0)/Ht],'note':'uv: u links→rechts, v unten→oben, auf der erweiterten Leinwand'}
 json.dump(meta,open(OUT+'sz_hof_layers.json','w'),indent=1)
 Image.fromarray(E8).resize((EW//2,EH//2)).save(DBG+'base_prev.jpg'); Image.fromarray(look(A)).save(DBG+'A_prev.jpg')
+Image.fromarray(np.clip(A,0,255).astype(np.uint8)).save(V3+'/assets/apartment/bedroom/src/sz_c2_clean.png')   # für gen_window_courtyard.py (ungegradet, Objekte entfernt)
 print('ok',EW,EH,meta)
