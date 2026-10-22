@@ -1,5 +1,5 @@
 /* Ost-Berlin 1989 – nasse Kopfsteinpflaster-Straße, Novembernacht, echtes 3D in Schichten (Look nach neon_gasse.jpg).
-   nah: Kopfstein, Trabi, Kisten · mittel: verrußte Altbau-Fassaden, spärliches DDR-Neon, Natriumlampen · fern: die Mauer mit Durchbruch, dahinter West-Flutlicht im Dunst.
+   nah: Kopfstein, Trabbel, Kisten · mittel: verrußte Altbau-Fassaden, spärliches DDR-Neon, Natriumlampen · fern: die Mauer mit Durchbruch, dahinter West-Flutlicht im Dunst.
    nah: Asphalt (nass, Pfützen), Bordstein, Müll, Kiosk, Passanten (3D), Baum mit Wurzeln, die den Asphalt aufbrechen
    mittel: Ziegelfassaden mit Fenstern, Läden, Rollläden, Neon-Schilder (Glühen + Spiegelstreifen am Boden), Kabel, Laterne mit Wackelkontakt
    fern: Silhouetten + abgedunkeltes Foto im lila Dunst. Licht: nur praktisch (2 Neon, 1 Laterne). window.buildStreet41(sceneEl,C) */
@@ -145,7 +145,7 @@ window.buildStreet89=function(sc,C){ const BK=!!window.ZSBake&&!/[?&]nobake=1/.t
   // Kontaktschatten + Pfütze unterm Auto
   const ao=cv(128,128,(x)=>{ const g=x.createRadialGradient(64,64,10,64,64,64); g.addColorStop(0,'rgba(0,0,0,0.9)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,128,128); }); const sh=new T.Mesh(new T.PlaneGeometry(2.2,4.4),new T.MeshBasicMaterial({map:ao,transparent:true,depthWrite:false,color:0x000000})); sh.material.alphaMap=ao; sh.rotation.x=-Math.PI/2; sh.position.y=0.008; TG.add(sh);
   trabi=[1.75,-4.6]; }
- // Trabi verschieben (alles oben ab car) erledigt per Gruppe unten
+ // Trabbel verschieben (alles oben ab car) erledigt per Gruppe unten
  // ---- Gully mit Dampf, Müllsäcke, Kartons ----
  const mh=new T.Mesh(new T.CircleGeometry(0.34,24),new T.MeshStandardMaterial({map:cv(128,128,(x)=>{ x.fillStyle='#1a1a1a'; x.beginPath(); x.arc(64,64,62,0,7); x.fill(); x.strokeStyle='#333'; x.lineWidth=3; for(let r=12;r<60;r+=10){ x.beginPath(); x.arc(64,64,r,0,7); x.stroke(); } }),roughness:0.4,metalness:0.8})); mh.rotation.x=-Math.PI/2; mh.position.set(-0.6,0.006,-4.2); G.add(mh);
  const steamT=halo; const steam=[]; for(let i=0;i<7;i++){ const sp=new T.Sprite(new T.SpriteMaterial({map:steamT,color:0x8a7aa0,transparent:true,opacity:0.09,depthWrite:false})); sp.position.set(-0.6,0.3+i*0.4,-4.2); sp.scale.set(1.2+i*0.35,1.2+i*0.35,1); sp.userData.ph=rnd()*6; steam.push(sp); G.add(sp); }

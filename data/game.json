@@ -68,7 +68,7 @@
     "speaker": "narrator"
    },
    {
-    "say": "Das würde nicht mal MacGyver probieren.",
+    "say": "Das würde nicht mal MacKleber probieren.",
     "speaker": "narrator"
    },
    {
@@ -144,7 +144,7 @@
    "hotspots": [
     {
      "id": "polaroid",
-     "label": "Polaroid",
+     "label": "Polarbild",
      "box": [
       0.42,
       0.7,
@@ -161,7 +161,7 @@
        "speaker": "narrator"
       },
       {
-       "note": "Polaroid: \"Finde mich – M.\""
+       "note": "Polarbild: \"Finde mich – M.\""
       }
      ],
      "when": "!has.polaroid",
@@ -807,7 +807,7 @@
     },
     {
      "id": "walkman",
-     "label": "Walkman",
+     "label": "Laufmann",
      "box": [
       0.75,
       0.55,
@@ -830,7 +830,7 @@
          "speaker": "mara"
         },
         {
-         "note": "Anker 1/3: Walkman (1984)"
+         "note": "Anker 1/3: Laufmann (1984)"
         }
        ],
        "else": [
@@ -944,7 +944,7 @@
   "M1": {
    "epoch": "1989",
    "title": "Grenzübergang, 9. November 1989",
-   "hint": "Die Menge will zur Mauer. Mara war doch irgendwo bei den Trabis?",
+   "hint": "Die Menge will zur Mauer. Mara war doch irgendwo bei den Trabbels?",
    "enter": [
     {
      "if": "!flag.m1",
@@ -953,7 +953,7 @@
        "set": "m1"
       },
       {
-       "say": "Berlin, neunter November 1989. Tausende Menschen, Trabis, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: \"Wahnsinn!\" Es wird nicht das letzte Mal sein.",
+       "say": "Berlin, neunter November 1989. Tausende Menschen, Trabbels, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: \"Wahnsinn!\" Es wird nicht das letzte Mal sein.",
        "speaker": "narrator"
       },
       {
@@ -982,7 +982,7 @@
     },
     {
      "id": "trabi",
-     "label": "Trabi",
+     "label": "Trabbel",
      "box": [
       0.05,
       0.5,
@@ -997,7 +997,7 @@
        }
       },
       {
-       "say": "Du hupst. Der Trabi hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.",
+       "say": "Du hupst. Der Trabbel hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.",
        "speaker": "narrator"
       }
      ]
@@ -1021,7 +1021,7 @@
     },
     {
      "id": "rechts",
-     "label": "Zur Trabi-Schlange",
+     "label": "Zur Trabbel-Schlange",
      "box": [
       0.93,
       0.12,
@@ -1057,7 +1057,7 @@
   "M2": {
    "epoch": "1989",
    "title": "An der Mauer",
-   "hint": "Der Typ mit dem Hammer will eine Banane. Bananen gibt es drüben an der Trabi-Schlange – mit Begrüßungsgeld.",
+   "hint": "Der Typ mit dem Hammer will eine Banane. Bananen gibt es drüben an der Trabbel-Schlange – mit Begrüßungsgeld.",
    "hotspots": [
     {
      "id": "typ",
@@ -1162,12 +1162,12 @@
   },
   "M3": {
    "epoch": "1989",
-   "title": "Trabi-Schlange",
-   "hint": "Da hängt ein Bananen-Schild! Aber Bananen kosten Westgeld. Begrüßungsgeld gibt's am Schalter – zeig dein Polaroid, das sieht fast aus wie ein Ausweis.",
+   "title": "Trabbel-Schlange",
+   "hint": "Da hängt ein Bananen-Schild! Aber Bananen kosten Westgeld. Begrüßungsgeld gibt's am Schalter – zeig dein Polarbild, das sieht fast aus wie ein Ausweis.",
    "hotspots": [
     {
      "id": "mara",
-     "label": "Mara auf dem Trabi",
+     "label": "Mara auf dem Trabbel",
      "box": [
       0.45,
       0.15,
@@ -1246,7 +1246,7 @@
           "give": "dm"
          },
          {
-          "say": "Die Beamtin schaut aufs Polaroid: \"Sieht aus wie'n Ausweis, wa? Jeht klar.\" Hundert D-Mark Begrüßungsgeld! Und du weißt sofort, wofür: Bananen. Prioritäten.",
+          "say": "Die Beamtin schaut aufs Polarbild: \"Sieht aus wie'n Ausweis, wa? Jeht klar.\" Hundert D-Mark Begrüßungsgeld! Und du weißt sofort, wofür: Bananen. Prioritäten.",
           "speaker": "narrator"
          }
         ],
@@ -1447,7 +1447,7 @@
         ],
         "else": [
          {
-          "say": "Der Walkman ist tot. Keine Batterien. Willkommen in 2041, hier ist alles leer. Auch der Walkman.",
+          "say": "Der Laufmann ist tot. Keine Batterien. Willkommen in 2041, hier ist alles leer. Auch der Laufmann.",
           "speaker": "narrator"
          }
         ]
@@ -1782,7 +1782,7 @@
  },
  "items": {
   "polaroid": {
-   "name": "Polaroid",
+   "name": "Polarbild",
    "icon": "📷",
    "desc": "\"Finde mich – M.\" Sieht fast aus wie ein Ausweis."
   },
@@ -1797,7 +1797,7 @@
    "desc": "Total verdreht. Irgendwer kennt die Farbfolge."
   },
   "walkman": {
-   "name": "Walkman",
+   "name": "Laufmann",
    "icon": "📼",
    "desc": "Anker 1. Maras Lied ist drauf.",
    "anchor": true
@@ -1851,7 +1851,7 @@
     "set": "batt"
    },
    {
-    "say": "Zwei Batterien in den Walkman, zwei bleiben übrig. Das Lied läuft wieder.",
+    "say": "Zwei Batterien in den Laufmann, zwei bleiben übrig. Das Lied läuft wieder.",
     "speaker": "narrator"
    }
   ]
@@ -1928,7 +1928,7 @@
     "text": "\"Also, Zeitreisender. Was willst du?\"",
     "options": [
      {
-      "label": "Der Walkman",
+      "label": "Der Laufmann",
       "next": "themen",
       "good": "\"Der hält diese Nacht fest. Den gibt's nur für Leute, die mich beeindrucken. Tipp: Bauchklatscher beeindrucken mich nicht.\"",
       "bad": "\"Finger weg, Freundchen.\""
@@ -1936,7 +1936,7 @@
      {
       "label": "Die Schleife",
       "next": "themen",
-      "good": "\"Drei Anker. Einer davon ist mein Walkman. Die anderen findest du 1989 und 2041. Ich weiß, klingt nach Schnitzeljagd. Ist es auch.\"",
+      "good": "\"Drei Anker. Einer davon ist mein Laufmann. Die anderen findest du 1989 und 2041. Ich weiß, klingt nach Schnitzeljagd. Ist es auch.\"",
       "bad": "\"Die Lampe in den Backrooms erklärt das besser als ich. Sie hat ja sonst nichts zu tun.\""
      },
      {
@@ -1955,13 +1955,13 @@
   "mara89": {
    "start": {
     "speaker": "mara",
-    "text": "Mara springt vom Trabi, Jeansjacke, Föhnfrisur. \"Du schon wieder! Verfolgst du mich durch die Geschichte? Hast du meinen Walkman?\"",
+    "text": "Mara springt vom Trabbel, Jeansjacke, Föhnfrisur. \"Du schon wieder! Verfolgst du mich durch die Geschichte? Hast du meinen Laufmann?\"",
     "options": [
      {
       "label": "😏 Charmant",
       "next": "themen",
       "tone": "charm",
-      "good": "\"Du bist echt hartnäckig. Wie Kaugummi am Trabi. Ich mag das.\"",
+      "good": "\"Du bist echt hartnäckig. Wie Kaugummi am Trabbel. Ich mag das.\"",
       "bad": "\"Charme reißt keine Mauern ein, Süßer. Ein Hammer schon.\""
      },
      {
@@ -2114,7 +2114,7 @@
    "title": "ENDE: Gemeinsam",
    "clip": "clip_ende_wohnung_polaroid",
    "speaker": "narrator",
-   "text": "Ihr geht Hand in Hand ins Licht. Sonntagmorgen. Eine echte Wohnung. Kaffee. Auf dem Tisch ein neues Polaroid: ihr beide. Diesmal scharf."
+   "text": "Ihr geht Hand in Hand ins Licht. Sonntagmorgen. Eine echte Wohnung. Kaffee. Auf dem Tisch ein neues Polarbild: ihr beide. Diesmal scharf."
   },
   "rejected": {
    "title": "ENDE: Abfuhr",
@@ -2126,19 +2126,19 @@
    "title": "ENDE: Allein",
    "clip": "clip_ende_polaroid_leer",
    "speaker": "narrator",
-   "text": "Du gehst allein. Du wachst auf, mit einem Polaroid in der Hand. Es ist leer. Wie dein Kühlschrank."
+   "text": "Du gehst allein. Du wachst auf, mit einem Polarbild in der Hand. Es ist leer. Wie dein Kühlschrank."
   },
   "frozen": {
    "title": "ENDE: Eingefroren",
    "clip": "clip_ende_roehren_aus",
    "speaker": "narrator",
-   "text": "Die Röhren gehen aus. Du sitzt auf Maras Liege und wartest. Und wartest. Irgendwann findet jemand ein Polaroid von dir auf dem Teppich. Hinten drauf: \"Finde mich.\""
+   "text": "Die Röhren gehen aus. Du sitzt auf Maras Liege und wartest. Und wartest. Irgendwann findet jemand ein Polarbild von dir auf dem Teppich. Hinten drauf: \"Finde mich.\""
   },
   "chaos": {
    "title": "ENDE: Zeitchaos",
    "clip": "clip_ende_wohnung_polaroid",
    "speaker": "narrator",
-   "text": "Ihr geht ins Licht, aber die Zeitlinie ist verbogen: Der Trabi hat Lauflicht, die Patrouille tanzt Synthwave, und K.I.T.T.Y. ist Bundeskanzler. Ehrlich gesagt: läuft besser als vorher."
+   "text": "Ihr geht ins Licht, aber die Zeitlinie ist verbogen: Der Trabbel hat Lauflicht, die Patrouille tanzt Synthwave, und K.I.T.T.Y. ist Bundeskanzler. Ehrlich gesagt: läuft besser als vorher."
   }
  }
 }

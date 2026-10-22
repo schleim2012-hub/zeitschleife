@@ -98,7 +98,7 @@ window.build84=function(sc){ const T=THREE, S=sc.object3D, TL=new T.TextureLoade
  cable([[1.95,0.78,-0.78],[2.05,0.7,-0.9],[2.07,0.2,-0.95],[2.04,0.01,-1.1],[2.08,0.3,-1.4]]); // Lampe → Steckdose
  [[0.05,0.3,Z0+0.006,0],[X1-0.006,0.3,-1.4,-Math.PI/2]].forEach(([x,y,z,r])=>{ const s=box(0.075,0.075,0.012,std({color:0xd8d0b8,roughness:0.4}),x,y,z); s.rotation.y=r; });
  // Comics + Kassette auf dem Boden/Tisch, Poster
- const pm=n=>{ const m=std({color:0xb8a8a0,roughness:0.85}); const t=TL.load('../assets/era1984/'+n+'.jpg?v=2',t=>{ t.colorSpace=T.SRGBColorSpace; m.map=t; m.needsUpdate=true; }); return m; };
+ const pm=n=>{ const m=std({color:0xb8a8a0,roughness:0.85}); const t=TL.load('../assets/era1984/'+n+'.jpg?v=1022z5',t=>{ t.colorSpace=T.SRGBColorSpace; m.map=t; m.needsUpdate=true; }); return m; };
  [['p2',-0.55,0.62,0.3],['p4',0.7,-0.95,-0.7]].forEach(([n,x,z,r])=>{ const c=new T.Mesh(new T.BoxGeometry(0.17,0.006,0.25),pm(n)); c.position.set(x,0.009,z); c.rotation.y=r; G.add(c); });
  { const k=new T.Group(); const sh=box(0.1,0.016,0.064,std({color:0x111111,roughness:0.4}),0,0,0,0,k); const lb=new T.Mesh(new T.PlaneGeometry(0.08,0.04),std({color:0xe8d8a0,roughness:0.8})); lb.rotation.x=-Math.PI/2; lb.position.y=0.0085; k.add(lb); k.position.set(1.7,0.768,0.1); k.rotation.y=0.4; G.add(k); }
  [['p1',X0+0.004,1.55,-0.95,Math.PI/2,0.02],['p3',X1-0.004,1.5,-0.95,-Math.PI/2,-0.03],['p4',-0.6,1.6,Z1-0.004,Math.PI,0.015]].forEach(([n,x,y,z,ry,rz])=>{ const p=new T.Mesh(new T.PlaneGeometry(0.5,0.72),pm(n)); p.position.set(x,y,z); p.rotation.set(0,ry,rz); G.add(p);

@@ -9,4 +9,4 @@ window.ERA={ amb:'../assets/sfx/amb_arcade.mp3', ambVol:0.35, props:[['../assets
 };
 window.ERAX={stands:[[2.65,0.5,-70,0.95,2.1,0x1a1014,[['p3',0.9,1.4,0,['Mara', '„Neon Cola. Die Automaten trinken das nachts heimlich.“']]]]],
  covers:[['c1','vhs',1.22,0.88,-0.9,-20,['Mara', '„Eine Videokassette. Bitte zurückspulen. Das gilt auch für dich.“']]],
- decoys:[['../assets/items/gameboy.glb',1.3,0.88,-1.0,1,10,['Mara', '„Ein Gameboy in einer Spielhalle. Das ist wie Sand mit an den Strand nehmen.“']],['../assets/items/coin.glb',-0.4,0,-1.2,1,0,['Mara', '„Eine Münze. Für genau ein Leben. Ausgeben würde ich sie hier nicht.“']]]};
+ decoys:[['../assets/items/gameboy.glb',1.3,0.88,-1.0,1,10,['Mara', '„Ein Spielbub in einer Spielhalle. Das ist wie Sand mit an den Strand nehmen.“']],['../assets/items/coin.glb',-0.4,0,-1.2,1,0,['Mara', '„Eine Münze. Für genau ein Leben. Ausgeben würde ich sie hier nicht.“']]]};

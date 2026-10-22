@@ -3,7 +3,7 @@
 // line = [wer, text, mp3?]  (Untertitel; Stimme nur wenn mp3 angegeben)
 (function(){
 const X=window.ERAX||{}, T=THREE, S=document.querySelector('a-scene'), PW='../assets/posters_web/';
-let VO={}; fetch('../assets/vo/erax.json').then(r=>r.json()).then(j=>VO=j).catch(()=>{});
+let VO={}; fetch('../assets/vo/erax.json?v=1022z5').then(r=>r.json()).then(j=>VO=j).catch(()=>{});
 function say(l){ if(!l) return; if(!l[2]&&VO[l[1]]) l=[l[0],l[1],'../assets/vo/'+VO[l[1]]]; if(window.eraSay) return window.eraSay(l[0],l[1],l[2],Math.max(3000,l[1].length*65)); if(window.ZSMARA&&ZSMARA.route(l[0],l[1],l[2])!=='room') return;
  const sb=document.getElementById('sub'); sb.textContent=(l[0]?l[0]+': ':'')+l[1]; sb.style.display='block'; clearTimeout(say.t);
  const end=()=>{ say.t=setTimeout(()=>sb.style.display='none',600); };
@@ -23,7 +23,7 @@ function go(){
   const sm=window.eraPBR?window.eraPBR(X.standMat||'metal',1,col?new T.Color(col).lerp(new T.Color(0x8a8378),0.45):0x555048):new T.MeshStandardMaterial({color:col||0x141414,roughness:0.8,metalness:0.3}); const b=new T.Mesh(new T.BoxGeometry(w,h,0.1),sm); b.position.y=h/2; g.add(b);
   (posters||[]).forEach(([img,ph,py,pdx,line])=>{ const pw=ph*2/3;
    const fr=new T.Mesh(new T.BoxGeometry(pw+0.05,ph+0.05,0.02),new T.MeshStandardMaterial({color:0x0c0c0c,roughness:0.5,metalness:0.6})); fr.position.set(pdx,py,0.06); g.add(fr);
-   const m=new T.MeshStandardMaterial({color:0xb8aca8,roughness:0.55,metalness:0,aoMap:aged,aoMapIntensity:1}); m.lightMap=null; tex(PW+img+'.jpg',m);
+   const m=new T.MeshStandardMaterial({color:0xb8aca8,roughness:0.55,metalness:0,aoMap:aged,aoMapIntensity:1}); m.lightMap=null; tex(PW+img+'.jpg?v=5',m);
    const pg=new T.PlaneGeometry(pw,ph); pg.setAttribute('uv2',pg.attributes.uv); const p=new T.Mesh(pg,m); p.position.set(pdx,py,0.072); g.add(p);
    const gl=new T.Mesh(new T.PlaneGeometry(pw,ph),new T.MeshStandardMaterial({color:0x000000,roughness:0.05,metalness:1,transparent:true,opacity:0.18})); gl.position.set(pdx,py,0.075); g.add(gl);
    if(line){ const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el); el.addEventListener('loaded',()=>{ el.setObject3D('mesh',new T.Mesh(new T.PlaneGeometry(pw,ph),new T.MeshBasicMaterial({visible:false}))); g.updateMatrixWorld(); p.getWorldPosition(el.object3D.position); el.object3D.rotation.y=R(ry); });
@@ -71,7 +71,7 @@ function go(){
   const par=(src&&(src.id==='hl'||src.id==='hr'))?src.object3D:cam(); par.attach(it.el.object3D); const o=it.el.object3D;
   if(par===cam()) o.position.set(0.02,-0.06,-0.38); else o.position.set(0,0.02,-0.12); o.rotation.set(par===cam()?0:-0.6,Math.PI,0); it.flip=performance.now(); held.it=it;
   if(it.line){ const L=Array.isArray(it.line[0])?it.line[Math.min(it.said,it.line.length-1)]:(it.said?null:it.line); it.said++; if(L) setTimeout(()=>say(L),450); } }
- (X.covers||[]).forEach(([img,kind,x,y,z,ry,line,sec])=>{ const [w,h,d,col]=K[kind]; const fm=new T.MeshStandardMaterial({color:0xd0c8c4,roughness:kind==='vhs'?0.35:0.7}); tex(PW+img+'.jpg',fm);
+ (X.covers||[]).forEach(([img,kind,x,y,z,ry,line,sec])=>{ const [w,h,d,col]=K[kind]; const fm=new T.MeshStandardMaterial({color:0xd0c8c4,roughness:kind==='vhs'?0.35:0.7}); tex(PW+img+'.jpg?v=5',fm);
   const sm=new T.MeshStandardMaterial({color:col,roughness:0.7}); const pageM=new T.MeshStandardMaterial({color:0xcbbf9e,roughness:0.9});
   const side=kind==='book'?pageM:sm; const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),[side,sm,side,side,fm,sm]);
   const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el); const it=mk(el,mesh,x,y+d/2,z,ry,true,line);

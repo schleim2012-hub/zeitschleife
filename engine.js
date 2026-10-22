@@ -50,7 +50,7 @@ async function act(a){
  if(a.set){ S.flags[a.set]=true; progress(); return; }
  if(a.add){ for(const k in a.add) S.v[k]=(S.v[k]||0)+a.add[k]; return; }
  if(a.anchor){ if(!S.anchors.includes(a.anchor)) S.anchors.push(a.anchor); toast(`⚓ Anker ${S.anchors.length}/3`,3500); progress(); return; }
- if(a.note){ S.notes.push(a.note); toast('✎ Neue Notiz im Zeit-Walkman'); return; }
+ if(a.note){ S.notes.push(a.note); toast('✎ Neue Notiz im Zeit-Laufmann'); return; }
  if(a.time){ S.time+=a.time; toast(`⏱ +${a.time/60} Minuten`); return; }
  if(a.clip) return playClip(a.clip);
  if(a.go) return go(a.go,a.dir||'forward');
@@ -173,8 +173,8 @@ function drawHUD(now,hover){
  text(`${mm}:${ss}`,109,51,{s:40,w:700,a:'center',b:'middle',c:warn&&(now%1000<500)?'#ff5a5a':'#ff8fd8',ls:3});
  // Anker
  for(let i=0;i<3;i++){ x.beginPath(); x.arc(220+i*26,49,8,0,7); x.fillStyle=i<S.anchors.length?'#ffd27a':'rgba(255,255,255,0.15)'; x.fill(); }
- // Zeit-Walkman-Knopf
- const r=[W-280,20,186,58]; button(r,'📼 ZEIT-WALKMAN',()=>openWM(!wm.open),{s:20,active:wm.open}); button([W-82,20,58,58],'❚❚',()=>openPause(true),{s:20,ls:0});
+ // Zeit-Laufmann-Knopf
+ const r=[W-280,20,186,58]; button(r,'📼 ZEIT-LAUFMANN',()=>openWM(!wm.open),{s:20,active:wm.open}); button([W-82,20,58,58],'❚❚',()=>openPause(true),{s:20,ls:0});
  // Auswahl
  if(S.sel){ glass(W/2-220,20,440,50,25,'rgba(255,210,122,0.8)'); text(`${G.items[S.sel].icon}  ${G.items[S.sel].name} benutzen mit …`,W/2,46,{s:24,w:600,a:'center',b:'middle'}); }
  // Hover-Label
@@ -212,7 +212,7 @@ function drawWM(now){ x.fillStyle='rgba(5,3,10,0.55)'; x.fillRect(0,0,W,H);
  const X=260,Y=110,w=W-520,h=680; glass(X,Y,w,h,30,'rgba(120,220,255,0.9)');
  // Kassetten-Look oben
  x.save(); rr(X+30,Y+26,w-60,90,18); x.fillStyle='rgba(0,0,0,0.45)'; x.fill(); x.restore();
- text('ZEIT-WALKMAN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8});
+ text('ZEIT-LAUFMANN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8});
  const t=Math.max(0,Math.ceil(S.time)); text(`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`,X+w-60,Y+84,{s:48,w:700,a:'right',c:'#ff8fd8',ls:4});
  [0,1].forEach(i=>{ const cx=X+w/2-60+i*120, cy=Y+71; x.save(); x.translate(cx,cy); x.rotate(now/400*(i?1:1)); x.strokeStyle='rgba(255,255,255,0.5)'; x.lineWidth=3; x.beginPath(); x.arc(0,0,22,0,7); x.stroke();
   for(let k=0;k<6;k++){ x.rotate(Math.PI/3); x.beginPath(); x.moveTo(8,0); x.lineTo(20,0); x.stroke(); } x.restore(); });
@@ -244,7 +244,7 @@ function drawWM(now){ x.fillStyle='rgba(5,3,10,0.55)'; x.fillRect(0,0,W,H);
   button([cx+cw-300,cy+380,300,52],'💭 BAUCHGEFÜHL JETZT',()=>{ openWM(false); hintNow(); },{s:20}); }
  if(wm.tab==='opt') drawOptions(cx,cy-10,cw);
 }
-// ---------- Optionen (geteilt von Pause-Menü, Titel und Zeit-Walkman)
+// ---------- Optionen (geteilt von Pause-Menü, Titel und Zeit-Laufmann)
 function slider(X,Y,w,label,k){ text(label,X,Y+30,{s:28,w:600}); const tx=X+300,tw=w-300-90; const v=SET[k];
  rr(tx,Y+16,tw,12,6); x.fillStyle='rgba(255,255,255,0.12)'; x.fill();
  rr(tx,Y+16,Math.max(12,tw*v),12,6); const g=x.createLinearGradient(tx,0,tx+tw,0); g.addColorStop(0,'#ff5abe'); g.addColorStop(1,'#78e6ff'); x.fillStyle=g; x.fill();
@@ -267,7 +267,7 @@ function drawPause(){ x.fillStyle='rgba(5,3,12,0.62)'; x.fillRect(0,0,W,H);
  if(opt){ drawOptions(X+44,Y+110,w-88); button([X+44,Y+h-66,200,46],'← ZURÜCK',()=>{pauseTab='main';},{s:20}); return; }
  const items=[['▶  WEITERSPIELEN',()=>openPause(false)],['⚙  OPTIONEN',()=>{pauseTab='opt';}],['💾  SPEICHERN',()=>saveGame()],['📂  LADEN',()=>{ if(hasSave()){ pauseOpen=false; loadGame(); } else toast('Kein Spielstand vorhanden'); }],['⌂  HAUPTMENÜ',()=>{ saveGame(true); toTitle(); }]];
  items.forEach(([l,fn],i)=>button([X+44,Y+106+i*80,w-88,60],l,fn,{s:24,rad:18}));
- text('COUNTDOWN PAUSIERT  ·  QUEST: A/X = MENÜ  ·  B/Y = WALKMAN',X+w/2,Y+h-24,{s:14,w:700,a:'center',c:'rgba(255,255,255,0.4)',ls:4}); }
+ text('COUNTDOWN PAUSIERT  ·  QUEST: A/X = MENÜ  ·  B/Y = LAUFMANN',X+w/2,Y+h-24,{s:14,w:700,a:'center',c:'rgba(255,255,255,0.4)',ls:4}); }
 // ---------- Titelbildschirm
 let titleV=null, titleOpt=false;
 function drawTitle(now){ if(titleV&&titleV.readyState>=2&&!titleV.paused) coverV(titleV); else cover(titleImg);
@@ -368,7 +368,7 @@ AFRAME.registerComponent('zs-vr',{ tick(){ const sc=this.el, r=sc.renderer, xr=r
   L.l.position.copy(o); L.l.quaternion.setFromRotationMatrix(vrM); L.l.scale.set(1,1,len); L.l.visible=true;
   vrHits[key]=h||null;
   if(h){ L.dot.position.copy(h.point); L.dot.visible=true; const hv=ui.some(u=>inR({x:h.uv.x*W,y:(1-h.uv.y)*H},u.r)); L.dot.material.color.setHex(ptr.down&&key===activeSrc?0xffffff:hv?0x7dff9a:(key==='left'?0x8fe9ff:0xff8fd8)); L.dot.scale.setScalar(hv?1.8:1); if(!activeSrc) activeSrc=key; if(key===activeSrc){ vrPoint(h,key); hitAny=true; if(dragUI&&ptr.down) dragUI.drag({...ptr}); } }
-  // Tasten A/X (4) = Menü, B/Y (5) = Walkman, Flanke erkennen
+  // Tasten A/X (4) = Menü, B/Y (5) = Laufmann, Flanke erkennen
   const gp=src.gamepad; if(gp){ const prev=vrPads[key]||[]; const now=gp.buttons.map(b=>b.pressed);
    if(!gotSelEvt&&gp.buttons[0]){ if(now[0]&&!prev[0]) vrSelect(true,key); else if(!now[0]&&prev[0]) vrSelect(false,key); }
    if(now[4]&&!prev[4]) vrMenu(); if(now[5]&&!prev[5]){ if(S&&!['pause','title','press'].includes(mode)) openWM(!wm.open); } vrPads[key]=now; } }

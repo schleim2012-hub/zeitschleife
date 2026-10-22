@@ -92,9 +92,9 @@
   "back.lampe.with.walkman#0": {
    "file": "audio/narrator_back_lampe_walkman.mp3",
    "speaker": "narrator",
-   "text": "Du hältst den Walkman ans Licht. Die Röhre flackert im Takt.",
-   "duration": 3.1,
-   "ttsText": "Du hältst den Wokmen ans Licht. Die Röhre flackert im Takt."
+   "text": "Du hältst den Laufmann ans Licht. Die Röhre flackert im Takt.",
+   "duration": 3.24,
+   "ttsText": "Du hältst den Laufmann ans Licht. Die Röhre flackert im Takt."
   },
   "back.lampe.with.krone#0": {
    "file": "audio/narrator_back_lampe_krone.mp3",
@@ -211,16 +211,16 @@
   "pool.walkman.look#0": {
    "file": "audio/narrator_pool_walkman_look.mp3",
    "speaker": "narrator",
-   "text": "Ein gelber Walkman. Die Kassette dreht sich, obwohl er aus ist.",
-   "duration": 3.6,
-   "ttsText": "Ein gelber Wokmen. Die Kassette dreht sich, obwohl er aus ist."
+   "text": "Ein gelber Laufmann. Die Kassette dreht sich, obwohl er aus ist.",
+   "duration": 3.62,
+   "ttsText": "Ein gelber Laufmann. Die Kassette dreht sich, obwohl er aus ist."
   },
   "pool.walkman.take#0": {
    "file": "audio/narrator_pool_walkman.mp3",
    "speaker": "narrator",
-   "text": "Du nimmst den Walkman. Das Lied läuft weiter, in deinem Kopf.",
-   "duration": 3.26,
-   "ttsText": "Du nimmst den Wokmen. Das Lied läuft weiter, in deinem Kopf."
+   "text": "Du nimmst den Laufmann. Das Lied läuft weiter, in deinem Kopf.",
+   "duration": 3.34,
+   "ttsText": "Du nimmst den Laufmann. Das Lied läuft weiter, in deinem Kopf."
   },
   "pool.cocktail.look#0": {
    "file": "audio/narrator_pool_cocktail_look.mp3",
@@ -336,9 +336,9 @@
   "fest.vwbus.look#0": {
    "file": "audio/narrator_fest_vwbus_look.mp3",
    "speaker": "narrator",
-   "text": "Ein türkiser VW-Bus mit Peace-Zeichen.",
-   "duration": 2.52,
-   "ttsText": "Ein türkiser VW-Bus, mit Piis-Zeichen."
+   "text": "Ein türkiser Hippie-Bus mit Peace-Zeichen.",
+   "duration": 2.57,
+   "ttsText": "Ein türkiser Hippie-Bus, mit Piis-Zeichen."
   },
   "fest.vwbus.use#0": {
    "file": "audio/narrator_fest_vwbus.mp3",
@@ -361,8 +361,8 @@
   "finale.mitmara#0": {
    "file": "audio/narrator_ende_a.mp3",
    "speaker": "narrator",
-   "text": "Ihr geht Hand in Hand ins Licht. Du wachst auf – in einer echten Wohnung, Sonntagmorgen. Auf dem Tisch ein neues Polaroid: ihr beide. Ende A. Gemeinsam.",
-   "duration": 9.24
+   "text": "Ihr geht Hand in Hand ins Licht. Du wachst auf – in einer echten Wohnung, Sonntagmorgen. Auf dem Tisch ein neues Polarbild: ihr beide. Ende A. Gemeinsam.",
+   "duration": 9.31
   },
   "finale.allein#0": {
    "file": "audio/narrator_ende_b_01.mp3",
@@ -379,8 +379,8 @@
   "finale.allein#2": {
    "file": "audio/narrator_ende_b_02.mp3",
    "speaker": "narrator",
-   "text": "Du wachst auf – mit einem Polaroid in der Hand. Ende B. Schleife.",
-   "duration": 4.1
+   "text": "Du wachst auf – mit einem Polarbild in der Hand. Ende B. Schleife.",
+   "duration": 3.98
   }
  }
 }

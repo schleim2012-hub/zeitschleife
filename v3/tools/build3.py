@@ -38,7 +38,7 @@ config={
    'sliceEnd':N("Ende von Kapitel eins. Die anderen Türen gehen in der nächsten Version auf. Bis dahin: Danke fürs Spielen. Und wasch dir die Hände. Mauerstaub."),
  }}
 items={
- 'polaroid':{'name':'Polaroid','icon':'📷','desc':'„Finde mich – M.“ Sieht fast aus wie ein Ausweis.'},
+ 'polaroid':{'name':'Polarbild','icon':'📷','desc':'„Finde mich – M.“ Sieht fast aus wie ein Ausweis.'},
  'dm':{'name':'100 D-Mark','icon':'💵','desc':'Begrüßungsgeld. Frisch aus dem Westen.'},
  'banane':{'name':'Banane','icon':'🍌','desc':'Begrüßungsbanane. Wertvoller als Gold, 1989.'},
  'hammer':{'name':'Hammer & Meißel','icon':'🔨','desc':'Für Mauern. Nur für Mauern.'},
@@ -47,7 +47,7 @@ items={
  'tasse':{'name':'Kaffeetasse','icon':'☕','desc':'„Bester Mitarbeiter des Monats, März 1993“. Leer. Wie sein Blick.','fail':N("Du hältst die Tasse hin. Niemand schenkt dir was ein. Niemand.")},
  'akte':{'name':'Leere Akte','icon':'📁','desc':'Eine Stasi-Akte. Leer. Entweder warst du sehr brav oder sehr langweilig.','fail':N("Die Akte ist leer. Sie hat dir nichts zu sagen. Und du ihr offenbar auch nicht.")},
  'huhn':{'name':'Gummihuhn mit Seilrolle','icon':'🐔','desc':'Kombinierbar mit nichts. Garantiert. Vermutlich.','fail':N("Das Gummihuhn quietscht vorwurfsvoll. Es wartet auf ein anderes Spiel.")},
- 'radkappe':{'name':'Trabi-Radkappe','icon':'⚙️','desc':'Leicht wie ein Versprechen, genauso hohl.','fail':N("Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.")},
+ 'radkappe':{'name':'Trabbel-Radkappe','icon':'⚙️','desc':'Leicht wie ein Versprechen, genauso hohl.','fail':N("Eine Radkappe ist keine Lösung. Sie ist nicht mal ein Rad.")},
 }
 def plateHit(b): return {'box':b}
 # ------------------------------------------------- Backrooms
@@ -62,7 +62,7 @@ nodes['B1']={'epoch':'hub','title':'Backrooms – Aufwachen','sky':'B1',
           {'id':'radio','type':'radio','pos':[0.55,-1.6,-0.75]},
           {'id':'murmel','type':'marmot','pos':[3.15,-1.6,3.1],'when':'!flag.egg_murmel'}],
  'hotspots':[
-  {'id':'polaroid','label':'Polaroid','prop':'polaroid','when':'!has.polaroid','on':[{'give':'polaroid'},N('Ein Sofortbild: eine Frau mit Föhnfrisur, leicht verschwommen. Hinten drauf: "Finde mich – M." Endlich mal eine Frau, die dich finden will. Statt dich zu blockieren.'),{'note':'Polaroid: „Finde mich – M.“'}]},
+  {'id':'polaroid','label':'Polarbild','prop':'polaroid','when':'!has.polaroid','on':[{'give':'polaroid'},N('Ein Sofortbild: eine Frau mit Föhnfrisur, leicht verschwommen. Hinten drauf: "Finde mich – M." Endlich mal eine Frau, die dich finden will. Statt dich zu blockieren.'),{'note':'Polarbild: „Finde mich – M.“'}]},
   {'id':'eimer','label':'Mülleimer','prop':'eimer','trash':True,'on':[N("Ein Mülleimer. Leer bis auf einen Kaugummi von 1993 und den Geruch von Montag. Wer zu viel mit sich rumschleppt, wird hier Sachen los.")]},
   {'id':'tasse','label':'Kaffeetasse','prop':'tasse','when':'!flag.tasse','on':[{'give':'tasse'},{'set':'tasse'},N("Eine Tasse: Bester Mitarbeiter des Monats, März 1993. Der Monat ist vorbei. Der Mitarbeiter vermutlich auch.")]},
   {'id':'radio','label':'Radiowecker','prop':'radio','grab':False,'on':[N("Ein Radiowecker. Sechs Uhr. Es ist immer sechs Uhr."),{'radio':True}],'with':{'hammer':[N("Du hebst den Hammer. Der Wecker springt auf sechs Uhr. Aus Trotz.")]}},
@@ -88,7 +88,7 @@ nodes['B2']={'epoch':'hub','title':'Backrooms – Kreuzung','sky':'B2',
  ]}
 # ------------------------------------------------- 1989
 nodes['M1']={'epoch':'1989','title':'Grenzübergang, 9. November 1989','sky':'M1','still':'M1',
- 'enter':[IF('!flag.m1',[{'set':'m1'},N('Berlin, neunter November 1989. Tausende Menschen, Trabis, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: "Wahnsinn!" Es wird nicht das letzte Mal sein.'),{'note':'Berlin 1989: Ein Mauerstück könnte ein Anker sein.'}])],
+ 'enter':[IF('!flag.m1',[{'set':'m1'},N('Berlin, neunter November 1989. Tausende Menschen, Trabbels, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: "Wahnsinn!" Es wird nicht das letzte Mal sein.'),{'note':'Berlin 1989: Ein Mauerstück könnte ein Anker sein.'}])],
  'hotspots':[
   {'id':'grenzer','label':'Grenzposten','box':[0.70,0.36,0.17,0.18],'on':[{'talk':'grenzer'}],'gaze':{'sec':4,'do':[Gr("Wat kieken Se denn so? Ick hab nüscht jemacht! Heute hat keener wat jemacht!"),{'rep':{'grenzer':-1}}]}},
   {'id':'haeuschen','label':'Fach im Grenzerhäuschen','box':[0.63,0.2,0.07,0.3],'on':[
@@ -96,9 +96,9 @@ nodes['M1']={'epoch':'1989','title':'Grenzübergang, 9. November 1989','sky':'M1
       [IF('!flag.akte',[{'give':'akte'},{'set':'akte'},N("Eine Akte mit deinem Namen. Leer. Entweder warst du sehr brav oder sehr langweilig.")],
         [IF('!flag.egg_karton',[{'set':'egg_karton'},N("Ganz hinten ein Karton: Zeitreise-Kram, nicht öffnen. Du öffnest ihn nicht. Plus dreißig Sekunden für Selbstbeherrschung."),{'bonus':30,'key':'egg_karton'}],
           [N("Formulare. Stempel. Und der Karton, den du nicht öffnest.")])])])]},
-  {'id':'trabi','label':'Trabi','box':[0.65,0.58,0.35,0.35],'on':[{'add':{'chaos':1}},N("Du hupst. Der Trabi hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.")]},
+  {'id':'trabi','label':'Trabbel','box':[0.65,0.58,0.35,0.35],'on':[{'add':{'chaos':1}},N("Du hupst. Der Trabbel hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.")]},
   {'id':'menge','label':'Mit der Menge zur Mauer','box':[0.0,0.47,0.48,0.45],'on':[{'go':'M2'}]},
-  {'id':'rechts','label':'Zur Trabi-Schlange','box':[0.94,0.08,0.06,0.42],'on':[{'go':'M3'}]},
+  {'id':'rechts','label':'Zur Trabbel-Schlange','box':[0.94,0.08,0.06,0.42],'on':[{'go':'M3'}]},
   {'id':'zurueck','label':'Zurück in die Backrooms','box':[0.48,0.86,0.17,0.14],'on':[{'epoch':'B2'}]},
  ]}
 nodes['M2']={'epoch':'1989','title':'An der Mauer','sky':'M2','still':'M2','props':[{'id':'huhn','type':'chicken','pos':[0.9,-1.6,-1.3],'when':'!flag.huhn'}],
@@ -111,9 +111,9 @@ nodes['M2']={'epoch':'1989','title':'An der Mauer','sky':'M2','still':'M2','prop
   {'id':'huhn','label':'Gummihuhn','prop':'huhn','when':'!flag.huhn','on':[{'give':'huhn'},{'set':'huhn'},N("Ein Gummihuhn mit einer Seilrolle in der Mitte. Wer lässt so was an der Mauer liegen? Und warum fühlt es sich so wichtig an?")]},
   {'id':'zurueck','label':'Zurück','box':[0.3,0.9,0.4,0.1],'on':[{'go':'M1'}]},
  ]}
-nodes['M3']={'epoch':'1989','title':'Trabi-Schlange','sky':'M3','still':'M3','props':[{'id':'radkappe','type':'hubcap','pos':[-1.0,-1.6,-1.4],'when':'!flag.radkappe'},{'id':'gully','type':'gully','pos':[0.3,-1.6,-1.2]}],
+nodes['M3']={'epoch':'1989','title':'Trabbel-Schlange','sky':'M3','still':'M3','props':[{'id':'radkappe','type':'hubcap','pos':[-1.0,-1.6,-1.4],'when':'!flag.radkappe'},{'id':'gully','type':'gully','pos':[0.3,-1.6,-1.2]}],
  'hotspots':[
-  {'id':'mara','label':'Mara auf dem Trabi','box':[0.2,0.1,0.36,0.55],'gaze':{'sec':4,'do':[Ma("Starr nicht so. Ich bin keine Sehenswürdigkeit. Okay, ein bisschen.")]},'on':[IF('!flag.metmara89',[{'set':'metmara89'},{'clip':'clip_mara_1989_trabi_sprung'}]),{'talk':'mara89'}]},
+  {'id':'mara','label':'Mara auf dem Trabbel','box':[0.2,0.1,0.36,0.55],'gaze':{'sec':4,'do':[Ma("Starr nicht so. Ich bin keine Sehenswürdigkeit. Okay, ein bisschen.")]},'on':[IF('!flag.metmara89',[{'set':'metmara89'},{'clip':'clip_mara_1989_trabi_sprung'}]),{'talk':'mara89'}]},
   {'id':'schalter','label':'Schalter „Begrüßungsgeld“','box':[0.7,0.05,0.3,0.75],'on':[{'talk':'beamtin'}],'gaze':{'sec':5,'do':[Be("Ick seh Sie. Ick seh alle. Det is mein Beruf.")]},
    'with':{'polaroid':[IF('!flag.geld',[{'set':'geld'},Be("Sieht aus wie'n Ausweis, wa? Na jut. Jeht klar."),{'give':'dm'},N("Hundert D-Mark Begrüßungsgeld! Und du weißt sofort, wofür: Bananen. Prioritäten.")],[Be("Sie hatten schon, junger Mann. Ick erkenn Sie ooch mit Schnurrbart.")])],
            'akte':[Be("Ne leere Akte als Ausweis? Mutig. Aber nee.")],'tasse':[Be("Det is keen Ausweis. Det is 'n Hilferuf.")]}},
@@ -123,7 +123,7 @@ nodes['M3']={'epoch':'1989','title':'Trabi-Schlange','sky':'M3','still':'M3','pr
    'with':{'muenze':[IF('has.banane||has.hammer',[N("Eine Banane reicht. Gier ist sowas von 2041.")],[{'take':'muenze'},{'give':'banane'},N("Du legst die nasse Mark auf den Tresen. Der Verkäufer wischt sie ab, nickt und gibt dir eine Banane. Geld stinkt nicht. Gullygeld ein bisschen.")])],'dm':[IF('has.banane||has.hammer',[N("Eine Banane reicht. Gier ist sowas von 2041.")],[{'take':'dm'},{'give':'banane'},N("Du kaufst eine Banane. Sie leuchtet gelb wie ein Pokal. Hinter dir seufzen drei Leute neidisch.")])]}},
   {'id':'gully','label':'Gully','prop':'gully','grab':False,'on':[IF('!flag.gully',[N("Ein Gully. Unten blinkt was. Eine Münze? Deine Finger sind zu kurz, deine Würde zu groß.")],[N("Nur noch Wasser und Geschichte.")])],
    'with':{'haken':[IF('!flag.gully',[{'set':'gully'},N("Du lässt die Angel runter. Der Kaugummi klebt, die Münze kommt mit. Eine Mark! Für eine Banane reicht's genau."),{'give':'muenze'}],[N("Da unten ist nichts mehr. Außer deiner Hoffnung.")])],'schnur':[N("Nur eine Schnur? Da fehlt was Klebriges.")]}},
-  {'id':'radkappe','label':'Radkappe','prop':'radkappe','when':'!flag.radkappe','on':[{'give':'radkappe'},{'set':'radkappe'},N("Eine Trabi-Radkappe, leicht wie ein Versprechen. Der Trabi merkt es nicht. Der Trabi merkt nie was.")]},
+  {'id':'radkappe','label':'Radkappe','prop':'radkappe','when':'!flag.radkappe','on':[{'give':'radkappe'},{'set':'radkappe'},N("Eine Trabbel-Radkappe, leicht wie ein Versprechen. Der Trabbel merkt es nicht. Der Trabbel merkt nie was.")]},
   {'id':'links','label':'Zurück zum Grenzübergang','box':[0.0,0.1,0.06,0.75],'on':[{'go':'M1'}]},
  ]}
 # ------------------------------------------------- Slinky-Ziele (je Szene, nach Spielstand; erstes passendes gilt)
@@ -132,25 +132,25 @@ slinky={'B1':[['!has.polaroid','polaroid'],['1','flur']],'B2':[['!flag.metlampe'
  'M3':[['!flag.geld','schalter'],['!has.banane&&!has.hammer&&!has.mauer','bananen'],['1','links']]}
 # ------------------------------------------------- Hinweise 3 Stufen [Erzähler vage, Mara Ort, Mara Lösung]
 hints={
- 'B1':[{'if':'!has.polaroid','t':["Wer aufwacht, sollte erst mal schauen, worauf er liegt.","Guck mal auf den Teppich vor dir. Da liegt was, das nicht nach Teppich aussieht.","Das Polaroid, Süßer. Vorne links am Boden. Heb es auf."]},
+ 'B1':[{'if':'!has.polaroid','t':["Wer aufwacht, sollte erst mal schauen, worauf er liegt.","Guck mal auf den Teppich vor dir. Da liegt was, das nicht nach Teppich aussieht.","Das Polarbild, Süßer. Vorne links am Boden. Heb es auf."]},
        {'if':'1','t':["Flure führen irgendwohin. Das ist ihr einziger Job.","Geh den Flur runter. Da vorne summt was, das reden will.","Flur entlang, dann die flackernde Lampe an der Decke ansprechen."]}],
  'B2':[{'if':'!flag.metlampe','t':["Eine der Lampen summt in Moll.","Die Lampe über dir. Ja, die. Sprich mit ihr. Also mit mir.","Zeig auf die flackernde Lampe an der Decke und drück ab."]},
        {'if':'!has.mauer','t':["Drei Türen. Nur eine davon hat heute Lust.","Die Tür mit der Neunundachtzig. Da wartet ein Stück Freiheit.","Die Tür direkt vor dir. Durchgehen. Ich halt solange die Röhre warm."]},
        {'if':'1','t':["Ein Anker ist ein Anfang.","Mehr Türen gehen gerade nicht auf. Ich bin trotzdem stolz auf dich.","Das war's für diesen Teil der Schleife. Ehrlich."]}],
- 'M1':[{'if':'!flag.geld&&!has.hammer&&!has.mauer','t':["Wer zur Mauer will, braucht Werkzeug. Wer Werkzeug will, braucht Tauschware.","Rechts geht's zur Trabi-Schlange. Da gibt's Geld und Obst.","Nach rechts zur Trabi-Schlange, am Schalter Begrüßungsgeld holen, dann eine Banane kaufen."]},
+ 'M1':[{'if':'!flag.geld&&!has.hammer&&!has.mauer','t':["Wer zur Mauer will, braucht Werkzeug. Wer Werkzeug will, braucht Tauschware.","Rechts geht's zur Trabbel-Schlange. Da gibt's Geld und Obst.","Nach rechts zur Trabbel-Schlange, am Schalter Begrüßungsgeld holen, dann eine Banane kaufen."]},
        {'if':'!has.hammer&&!has.mauer','t':["Mit Obst macht man hier Geschäfte.","Der Typ an der Mauer hat Hunger und einen Hammer. Rechne.","Mit der Menge zur Mauer und dem Typen die Banane geben."]},
        {'if':'1','t':["Hammer. Mauer. Muss man noch mehr sagen?","Die Mauer wartet. Na los.","Mit der Menge zur Mauer, dann den Hammer auf die bemalte Mauer."]}],
- 'M2':[{'if':'!has.banane&&!has.hammer&&!has.mauer','t':["Der Mann hat Hunger auf etwas, das es im Osten selten gab.","Hast du das Schild an der Trabi-Schlange gesehen? Und hast du Westgeld?","Polaroid am Schalter zeigen, Banane kaufen, rübergeben. Bitte. Ich schau weg."]},
-       {'if':'has.banane','t':["Du hast, was er will. Er hat, was du willst. Das nennt man Wirtschaft.","Gib dem Typen endlich die Banane.","Banane im Walkman auswählen, dann auf den Typen mit dem Hammer zeigen."]},
+ 'M2':[{'if':'!has.banane&&!has.hammer&&!has.mauer','t':["Der Mann hat Hunger auf etwas, das es im Osten selten gab.","Hast du das Schild an der Trabbel-Schlange gesehen? Und hast du Westgeld?","Polarbild am Schalter zeigen, Banane kaufen, rübergeben. Bitte. Ich schau weg."]},
+       {'if':'has.banane','t':["Du hast, was er will. Er hat, was du willst. Das nennt man Wirtschaft.","Gib dem Typen endlich die Banane.","Banane im Laufmann auswählen, dann auf den Typen mit dem Hammer zeigen."]},
        {'if':'has.hammer','t':["Beton ist auch nur Stein mit schlechter Laune.","Hau drauf. Auf die Mauer, nicht auf den Typen.","Hammer auswählen, dann auf die bemalte Mauer."]},
-       {'if':'1','t':["Du hast dein Stück Geschichte.","Zurück in die Backrooms, zur Lampe.","Zurück, dann über den Walkman oder die Tür hinter dir in die Backrooms."]}],
- 'M3':[{'if':'!flag.geld&&!has.banane&&!has.hammer&&!has.mauer','t':["Bananen kosten Westgeld. Westgeld kostet ein Gesicht.","Die Beamtin will irgendwas mit deinem Gesicht drauf. Hast du nicht ein Foto?","Polaroid im Walkman auswählen und auf den Schalter zeigen."]},
+       {'if':'1','t':["Du hast dein Stück Geschichte.","Zurück in die Backrooms, zur Lampe.","Zurück, dann über den Laufmann oder die Tür hinter dir in die Backrooms."]}],
+ 'M3':[{'if':'!flag.geld&&!has.banane&&!has.hammer&&!has.mauer','t':["Bananen kosten Westgeld. Westgeld kostet ein Gesicht.","Die Beamtin will irgendwas mit deinem Gesicht drauf. Hast du nicht ein Foto?","Polarbild im Laufmann auswählen und auf den Schalter zeigen."]},
        {'if':'!has.banane&&!has.hammer&&!has.mauer','t':["Du hast Geld. Hier gibt's Obst. Mehr Hinweis wäre peinlich.","Der Bananenstand, Süßer. Gleich neben dem Schalter.","Auf die Bananen zeigen und kaufen."]},
        {'if':'1','t':["Hier ist alles erledigt.","Zurück zum Grenzübergang, dann zur Mauer.","Links zurück, dann mit der Menge zur Mauer."]}]}
 # ------------------------------------------------- Glitch-Stufen je Besuch (Ton, Sprüche, Zeit – keine starken Bildeffekte)
 glitch={'1989':{'2':N('Wahnsinn! … Wahnsinn! Der Satz hängt. Die Zeit offenbar auch.'),'3':Ma("Hörst du das? Das klingt wie 1984. Hier wird's dünn."),'4':Ma("Hier wird's instabil, beeil dich!"),
   '5':N("Die Schleife franst aus. Jeder Besuch hier kostet jetzt dreißig Sekunden. Wie ein Parkhaus, nur metaphysisch.")},
- 'remember':{'1989':Ma("Moment, das hatten wir schon. Berlin, Trabis, Banane. Diesmal machen wir es schneller, ja?")}}
+ 'remember':{'1989':Ma("Moment, das hatten wir schon. Berlin, Trabbels, Banane. Diesmal machen wir es schneller, ja?")}}
 # ------------------------------------------------- Dialoge
 def O(label,**k): d={'label':label}; d.update(k); return d
 dialogs={}
@@ -167,7 +167,7 @@ dialogs['lampe']={'nodes':{
 dialogs['grenzer']={'pre':[IF('loop>=2&&mem.grenzer_formular&&!flag.warnG',[{'set':'warnG'},Ma("Moment, das hatten wir schon. Frag ihn bloß nicht nach dem Formular.")]),IF('rep.grenzer<0',[Gr("Sie schon wieder. Der Kieker.")])],'nodes':{
  'start':{'speaker':'grenzer','text':"Na, Kollege? Wo wollnse denn hin? Ick hab keene Anweisung mehr. Ick hab nur noch Feierabend.",
   'options':[O('Wo geht\'s zur Mauer?',next='mehr',do=[{'rep':{'grenzer':1}},Gr("Immer der Menge nach. Die wissen heute alle, wo's langjeht. Zum ersten Mal seit achtundzwanzig Jahren.")]),
-             O('Gibt es hier Bananen?',next='mehr',do=[Gr("Drüben an der Trabi-Schlange. Aber nur jegen Westjeld. Und Westjeld jibt's am Schalter. Mit Ausweis. Ohne Ausweis jibt's nur Jefühle.")]),
+             O('Gibt es hier Bananen?',next='mehr',do=[Gr("Drüben an der Trabbel-Schlange. Aber nur jegen Westjeld. Und Westjeld jibt's am Schalter. Mit Ausweis. Ohne Ausweis jibt's nur Jefühle.")]),
              O('Formular A38, dreifacher Durchschlag!',next='mehr',cond='know.a38&&!flag.a38',do=[{'set':'a38'},{'rep':{'grenzer':2}},Gr("Sie kennen A38? Respekt, Kollege! Endlich mal eener mit Bildung.")]),
              O('Gibt es dafür ein Formular?',next='mehr',cond='!know.a38',trap={'key':'grenzer_formular','sec':20},do=[{'rep':{'grenzer':-1}},{'learn':'a38'},Gr("Een Formular? Junge. Setzen Se sich. Also: Formular A38 zur Beantragung eenes Formulars, dreifacher Durchschlag, blau, jelb und rosa …"),N("Zwanzig Sekunden später weißt du alles über Durchschläge. Wirklich alles. Minus zwanzig Sekunden.")]),
              O('Tschüss',do=[Gr("Jute Nacht. Und nich drängeln.")])]},
@@ -189,9 +189,9 @@ dialogs['mauertyp']={'pre':[IF('loop>=2&&mem.mauertyp_lied&&!flag.warnT',[{'set'
              O('Summ das Lied vom Lederjacken-Typen',next='start',cond='know.lied&&!flag.lied',do=[{'set':'lied'},{'rep':{'mauertyp':2}},Ty("Du kennst det ooch? Bruder! Komm her, ick drück dich. Und jetzt hau ab, bevor ick heule."),{'bonus':20,'key':'lied'}]),
              O('Kennst du den Typen mit dem sprechenden Auto?',next='start',cond='!know.lied',trap={'key':'mauertyp_lied','sec':25},do=[{'learn':'lied'},Ty("Den mit der Lederjacke? Junge, der singt bald hier uff der Mauer! Warte, ick sing dir det mal vor …"),N("Er singt. Lange. Mit Gefühl. Und erstaunlich wenig Text. Minus fünfundzwanzig Sekunden und ein Stück deiner Würde.")]),
              O('Tschüss',do=[Ty("Wahnsinn! Tschüssi!")])]}}}
-dialogs['mara89']={'pre':[IF('loop>=2&&mem.met89&&!flag.warnM',[{'set':'warnM'},Ma("Moment … das hatten wir schon. Du, ich, Trabi, Banane. Diesmal machen wir es schneller, ja?")])],'nodes':{
+dialogs['mara89']={'pre':[IF('loop>=2&&mem.met89&&!flag.warnM',[{'set':'warnM'},Ma("Moment … das hatten wir schon. Du, ich, Trabbel, Banane. Diesmal machen wir es schneller, ja?")])],'nodes':{
  'start':{'speaker':'mara','text':"Du schon wieder! Verfolgst du mich durch die Geschichte?",
-  'options':[O('😏 Charmant',next='themen',tone='charm',good="Du bist echt hartnäckig. Wie Kaugummi am Trabi. Ich mag das.",bad="Charme reißt keine Mauern ein, Süßer. Ein Hammer schon."),
+  'options':[O('😏 Charmant',next='themen',tone='charm',good="Du bist echt hartnäckig. Wie Kaugummi am Trabbel. Ich mag das.",bad="Charme reißt keine Mauern ein, Süßer. Ein Hammer schon."),
              O('😜 Frech',next='themen',tone='cheeky',good="Wahnsinn! Den Spruch hab ich heute schon hundert Mal gehört. Von dir klingt er trotzdem süß.",bad="Frech sein kann jeder. Mauern klopfen nicht."),
              O('😐 Ernst',next='themen',tone='serious',good="Der zweite Anker ist ein Stück dieser Mauer. Ohne Werkzeug wird das nichts. Und nein, deine Fingernägel zählen nicht.",bad="Wir brauchen ein Mauerstück. Mehr verrat ich nicht. Ich bin ja kein Lösungsbuch.")]},
  'themen':{'speaker':'mara','text':"Und jetzt? Schau nicht mich an!",
@@ -223,7 +223,7 @@ pool={'perLoop':5,'always':[['B1:s2','kaugummi']],
            'M1':[{'id':'s1','pos':[-0.7,-1.6,-1.6]}],'M2':[{'id':'s1','pos':[-0.6,-1.6,-1.5]}],'M3':[{'id':'s1','pos':[0.9,-1.6,-1.8]}]}}
 combos={
  'kaugummi+schnur':[{'take':'kaugummi'},{'take':'schnur'},{'give':'haken'},N("Du kaust den Kaugummi weich und knotest ihn an die Schnur. Fertig ist die Angel des armen Mannes. Irgendwo nickt ein Mann mit Taschenmesser anerkennend."),{'learn':'angel'}],
- 'polaroid+bleistift':[IF('!flag.mnote',[{'set':'mnote'},N("Du schreibst auf die Rückseite: Ich war hier. Darunter steht plötzlich, in fremder Schrift: Ich weiß. M."),{'note':'Polaroid: „Ich weiß. M.“ – merkt sie sich die Schleifen auch?'},{'learn':'mweiss'}],[N("Ich weiß. M. Steht immer noch da. Du hast es nicht geträumt.")])],
+ 'polaroid+bleistift':[IF('!flag.mnote',[{'set':'mnote'},N("Du schreibst auf die Rückseite: Ich war hier. Darunter steht plötzlich, in fremder Schrift: Ich weiß. M."),{'note':'Polarbild: „Ich weiß. M.“ – merkt sie sich die Schleifen auch?'},{'learn':'mweiss'}],[N("Ich weiß. M. Steht immer noch da. Du hast es nicht geträumt.")])],
  'slinky+huhn':[Ma("Ein Gummihuhn auf einem Slinky. Das ist entweder Kunst oder ein Hilferuf.")],
  'banane+huhn':[N("Das Huhn und die Banane schauen sich an. Keiner von beiden will das hier.")],
  'tamagotchi+brause':[N("Du gibst dem Ei Brause. Es piept jetzt doppelt so schnell. Glückwunsch, du hast ein Haustier hyperaktiv gemacht.")],
@@ -237,11 +237,11 @@ nodes['B2']['hum']='lampe'
 # ---- Barks: kurze, nicht-blockierende Sprachzeilen (Untertitel als Toast)
 config['barks']={
  'idle_backrooms':[N("Du stehst da. Das Neon summt. Ein Zeitreisender in seinem natürlichen Lebensraum: unentschlossen."),Ma("Hallo? Die Zeit läuft. Nur so als Info."),N("Wenn du lange genug wartest, passiert nichts. Garantiert."),Ma("Ich hör dich atmen. Mach was."),N("Die Backrooms sind geduldig. Die Uhr nicht.")],
- 'idle_1989':[Ma("Die Mauer fällt nicht von allein. Na gut, eigentlich schon. Aber nicht ohne dich."),N("Um dich herum wird Geschichte geschrieben. Du schreibst gerade: nichts."),Ma("Hey, Träumer. Wir haben einen Plan, weißt du noch?"),N("Ein Trabi hupt. Er meint dich.")],
+ 'idle_1989':[Ma("Die Mauer fällt nicht von allein. Na gut, eigentlich schon. Aber nicht ohne dich."),N("Um dich herum wird Geschichte geschrieben. Du schreibst gerade: nichts."),Ma("Hey, Träumer. Wir haben einen Plan, weißt du noch?"),N("Ein Trabbel hupt. Er meint dich.")],
  'pickup':[N("Eingesteckt. Deine Taschen sind tiefer als dein Verständnis dieser Lage."),N("Nimm alles mit. So machen das Abenteurer."),N("Klebt ein bisschen. Frag nicht."),N("Ins Inventar damit. Wird schon zu was gut sein. Vermutlich nicht.")],
  'drop':[N("Fallen gelassen. Die Schwerkraft funktioniert also noch."),N("Hoppla. Absichtlich, natürlich.")],
  'throw':[N("Ein beherzter Wurf. Die Haltungsnote lassen wir weg."),Ma("Hast du gerade was geworfen? Ich hab's gehört.")],
- 'invOpen':[N("Du kramst im Zeit-Walkman. Er riecht nach Kassette.")],
+ 'invOpen':[N("Du kramst im Zeit-Laufmann. Er riecht nach Kassette.")],
  'gazeMara':[Ma("Starr nicht so. Ich bin keine Sehenswürdigkeit. Okay, ein bisschen."),Ma("Hab ich was im Gesicht? Ach so, nur dich."),Ma("Du guckst, als hättest du mich schon hundertmal gesehen. Hast du, oder?"),Ma("Augen nach vorne, Zeitreisender. Die Mauer ist da drüben.")],
  'glitch2':[Ma("Hast du das auch gesehen? Das Bild hat gezuckt."),N("Irgendwas stimmt nicht. Die Farben sind eine Spur zu grau.")],
  'glitch3':[Ma("Die Schleife wird dünn. Ich spür das in den Zähnen."),N("Das Band leiert. Und du mit.")],
@@ -270,13 +270,13 @@ config['reactItem']={
  'tasse':Ma("Bester Mitarbeiter des Monats? Du hast hier nie gearbeitet."),
  'akte':Ma("Eine Akte über dich. Lies die lieber nicht vor dem Frühstück."),
  'huhn':Ma("Ein Gummihuhn. Ich frag nicht. Ich frag nie."),
- 'radkappe':Ma("Eine Radkappe vom Trabi. Die vermisst gleich jemand sehr."),
+ 'radkappe':Ma("Eine Radkappe vom Trabbel. Die vermisst gleich jemand sehr."),
  'schnur':Ma("Paketschnur, volkseigen. Damit kann man fast alles reparieren."),
  'haken':Ma("Eine Kaugummi-Angel. Du bist ein Genie. Ein ekliges, aber ein Genie."),
  'muenze':Ma("Eine Mark aus dem Gully. Glück muss man haben. Und Kaugummi."),
  'tamagotchi':Ma("So ein Ei hatte ich auch. Es ist gestorben, während ich in Mathe war."),
  'bleistift':Ma("Ein Bleistift. Perfekt für Kassetten und Notizen an dich selbst."),
- 'gameboy':Ma("Ein Gameboy! Lass mich mal. Nur ein Level. Okay, drei."),
+ 'gameboy':Ma("Ein Spielbub! Lass mich mal. Nur ein Level. Okay, drei."),
  'wuerfel':Ma("Ein Zauberwürfel. Ich hab nur eine Seite geschafft. Mit Aufklebern."),
  'brause':Ma("Brausepulver! Auf die Zunge, nicht in die Nase. Glaub mir."),
  'kaugummi':Ma("Kaugummi. Kau den nicht gleich, der wird noch wichtig."),

@@ -1,7 +1,7 @@
 /* FORUM 3D – spielbarer Automat in der Spielhalle 1984 (Rewind V3). Komplett eigener Code + eigene Grafik
    (nur das Genre "Raycaster-Labyrinth-Shooter"; keine fremden Karten, Figuren, Namen, Grafiken oder Töne).
    Zentrale des "Weltwirtschaftsforums für Glück und Verzicht": Anzugträger mit Datenbrille halten Vorträge (kosten GLÜCK),
-   man wirft Bananen, sie rutschen aus. Pickups: Bananen, Soylent-Riegel, Perri-Air. Ziel: Aufzug "AUSGANG" je Etage.
+   man wirft Bananen, sie rutschen aus. Pickups: Bananen, Soylänt-Riegel, Perri-Air. Ziel: Aufzug "AUSGANG" je Etage.
    window.Forum3D(canvas) -> {update(dt), draw(), setAxes(fwd,turn,strafe), fire(), coin(), state()}
    window.mountForum3D(sceneEl, cab) baut den Automaten in die Spielhalle ein */
 (function(){
@@ -65,7 +65,7 @@ function buildTex(){
  TX.v_w1=suit('w1',1); TX.v_w2=suit('w2',1); TX.v_talk=suit('talk',1); TX.v_slip=suit('slip',1); TX.v_down=suit('down',1);
  TX.ban=mk(64,64,g=>{ g.fillStyle='#f0d030'; g.beginPath(); g.arc(32,24,14,0.3,2.8); g.arc(32,18,12,2.6,0.5,true); g.fill(); g.fillStyle='#604010'; g.fillRect(44,26,3,3); });
  TX.bunch=mk(64,64,g=>{ for(let i=0;i<4;i++){ g.save(); g.translate(32,56); g.rotate(-0.5+i*0.33); g.fillStyle=i%2?'#e8c828':'#f8dc40'; g.beginPath(); g.ellipse(0,-12,3.5,11,0,0,7); g.fill(); g.restore(); } g.fillStyle='#5a4010'; g.fillRect(30,52,4,6); });
- TX.soy=mk(64,64,g=>{ g.fillStyle='#103a18'; g.fillRect(18,46,28,14); g.fillStyle='#40d060'; g.fillRect(19,47,26,12); g.fillStyle='#08200c'; g.font='bold 6px monospace'; g.textAlign='center'; g.fillText('SOYLENT',32,55); });
+ TX.soy=mk(64,64,g=>{ g.fillStyle='#103a18'; g.fillRect(18,46,28,14); g.fillStyle='#40d060'; g.fillRect(19,47,26,12); g.fillStyle='#08200c'; g.font='bold 6px monospace'; g.textAlign='center'; g.fillText('SOYLÄNT',32,55); });
  TX.air=mk(64,64,g=>{ g.fillStyle='#1a4aa0'; g.fillRect(25,34,14,26); g.fillStyle='#c0d8ff'; g.fillRect(25,34,14,4); g.fillStyle='#fff'; g.font='bold 5px monospace'; g.textAlign='center'; g.fillText('PERRI',32,46); g.fillText('AIR',32,52); g.fillStyle='#808890'; g.fillRect(29,30,6,4); });
  TX.plant=mk(64,64,g=>{ g.fillStyle='#5a3a24'; g.fillRect(24,48,16,14); g.fillStyle='#1e5a2a'; for(let i=0;i<9;i++){ g.save(); g.translate(32,48); g.rotate(-1.2+i*0.3); g.beginPath(); g.ellipse(0,-14,3,12,0,0,7); g.fill(); g.restore(); } g.fillStyle='#d0d0c0'; g.fillRect(38,40,10,8); g.fillStyle='#202020'; g.font='4px monospace'; g.fillText('CO2',39,46); });
 }
@@ -109,7 +109,7 @@ window.Forum3D=function(cv){
   // Entities
   ents.forEach(e=>{
    if(e.k!=='suit'){ if(e.k!=='plant'&&!e.got&&Math.hypot(e.x-P.x,e.y-P.y)<0.5){ e.got=1;
-     if(e.k==='bunch'){ bans+=6; msg='+6 BANANEN'; } if(e.k==='soy'){ gl=Math.min(100,gl+20); msg='SOYLENT-RIEGEL +20 GLÜCK'; } if(e.k==='air'){ gl=Math.min(100,gl+35); msg='PERRI-AIR +35 GLÜCK'; } msgT=1.4; beep(1200,0.08); setTimeout(()=>beep(1600,0.1),80); } return; }
+     if(e.k==='bunch'){ bans+=6; msg='+6 BANANEN'; } if(e.k==='soy'){ gl=Math.min(100,gl+20); msg='SOYLÄNT-RIEGEL +20 GLÜCK'; } if(e.k==='air'){ gl=Math.min(100,gl+35); msg='PERRI-AIR +35 GLÜCK'; } msgT=1.4; beep(1200,0.08); setTimeout(()=>beep(1600,0.1),80); } return; }
    if(e.st==='slip'){ e.t-=dt; if(e.t<=0) e.st='down'; return; } if(e.st==='down') return;
    const d=Math.hypot(P.x-e.x,P.y-e.y); e.cd-=dt;
    if(e.st==='idle'&&d<9&&los(e.x,e.y,P.x,P.y)){ e.st='chase'; if(Math.random()<0.6){ quote='MOMENT, HABEN SIE EINEN TERMIN?'; quoteT=1.4; } }

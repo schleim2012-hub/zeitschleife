@@ -207,7 +207,7 @@
      "speaker": "mara"
     },
     {
-     "say": "Ein Trabi hupt. Er meint dich.",
+     "say": "Ein Trabbel hupt. Er meint dich.",
      "speaker": "narrator"
     }
    ],
@@ -251,7 +251,7 @@
    ],
    "invOpen": [
     {
-     "say": "Du kramst im Zeit-Walkman. Er riecht nach Kassette.",
+     "say": "Du kramst im Zeit-Laufmann. Er riecht nach Kassette.",
      "speaker": "narrator"
     }
    ],
@@ -430,7 +430,7 @@
     "speaker": "mara"
    },
    "radkappe": {
-    "say": "Eine Radkappe vom Trabi. Die vermisst gleich jemand sehr.",
+    "say": "Eine Radkappe vom Trabbel. Die vermisst gleich jemand sehr.",
     "speaker": "mara"
    },
    "schnur": {
@@ -454,7 +454,7 @@
     "speaker": "mara"
    },
    "gameboy": {
-    "say": "Ein Gameboy! Lass mich mal. Nur ein Level. Okay, drei.",
+    "say": "Ein Spielbub! Lass mich mal. Nur ein Level. Okay, drei.",
     "speaker": "mara"
    },
    "wuerfel": {
@@ -751,7 +751,7 @@
       "speaker": "narrator"
      },
      {
-      "note": "Polaroid: „Ich weiß. M.“ – merkt sie sich die Schleifen auch?"
+      "note": "Polarbild: „Ich weiß. M.“ – merkt sie sich die Schleifen auch?"
      },
      {
       "learn": "mweiss"
@@ -798,7 +798,7 @@
  },
  "items": {
   "polaroid": {
-   "name": "Polaroid",
+   "name": "Polarbild",
    "icon": "📷",
    "desc": "„Finde mich – M.“ Sieht fast aus wie ein Ausweis.",
    "model": "polaroid",
@@ -914,7 +914,7 @@
    ]
   },
   "radkappe": {
-   "name": "Trabi-Radkappe",
+   "name": "Trabbel-Radkappe",
    "icon": "⚙️",
    "desc": "Leicht wie ein Versprechen, genauso hohl.",
    "fail": {
@@ -933,7 +933,7 @@
      "speaker": "narrator"
     },
     {
-     "say": "Irgendwo sucht ein Trabi-Fahrer gerade seine Radkappe. Und du spielst Frisbee.",
+     "say": "Irgendwo sucht ein Trabbel-Fahrer gerade seine Radkappe. Und du spielst Frisbee.",
      "speaker": "mara"
     }
    ]
@@ -1649,7 +1649,7 @@
        "set": "m1"
       },
       {
-       "say": "Berlin, neunter November 1989. Tausende Menschen, Trabis, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: \"Wahnsinn!\" Es wird nicht das letzte Mal sein.",
+       "say": "Berlin, neunter November 1989. Tausende Menschen, Trabbels, Scheinwerfer, Sekt aus Pappbechern. Jemand ruft: \"Wahnsinn!\" Es wird nicht das letzte Mal sein.",
        "speaker": "narrator"
       },
       {
@@ -1758,7 +1758,7 @@
     },
     {
      "id": "trabi",
-     "label": "Trabi",
+     "label": "Trabbel",
      "box": [
       0.65,
       0.58,
@@ -1772,7 +1772,7 @@
        }
       },
       {
-       "say": "Du hupst. Der Trabi hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.",
+       "say": "Du hupst. Der Trabbel hupt zurück. Mit Zweitakt-Empörung. Du bist dir nicht sicher, wer hier wen erschreckt hat.",
        "speaker": "narrator"
       }
      ]
@@ -1794,7 +1794,7 @@
     },
     {
      "id": "rechts",
-     "label": "Zur Trabi-Schlange",
+     "label": "Zur Trabbel-Schlange",
      "box": [
       0.94,
       0.08,
@@ -1992,7 +1992,7 @@
   },
   "M3": {
    "epoch": "1989",
-   "title": "Trabi-Schlange",
+   "title": "Trabbel-Schlange",
    "sky": "M3",
    "still": "M3",
    "props": [
@@ -2019,7 +2019,7 @@
    "hotspots": [
     {
      "id": "mara",
-     "label": "Mara auf dem Trabi",
+     "label": "Mara auf dem Trabbel",
      "box": [
       0.2,
       0.1,
@@ -2302,7 +2302,7 @@
        "set": "radkappe"
       },
       {
-       "say": "Eine Trabi-Radkappe, leicht wie ein Versprechen. Der Trabi merkt es nicht. Der Trabi merkt nie was.",
+       "say": "Eine Trabbel-Radkappe, leicht wie ein Versprechen. Der Trabbel merkt es nicht. Der Trabbel merkt nie was.",
        "speaker": "narrator"
       }
      ]
@@ -2458,7 +2458,7 @@
        "next": "mehr",
        "do": [
         {
-         "say": "Drüben an der Trabi-Schlange. Aber nur jegen Westjeld. Und Westjeld jibt's am Schalter. Mit Ausweis. Ohne Ausweis jibt's nur Jefühle.",
+         "say": "Drüben an der Trabbel-Schlange. Aber nur jegen Westjeld. Und Westjeld jibt's am Schalter. Mit Ausweis. Ohne Ausweis jibt's nur Jefühle.",
          "speaker": "grenzer"
         }
        ]
@@ -2766,7 +2766,7 @@
        "set": "warnM"
       },
       {
-       "say": "Moment … das hatten wir schon. Du, ich, Trabi, Banane. Diesmal machen wir es schneller, ja?",
+       "say": "Moment … das hatten wir schon. Du, ich, Trabbel, Banane. Diesmal machen wir es schneller, ja?",
        "speaker": "mara"
       }
      ]
@@ -2781,7 +2781,7 @@
        "label": "😏 Charmant",
        "next": "themen",
        "tone": "charm",
-       "good": "Du bist echt hartnäckig. Wie Kaugummi am Trabi. Ich mag das.",
+       "good": "Du bist echt hartnäckig. Wie Kaugummi am Trabbel. Ich mag das.",
        "bad": "Charme reißt keine Mauern ein, Süßer. Ein Hammer schon."
       },
       {
@@ -2894,8 +2894,8 @@
     "if": "!flag.geld&&!has.hammer&&!has.mauer",
     "t": [
      "Wer zur Mauer will, braucht Werkzeug. Wer Werkzeug will, braucht Tauschware.",
-     "Rechts geht's zur Trabi-Schlange. Da gibt's Geld und Obst.",
-     "Nach rechts zur Trabi-Schlange, am Schalter Begrüßungsgeld holen, dann eine Banane kaufen."
+     "Rechts geht's zur Trabbel-Schlange. Da gibt's Geld und Obst.",
+     "Nach rechts zur Trabbel-Schlange, am Schalter Begrüßungsgeld holen, dann eine Banane kaufen."
     ]
    },
    {
@@ -2920,8 +2920,8 @@
     "if": "!has.banane&&!has.hammer&&!has.mauer",
     "t": [
      "Der Mann hat Hunger auf etwas, das es im Osten selten gab.",
-     "Hast du das Schild an der Trabi-Schlange gesehen? Und hast du Westgeld?",
-     "Polaroid am Schalter zeigen, Banane kaufen, rübergeben. Bitte. Ich schau weg."
+     "Hast du das Schild an der Trabbel-Schlange gesehen? Und hast du Westgeld?",
+     "Polarbild am Schalter zeigen, Banane kaufen, rübergeben. Bitte. Ich schau weg."
     ]
    },
    {
@@ -2929,7 +2929,7 @@
     "t": [
      "Du hast, was er will. Er hat, was du willst. Das nennt man Wirtschaft.",
      "Gib dem Typen endlich die Banane.",
-     "Banane im Walkman auswählen, dann auf den Typen mit dem Hammer zeigen."
+     "Banane im Laufmann auswählen, dann auf den Typen mit dem Hammer zeigen."
     ]
    },
    {
@@ -2945,7 +2945,7 @@
     "t": [
      "Du hast dein Stück Geschichte.",
      "Zurück in die Backrooms, zur Lampe.",
-     "Zurück, dann über den Walkman oder die Tür hinter dir in die Backrooms."
+     "Zurück, dann über den Laufmann oder die Tür hinter dir in die Backrooms."
     ]
    }
   ],
@@ -2955,7 +2955,7 @@
     "t": [
      "Bananen kosten Westgeld. Westgeld kostet ein Gesicht.",
      "Die Beamtin will irgendwas mit deinem Gesicht drauf. Hast du nicht ein Foto?",
-     "Polaroid im Walkman auswählen und auf den Schalter zeigen."
+     "Polarbild im Laufmann auswählen und auf den Schalter zeigen."
     ]
    },
    {
@@ -3061,7 +3061,7 @@
   },
   "remember": {
    "1989": {
-    "say": "Moment, das hatten wir schon. Berlin, Trabis, Banane. Diesmal machen wir es schneller, ja?",
+    "say": "Moment, das hatten wir schon. Berlin, Trabbels, Banane. Diesmal machen wir es schneller, ja?",
     "speaker": "mara"
    }
   }

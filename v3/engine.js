@@ -1,5 +1,5 @@
 // ZEITSCHLEIFE V3 – VR-first 360°-Engine. Räume = Equirect-Panorama + (optional) Front-Platte mit dem Original-Still
-// + unsichtbare 3D-Trefferflächen + einfache 3D-Props. UI (Dialoge, Walkman, Menüs) = Canvas: Desktop direkt, VR als Panel.
+// + unsichtbare 3D-Trefferflächen + einfache 3D-Props. UI (Dialoge, Laufmann, Menüs) = Canvas: Desktop direkt, VR als Panel.
 (()=>{
 const W=1600,H=900,cv=document.getElementById('cv'),x=cv.getContext('2d');
 const F='Rajdhani, "Noto Color Emoji", sans-serif';
@@ -47,7 +47,7 @@ function cond(c){ if(c===undefined||c===null||c==='1'||c===true) return true; tr
 function progress(){ idle=0; }
 function toast(t,ms=2600){ toasts.push({t,until:performance.now()+ms}); }
 function invCount(){ return S.inv.filter(i=>!G.items[i].anchor).length; }
-let tDelta=null; // kurze „+0:30“/„−0:20“-Anzeige direkt am Walkman-Zeitdisplay (kein Extra-Zähler)
+let tDelta=null; // kurze „+0:30“/„−0:20“-Anzeige direkt am Laufmann-Zeitdisplay (kein Extra-Zähler)
 function flashDelta(sec,plus){ tDelta={t:(plus?'+':'−')+fmt(sec),c:plus?'#7dffb0':'#ff6a6a',t0:performance.now()}; }
 function addTime(sec,key,kind){ // kind: 'pen' oder 'bonus'; Ostereier/Bonus bleiben 1× pro Spielstand (MEM.bonusKeys)
  if(kind==='bonus'){ MEM.bonusKeys=MEM.bonusKeys||{}; if(key&&(S.pen['b_'+key]||MEM.bonusKeys[key])) return; const s=Math.min(sec,TM.maxBonus-S.bonus); if(key){ S.pen['b_'+key]=1; MEM.bonusKeys[key]=Math.max(0,s); saveMem(); } if(s<=0){ toast('⏱ Bonuszeit voll ('+fmt(TM.maxBonus)+')'); return; } S.bonus+=s; S.time+=s; sfxF('bonus'); flashDelta(s,true); sfx('rewind'); clockTicks(); return; }
@@ -71,7 +71,7 @@ async function act(a){
  if(a.remember){ MEM.seen[a.remember]=1; saveMem(); return; }
  if(a.add){ for(const k in a.add) S.v[k]=(S.v[k]||0)+a.add[k]; return; }
  if(a.anchor){ if(!S.anchors.includes(a.anchor)) S.anchors.push(a.anchor); S.inv=S.inv.filter(i=>i!==a.anchor); toast(`⚓ Anker ${S.anchors.length}/3`,3500); progress(); return; }
- if(a.note){ S.notes.push(a.note); toast('✎ Neue Notiz im Zeit-Walkman'); return; }
+ if(a.note){ S.notes.push(a.note); toast('✎ Neue Notiz im Zeit-Laufmann'); return; }
  if(a.timefx){ const f=(G.config.timeFx||{})[a.timefx]; if(!f) return; if(f.bonus) addTime(f.bonus,f.key||a.timefx,'bonus'); else if(f.penalty) addTime(f.penalty,f.key||a.timefx,'pen'); return; }
  if(a.bonus){ addTime(a.bonus,a.key,'bonus'); return; }
  if(a.penalty){ addTime(a.penalty,a.key,'pen'); return; }
@@ -254,7 +254,7 @@ function itemModel(g,it){ const T=T3(), md=(it&&it.model)||'box', c=(it&&it.colo
    for(let j=0;j<=R;j++){ const b=j/R*Math.PI*2; const nx=-tz*Math.cos(b), ny=Math.sin(b), nz=tx*Math.cos(b); pos.push(cx+nx*r,0.019+ny*r*0.95,cz+nz*r); uv.push(t,j/R); } }
   for(let i=0;i<N;i++) for(let j=0;j<R;j++){ const a=i*(R+1)+j, b=a+R+1; idx.push(a,b,a+1,b,b+1,a+1); }
   const geo=new T.BufferGeometry(); geo.setAttribute('position',new T.Float32BufferAttribute(pos,3)); geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals(); add(geo,new T.MeshStandardMaterial({map,roughness:0.55,side:T.DoubleSide})); }
- else if(md==='hubcap'){ // Trabi-Radkappe, ca. 30 cm, verchromt und etwas verbeult
+ else if(md==='hubcap'){ // Trabbel-Radkappe, ca. 30 cm, verchromt und etwas verbeult
   const map=tex('hubcap',512,512,(x,w,h)=>{ const gr=x.createRadialGradient(256,256,20,256,256,256); gr.addColorStop(0,'#eef0f2'); gr.addColorStop(0.5,'#b9bec4'); gr.addColorStop(0.8,'#e2e5e8'); gr.addColorStop(1,'#8d9298'); x.fillStyle=gr; x.fillRect(0,0,w,h);
    for(let i=0;i<10;i++){ const a=i/10*Math.PI*2; x.save(); x.translate(256,256); x.rotate(a); x.fillStyle='#2b2d30'; x.beginPath(); x.roundRect(120,-14,80,28,12); x.fill(); x.restore(); }
    x.strokeStyle='#7a7f85'; x.lineWidth=4; [70,215,250].forEach(r=>{ x.beginPath(); x.arc(256,256,r,0,7); x.stroke(); }); x.fillStyle='#c8202a'; x.beginPath(); x.arc(256,256,40,0,7); x.fill(); x.fillStyle='#fff'; x.font='bold 48px Arial'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('S',256,258);
@@ -267,7 +267,7 @@ function itemModel(g,it){ const T=T3(), md=(it&&it.model)||'box', c=(it&&it.colo
   const pts=[]; for(let i=0;i<=16;i++){ const t=i/16, a=t*Math.PI; pts.push(new T.Vector2(Math.sin(a)*0.024*(1-0.18*Math.cos(a)),-Math.cos(a)*0.03)); } const e=add(new T.LatheGeometry(pts,24),new T.MeshStandardMaterial({map,roughness:0.35}),[0,0.012,0],[Math.PI/2,0,0]); e.scale.set(1,0.55,1);
   add(new T.TorusGeometry(0.008,0.0012,6,16),M(0xbbbbbb,{metalness:0.9,roughness:0.3}),[0,0.006,-0.036],[Math.PI/2,0,0]); }
  else if(md==='gameboy'){ const map=tex('gb',300,480,(x,w,h)=>{ noiseFill(x,w,h,'#c4c0b4',0.06,2000); x.fillStyle='#55586a'; x.beginPath(); x.roundRect(22,30,256,200,[12,12,40,12]); x.fill(); x.fillStyle='#8b9a5b'; x.fillRect(62,58,176,146); x.fillStyle='rgba(20,40,10,0.25)'; for(let i=0;i<8;i++) x.fillRect(62,58+i*18,176,1);
-   x.fillStyle='#202028'; x.font='italic bold 22px Arial'; x.fillText('GAME DUDE',30,262); x.fillStyle='#2a2a30'; x.fillRect(50,330,26,74); x.fillRect(26,354,74,26); x.fillStyle='#8a1d4a'; x.beginPath(); x.arc(210,370,20,0,7); x.fill(); x.beginPath(); x.arc(254,346,20,0,7); x.fill();
+   x.fillStyle='#202028'; x.font='italic bold 22px Arial'; x.fillText('SPIELBUB',30,262); x.fillStyle='#2a2a30'; x.fillRect(50,330,26,74); x.fillRect(26,354,74,26); x.fillStyle='#8a1d4a'; x.beginPath(); x.arc(210,370,20,0,7); x.fill(); x.beginPath(); x.arc(254,346,20,0,7); x.fill();
    x.fillStyle='#777'; x.save(); x.translate(120,440); x.rotate(-0.5); x.fillRect(0,0,34,9); x.fillRect(50,0,34,9); x.restore(); x.strokeStyle='#999'; x.lineWidth=4; for(let i=0;i<5;i++){ x.save(); x.translate(220+i*12,450); x.rotate(-0.5); x.beginPath(); x.moveTo(0,0); x.lineTo(0,30); x.stroke(); x.restore(); } });
   topBox(0.09,0.032,0.148,map,0xb8b4aa,{roughness:0.5}); }
  else if(md==='cube'){ // 3x3 Zauberwürfel, 5,7 cm, leicht verdreht, alle Seiten bunt
@@ -469,7 +469,7 @@ function spk(s){ return (G.config.speakers[s]||['',''])[0]; } function spc(s){ r
 function drawHUD(now){ const warn=S.time<=60; glass(24,20,170,58,16,warn?'rgba(255,60,60,0.9)':undefined);
  text(fmt(S.time),109,51,{s:40,w:700,a:'center',b:'middle',c:warn&&(now%1000<500)?'#ff5a5a':'#ff8fd8',ls:3}); drawDelta(now,109,96,30);
  for(let i=0;i<3;i++){ x.beginPath(); x.arc(220+i*26,49,8,0,7); x.fillStyle=i<S.anchors.length?'#ffd27a':'rgba(255,255,255,0.15)'; x.fill(); }
- button([W-430,20,140,58],'💭 HINWEIS',()=>hintNow(),{s:18}); button([W-280,20,186,58],'📼 ZEIT-WALKMAN',()=>openWM(!wm.open),{s:20,active:wm.open}); button([W-82,20,58,58],'❚❚',()=>openPause(true),{s:20,ls:0});
+ button([W-430,20,140,58],'💭 HINWEIS',()=>hintNow(),{s:18}); button([W-280,20,186,58],'📼 ZEIT-LAUFMANN',()=>openWM(!wm.open),{s:20,active:wm.open}); button([W-82,20,58,58],'❚❚',()=>openPause(true),{s:20,ls:0});
  if(S.sel){ glass(W/2-220,20,440,50,25,'rgba(255,210,122,0.8)'); text(`${G.items[S.sel].icon}  ${G.items[S.sel].name} benutzen mit …`,W/2,46,{s:24,w:600,a:'center',b:'middle'}); }
  if(DEBUG&&hover3&&mode==='play'){ const l=S.sel?`${G.items[S.sel].name} → ${hover3.label}`:hover3.label; x.font=`600 26px ${F}`; const w=x.measureText(l).width+50; glass(W/2-w/2,H-78,w,46,23); text(l,W/2,H-55,{s:26,w:600,a:'center',b:'middle'}); }
  drawToasts(now,96); if(DEBUG){ glass(24,H-60,700,40,10); text(`DEBUG ${S.node} · visits ${JSON.stringify(S.visits)} · loop ${S.loop} · slinky ${S.slinky.uses} · yaw ${(eyeYaw()*57.3).toFixed(0)}°`,40,H-34,{s:20,w:600,c:'#0f0'}); } }
@@ -494,7 +494,7 @@ function openWM(v){ if(v&&mode!=='play'&&mode!=='wm') return; if(v!==wm.open) sf
 function drawWM(now){ x.fillStyle='rgba(5,3,10,0.55)'; x.fillRect(0,0,W,H);
  const X=230,Y=100,w=W-460,h=700; glass(X,Y,w,h,30,'rgba(120,220,255,0.9)');
  x.save(); rr(X+30,Y+26,w-60,90,18); x.fillStyle='rgba(0,0,0,0.45)'; x.fill(); x.restore();
- text('ZEIT-WALKMAN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8}); text(fmt(S.time),X+w-60,Y+84,{s:48,w:700,a:'right',c:'#ff8fd8',ls:4}); drawDelta(now,X+w-120,Y+130,34);
+ text('ZEIT-LAUFMANN',X+60,Y+82,{s:34,w:700,c:'#8fe9ff',ls:8}); text(fmt(S.time),X+w-60,Y+84,{s:48,w:700,a:'right',c:'#ff8fd8',ls:4}); drawDelta(now,X+w-120,Y+130,34);
  TABS.forEach(([k,l],i)=>button([X+40+i*200,Y+140,184,48],l,()=>{wm.tab=k;},{s:20,active:wm.tab===k})); button([X+w-110,Y+140,70,48],'✕',()=>openWM(false),{s:24});
  const cx=X+40,cy=Y+220,cw=w-80;
  if(wm.tab==='inv'){ const inv=S.inv.filter(i=>!G.items[i].anchor), N=G.config.invLimit, s=118,g=16; wm.hover=-1;
@@ -540,7 +540,7 @@ function drawPause(){ x.fillStyle='rgba(5,3,12,0.62)'; x.fillRect(0,0,W,H);
  if(opt){ drawOptions(X+44,Y+110,w-88); button([X+44,Y+h-66,200,46],'← ZURÜCK',()=>{pauseTab='main';},{s:20}); return; }
  [['▶  WEITERSPIELEN',()=>openPause(false)],['⚙  OPTIONEN',()=>{pauseTab='opt';}],['💾  SPEICHERN',()=>{ saveGame(); toast('💾 Gespeichert'); }],['★  CREDITS',()=>{ pauseOpen=false; showCredits(false,'pause'); }],['⌂  HAUPTMENÜ',()=>{ saveGame(); toTitle(); }]]
   .forEach(([l,fn],i)=>button([X+44,Y+106+i*80,w-88,60],l,fn,{s:24,rad:18}));
- text('COUNTDOWN PAUSIERT  ·  A/X = MENÜ  ·  B/Y = WALKMAN  ·  GRIFF = GREIFEN/WERFEN  ·  STICK DRÜCKEN = HINWEIS  ·  R-STICK = DREHEN',X+w/2,Y+h-24,{s:14,w:700,a:'center',c:'rgba(255,255,255,0.4)',ls:3}); }
+ text('COUNTDOWN PAUSIERT  ·  A/X = MENÜ  ·  B/Y = LAUFMANN  ·  GRIFF = GREIFEN/WERFEN  ·  STICK DRÜCKEN = HINWEIS  ·  R-STICK = DREHEN',X+w/2,Y+h-24,{s:14,w:700,a:'center',c:'rgba(255,255,255,0.4)',ls:3}); }
 // ---------- Credits (Vortex: Delta FX)
 const CREDITS=['REWIND – DIE ZEITSCHLEIFE','Idee & Regie: Pete','Spiel-Engine, Texte & Bau: Captain Chaos (Grok Bot)','Konzept & Rätsel-Handbuch: Zeitschleife VR',
  'Zeitstrudel-Video: „Time Vortex Collection REMASTERED“ von Delta FX – youtube.com/@deltafx43','Stimmen: ElevenLabs  ·  3D: A-Frame / three.js  ·  Mülleimer: Poly Haven (CC0)','Alle Hommagen sind Anspielungen. Keine Tiere wurden in Mikrowellen gesteckt.'];

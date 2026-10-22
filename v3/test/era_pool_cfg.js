@@ -7,6 +7,6 @@ window.ERA={ amb:'../assets/sfx/amb_pool.mp3', ambVol:0.35, props:[['../assets/p
  enter:['Erzähler','Das Hallenbad, nach Feierabend. Das Wasser ist ruhig. Zu ruhig.'],
  floorFront:-3.0, bounds:[-5.6,5.6,-0.62,2.6]
 };
-window.ERAX={stands:[[2.7,1.2,-80,0.95,2.1,0x0e1614,[['p2',0.9,1.4,0,['Mara', '„Der Weiße Hai. Hier drin? Keine Sorge. Der hat Hausverbot.“']]],0xa0ffe0,0.8]],
+window.ERAX={stands:[[2.7,1.2,-80,0.95,2.1,0x0e1614,[['p2',0.9,1.4,0,['Mara', '„Der Weiße Kai. Hier drin? Keine Sorge. Der hat Hausverbot.“']]],0xa0ffe0,0.8]],
  covers:[['c11','mag',-1.6,0,0.3,30,['Mara', '„Level 0? Nein, Süßer. Das hier ist Level 37. Die Poolrooms. Nicht reinspringen.“'],{back:'Zähl die Fliesen nicht. Die zählen zurück.',cap:'Hinten drauf, mit Bleistift: „Zähl die Fliesen nicht. Die zählen zurück.“',w:0.15,h:0.09}]],
- decoys:[['../assets/items/polaroid.glb',-2.05,0.44,-0.2,1,25,['Mara', '„Ein Polaroid vom Becken. Leer. Aber da war doch eben jemand.“']],['../assets/items/brause.glb',2.15,0.44,0.05,1,0,['Mara', '„Brause. Im Hallenbad. Kriegt man davon nicht Krämpfe beim Schwimmen?“']]]};
+ decoys:[['../assets/items/polaroid.glb',-2.05,0.44,-0.2,1,25,['Mara', '„Ein Polarbild vom Becken. Leer. Aber da war doch eben jemand.“']],['../assets/items/brause.glb',2.15,0.44,0.05,1,0,['Mara', '„Brause. Im Hallenbad. Kriegt man davon nicht Krämpfe beim Schwimmen?“']]]};

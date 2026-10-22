@@ -41,7 +41,7 @@ window.makeCRT=function(T,o={}){ const ROOT=o.root||'', TL=new T.TextureLoader()
  const glass=add(new T.Mesh(sg.clone(),new T.MeshPhysicalMaterial({color:0x223030,roughness:0.08,metalness:0,transparent:true,opacity:0.16,clearcoat:1,clearcoatRoughness:0.05,depthWrite:false})),0,0,td/2+0.008,tv);
  // Bedienelemente rechts unter dem Bild (Leiste)
  const bar=add(new T.Mesh(new T.BoxGeometry(0.58,0.055,0.01),plastD),0,-0.282,td/2+0.042,tv);
- const gc=document.createElement('canvas'); gc.width=256; gc.height=32; const gg=gc.getContext('2d'); gg.fillStyle='#141312'; gg.fillRect(0,0,256,32); for(let x=4;x<84;x+=6){ gg.fillStyle='#050505'; gg.fillRect(x,6,3,20); } gg.fillStyle='#b8b0a0'; gg.font='italic 700 15px serif'; gg.fillText('Grundig',96,22);
+ const gc=document.createElement('canvas'); gc.width=256; gc.height=32; const gg=gc.getContext('2d'); gg.fillStyle='#141312'; gg.fillRect(0,0,256,32); for(let x=4;x<84;x+=6){ gg.fillStyle='#050505'; gg.fillRect(x,6,3,20); } gg.fillStyle='#b8b0a0'; gg.font='italic 700 15px serif'; gg.fillText('Gründlich',96,22);
  const grill=new T.CanvasTexture(gc); grill.colorSpace=T.SRGBColorSpace; add(new T.Mesh(new T.PlaneGeometry(0.56,0.05),new T.MeshStandardMaterial({map:grill,roughness:0.7})),0,-0.282,td/2+0.0475,tv);
  [0.15,0.22].forEach((x,i)=>{ const k=add(new T.Mesh(new T.CylinderGeometry(0.017,0.019,0.022,24),silver),x+0.02,-0.282,td/2+0.058,tv); k.rotation.x=Math.PI/2; const c=add(new T.Mesh(new T.CylinderGeometry(0.009,0.009,0.003,16),chrome),x+0.02,-0.282,td/2+0.07,tv); c.rotation.x=Math.PI/2; });
  const led=add(new T.Mesh(new T.SphereGeometry(0.005,8,6),new T.MeshBasicMaterial({color:0xff2a10})),0.27,-0.282,td/2+0.052,tv);

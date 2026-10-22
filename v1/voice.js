@@ -1,6 +1,6 @@
 // Sprachausgabe: spielt zu jedem say()-Text die passenden Segmente aus audio/manifest.json
 (function(){
- const V='8', norm=s=>(s||'').toLowerCase().replace(/[^a-zäöüß0-9]/g,'');
+ const V='9', norm=s=>(s||'').toLowerCase().replace(/[^a-zäöüß0-9]/g,'');
  const full={}, seg={}; let on=localStorage.getItem('zs_voice')!=='off', cur=null, token=0;
  window.ZS_DUCK=false;
  fetch('audio/manifest.json?v='+V).then(r=>r.json()).then(m=>{ const g={};

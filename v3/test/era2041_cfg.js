@@ -23,10 +23,10 @@ window.ERA={ amb:'../assets/sfx/amb_2041.mp3', ambVol:0.4,
  floorFront:-3.0, start:[-1.8,1.6], bounds:[-2.6,2.6,-5.6,2.4]
 };
 window.ERAX={
- stands:[[2.65,-0.55,-70,1.5,2.4,0x0b100e,[['p8',1.0,1.5,-0.37,['Mara','„Soylent. Grüne Riegel für die ganze Familie. Frag lieber nicht, was drin ist.“']],['p7',1.0,1.5,0.37,['Mara','„Frische Bergluft in Dosen. Familiengröße. Schnüffel nicht dran, Süßer, das ist peinlich.“']]]],
-  [-2.6,0.55,70,0.95,2.3,0x0b100e,[['p6',1.0,1.45,0,['Mara','„Restaurant am Ende der Galaxis. Die zwei da reden seit Stunden davon. Keiner war je da.“']]]]],
- covers:[['c8','book',2.12,0.78,0.85,-60,['Mara','„KI für Dummies. Hab ich geschrieben. Kleiner Scherz. … Oder?“']],['c9','book',2.38,0.78,1.08,-80,['Mara','„Wie ich lernte, die Simulation zu lieben. Spoiler: Man gewöhnt sich dran.“']],
-  ['c10','book',2.45,0.78,0.8,-95,['Mara','„Kochen mit Soylent. Seite eins: Nimm Soylent. Seite zwei: Fertig.“']],['c11','mag',2.2,0.815,0.95,-70,['Mara','„Level 0. Ein Reiseführer für die Backrooms. Wer den braucht, kommt eh nicht mehr raus.“']],
+ stands:[[2.65,-0.55,-70,1.5,2.4,0x0b100e,[['p8',1.0,1.5,-0.37,['Mara','„Soylänt. Grüne Riegel für die ganze Familie. Frag lieber nicht, was drin ist.“']],['p7',1.0,1.5,0.37,['Mara','„Frische Bergluft in Dosen. Familiengröße. Schnüffel nicht dran, Süßer, das ist peinlich.“']]]],
+  [-2.6,0.55,70,0.95,2.3,0x0b100e,[['p6',1.0,1.45,0,['Mara','„Imbiss am Ende der Galaxis. Die zwei da reden seit Stunden davon. Keiner war je da.“']]]]],
+ covers:[['c8','book',2.12,0.78,0.85,-60,['Mara','„KI für Dösköppe. Hab ich geschrieben. Kleiner Scherz. … Oder?“']],['c9','book',2.38,0.78,1.08,-80,['Mara','„Wie ich lernte, die Simulation zu lieben. Spoiler: Man gewöhnt sich dran.“']],
+  ['c10','book',2.45,0.78,0.8,-95,['Mara','„Kochen mit Soylänt. Seite eins: Nimm Soylänt. Seite zwei: Fertig.“']],['c11','mag',2.2,0.815,0.95,-70,['Mara','„Level 0. Ein Reiseführer für die Backrooms. Wer den braucht, kommt eh nicht mehr raus.“']],
   ['c2','book',-2.2,0,-0.6,30,['Mara','„Per Anhalter durch den Baumarkt. Das Wichtigste steht drauf: Keine Panik in Gang 42.“']]],
  decoys:[['../assets/items/cube.glb',2.55,0.78,1.1,1,15,['Mara','„Ein Würfel. 2041 nennt man das Speichermedium. Oder einfach Würfel.“']]]
 };

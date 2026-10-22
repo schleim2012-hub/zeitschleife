@@ -3,7 +3,7 @@
 const C=window.ERA, T=THREE, S=document.querySelector('a-scene');
 const sub=document.getElementById('sub');
 let subBusy=false;
-let VOX={}; fetch('../assets/vo/erax.json').then(r=>r.json()).then(j=>VOX=j).catch(()=>{});
+let VOX={}; fetch('../assets/vo/erax.json?v=1022z5').then(r=>r.json()).then(j=>VOX=j).catch(()=>{});
 function say(who,text,file,ms){ if(!file&&VOX[text]) file='../assets/vo/'+VOX[text]; if(window.ZSMARA&&ZSMARA.route(who,text,file)!=='room') return; /* Mara nicht im Raum → Anruf/stumm (mara.js) */ sub.textContent=(who?who+': ':'')+text; sub.style.display='block'; subBusy=true;
  const done=()=>{ subBusy=false; setTimeout(()=>{ if(!subBusy) sub.style.display='none'; },500); };
  if(file){ const a=new Audio(file); a.volume=0.9; a.onended=a.onerror=done; a.play().catch(()=>setTimeout(done,ms||3500)); } else setTimeout(done,ms||3500); }
