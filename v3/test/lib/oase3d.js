@@ -9,8 +9,9 @@ const T=THREE, Q=new URLSearchParams(location.search), MUTE=Q.has('mute');
 const C=Object.assign({fig:{lie:'../assets/oase/kundin_lie.glb',up:'../assets/oase/kundin_up.glb'},base:'../assets/oase/'},window.OASE||{});
 const ADULT=()=>window.ZS_ADULT===true;
 // Brust-Zone (figur-lokal, Draufsicht): dort KEIN Öl, KEINE Verformung, keine Wirkung – nur der Ohrfeigen-Gag, wenn man dort 15–20 s verweilt (nur ab 18). Neue Figur: window.OASE.chest anpassen.
-const CHEST=Object.assign({x0:-0.56,x1:-0.30,zIn:0.16,zOut:9},C.chest||{});
-const inChest=(lx,lz)=>lx>CHEST.x0&&lx<CHEST.x1&&Math.abs(lz)>CHEST.zIn&&Math.abs(lz)<CHEST.zOut;   // jedes Mal neu prüfen (kein zwischengespeicherter Zustand)
+const CHEST0=Object.assign({x0:-0.56,x1:-0.30,zIn:0.16,zOut:9},C.chest||{});   // Ab-18-Figur (Rückenlage): window.OASE.chestAdult
+const chestZ=()=>(ADULT()&&C.chestAdult)?Object.assign({},CHEST0,C.chestAdult):CHEST0;
+const inChest=(lx,lz)=>{ const CHEST=chestZ(); return lx>CHEST.x0&&lx<CHEST.x1&&Math.abs(lz)>CHEST.zIn&&Math.abs(lz)<CHEST.zOut; };   // jedes Mal neu prüfen (kein zwischengespeicherter Zustand)
 const RW={x0:-2.0,x1:2.0,z0:-2.2,z1:2.0,h:2.55};   // Raum
 const TB={x:-0.35,z:-0.35,len:1.75,w:0.66,top:0.70}; // Massageliege (Polster-Oberkante)
 const FIG={x:-0.40,y:TB.top,z:-0.35};                // Ursprung der Figur
@@ -170,20 +171,25 @@ function buildCurtain(){ // Perlenvorhang (Holz/Bernstein), 1 Draw (Instanzen), 
  beads.instanceMatrix.setUsage(T.DynamicDrawUsage); G.add(beads); }
 // ---------------------------------------------------------------- Figur + Öl-Shader
 const MW=512, MH=192, X0=-0.98, X1=1.0, Z0=-0.37, Z1=0.37;   // Masken-Fenster (Figur lokal, Draufsicht)
-const uT={value:0}, uPress={value:new T.Vector4(0,0,0.055,0)}; let pressGoal=0, pressAt=0;
+const uT={value:0}, uPress={value:new T.Vector4(0,0,0.055,0)}; let pressGoal=0, pressAt=0, pressV=0;
+const uJig={value:new T.Vector4(0,0,0,0)}, jig={b:0,bv:0,bz:0,bzv:0,s:0,sv:0};   // passives Nachwippen: Brust (y,z) + weiches Gewebe (Bauch/Schenkel), gedämpfte Federn
 let mask=null, maskTex=null, fig={}, figRoot=null, pose='lie', oilU={value:null}, oilAmt={value:0}, glint={value:0};
 const GX=128, GZ=48; let target=null, got=null, nTarget=1;
 function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.height=MH; const x=mask.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,MW,MH); maskTex=new T.CanvasTexture(mask); maskTex.flipY=false; maskTex.colorSpace=T.NoColorSpace; maskTex.minFilter=T.LinearFilter; maskTex.generateMipmaps=false; oilU.value=maskTex; }
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
-function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht
- const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
+function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht. skin.tx = Figur mit eigener Hauttextur (COLOR_0 = AO + ölbar), skin.soft = Attribut _SOFT (Weichheit, Brust-Gewicht)
+ const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.tx?0xffffff:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
-  sh.uniforms.uT=uT; sh.uniforms.uPress=uPress;
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress;').replace('#include <begin_vertex>',`#include <begin_vertex>
+  sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
   vOP=position;
   { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)); transformed+=objectNormal*(0.0032*wb*(0.5+0.5*sin(uT*1.35)));   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
-    float dp=distance(position.xz,uPress.xy); transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp)); }   // Haut gibt unter der Hand nach`);
+    float dp=distance(position.xz,uPress.xy); ${skin.soft?`
+    float sf=_soft.x, r=uPress.z*(0.8+0.5*sf), g=exp(-dp*dp/(r*r)), rim=exp(-pow((dp-1.35*r)/(0.45*r),2.0));
+    transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(g-0.22*rim)*(0.35+1.1*sf);   // weiche Delle + Gewebe-Wulst am Rand, federt zurück
+    transformed.y+=_soft.y*uJig.x*(0.6+0.4*smoothstep(0.0,0.05,position.y-0.12)) + sf*(1.0-_soft.y)*uJig.z*0.35;   // Nachwippen (Brust / Bauch, Schenkel)
+    transformed.z+=_soft.y*uJig.y*sign(position.z);`:`transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp));`} }   // Haut gibt unter der Hand nach`);
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec3 vOP; uniform sampler2D oilMap; uniform float oilGlint; float oilK=0.0;
 float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
   .replace('#include <color_fragment>',`#include <color_fragment>
@@ -197,16 +203,16 @@ float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
    material.clearcoat=oilK*0.9; material.clearcoatRoughness=mix(0.12,0.05,oilK);
   #endif
 `);
- }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0); return m; }
+ }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0)+(skin.tx?'t':'')+(skin.soft?'s':''); return m; }
 function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[which+'Adult']:C.fig[which]; // Ab-18-Datei nur bei ZS_ADULT === true
  new T.GLTFLoader().load(url,gl=>{ const r=gl.scene, parts={body:[],hair:[],towel:[],robe:[],strap:[],chest:[],top:[]}; let named=false;
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
-  parts.body.forEach(o=>{ const vc=!!o.geometry.attributes.color; o.material=oilMat(o.material,{vc}); });
+  parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; o.material=oilMat(o.material,{vc,tx,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
   const hT=hairTex(); parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:1.2,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xd08040),sheenRoughness:0.35}));
   [...parts.towel,...parts.chest].forEach(o=>o.material=terry('#f4ece0','#d98aa0')); parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
   [...parts.strap,...parts.top].forEach(o=>o.material=new T.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:0.45}));
-  r.traverse(o=>{ if(o.isMesh){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
+  r.traverse(o=>{ if(o.isMesh&&!o.userData.keepUV){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
   r.position.set(FIG.x,FIG.y,FIG.z); cb({root:r,parts,named}); },undefined,e=>{ console.warn('[oase] Figur fehlt',url); cb(null); }); }
 function applyMode(f){ if(!f) return; const ad=ADULT(), P=f.parts;
  // jugendfrei: Bademantel + Bikini-Träger/-Oberteil IMMER sichtbar, Handtuch-only-Variante nie. Ab 18: Handtuch über der Hüfte, Rücken frei.
@@ -253,8 +259,18 @@ function takeOil(){ if(st.oiled||st.done) return; st.oiled=true; startAmb(); try
   if(k<1) requestAnimationFrame(anim); else { par.attach(bottle); bottle.position.copy(par.worldToLocal(bottleHome.clone())); bottle.rotation.set(0,0,0); } }; anim();
  drip(); }
 function drip(){ const a=new (window.AudioContext||window.webkitAudioContext)(); if(MUTE) return; [0.9,1.25,1.6].forEach(d=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(900,a.currentTime+d); o.frequency.exponentialRampToValueAtTime(260,a.currentTime+d+0.09); g.gain.setValueAtTime(0.0001,a.currentTime+d); g.gain.linearRampToValueAtTime(0.12,a.currentTime+d+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d+0.14); o.connect(g); g.connect(a.destination); o.start(a.currentTime+d); o.stop(a.currentTime+d+0.2); }); }
-function rub(lx,lz,len){ if(st.done) return; if(inChest(lx,lz)) return; uPress.value.x=lx; uPress.value.y=lz; pressGoal=0.006; pressAt=performance.now(); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; }
+function rub(lx,lz,len){ if(st.done) return; if(inChest(lx,lz)) return; uPress.value.x=lx; uPress.value.y=lz; pressGoal=window.__oaseSoft?0.0085:0.006; pressAt=performance.now(); jigKick(lx,lz,len); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; }
  startAmb(); paintAt(lx,lz,0.35+Math.min(0.5,len*6)); st.dist+=len; }
+function jigKick(lx,lz,len){ if(!window.__oaseSoft) return; const v=Math.min(len||0.01,0.05);   // Streichen in Brustnähe/über weichem Gewebe bringt sie leicht ins Schwingen
+ const db=Math.hypot(Math.max(0,Math.abs(lx+0.447)-0.08),Math.max(0,Math.abs(Math.abs(lz)-0.104)-0.09)); const nb=Math.max(0,1-db/0.12);
+ jig.bv+=(Math.random()<0.5?-1:1)*v*0.9*(0.25+nb); jig.bzv+=(Math.random()-0.5)*v*0.6*(0.2+nb); jig.sv+=(Math.random()<0.5?-1:1)*v*0.7; }
+function jigTick(d){ if(!window.__oaseSoft) return; const sp=(k,c,x,v,ext)=>{ v+=(-k*x-c*v+ext)*d; return [x+v*d,v]; };
+ const br=-Math.cos(uT.value*1.35)*1.35*1.35*0.0011;   // Atmen schiebt mit
+ [jig.b,jig.bv]=sp(150,5.5,jig.b,jig.bv,br); [jig.bz,jig.bzv]=sp(120,5.0,jig.bz,jig.bzv,0); [jig.s,jig.sv]=sp(220,9,jig.s,jig.sv,0);
+ const cl=(x,m)=>Math.max(-m,Math.min(m,x)); jig.b=cl(jig.b,0.006); jig.bz=cl(jig.bz,0.004); jig.s=cl(jig.s,0.004);
+ uJig.value.set(jig.b,jig.bz,jig.s,0);
+ // Delle: gedämpfte Feder (leichtes Überschwingen beim Loslassen = Haut federt zurück)
+ pressV+=((pressGoal-uPress.value.w)*320-pressV*20)*d; uPress.value.w=Math.max(-0.0015,uPress.value.w+pressV*d); }
 function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; oilAmt.value=c; const ad=ADULT(), p=ad?'a':'h'; const now=performance.now();
  [[0.12,1],[0.42,2],[0.68,3]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
  if(c>=0.9&&now-st.spoke>3600) punch(); }
@@ -266,7 +282,7 @@ function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
   const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
   const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); },1000); } };
   setTimeout(fl,300); } }
-function swapPose(){ if(!fig.up) return; fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; }
+function swapPose(){ if(!fig.up) return; fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; jig.bv+=0.09; jig.sv+=0.05; }
 function reward(){ setTimeout(()=>{ if(!window.zsaNote) return; const n=zsaNote('Gutschein: Einmal Ölmassage gratis. Für den Kleinen. – Gerd',0.16,0.1); n.position.set(CART.x+0.02,0.795,CART.z+0.12); n.rotation.x=-Math.PI/2; n.rotation.z=0.3; G.add(n); try{ localStorage.setItem('zs_oase_done','1'); }catch(e){} },2500); }
 // ---------------------------------------------------------------- Eingabe: Maus/Touch (Pointer) + VR-Controller
 const rc=new T.Raycaster(), tmpV=new T.Vector3(), tmpV2=new T.Vector3();
@@ -335,7 +351,7 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   this.el.hasLoaded?go():this.el.addEventListener('loaded',go); },
  tick(t,dt){ if(!this.mov) return; const d=Math.min(dt||16,50)/1000; const [x,y]=this.ax;
   if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new T.Quaternion(); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new T.Vector3(-f.z,0,f.x); rig.position.addScaledVector(f,-y*d*1.6).addScaledVector(r,x*d*1.6); }
-  collide(); xrTick(); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
+  collide(); xrTick(); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; if(window.__oaseSoft){ const n=Math.max(1,Math.ceil(d/0.008)); for(let i=0;i<n;i++) jigTick(d/n); } else uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
   // Begrüßung, wenn man nah genug ist (einmal) – gesprochene Zeile, kein Tipp-Fenster
   if(!st.greet&&window.__oase.ready){ const h=new T.Vector3(); cam.getWorldPosition(h); if(Math.hypot(h.x-TB.x,h.z-TB.z)<1.5&&t>2500){ st.greet=true; startAmb(); say(ADULT()?'a0':'h0'); } }
   // Perlenvorhang schwingt, wenn der Kopf durchgeht; Rauch, Röhrenflimmern, Glanz-Glitzern
@@ -344,5 +360,5 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   if(window.__oaseSmoke){ window.__oaseSmoke.material.opacity=0.42+0.14*Math.sin(t*0.0013); window.__oaseSmoke.rotation.y=Math.sin(t*0.0005)*0.6; }
   if(window.__oaseTubes) window.__oaseTubes.emissiveIntensity=1.05+0.04*Math.sin(t*0.31)+(Math.random()<0.004?-0.4:0);
   if(window.__oaseNeon) window.__oaseNeon.color.setHex(Math.random()<0.003?0x704050:0xd07090); }});
-window.__oase={gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
+window.__oase={jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
 })();
