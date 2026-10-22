@@ -3,7 +3,7 @@
    - Schreibtisch (Kiefer, Schubladen-Container, Schreibunterlage, Stifteköcher) statt Platte + 4 Stäben; Stuhl, Lampe, Kassette bleiben.
    - TV-Rollwagen (Chrom, schwarze Böden, Rollen, Videorekorder) statt Batch-Kisten; Fernseher (crt-tv) unverändert.
    - Neu: weiße Lack-Kommode mit Radiorekorder + Kassetten an der linken Wand (Kollision ergänzt).
-   - Fensterblick: Bild+Tiefe (lib/depthbg.js, Depth Anything V2) „Hinterhof von oben“ (Grok C2_a), grobes Raster 96×56, statt Canvas-Schichten.
+   - Fensterblick: Foto-Parallax in 2 Ebenen (Hof/Fassaden + Räder/Tonnen/Wäsche, Depth Anything V2, aus Grok C2), Schmutz-/Regenglas, Alu-Jalousie, seltene Scheinwerfer-/Lampen-Bewegung.
    - Neu: Kiefer-Kleiderschrank (Koffer/Schuhkarton oben, Poster an der Tür), Kram (Turnschuhe, Rucksack, Wäschehaufen, Comic-Stapel, Papierkorb),
      Pinnwand + Wandkalender Okt. 1989 (Text per PIL), geflochtener Flickenteppich statt Ring-Kreis, Bettdecke ohne durchstoßende Matratze, Kissen neu, Neon gedämpft.
    - Sperrzonen: ROOMS.bedroom.solid (apt_main, Hook über window.__apt) mit ~0,34 m Abstand zu allen großen Möbeln (0,12 Rand + 0,22 Kopfradius aus hardClamp).
@@ -18,6 +18,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  const gltf=(f,cb)=>{ info.pending++; const el=document.createElement('a-entity'); el.setAttribute('gltf-model','../'+SB+f); el.addEventListener('model-loaded',()=>{ const m=el.getObject3D('mesh'); if(m){ el.object3D.remove(m); try{ cb(m); }catch(e){ console.warn('gfx_sz',f,e); } } el.parentNode&&el.parentNode.removeChild(el); info.pending--; info.swapped.push(f); }); el.addEventListener('model-error',()=>{ console.warn('gfx_sz glb',f); info.pending--; }); sc.appendChild(el); };
  const tune=(m,name,k)=>m.traverse(o=>{ if(o.isMesh){ o.name=name; o.material.envMapIntensity=0.25; if(o.material.map) o.material.map.anisotropy=4; if(k) o.material.color.multiplyScalar(k); } });
  const put=(f,name,par,pos,ry,k)=>gltf(f,m=>{ const g=new T.Group(); g.add(m); g.position.set(...pos); g.rotation.y=ry||0; par.add(g); tune(m,name,k); });
+ const TL=new T.TextureLoader(), tx=(f,cb)=>TL.load('../'+SB+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; if(cb) cb(t); });
  // ---- 1) Klotz-Möbel aus der k84-Gruppe entfernen (über Box-Maße erkannt) ----
  const near=(a,b)=>Math.abs(a-b)<0.006; const isBox=(o,w,h,d)=>{ const p=o.geometry&&o.geometry.type==='BoxGeometry'&&o.geometry.parameters; return p&&near(p.width,w)&&near(p.height,h)&&near(p.depth,d); };
  const KILL=[[0.93,0.28,2.0],[0.97,0.85,0.05],[0.97,0.45,0.04],[0.89,0.16,1.94],[0.6,0.03,1.3],[0.04,0.73,0.04],[0.5,0.16,0.42]];
@@ -31,16 +32,60 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  setTimeout(wagen,0);
  // ---- 3) Fensterblick: Canvas-Schichten (hinter der Wand) raus, Bild+Tiefe rein ----
  G.children.filter(o=>o.isMesh&&o.material&&o.material.isMeshBasicMaterial&&o.material.fog===false&&o.position.z<-3).forEach(o=>{ G.remove(o); });
- const mkView=()=>{ info.pending++; DepthBG.build({img:'../sky/backdrop/sz_hinterhof.jpg',depth:'../sky/backdrop/sz_hinterhof_depth.png',position:[0,0,0],hfov:88,aspect:2048/1031,near:6,far:28,fade:0.1,tint:0xf0f0f0,grid:[96,56]}).then(m=>{
-   const g=new T.Group(); g.position.set(0.45,1.6,-2.0-0.6); m.rotation.x=-0.5; g.add(m); G.add(g); // obere Fensterhälfte: Hinterhaus-Etagen + Dach + Stadthimmel (PIL), weit hinter dem Tiefenbild (−5°…+45°), sonst schwarz
-   const fp=new T.Mesh(new T.PlaneGeometry(57,26.1),new T.MeshBasicMaterial({color:0xb0b0b0,fog:false})); fp.position.set(0,10.95,-24); fp.name='sz_hof_oben'; g.add(fp); tx('sz_hof_oben.jpg',t=>{ fp.material.map=t; fp.material.needsUpdate=true; }); info.view=true; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
- if(window.DepthBG) mkView(); else { let s=document.querySelector('script[src*="depthbg.js"]'); if(!s){ s=document.createElement('script'); s.src='lib/depthbg.js?v=1'; document.head.appendChild(s); }
-  const wait=()=>{ if(window.DepthBG) mkView(); else if(Date.now()-t0>15000) info.viewFail=true; else setTimeout(wait,100); }, t0=Date.now(); wait(); }
+ // Foto-Parallax aus EINEM Foto (Grok C2 „Hinterhof von oben“, tools/gfx_wohnung/gen_window_layers.py): Ebene A = Hof/Fassaden (Objekte per Inpaint/Klon entfernt,
+ // Leinwand oben/unten fotografisch geklont), Ebene B = Fahrräder/Tonnen/Wäscheleine (RGBA, eigene Tiefe). Beide als Strahlen-Gitter (Depth Anything V2, 1=nah).
+ const BK='../sky/backdrop/', ldI=s=>new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=s; });
+ const pix=im=>{ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const x=c.getContext('2d'); x.drawImage(im,0,0); return {w:c.width,h:c.height,d:x.getImageData(0,0,c.width,c.height).data}; };
+ const samp=(P,u,v)=>{ const fx=Math.min(Math.max(u,0),1)*(P.w-1), fy=(1-Math.min(Math.max(v,0),1))*(P.h-1), x0=Math.floor(fx), y0=Math.floor(fy), x1=Math.min(x0+1,P.w-1), y1=Math.min(y0+1,P.h-1), ax=fx-x0, ay=fy-y0, p=(xx,yy)=>P.d[(yy*P.w+xx)*4];
+   return ((p(x0,y0)*(1-ax)+p(x1,y0)*ax)*(1-ay)+(p(x0,y1)*(1-ax)+p(x1,y1)*ax)*ay)/255; };
+ const U={uT:{value:0},uSweep:{value:new T.Vector2(0.5,0)},uLamp:{value:new T.Vector3(0.6,0.64,1)}};
+ const mod=(mat,rect)=>{ mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U,{uRect:{value:new T.Vector4(rect[0],rect[2],rect[1]-rect[0],rect[3]-rect[2])}});
+   sh.fragmentShader='uniform vec2 uSweep; uniform vec3 uLamp; uniform vec4 uRect;\n'+sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+   vec2 fu=uRect.xy+vMapUv*uRect.zw;
+   float sw=uSweep.y*exp(-pow((fu.x-uSweep.x)/0.075,2.0))*smoothstep(0.27,0.36,fu.y)*(1.0-smoothstep(0.52,0.62,fu.y));
+   vec2 dl=(fu-uLamp.xy)*vec2(1.0,1.06); float gl=exp(-dot(dl,dl)/0.0035);
+   diffuseColor.rgb*=1.0+sw*vec3(1.0,0.93,0.78)+(uLamp.z-1.0)*gl;`); }; mat.customProgramCacheKey=()=>'szhof'+rect.join(','); };
+ const grid=(M,P,rect,gx,gy,fade,mat)=>{ const g=new T.PlaneGeometry(1,1,gx,gy), pos=g.attributes.position, uv=g.attributes.uv, v3=new T.Vector3(), col=new Float32Array(pos.count*3), b=1/M.far, a=1/M.near-b;
+   for(let i=0;i<pos.count;i++){ const lu=uv.getX(i), lv=uv.getY(i), u=rect[0]+lu*(rect[1]-rect[0]), v=rect[2]+lv*(rect[3]-rect[2]), r=1/(a*samp(P,lu,lv)+b);
+     v3.set((u-0.5)*2*M.tx,(v-0.5)*2*M.ty_full,-1).normalize().multiplyScalar(r); pos.setXYZ(i,v3.x,v3.y,v3.z);
+     const e=Math.min(u,1-u,v*1.5,(1-v)*1.5), k=fade>0?Math.min(1,Math.max(0,e/fade)):1, s2=k*k*(3-2*k); col.set([s2,s2,s2],i*3); }
+   g.setAttribute('color',new T.BufferAttribute(col,3)); g.computeBoundingSphere(); const m=new T.Mesh(g,mat); m.frustumCulled=false; m.name='depthbg'; return m; };
+ const mkView=()=>{ info.pending++;
+  Promise.all([fetch(BK+'sz_hof_layers.json').then(r=>r.json()),ldI(BK+'sz_hof_base_depth.png'),ldI(BK+'sz_hof_obj_depth.png')]).then(([M,dA,dB])=>{
+   const TINT=0xdcdce2;   // draußen dunkler als das Zimmer
+   const mA=new T.MeshBasicMaterial({color:TINT,fog:false,vertexColors:true}), mB=new T.MeshBasicMaterial({color:TINT,fog:false,vertexColors:true,alphaTest:0.5,side:T.DoubleSide});
+   const tb=(f,cb)=>TL.load(BK+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; cb(t); });
+   tb('sz_hof_base.jpg',t=>{ mA.map=t; mA.needsUpdate=true; }); tb('sz_hof_obj.png',t=>{ mB.map=t; mB.needsUpdate=true; });
+   const RA=[0,1,0,1], RB=M.obj_rect_uv; mod(mA,RA); mod(mB,RB); U.uLamp.value.set(M.lamp_uv[0],M.lamp_uv[1],1);
+   const A=grid(M,pix(dA),RA,72,120,0.06,mA), B=grid(M,pix(dB),RB,96,80,0,mB);
+   const g=new T.Group(); g.name='sz_hof'; g.position.set(0.45,1.6,-2.0-0.6); A.rotation.x=B.rotation.x=M.pitch; g.add(A); g.add(B); G.add(g);
+   // leise Bewegung: ab und zu Scheinwerfer eines Autos in der Durchfahrt (weicher Streifen über Hof + Rückfassade), Hoflampe flackert selten kurz
+   let nx=performance.now()+9000, s0=0, dir=1, fl=0;
+   A.onBeforeRender=()=>{ const t=performance.now(); if(t>nx&&!s0){ s0=t; dir=Math.random()<0.5?1:-1; nx=t+30000+Math.random()*25000; }
+     if(s0){ const k=(t-s0)/3400; if(k>=1){ s0=0; U.uSweep.value.y=0; } else { U.uSweep.value.set(dir>0?0.12+k*0.8:0.92-k*0.8,0.42*Math.sin(Math.PI*k)); } }
+     if(fl<=0&&Math.random()<0.0025) fl=6+Math.floor(Math.random()*10); let z=1; if(fl>0){ fl--; z=Math.random()<0.5?0.55:0.85; } U.uLamp.value.z+= (z-U.uLamp.value.z)*0.5; };
+   info.view=true; info.layers=2; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
+ mkView();
+ // Glas: Grauschleier, Schmutzrand, Kalkflecken, Tropfen, schwache Raumspiegelung (statt glattem Dunkelglas) + außen laufende Regenrinnsale
+ const glass=G.children.find(o=>o.isMesh&&o.geometry.type==='PlaneGeometry'&&near(o.geometry.parameters.width,1.2)&&o.material.transparent&&near(o.material.opacity,0.28));
+ if(glass){ const gm=new T.MeshBasicMaterial({transparent:true,depthWrite:false,fog:false,color:0xffffff}); glass.material=gm; glass.name='sz_glas'; tx('sz_glas.png',t=>{ gm.map=t; gm.needsUpdate=true; });
+  const rm=new T.MeshBasicMaterial({transparent:true,depthWrite:false,fog:false,color:0xc0c0c0,opacity:0.3}); const rg=new T.Mesh(glass.geometry,rm); rg.name='sz_regen'; rg.position.copy(glass.position); rg.position.z-=0.004; G.add(rg);
+  tx('sz_regen.png',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(3,0.8); rm.map=t; rm.needsUpdate=true; let l=performance.now(); rg.onBeforeRender=()=>{ const n=performance.now(); t.offset.y=(t.offset.y+(n-l)*0.000018)%1; l=n; }; });
+  // 80er Alu-Jalousie, halb heruntergelassen, Lamellen schräg gestellt (1 InstancedMesh = 1 Draw Call); verdeckt den oberen Bildrand
+  const bz=glass.position.z+0.075, N=17, IM=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:0xb9b2a2,roughness:0.5,metalness:0.35}),N+4), o3=new T.Object3D(); let n=0;
+  const set=(x,y,z,sx,sy,sz,rx)=>{ o3.position.set(x,y,z); o3.rotation.set(rx||0,0,0); o3.scale.set(sx,sy,sz); o3.updateMatrix(); IM.setMatrixAt(n++,o3.matrix); };
+  set(0.45,2.035,bz,1.17,0.03,0.045,0);                                   // Oberschiene
+  for(let k=0;k<N;k++) set(0.45,2.005-k*0.0185,bz,1.14,0.0025,0.025,0.55); // Lamellen
+  set(0.45,2.005-N*0.0185-0.006,bz,1.15,0.012,0.03,0);                    // Unterschiene
+  [-0.42,0.42].forEach(dx=>set(0.45+dx,2.0-N*0.0185/2,bz,0.003,N*0.0185+0.02,0.003,0)); // Leiterkordeln
+  set(1.0,1.62,bz+0.01,0.004,0.4,0.004,0);                                // Zugschnur
+  IM.count=n; IM.instanceMatrix.needsUpdate=true; IM.name='sz_jalousie'; G.add(IM); info.blind=true; }
+ // Fensterrahmen: vergilbter alter Lack statt Neu-Weiß
+ G.children.forEach(o=>{ if(o.isMesh&&o.material&&o.material.color&&o.material.color.getHex()===0xd8d0bc&&o.position.z<-2.05){ if(!info.frameMat){ info.frameMat=o.material.clone(); info.frameMat.color.setHex(0x9e9584); info.frameMat.roughness=0.72; } o.material=info.frameMat; } });
  put('sz_schrank.glb','sz_schrank',G,[-0.5,0,1.70],0,1.05);
  put('sz_kram.glb','sz_kram',G,[0,0,0],0,1.0);
  // ---- 3b) Raumhülle benennen (Lightmap-Empfänger), Bettdecke/Kissen, Teppich, Neon, Wandsachen ----
  const shell=G.children.filter(o=>o.isMesh&&o.material&&o.material.vertexColors&&o.geometry.type==='BufferGeometry'); ['sz_fl','sz_ce','sz_wa'].forEach((n,i)=>{ if(shell[i]) shell[i].name=n; });
- const TL=new T.TextureLoader(), tx=(f,cb)=>TL.load('../'+SB+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; if(cb) cb(t); });
  if(shell[2]) tx('sz_tapete.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; shell[2].material.map=t; shell[2].material.needsUpdate=true; }); // Tapete: Streifen mit Rautenblüte, Papierfaser (gen_bedroom_tex.py) statt fleckiger Kachel
  G.children.forEach(o=>{ if(!o.isMesh) return; const g=o.geometry, pr=g.parameters||{};
   if(g.type==='PlaneGeometry'&&Math.abs((pr.height||0)-2.12)<1e-3&&pr.widthSegments===24&&o.material&&o.material.side===T.DoubleSide){ const m=o.material; tx('sz_vorhang.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(2,1); m.map=t; m.color.setHex(0xffffff); m.needsUpdate=true; }); o.name='sz_vorhang'; return; }
@@ -54,7 +99,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.75)<1e-3&&Math.abs(pr.height-0.28)<1e-3&&o.material.blending===T.AdditiveBlending){ o.material.color.setHex(0x6a6a6a); o.name='sz_neon'; }
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.5)<1e-3&&Math.abs(pr.height-0.72)<1e-3&&o.position.z>1.9){ o.position.set(-0.25,1.33,1.385); o.scale.set(0.8,0.8,1); o.rotation.z=-0.01; o.name='sz_poster_schrank'; }
  });
- added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.2; o.distance=3.0; o.position.x=1.3; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } if(o.isPointLight&&o.color.getHex()===0x7090d0){ o.intensity=0.65; o.position.set(0.45,1.85,-1.45); } }); // Mond: kein blauer Fleck auf der Fensterbank // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
+ added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.2; o.distance=3.0; o.position.x=1.3; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } if(o.isPointLight&&o.color.getHex()===0x7090d0){ o.intensity=0.5; o.position.set(0.45,1.9,-1.2); } }); // Mond: kein blauer Fleck auf der Fensterbank // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
  { const m=new T.Mesh(new T.BoxGeometry(0.8,0.55,0.022),new T.MeshStandardMaterial({color:0xb0a898,roughness:0.85})); tx('sz_pinboard.jpg',t=>{ m.material.map=t; m.material.needsUpdate=true; });
    m.position.set(2.1-0.012,1.36,-0.22); m.rotation.y=-Math.PI/2; m.name='sz_pinnwand'; G.add(m);
    const k=new T.Mesh(new T.PlaneGeometry(0.3,0.45),new T.MeshStandardMaterial({color:0xb8b0a4,roughness:0.8})); tx('sz_kalender.jpg',t=>{ k.material.map=t; k.material.needsUpdate=true; });

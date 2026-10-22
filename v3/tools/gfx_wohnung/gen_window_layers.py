@@ -19,6 +19,18 @@ m=cv2.morphologyEx(m.astype(np.uint8),cv2.MORPH_OPEN,np.ones((3,3),np.uint8))
 n,lab,st,_=cv2.connectedComponentsWithStats(m); keep=np.zeros_like(m)
 for i in range(1,n):
     if st[i,cv2.CC_STAT_AREA]>60: keep[lab==i]=1
+# senkrechte Objekte (Tonnen) nach unten bis zum Boden nachwachsen lassen: gleiche Tiefe wie darüber und noch vor dem Hintergrund
+allow=np.zeros_like(keep)
+n2,lab2,st2,_=cv2.connectedComponentsWithStats(keep)
+for i in range(1,n2):
+    bx,by,bw_,bh_=st2[i,0],st2[i,1],st2[i,2],st2[i,3]
+    if by+bh_<h5*0.7 and by>h5*0.35: allow[by:min(h5,by+bh_+int(h5*0.25)),bx:bx+bw_]=1   # nur Objekte, die mitten im Hof stehen (Tonnen an der Wand)
+for _ in range(int(h5*0.3)):
+    up_=np.zeros_like(keep); up_[1:]=keep[:-1]; dprev=np.zeros_like(d5); dprev[1:]=d5[:-1]
+    cand=(up_>0)&(keep==0)&(np.abs(d5-dprev)<0.012)&(res>0.012)&(allow>0)
+    if not cand.any(): break
+    keep[cand]=1
+keep=cv2.morphologyEx(keep,cv2.MORPH_CLOSE,np.ones((5,5),np.uint8))
 M=cv2.resize(keep.astype(np.float32),(W,H),interpolation=cv2.INTER_LINEAR)
 Mh=(cv2.dilate((M>0.3).astype(np.uint8),np.ones((15,15),np.uint8))>0)
 low_part=Mh.copy(); low_part[:int(H*0.6)]=False
@@ -41,7 +53,7 @@ DA=cv2.inpaint((D*255).astype(np.uint8),Mh.astype(np.uint8),9,cv2.INPAINT_TELEA)
 DA=cv2.GaussianBlur(DA,(0,0),2)*(Mh)+D*(~Mh)
 # --- Ebene B: Objekte RGBA (Bounding-Box), weiche Kante ---
 al=cv2.GaussianBlur(np.clip(M*1.6,0,1),(0,0),1.6); ys,xs=np.where(al>0.02); x0,x1,y0,y1=max(0,xs.min()-8),min(W,xs.max()+8),max(0,ys.min()-8),min(H,ys.max()+8)
-B=np.dstack([img,al[...,None]*255])[y0:y1,x0:x1]
+B=np.dstack([img,al[...,None]*255])[y0:y1,x0:x1]; CR=(x0,x1,y0,y1)   # Ausschnitt merken (y0 wird unten wiederverwendet)
 # --- Erweiterung oben/unten: Klon der Fassaden-/Pflaster-Bänder, Tiefe planar (oben: senkrechte Wand, unten: Boden) ---
 HF=88*math.pi/180; tx=math.tan(HF/2); asp=W/H; ty=tx/asp; PITCH=-0.5; NEAR,FAR=6.0,28.0; b=1/FAR; a=1/NEAR-b
 K=int(H*0.55)                                   # Zeilen je Seite
@@ -104,6 +116,7 @@ E8=look(EXT); B8=np.dstack([look(B[...,:3]),B[...,3:].astype(np.uint8)])
 sc=min(1.0,2048/Ht,2048/W); EW,EH=int(W*sc)//4*4,int(Ht*sc)//4*4
 Image.fromarray(E8).resize((EW,EH),Image.LANCZOS).save(OUT+'sz_hof_base.jpg',quality=88)
 Image.fromarray((np.clip(DEXT,0,1)*255).astype(np.uint8)).resize((512,round(512*Ht/W)),Image.BILINEAR).save(OUT+'sz_hof_base_depth.png')
+x0,x1,y0,y1=CR
 bw,bh=x1-x0,y1-y0; s2=min(1.0,1024/max(bw,bh)); Image.fromarray(B8,'RGBA').resize((int(bw*s2),int(bh*s2)),Image.LANCZOS).save(OUT+'sz_hof_obj.png',optimize=True)
 Dob=cv2.dilate(D[y0:y1,x0:x1].astype(np.float32),np.ones((13,13),np.uint8))   # Objekt-Tiefe über die Silhouette ziehen (keine gestreckten Kanten)
 Image.fromarray((np.clip(Dob,0,1)*255).astype(np.uint8)).resize((max(8,int(bw/4)),max(8,int(bh/4))),Image.BILINEAR).save(OUT+'sz_hof_obj_depth.png')

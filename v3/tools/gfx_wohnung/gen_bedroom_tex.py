@@ -187,7 +187,53 @@ def vorhang(W=512,H=1024):
     c[y>H*0.97]*=0.8; c[y<H*0.03]=c[y<H*0.03]*0.6+np.array([200,190,170])*0.4
     low=pnoise(1024,80)[:H,:W]; c*=(0.92+0.12*low[...,None])
     im=Image.fromarray(np.clip(c,0,255).astype(np.uint8)); im.save(OUT+'src/sz_vorhang.png'); im.save(OUT+'sz_vorhang.jpg',quality=88)
+
+# ---------- Fensterglas: Grauschleier, Schmutzrand, eingetrocknete Tropfen, Regentropfen, ganz schwache Raumspiegelung (RGBA) ----------
+def drop(c,a,x,y,r,hl):
+    H,W=a.shape; x0,x1,y0,y1=max(0,int(x-r-2)),min(W,int(x+r+3)),max(0,int(y-r*1.3-2)),min(H,int(y+r*1.3+3))
+    yy,xx=np.mgrid[y0:y1,x0:x1]; dx=(xx-x)/r; dy=(yy-y)/(r*1.25); d=np.sqrt(dx*dx+dy*dy); m=d<1
+    body=np.clip(1-d,0,1)
+    c[y0:y1,x0:x1][m]=c[y0:y1,x0:x1][m]*0.5+np.array([60,62,66])*0.5          # Tropfenkörper bricht dunkles Draußen
+    a[y0:y1,x0:x1][m]=np.maximum(a[y0:y1,x0:x1][m],0.10+0.16*(1-body[m]))
+    rim=m&(d>0.72)&(dy>0); a[y0:y1,x0:x1][rim]=np.maximum(a[y0:y1,x0:x1][rim],0.34); c[y0:y1,x0:x1][rim]=np.array([14,14,16])
+    h=((xx-(x-r*0.35))**2+(yy-(y-r*0.45))**2)<(r*0.28)**2
+    c[y0:y1,x0:x1][h]=np.array(hl); a[y0:y1,x0:x1][h]=np.maximum(a[y0:y1,x0:x1][h],0.38)
+def glas(N=1024):
+    H=W=N; y,x=np.mgrid[0:H,0:W]/N
+    n1=noise(H,W,180); n2=noise(H,W,40); n3=noise(H,W,9,2)
+    edge=np.minimum.reduce([x,1-x,y,1-y]); rim=np.clip(1-edge/0.07,0,1)**1.6
+    a=0.11+0.08*n1+0.07*(y**2.2)+0.30*rim*(0.6+0.4*n2)+0.05*(n3>0.7)
+    c=np.zeros((H,W,3))+np.array([30,34,44]); dirt=np.array([88,80,66])
+    k=np.clip(0.25*n1+0.55*rim+0.25*y**3,0,1)[...,None]; c=c*(1-k)+dirt*k
+    # Wischspur (Bogen, sauberer) – Fenster wurde mal halbherzig geputzt
+    cx,cy=0.55,1.15; rr=np.sqrt((x-cx)**2+(y-cy)**2); wipe=np.exp(-((rr-0.78)/0.12)**2)*0.35*(1-rim); a=a*(1-wipe)
+    # eingetrocknete Kalkränder
+    for _ in range(260):
+        px,py,r=rng.random()*W,rng.random()*H,2+rng.random()*7; yy,xx=np.ogrid[0:H,0:W]
+        x0,x1,y0,y1=int(max(0,px-r-2)),int(min(W,px+r+2)),int(max(0,py-r-2)),int(min(H,py+r+2)); d=np.sqrt((xx[:,x0:x1]-px)**2+(yy[y0:y1]-py)**2)
+        ring=np.abs(d-r)<1.0; a[y0:y1,x0:x1][ring]=np.maximum(a[y0:y1,x0:x1][ring],0.07); c[y0:y1,x0:x1][ring]=np.array([120,116,104])
+    # Regentropfen (statisch), mehr unten, Lichtpunkt leicht warm (Hoflampe) bzw. kühl
+    for _ in range(380):
+        px=rng.random()*W; py=(rng.random()**0.8)*H; r=1.2+rng.random()**3*6
+        drop(c,a,px,py,r,[205,190,150] if rng.random()<0.5 else [150,165,190])
+    # ganz schwache Spiegelung des Zimmers: warmer Schimmer rechts unten (Schreibtischlampe), kein Hotspot
+    refl=np.exp(-(((x-0.92)/0.25)**2+((y-0.78)/0.3)**2))*0.07
+    c=c*(1-refl[...,None]*3)+np.array([210,150,90])*refl[...,None]*3; a=np.maximum(a,refl)
+    im=Image.fromarray(np.dstack([np.clip(c,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA')
+    im.save(OUT+'src/sz_glas.png'); im.resize((512,512),Image.LANCZOS).save(OUT+'sz_glas.png',optimize=True)
+def regen(W=256,H=1024):
+    c=np.zeros((H,W,3))+np.array([96,100,108]); a=np.zeros((H,W))
+    for _ in range(14):   # Rinnspuren: dünne, leicht schlingernde Bahnen mit Tropfenkopf, kachelbar in y
+        x0=rng.random()*W; ph=rng.random()*6.28; amp=2+rng.random()*5; wdt=0.8+rng.random()*1.2; L=int(H*(0.3+rng.random()*0.5)); ys=int(rng.random()*H)
+        for i in range(L):
+            yy=(ys+i)%H; xx=x0+amp*math.sin(ph+i/37.0)+1.5*math.sin(i/7.3); t=i/L
+            for dx in range(-3,4):
+                xi=int(xx)+dx
+                if 0<=xi<W:
+                    v=max(0,1-abs(xi-xx)/(wdt+0.5)); a[yy,xi]=max(a[yy,xi],v*(0.22+0.3*t))
+        drop(c,a,x0+amp*math.sin(ph+L/37.0),(ys+L)%H,3+rng.random()*3,[200,188,160])
+    im=Image.fromarray(np.dstack([np.clip(c,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA'); im.save(OUT+'sz_regen.png',optimize=True)
 import sys
 which=sys.argv[1].split(',') if len(sys.argv)>1 else ['rug','pinboard','kalender','hof','tapete']
-for w in which: globals()[{'rug':'rug','pinboard':'pinboard','kalender':'kalender','hof':'hof','tapete':'tapete','hofoben':'hofoben','vorhang':'vorhang'}[w]]()
+for w in which: globals()[{'rug':'rug','pinboard':'pinboard','kalender':'kalender','hof':'hof','tapete':'tapete','hofoben':'hofoben','vorhang':'vorhang','glas':'glas','regen':'regen'}[w]]()
 print('ok')
