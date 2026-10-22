@@ -120,7 +120,7 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
   const st=new T.Mesh(new T.PlaneGeometry(0.27,0.338),sm); st.position.set(0,0,0.0095); st.name='kue_stick'; fr.add(st); }
  // ---- 4d) Lichtinseln: 70er-Pendelleuchte (Emaille-Pilz, braun-orange) über dem Eckbanktisch + Unterbauleuchte (Soffitte) unter dem Oberschrank neben der Spüle.
  //      Beide nur gebacken (tools/bake extraLights „pendel“/„unterbau“) + leuchtende Birne/Diffusor; keine zusätzlichen Echtzeit-Lichter.
- { const PX=-10.95, PZ=0.12, PY=1.72;
+ { const PX=-10.95, PZ=0.12, PY=1.92;   // Schirmunterkante 1,915 m (über Kopfhöhe)
   const sh=new T.LatheGeometry([[0.012,0.2],[0.05,0.19],[0.11,0.13],[0.165,0.03],[0.175,0.0],[0.17,-0.005]].map(([r,y])=>new T.Vector2(r,y)),28);
   const shade=new T.Mesh(sh,new T.MeshStandardMaterial({color:0x8a4a1c,roughness:0.35,metalness:0.05,side:T.DoubleSide})); shade.position.set(PX,PY,PZ); shade.name='kue_pendel'; IN.add(shade);
   const cord=new T.Mesh(new T.CylinderGeometry(0.0035,0.0035,2.6-PY-0.2,6),new T.MeshStandardMaterial({color:0x2a2622,roughness:0.6})); cord.position.set(PX,(2.6+PY+0.2)/2,PZ); cord.name='kue_pendel_k'; IN.add(cord);
@@ -136,8 +136,8 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
  const ST=window.__mmk;
  const tick=(now,st,Kw)=>{ const kin=ST?ST.inside:1; if(kin<=0.001) return;
   const B=info.baked>0; // mit Lightmap: Licht kommt gebacken (Cycles), Echtzeit nur Glanz/Flackern; ohne (?nobake=1): Echtzeit heller
-  if(hemi) hemi.intensity=hemi.intensity+(B?0.025:0.42)*Kw*kin;
-  if(L2&&kin>0.5){ const bI=L2.intensity/Math.max(1e-4,0.32*Kw*kin); L2.intensity*=B?0.75:4.2; L2.distance=B?4.5:6.0; if(B&&info.lmMats) info.lmMats.forEach(m=>{ m.lightMapIntensity=m.userData.lm0*(0.9+0.1*Math.min(1.2,bI)); }); }
+  if(hemi) hemi.intensity=hemi.intensity*(B?0.5:1)+(B?0.006:0.42)*Kw*kin;
+  if(L2&&kin>0.5){ const bI=L2.intensity/Math.max(1e-4,0.32*Kw*kin); L2.intensity*=B?0.55:4.2; L2.distance=B?4.5:6.0; if(B&&info.lmMats) info.lmMats.forEach(m=>{ m.lightMapIntensity=m.userData.lm0*(0.9+0.1*Math.min(1.2,bI)); }); }
   if(spot) spot.intensity*=B?0.35:0.7; };
  // ---- 6) Sperrzonen (x0,x1,z0,z1): Küchenzeile, Westseite (Kühlschrank+Kiste+Eckbankgruppe), Treteimer ----
  const ZONES=[[-10.79,-7.0,1.675,2.5],[-11.5,-10.38,-0.92,2.5],[-7.47,-7.0,1.36,2.5]]; // Kühlschrank+Kiste und Eckbank zu einer Zone: die 14-cm-Lücke dazwischen ließ den Kopf beim Teleport zwischen zwei Zonen hängen
