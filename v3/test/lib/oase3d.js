@@ -225,7 +225,7 @@ function buildTarget(f){ // ölbare Zellen = was man von oben wirklich sieht (Ha
  for(let r=0;r<GZ;r++) for(let c=0;c<GX;c++){ const k=(r*GX+c)*4; if(px[k+2]>128&&px[k]>150&&px[k+1]>150){ const z=-(-Z1+(r+0.5)/GZ*(Z1-Z0)); const gz=Math.floor((z-Z0)/(Z1-Z0)*GZ); if(gz>=0&&gz<GZ){ target[gz*GX+c]=1; nTarget++; } } }
  for(let r=0;r<GZ;r++) for(let c=0;c<GX;c++){ const lx=X0+(c+0.5)/GX*(X1-X0), lz=Z0+(r+0.5)/GZ*(Z1-Z0); if(target[r*GX+c]&&inChest(lx,lz)){ target[r*GX+c]=0; nTarget--; } }
  nTarget=Math.max(1,nTarget); window.__oaseTarget=nTarget; window.__oaseTargetArr=target; }
-function coverage(){ let k=0; for(let i=0;i<target.length;i++) if(target[i]&&got[i]>=0.6) k++; return k/nTarget; }
+window.__oaseGot=()=>got; function coverage(){ let k=0; for(let i=0;i<target.length;i++) if(target[i]&&got[i]>=0.6) k++; return k/nTarget; }
 let lastPaint=null;
 function paintAt(lx,lz,str){ const u=(lx-X0)/(X1-X0), v=(lz-Z0)/(Z1-Z0); if(u<0||u>1||v<0||v>1) return 0;
  const x=mask.getContext('2d'), px=u*MW, pz=v*MH, R=24; x.globalCompositeOperation='lighter'; x.globalAlpha=Math.min(1,str); x.save(); x.translate(px,pz); x.rotate(Math.atan2(lastPaint?pz-lastPaint[1]:0,lastPaint?px-lastPaint[0]:1)); x.drawImage(brush,-R,-R,2*R,2*R); x.restore(); x.globalAlpha=1;
