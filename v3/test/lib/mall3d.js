@@ -162,6 +162,13 @@ const Lu=new T.PointLight(0xd8e8ff,BK?1.6:0,4.5,1.8); Lu.position.set(-4.0,YG-0.
   Lf.intensity=1.3+0.2*Math.sin(s*3.1)*Math.sin(s*1.7); fig.scale.set(1,1+0.004*Math.sin(s*1.3),1); };
  AFRAME.registerComponent('m84-tick',{tick(t){ update(t); }}); sc.setAttribute('m84-tick','');
  const circ=[[0,FZ,2.65]]; const collide=(x,z)=>{ for(const [cx,cz,r] of circ){ const dx=x-cx,dz=z-cz,d=Math.hypot(dx,dz); if(d<r) return [dx/d*(r-d),dz/d*(r-d)]; } return null; };
+ // Abstecher „Sonnen-Oase“ (Massage-Minispiel): Holztür links am Brunnenplatz mit Leuchtschild darüber; nur im Spiel-Ablauf
+ if(window.ZSA&&ZSA.on&&ZSA.SIDES&&ZSA.SIDES.sonnenoase&&window.zsaDoor){ const DX=-2.95, DZ=1.5;
+  const d=zsaDoor(sc,{x:DX,z:DZ,face:[0,DZ],light:0.16,reach:0.4,wood:true},()=>ZSA.goSide('sonnenoase')); window.__m84OaseDoor=d;
+  const st=cv(512,128,(x,w,h)=>{ x.fillStyle='#120a10'; x.fillRect(0,0,w,h); x.font='italic 700 64px "DejaVu Serif",serif'; x.textAlign='center'; x.textBaseline='middle'; x.shadowColor='#ff8a3a'; x.shadowBlur=18; x.fillStyle='#ffc07a'; x.fillText('Sonnen-Oase',256,56); x.shadowBlur=0; x.font='600 22px "DejaVu Sans Condensed",sans-serif'; x.fillStyle='#e06a8a'; x.fillText('BRÄUNEN  ·  MASSAGE',256,104); });
+  const sg=new T.Mesh(new T.PlaneGeometry(1.1,0.275),new T.MeshBasicMaterial({map:st,toneMapped:false,fog:true,color:0xb0a0a0})); sg.position.set(DX-0.02,2.55,DZ); sg.rotation.y=Math.PI/2; G.add(sg);
+  const sl=new T.PointLight(0xff8a50,0.5,2.2,2); sl.position.set(DX+0.3,2.45,DZ); G.add(sl);
+  if(new URLSearchParams(location.search).get('from')==='sonnenoase'){ const r=document.getElementById('rig'); if(r){ r.object3D.position.set(DX+0.8,0,DZ); r.object3D.rotation.set(0,-Math.PI/2,0); } } }
  return {update,collide};
 };
 })();

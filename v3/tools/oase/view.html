@@ -1,0 +1,8 @@
+<!doctype html><html><head><script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script></head><body>
+<a-scene renderer="colorManagement:true" background="color:#333"><a-entity id="rig"><a-entity id="cam" camera position="0 1.6 0"></a-entity></a-entity></a-scene>
+<script>
+const sc=document.querySelector('a-scene'); const q=new URLSearchParams(location.search);
+sc.addEventListener('loaded',()=>{ const T=THREE; sc.object3D.add(new T.HemisphereLight(0xffffff,0x332211,1.2)); const dl=new T.DirectionalLight(0xffeedd,2); dl.position.set(1,3,2); sc.object3D.add(dl);
+ new T.GLTFLoader().load(q.get('f')||'../../assets/oase/kundin_lie.glb',g=>{ const r=g.scene; r.position.set(0,0.75,-1.2); const hide=(q.get('hide')||'').split(',');
+  r.traverse(o=>{ if(o.isMesh){ if(hide.includes(o.name)) o.visible=false; o.material=new T.MeshStandardMaterial({vertexColors:true,roughness:0.6}); } }); sc.object3D.add(r); window.ready=1; }); });
+</script></body></html>

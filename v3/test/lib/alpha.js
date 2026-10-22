@@ -2,6 +2,8 @@
 // Jeder Raum bekommt eine Tür in der Welt (kein Leucht-Hotspot): anfassen, hindurchgehen oder mit Laser/Klick öffnen → nächster Raum.
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
+// Erwachsenen-Modus (lib/adult.js): setzt window.ZS_ADULT synchron, bevor die Räume ihre Inhalte wählen; Standard jugendfrei
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSAdult&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'adult.js?v=1022o1')+'"><\/script>'); }
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z5')+'"><\/script>'); }
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z3')+'"><\/script>'); }
@@ -26,7 +28,9 @@ const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (S
 // Abstecher (kein eigener Schritt): Tür in Raum 'from' -> Seite -> Tür zurück an dieselbe Stelle. Rückweg-Zone/Spawn in Weltkoordinaten der Zielseite.
 const SIDES={ warteraum:{page:'test/era_warteraum.html', from:'backrooms', title:'Warteraum',
   exit:{x:0.75, z:2.5, w:1.0, n:[0,-1], h:2.2}, // NO-EXIT-Tür (Collider [0.17,1.33,2.45,2.55] in assets/warteraum/scene.json)
-  spawn:{x:0.75, z:1.75, yaw:0} } };          // Ankunft vor der NO-EXIT-Tür, Blick in den Raum (-z)
+  spawn:{x:0.75, z:1.75, yaw:0} },
+ sonnenoase:{page:'test/era_sonnenoase.html', from:'era1984mall', title:'Sonnen-Oase', // Massage-Minispiel (Laden in der Mall, Tür links am Brunnenplatz)
+  exit:{x:0.9, z:2.0, w:1.0, n:[0,-1], h:2.1}, spawn:{x:0.9, z:1.05, yaw:0} } };          // Ankunft vor der NO-EXIT-Tür, Blick in den Raum (-z)
 const KEY='zs_alpha_v1', P=new URLSearchParams(location.search), inTest=/\/test\//.test(location.pathname), ROOT=inTest?'../':'';
 const ls=()=>{ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } };
 const save=st=>{ if(st&&st.step!=null&&!st.id&&typeof STEPS!=='undefined'&&STEPS[st.step]) st=Object.assign({},st,{id:STEPS[st.step].id}); try{ localStorage.setItem(KEY,JSON.stringify(Object.assign(ls(),st,{t:Date.now()}))); }catch(e){} };
