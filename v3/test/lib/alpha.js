@@ -50,11 +50,80 @@ function fadeOut(cb){
  let fin=false; const finish=()=>{ if(fin) return; fin=true; f.style.opacity='1'; cv.style.opacity='0'; cb&&cb(); };
  setTimeout(finish,DUR+350); // falls rAF stockt (schwere Szene, Hintergrund-Tab): trotzdem weiter
  requestAnimationFrame(frame); }
-function goStep(i){ i=Math.max(0,Math.min(STEPS.length-1,i)); save({step:i}); fadeOut(()=>{ location.href=url(i); }); }
+// ---------- Zwischenszenen (Grok-Clips) – EINE Tabelle. Schlüssel = id des ZIEL-Raums (siehe STEPS); läuft beim Weg nach vorn (Tür → nächster Raum).
+// Neuer Clip: clips/zw/zw_<name>.mp4 (1280×720) + zw_<name>_m.mp4 (960×540, Handy) ablegen und hier eine Zeile eintragen. Fertig.
+// ?nocut=1 schaltet alle Zwischenszenen ab (Tests). In VR: gebogene Leinwand fest in der Welt, Boden y=0. Am Handy/PC: Vollbild-Ebene.
+const CUTS={
+ // vor einem Raum (Schlüssel = Raum-id), läuft beim Weg nach vorn
+ era1984:    {f:'zw_era1984'},     // VHS-Kassette rein → Kinderzimmer 1984 (Grok V1b)
+ era1984mall:{f:'zw_mall'},        // geschlossene Mall 1984 nachts, ausgedachte Ladennamen (W1b)
+ pool:       {f:'zw_pool'},        // leeres Hallenbad mit Schwimmring (V3a)
+ cornfield:  {f:'zw_cornfield'},   // Maisfeld in der Dämmerung, Vogelscheuche (V4b)
+ era1989:    {f:'zw_era1989'},     // Ostberlin 1989 nachts, Kerzen, Mauer (W3b)
+ era2041:    {f:'zw_era2041'},     // regennasse Stadt 2041 (V5b)
+ apartment:  {f:'zw_apartment'},   // Wohnung 2041, Haushaltsroboter (W5b)
+ basket:     {f:'zw_basket'},      // Hinterhof im Regen, Katze (W6b)
+ kirmes:     {f:'zw_kirmes'},      // verlassene Kirmes (V6a)
+ sim:        {f:'zw_sim'},         // Simulator-Kapsel mit Countdown (V8b)
+ end:        {f:'zw_end'},         // Zeitstrudel → Kinderzimmer im Morgengrauen (W7a)
+ // besondere Momente
+ rewind:     {f:'zw_rewind'},      // Zurückspulen: Ende-Tür → Schleife beginnt von vorn (W8a)
+ warteraum_entry:null,             // Abstecher Warteraum (kleine Backrooms-Tür) – Platz frei, Ersatz-Clip kommt (W4 abgelehnt)
+ haengematte:{f:'zw_haengematte'}, // Hängematten-Falle „einschlafen“ (W2a) – Falle gibt es noch nicht: ZSA.playCut(ZSA.CUTS.haengematte)
+};
+const CUT_V='1022a';
+function playCut(c){ return new Promise(done=>{ const sc=document.querySelector('a-scene'), R=sc&&sc.renderer, xr=!!(R&&R.xr&&R.xr.isPresenting);
+ const mob=!xr&&(!!(window.ZSTouch&&ZSTouch.active)||Math.max(screen.width,screen.height)<1000);
+ const v=document.createElement('video'); v.src=ROOT+'clips/zw/'+c.f+(mob?'_m':'')+'.mp4?v='+CUT_V; v.playsInline=true; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline',''); v.preload='auto'; v.crossOrigin='anonymous'; v.disablePictureInPicture=true;
+ window.__zsCutV=v; const t0=performance.now(); let fin=false, ov=null, hint=null, G=null, mats=[], vt=null, tick=null; const offs=[];
+ const on=(el,ev,fn,o)=>{ el.addEventListener(ev,fn,o); offs.push(()=>el.removeEventListener(ev,fn,o)); };
+ const finish=how=>{ if(fin) return true; fin=true; window.__zsCutHow=(typeof how==='string'?how:'skip')+'@'+v.currentTime.toFixed(2); window.__zsCutSkip=null; offs.forEach(f=>f()); const ts=performance.now(), a0=v.muted?0:v.volume;
+  const fo=()=>{ const k=Math.min(1,(performance.now()-ts)/380); try{ v.volume=a0*(1-k); }catch(e){} if(ov) ov.querySelector('video').style.opacity=String(1-k); if(G&&mats[2]) mats[2].opacity=1-k; if(k<1) requestAnimationFrame(fo); else { try{ v.pause(); }catch(e){} if(tick) tick.dead=true; if(G){ G.parent&&G.parent.remove(G); G=null; } done(); } }; fo(); return true; };
+ window.__zsCutSkip=finish;
+ const skip=()=>{ if(performance.now()-t0>600) finish(); };
+ const start=()=>{ const p=v.play(); if(p&&p.catch) p.catch(()=>{ v.muted=true; if(hint) hint.style.display=''; v.play().catch(()=>finish('noplay')); }); };
+ if(!xr){ // Handy/PC: ganze Fläche, dunkler Rand (nicht schwarz), Überspringen-Knopf
+  ov=document.createElement('div'); ov.id='zsCut'; ov.style.cssText='position:fixed;inset:0;z-index:200;background:#0b0907;opacity:0;transition:opacity .45s ease;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none';
+  const ar=innerWidth/Math.max(1,innerHeight); v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:'+(ar>1.55&&ar<2.35?'cover':'contain')+';background:#0b0907;transition:none';
+  const vig=document.createElement('div'); vig.style.cssText='position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 85% 85% at 50% 50%,rgba(0,0,0,0) 60%,rgba(8,6,4,.55) 100%)';
+  const sk=document.createElement('div'); sk.id='zsCutSkip'; sk.innerHTML='Überspringen &#9656;&#9656;'+(mob?'':' <small style="opacity:.6;margin-left:.5em">B / Esc</small>');
+  sk.style.cssText='position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));font:600 14px/1 ZSRaj,"DejaVu Sans Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d8c9a6;background:rgba(14,11,8,.55);border:1px solid rgba(216,201,166,.28);padding:11px 16px;border-radius:3px;opacity:.85';
+  hint=document.createElement('div'); hint.textContent='🔇 Antippen für Ton'; hint.style.cssText='display:none;position:absolute;left:16px;top:14px;font:600 13px/1 ZSRaj,sans-serif;letter-spacing:.15em;color:#d8c9a6;background:rgba(14,11,8,.55);padding:8px 12px;border-radius:3px';
+  ov.append(v,vig,sk,hint); document.body.appendChild(ov); requestAnimationFrame(()=>{ ov.style.opacity='1'; });
+  let wasMuted=false; on(ov,'pointerdown',e=>{ wasMuted=v.muted; e.stopPropagation(); });
+  on(sk,'pointerup',e=>{ e.stopPropagation(); finish(); });
+  let lastUp=0; const up=e=>{ e.stopPropagation(); const n=performance.now(); if(n-lastUp<350) return; lastUp=n; if(wasMuted){ wasMuted=false; v.muted=false; hint.style.display='none'; return; } skip(); };
+  on(ov,'pointerup',up); on(ov,'touchend',e=>{ if(e.target===sk||sk.contains(e.target)){ e.stopPropagation(); finish(); return; } up(e); },{passive:true}); on(ov,'touchstart',e=>{ wasMuted=v.muted; e.stopPropagation(); },{passive:true});
+  // Raum dahinter nicht mehr rendern (Handy: Video läuft flüssig, Akku); danach wird ohnehin die nächste Seite geladen
+  setTimeout(()=>{ if(!fin&&sc&&sc.renderer&&!(sc.renderer.xr&&sc.renderer.xr.isPresenting)){ try{ sc.renderer.setAnimationLoop(null); }catch(e){} } },550);
+  on(ov,'click',e=>e.stopPropagation());
+  on(window,'keydown',e=>{ if(/^(b|B|Escape|Enter| |Backspace)$/.test(e.key)){ e.preventDefault(); e.stopPropagation(); finish(); } },true);
+ } else { // VR: Kuppel + gebogene Leinwand, einmal in Blickrichtung in die Welt gesetzt (nicht am Kopf), Boden y=0
+  const T=THREE, S=sc.object3D, cam=sc.camera, hp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; if(f.lengthSq()<1e-4) f.set(0,0,-1); f.normalize();
+  G=new T.Group(); G.position.set(hp.x,0,hp.z); G.rotation.y=Math.atan2(-f.x,-f.z);
+  const mk=(geo,mat,ro)=>{ mat.transparent=true; mat.opacity=0; mat.depthTest=false; mat.depthWrite=false; mat.fog=false; mat.toneMapped=false; const m=new T.Mesh(geo,mat); m.renderOrder=ro; m.frustumCulled=false; G.add(m); mats.push(mat); return m; };
+  const dome=mk(new T.SphereGeometry(9,32,16),new T.MeshBasicMaterial({color:0x0b0907,side:T.BackSide}),990); dome.position.y=1.6;
+  const fl=mk(new T.CircleGeometry(9,48),new T.MeshBasicMaterial({color:0x17120c}),991); fl.rotation.x=-Math.PI/2; fl.position.y=0.002;
+  vt=new T.VideoTexture(v); vt.colorSpace=T.SRGBColorSpace;
+  const SR=4.0, TOT=70*Math.PI/180, SH=SR*TOT*9/16; const scr=mk(new T.CylinderGeometry(SR,SR,SH,96,1,true,Math.PI-TOT/2,TOT),new T.MeshBasicMaterial({map:vt,side:T.DoubleSide}),992); scr.scale.x=-1; scr.position.y=1.6;
+  S.add(G); const tf=performance.now(); tick=()=>{ if(tick.dead) return; const k=Math.min(1,(performance.now()-tf)/600); mats[0].opacity=mats[1].opacity=k; if(!fin) mats[2].opacity=k; if(!v.paused&&v.readyState>=2) vt.needsUpdate=true; };
+  (window.__zsaSteps=window.__zsaSteps||[]).push(tick); if(window.AFRAME&&!AFRAME.components['zsa-tick']) AFRAME.registerComponent('zsa-tick',{tick(){ (window.__zsaSteps||[]).forEach(fn=>fn()); }}); sc.setAttribute('zsa-tick','');
+  [0,1].forEach(i=>on(R.xr.getController(i),'selectstart',skip));
+  ['bbuttondown','abuttondown','ybuttondown','xbuttondown'].forEach(ev=>on(sc,ev,skip));
+ }
+ on(v,'ended',()=>finish('ended')); on(v,'error',()=>setTimeout(()=>finish('error'),400));
+ // Sicherheitsnetze: hängt das Video (kein Fortschritt) → weiter; nie länger als Clip + 4 s
+ setTimeout(()=>{ if(!fin&&v.currentTime<0.2) finish('stall'); },9000); setTimeout(()=>finish('cap'),((isFinite(v.duration)&&v.duration)||15.5)*1000+5500);
+ on(v,'loadedmetadata',()=>{ setTimeout(()=>finish('cap'),v.duration*1000+4500); });
+ start(); }); }
+function goStep(i){ i=Math.max(0,Math.min(STEPS.length-1,i)); save({step:i}); const c=i===step+1?CUTS[STEPS[i].id]:(i===0&&STEPS[step].id==='end'?CUTS.rewind:null);
+ if(c&&!P.has('nocut')&&!window.__zsCutOn){ window.__zsCutOn=true; playCut(c).then(()=>fadeOut(()=>{ location.href=url(i); })); return; }
+ fadeOut(()=>{ location.href=url(i); }); }
 const side=P.get('side'), SD=SIDES[side]||null;
-function goSide(id){ const d=SIDES[id]; if(!d) return; save({step,side:id}); fadeOut(()=>{ location.href=ROOT+d.page+'?alpha=1&step='+step+'&side='+id; }); }
+function goSide(id){ const d=SIDES[id]; if(!d) return; save({step,side:id}); const go=()=>fadeOut(()=>{ location.href=ROOT+d.page+'?alpha=1&step='+step+'&side='+id; }); const c=CUTS[id+'_entry'];
+ if(c&&!P.has('nocut')&&!window.__zsCutOn){ window.__zsCutOn=true; playCut(c).then(go); } else go(); }
 function backFromSide(){ save({step,side:null}); fadeOut(()=>{ location.href=url(step).replace('#','&from='+side+'#'); }); }
-window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url};
+window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); },url,CUTS,playCut};
 if(!on) return;
 save({step});
 // Quest: nach Seitenwechsel ggf. direkt wieder in VR (WebXR-Navigation)

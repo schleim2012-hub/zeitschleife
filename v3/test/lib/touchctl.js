@@ -97,6 +97,7 @@ function buildUI(){
  const mvA=()=>{ document.querySelectorAll('body > div').forEach(d=>{ if(/^ALPHA ·/.test(d.textContent||'')&&!d.id){ d.style.right='auto'; d.style.bottom='auto'; d.style.left='calc(12px + env(safe-area-inset-left))'; d.style.top='calc(12px + env(safe-area-inset-top))'; d.style.opacity='.7'; } }); }; mvA(); setTimeout(mvA,1500);
 }
 function back(){
+ if(window.__zsCutSkip){ __zsCutSkip(); return; }   // Zwischenszene läuft → überspringen
  if(document.getElementById('tc-inv-p').style.display==='block'){ toggleInv(); return; }
  if(window.ZSHelp&&ZSHelp.isOpen()){ ZSHelp.close(); return; }
  if(cinema()){ if(ArcadeCinema.close) ArcadeCinema.close(); return; }
@@ -249,6 +250,7 @@ window.addEventListener('touchend',tend,{capture:true,passive:false});
 window.addEventListener('touchcancel',tend,{capture:true,passive:false});
 // Android-Zurück-Taste (App): 'handled' = im Spiel erledigt, 'menu' = Menü geöffnet, 'exit' = Menü war offen → App in den Hintergrund
 Z.androidBack=function(){ try{ const ip=document.getElementById('tc-inv-p');
+ if(window.__zsCutSkip){ __zsCutSkip(); return 'handled'; }
  if(window.ZSHelp&&ZSHelp.isOpen()){ if(ZSHelp.view&&ZSHelp.view()!=='menu'){ ZSHelp.open('menu'); return 'handled'; } return 'exit'; }
  if((ip&&ip.style.display==='block')||cinema()||examining()||heldNow()){ back(); return 'handled'; }
  if(Z.onBack&&Z.onBack()) return 'handled';
