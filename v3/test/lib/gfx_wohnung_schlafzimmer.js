@@ -41,10 +41,12 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  const U={uT:{value:0},uSweep:{value:new T.Vector2(0.5,0)},uLamp:{value:new T.Vector3(0.6,0.64,1)}};
  const mod=(mat,rect)=>{ mat.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,U,{uRect:{value:new T.Vector4(rect[0],rect[2],rect[1]-rect[0],rect[3]-rect[2])}});
    sh.fragmentShader='uniform vec2 uSweep; uniform vec3 uLamp; uniform vec4 uRect;\n'+sh.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+   #ifdef USE_MAP
    vec2 fu=uRect.xy+vMapUv*uRect.zw;
    float sw=uSweep.y*exp(-pow((fu.x-uSweep.x)/0.075,2.0))*smoothstep(0.27,0.36,fu.y)*(1.0-smoothstep(0.52,0.62,fu.y));
    vec2 dl=(fu-uLamp.xy)*vec2(1.0,1.06); float gl=exp(-dot(dl,dl)/0.0035);
-   diffuseColor.rgb*=1.0+sw*vec3(1.0,0.93,0.78)+(uLamp.z-1.0)*gl;`); }; mat.customProgramCacheKey=()=>'szhof'+rect.join(','); };
+   diffuseColor.rgb*=1.0+sw*vec3(1.0,0.93,0.78)+(uLamp.z-1.0)*gl;
+   #endif`); }; mat.customProgramCacheKey=()=>'szhof'+rect.join(','); };
  const grid=(M,P,rect,gx,gy,fade,mat)=>{ const g=new T.PlaneGeometry(1,1,gx,gy), pos=g.attributes.position, uv=g.attributes.uv, v3=new T.Vector3(), col=new Float32Array(pos.count*3), b=1/M.far, a=1/M.near-b;
    for(let i=0;i<pos.count;i++){ const lu=uv.getX(i), lv=uv.getY(i), u=rect[0]+lu*(rect[1]-rect[0]), v=rect[2]+lv*(rect[3]-rect[2]), r=1/(a*samp(P,lu,lv)+b);
      v3.set((u-0.5)*2*M.tx,(v-0.5)*2*M.ty_full,-1).normalize().multiplyScalar(r); pos.setXYZ(i,v3.x,v3.y,v3.z);
@@ -57,14 +59,14 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
    const tb=(f,cb)=>TL.load(BK+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; cb(t); });
    tb('sz_hof_base.jpg',t=>{ mA.map=t; mA.needsUpdate=true; }); tb('sz_hof_obj.png',t=>{ mB.map=t; mB.needsUpdate=true; });
    const RA=[0,1,0,1], RB=M.obj_rect_uv; mod(mA,RA); mod(mB,RB); U.uLamp.value.set(M.lamp_uv[0],M.lamp_uv[1],1);
-   const A=grid(M,pix(dA),RA,72,120,0.06,mA), B=grid(M,pix(dB),RB,96,80,0,mB);
+   const A=grid(M,pix(dA),RA,64,104,0.06,mA), B=grid(M,pix(dB),RB,80,46,0,mB);
    const g=new T.Group(); g.name='sz_hof'; g.position.set(0.45,1.6,-2.0-0.6); A.rotation.x=B.rotation.x=M.pitch; g.add(A); g.add(B); G.add(g);
    // leise Bewegung: ab und zu Scheinwerfer eines Autos in der Durchfahrt (weicher Streifen über Hof + Rückfassade), Hoflampe flackert selten kurz
    let nx=performance.now()+9000, s0=0, dir=1, fl=0;
    A.onBeforeRender=()=>{ const t=performance.now(); if(t>nx&&!s0){ s0=t; dir=Math.random()<0.5?1:-1; nx=t+30000+Math.random()*25000; }
      if(s0){ const k=(t-s0)/3400; if(k>=1){ s0=0; U.uSweep.value.y=0; } else { U.uSweep.value.set(dir>0?0.12+k*0.8:0.92-k*0.8,0.42*Math.sin(Math.PI*k)); } }
      if(fl<=0&&Math.random()<0.0025) fl=6+Math.floor(Math.random()*10); let z=1; if(fl>0){ fl--; z=Math.random()<0.5?0.55:0.85; } U.uLamp.value.z+= (z-U.uLamp.value.z)*0.5; };
-   info.view=true; info.layers=2; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
+   info.view=true; info.layers=2; info.hofU=U; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
  mkView();
  // Glas: Grauschleier, Schmutzrand, Kalkflecken, Tropfen, schwache Raumspiegelung (statt glattem Dunkelglas) + außen laufende Regenrinnsale
  const glass=G.children.find(o=>o.isMesh&&o.geometry.type==='PlaneGeometry'&&near(o.geometry.parameters.width,1.2)&&o.material.transparent&&near(o.material.opacity,0.28));
