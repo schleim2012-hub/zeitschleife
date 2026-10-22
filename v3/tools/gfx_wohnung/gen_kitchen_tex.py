@@ -271,5 +271,86 @@ def gardine(W=1024,H=512):
     a=np.clip(a+np.asarray(C,float)/255*0.5,0,1); a[H-22:]*=np.clip((np.asarray(C,float)[H-22:]/255)*1.2+0.0,0,1)*0+np.where(np.asarray(C,float)[H-22:]>0,1,0.0)
     col=np.zeros((H,W,3))+np.array([232,228,214]); col*= (0.94+0.06*noise(H,W,60,2,81))[...,None]
     Image.fromarray(np.dstack([np.clip(col,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA').save(OUT+'kue_gardine.png',optimize=True)
+# ---------- 9) Küchentür: cremeweiß lackierte Kassettentür (2 Füllungen), vergilbt, Griffspuren, Schrammen unten; + Normal ----------
+def tuer(W=512,H=1024):
+    h=np.zeros((H,W)); col=np.zeros((H,W,3))+np.array([206,198,176])
+    n=noise(H,W,90,4,91); col*=(0.95+0.07*n)[...,None]
+    for (y0,y1) in [(90,450),(540,930)]:
+        x0,x1=80,W-80
+        for k in range(14):   # Profil: Fase nach innen
+            v=0.5+0.5*math.cos(k/14*math.pi); h[y0+k:y1-k,x0+k:x1-k]+=0.08*(1 if k<7 else -0.4)
+        col[y0:y0+3,x0:x1]*=0.78; col[y1-3:y1,x0:x1]*=1.05; col[y0:y1,x0:x0+3]*=0.8; col[y0:y1,x1-3:x1]*=1.04
+        col[y0+14:y0+17,x0+14:x1-14]*=1.05; col[y1-17:y1-14,x0+14:x1-14]*=0.85
+    yy,xx=np.mgrid[0:H,0:W]
+    g=np.exp(-(((xx-W*0.86)/60)**2+((yy-H*0.5)/120)**2)); col*=(1-0.22*g)[...,None]          # Griffspuren (Klinke rechts)
+    col[...,2]*=1-0.08*g
+    b=np.clip((yy-H*0.88)/(H*0.12),0,1)**1.5*(0.5+0.5*noise(H,W,40,2,92)); col*=(1-0.18*b)[...,None]            # Schuhkanten unten
+    for _ in range(40):
+        x=random.randint(0,W-1); y=random.randint(int(H*0.82),H-1); L=random.randint(6,30); col[y:y+1,x:x+L]*=0.7
+    yell=np.clip(1-yy/H,0,1)*0.06; col[...,2]*=1-yell                                         # oben stärker vergilbt (Kochdunst)
+    im=Image.fromarray(np.clip(col,0,255).astype(np.uint8)); im=grain(im,0.04,93); save(im,'kue_tuer',q=90)
+    nmap(cv2_blur(h,1.5)*6.0,3.0).save(OUT+'kue_tuer_n.jpg',quality=90)
+# ---------- 10) Küchenuhr (Parodie „Junghaus Quarz“), Ziffernblatt 512² ----------
+def uhr(N=512):
+    im=Image.new('RGB',(N,N),(226,220,200)); d=ImageDraw.Draw(im); c=N/2
+    d.ellipse([4,4,N-4,N-4],fill=(232,226,206),outline=(60,52,40),width=6)
+    for i in range(60):
+        a=i/60*2*math.pi; r0=c-22 if i%5 else c-44; r1=c-14
+        d.line([(c+math.sin(a)*r0,c-math.cos(a)*r0),(c+math.sin(a)*r1,c-math.cos(a)*r1)],fill=(40,36,30),width=8 if i%5==0 else 3)
+    f=F('ser',44)
+    for i in range(1,13):
+        a=i/12*2*math.pi; r=c-80; d.text((c+math.sin(a)*r,c-math.cos(a)*r),str(i),font=f,fill=(36,32,28),anchor='mm')
+    d.text((c,c-70),'JUNGHAUS',font=F('cond',30),fill=(120,30,26),anchor='mm'); d.text((c,c+84),'QUARZ',font=F('condr',24),fill=(60,56,50),anchor='mm')
+    d.text((c,c+112),'Made in W.-Germany',font=F('condr',16),fill=(90,86,78),anchor='mm')
+    # Stunden-/Minutenzeiger (fest, 2:47 – Batterie leer, die Zeit steht), Sekundenzeiger separat in JS
+    for (ang,L,w) in [((2+47/60)/12*360,c*0.46,14),(47/60*360,c*0.7,9)]:
+        a=math.radians(ang); d.line([(c-math.sin(a)*24,c+math.cos(a)*24),(c+math.sin(a)*L,c-math.cos(a)*L)],fill=(20,18,16),width=w)
+    d.ellipse([c-14,c-14,c+14,c+14],fill=(20,18,16))
+    v=np.asarray(im,float); yy,xx=np.mgrid[0:N,0:N]; rr=np.hypot(xx-c,yy-c)/c; v*= (1-0.12*np.clip(rr-0.6,0,1)/0.4)[...,None]
+    v[...,2]*=0.95; im=grain(Image.fromarray(np.clip(v,0,255).astype(np.uint8)),0.04,94); save(im,'kue_uhr',q=90)
+# ---------- 11) Kreuzstich-Spruch im Rahmen (Parodie auf Küchensegen) 512×640 ----------
+def stick(W=512,H=640):
+    base=Image.new('RGB',(W,H),(222,214,190)); d=ImageDraw.Draw(base)
+    for x in range(0,W,6): d.line([(x,0),(x,H)],fill=(208,200,176),width=1)
+    for y in range(0,H,6): d.line([(0,y),(W,y)],fill=(208,200,176),width=1)
+    # Motiv auf grobem Raster zeichnen, dann als Kreuzstiche (6px) setzen
+    S=6; gw,gh=W//S,H//S; m=Image.new('RGB',(gw,gh),(0,0,0)); md=ImageDraw.Draw(m)
+    md.rectangle([2,2,gw-3,gh-3],outline=(150,40,40)); md.rectangle([4,4,gw-5,gh-5],outline=(60,100,60))
+    fnt=ImageFont.truetype(FN['dj'],11)
+    for i,t in enumerate(['Wo man','kocht,','da lass','dich','nieder.']): md.text((gw/2,16+i*13),t,font=fnt,fill=(40,60,120),anchor='mt')
+    md.text((gw/2,gh-26),'Abwasch','',font=fnt,fill=(150,40,40),anchor='mt') if False else md.text((gw/2,gh-24),'Abwasch',font=fnt,fill=(150,40,40),anchor='mt')
+    md.text((gw/2,gh-13),'erst morgen.',font=ImageFont.truetype(FN['dj'],8),fill=(150,40,40),anchor='mt')
+    for k in range(5): md.point([(10+k*14,gh-34),(11+k*14,gh-35),(12+k*14,gh-34)],fill=(170,120,40))
+    M=np.asarray(m)
+    for y in range(gh):
+        for x in range(gw):
+            c=tuple(int(v) for v in M[y,x])
+            if sum(c)>40:
+                x0,y0=x*S,y*S; cc=tuple(min(255,int(v*random.uniform(0.85,1.1))) for v in c)
+                d.line([(x0+1,y0+1),(x0+S-1,y0+S-1)],fill=cc,width=2); d.line([(x0+S-1,y0+1),(x0+1,y0+S-1)],fill=cc,width=2)
+    v=np.asarray(base,float); v*=(0.9+0.12*noise(H,W,80,3,95))[...,None]; v[...,2]*=0.9   # vergilbt
+    im=grain(Image.fromarray(np.clip(v,0,255).astype(np.uint8)),0.04,96); save(im,'kue_stick',q=90)
+# ---------- 12) Wandtelefon (Wählscheibe) + Telefonliste am Nagel (Handschrift, Parodie-Nummern) ----------
+def wand_lbl():
+    N=512; im=Image.new('RGB',(N,N),(88,118,80)); d=ImageDraw.Draw(im); c=N/2
+    d.ellipse([20,20,N-20,N-20],fill=(70,98,64),outline=(50,70,46),width=6)
+    d.ellipse([c-110,c-110,c+110,c+110],fill=(226,222,206))                                    # Nummernring
+    for i in range(10):
+        a=math.radians(62+i*28.5); x,y=c+math.cos(a)*165,c-math.sin(a)*165
+        d.ellipse([x-38,y-38,x+38,y+38],fill=(40,44,40),outline=(140,150,130),width=4)
+        d.text((x,y),str((i+1)%10),font=F('dj',34),fill=(214,212,196),anchor='mm')
+    d.ellipse([c-60,c-60,c+60,c+60],fill=(236,232,218),outline=(120,120,110),width=3); d.text((c,c-14),'0521',font=F('condr',30),fill=(60,60,58),anchor='mm'); d.text((c,c+18),'47 11 08',font=F('condr',30),fill=(60,60,58),anchor='mm')
+    d.arc([c-200,c-200,c+200,c+200],12,30,fill=(200,200,190),width=10)                       # Fingeranschlag
+    grain(im,0.05,97).save(LB+'waehl.png')
+    W,H=300,400; im=Image.new('RGB',(W,H),(236,230,206)); d=ImageDraw.Draw(im)
+    for y in range(60,H,28): d.line([(0,y),(W,y)],fill=(150,170,200),width=1)
+    d.line([(36,0),(36,H)],fill=(210,120,120),width=2)
+    f=F('kal',26); fb=F('kalb',30); d.text((W/2,14),'Telefon',font=fb,fill=(30,40,110),anchor='mt')
+    for i,(n,t) in enumerate([('Mutti','0521 / 3 88 14'),('Pizza Roma','4 71 12'),('Videothek','2 22 90'),('Dr. Kern','6 13 00'),('Taxi','1 92 22'),('Hausmeister','???')]):
+        y=58+i*28*2; d.text((44,y),n,font=f,fill=(30,40,110)); d.text((W-12,y+26),t,font=f,fill=(30,40,110),anchor='ra')
+    d.line([(44,58+5*56+16),(200,58+5*56+10)],fill=(30,40,110),width=2)
+    d.ellipse([W/2-6,2,W/2+6,14],fill=(90,90,90))
+    v=np.asarray(im,float)*(0.88+0.14*noise(H,W,60,3,98))[...,None]; v[...,2]*=0.92
+    grain(Image.fromarray(np.clip(v,0,255).astype(np.uint8)),0.04,99).save(LB+'telliste.png')
 which=sys.argv[1].split(',') if len(sys.argv)>1 else ['fliesen','boden','raufaser','wachstuch','kalender','labels']
 for w in which: globals()[w]()

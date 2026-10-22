@@ -34,7 +34,7 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
  const gltf=(f,cb)=>{ info.pending++; const el=document.createElement('a-entity'); el.setAttribute('gltf-model',KB+f); el.addEventListener('model-loaded',()=>{ const m=el.getObject3D('mesh'); if(m){ el.object3D.remove(m); try{ cb(m); }catch(e){ console.warn('gfx_kue',f,e); } } el.parentNode&&el.parentNode.removeChild(el); info.pending--; info.swapped.push(f); });
   el.addEventListener('model-error',()=>{ info.pending--; console.warn('gfx_kue: fehlt',f); }); sc.appendChild(el); };
  const put=(f,k)=>gltf(f,m=>{ m.traverse(x=>{ if(x.isMesh){ x.name=f.replace('.glb',''); x.material.envMapIntensity=0.25; if(x.material.map) x.material.map.anisotropy=8; if(k) x.material.color.multiplyScalar(k); x.matrixAutoUpdate=false; x.updateMatrix(); } }); m.updateMatrixWorld(true); IN.add(m); });
- put('kue_zeile.glb',1.0); put('kue_kuehl.glb',1.0); put('kue_ecke.glb',1.0); put('kue_kram.glb',1.0);
+ put('kue_zeile.glb',1.0); put('kue_kuehl.glb',1.0); put('kue_ecke.glb',1.0); put('kue_kram.glb',1.0); put('kue_wand.glb',1.0);
  // ---- 3) Fliesenspiegel (15er, beige mit Dekor) über der Arbeitsplatte, Fugen bündig ab 0,92 m ----
  { const P=[],UV=[],I=[]; const q=(a,b,c,d)=>{ const n=P.length/4; [a,b,c,d].forEach(v=>{ P.push(...v); UV.push(v[3]/1.2,(v[1]-0.92)/0.6); }); I.push(n,n+1,n+2,n,n+2,n+3); };
    const zN=2.494, Y0=0.92; [[-10.67,-10.37,1.52],[-10.37,-9.13,1.22],[-9.13,-7.0,1.52]].forEach(([a,b,yt])=>q([b,Y0,zN,-b],[a,Y0,zN,-a],[a,yt,zN,-a],[b,yt,zN,-b]));
@@ -105,6 +105,19 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
    c.onBeforeRender=()=>{ if(info.curT) info.curT.value=performance.now()/1000; };
    const rod=new T.Mesh(new T.CylinderGeometry(0.005,0.005,1.1,8),new T.MeshStandardMaterial({color:0x9a7a42,roughness:0.35,metalness:0.8})); rod.rotation.z=Math.PI/2; rod.position.set(-9.75,1.255+h+0.004,2.552); rod.name='kue_stange'; IN.add(rod); info.curtain=true; }
  }
+ // ---- 4c) Tür (cremeweiß lackierte Kassettentür statt Putztextur), Südwand: Küchenuhr (Parodie „Junghaus“, Batterie leer: Sekundenzeiger zuckt auf der Stelle), Kreuzstich-Spruch ----
+ { let leaf=null; K.traverse(x=>{ if(!leaf&&x.isMesh&&x.geometry.type==='BoxGeometry'&&Math.abs(x.geometry.parameters.width-0.795)<0.002&&Math.abs(x.geometry.parameters.depth-0.035)<0.002) leaf=x; });
+  if(leaf){ const m=leaf.material; m.color.setHex(0xeae6da); m.roughness=0.5; tx('kue_tuer.jpg',true,t=>{ t.wrapS=t.wrapT=T.ClampToEdgeWrapping; t.repeat.set(1,1); m.map=t; m.needsUpdate=true; });
+   tx('kue_tuer_n.jpg',false,t=>{ t.wrapS=t.wrapT=T.ClampToEdgeWrapping; m.normalMap=t; m.normalScale.set(1,1); m.needsUpdate=true; }); info.door=true; }
+  const zS=-0.92; const U0=new T.Group(); U0.name='kue_uhr'; U0.position.set(-8.7,2.08,zS); IN.add(U0);
+  const body=new T.Mesh(new T.CylinderGeometry(0.152,0.155,0.045,32),new T.MeshStandardMaterial({color:0xd8d0bc,roughness:0.45})); body.rotation.x=Math.PI/2; body.position.z=0.0225; body.name='kue_uhr_k'; U0.add(body);
+  const fm=new T.MeshStandardMaterial({color:0xe4ded0,roughness:0.6}); tx('kue_uhr.jpg',true,t=>{ t.wrapS=t.wrapT=T.ClampToEdgeWrapping; fm.map=t; fm.needsUpdate=true; });
+  const face=new T.Mesh(new T.CircleGeometry(0.138,40),fm); face.position.z=0.046; face.name='kue_uhr_z'; U0.add(face);
+  const hg=new T.PlaneGeometry(0.004,0.125); hg.translate(0,0.045,0); const hand=new T.Mesh(hg,new T.MeshBasicMaterial({color:0x8a1a14})); hand.position.z=0.048; hand.name='kue_uhr_s'; U0.add(hand);
+  let tk=0; hand.onBeforeRender=()=>{ const s=Math.floor(performance.now()/1000); if(s!==tk){ tk=s; hand.rotation.z=-(31+(s%2?0.9:0))/60*2*Math.PI; } };
+  const fr=new T.Mesh(new T.BoxGeometry(0.31,0.38,0.018),new T.MeshStandardMaterial({color:0x4a3220,roughness:0.6})); fr.position.set(-8.1,1.48,zS+0.009); fr.rotation.z=-0.015; fr.name='kue_stick_r'; IN.add(fr);
+  const sm=new T.MeshStandardMaterial({color:0xe6e0d2,roughness:0.9}); tx('kue_stick.jpg',true,t=>{ t.wrapS=t.wrapT=T.ClampToEdgeWrapping; sm.map=t; sm.needsUpdate=true; });
+  const st=new T.Mesh(new T.PlaneGeometry(0.27,0.338),sm); st.position.set(0,0,0.0095); st.name='kue_stick'; fr.add(st); }
  // ---- 5) Licht: Hemi/Glühbirne heller (düster, aber lesbar), Mond bleibt ----
  const spot=added.find(x=>x.isSpotLight), hemi=o.hemi, L2=o.L2;
  if(hemi){ hemi.color.setHex(0x7a7890); hemi.groundColor.setHex(0x3a2e24); }
@@ -121,7 +134,7 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
  const sol=()=>{ const R=window.__apt&&__apt.ROOMS&&__apt.ROOMS.kitchen; if(!R){ setTimeout(sol,200); return; } R.solid=R.solid||[]; R.solid.length=0; ZONES.forEach(z=>R.solid.push(z.slice())); info.zones=true; };
  setTimeout(sol,0);
  // ---- 7) Lightmap/AO (tools/bake, Präfix kue) ----
- const fin=()=>{ if(info.pending>0||info.swapped.length<4){ setTimeout(fin,200); return; } if(!window.ZSBake){ console.warn('gfx_kue: bake_rt.js fehlt'); return; }
+ const fin=()=>{ if(info.pending>0||info.swapped.length<5){ setTimeout(fin,200); return; } if(!window.ZSBake){ console.warn('gfx_kue: bake_rt.js fehlt'); return; }
   const op={room:'kue',base:'../assets/bake/wohnung_kueche/',texRoot:'../assets/tex/realism/',lmGain:(+(location.search.match(/lmg=([\d.]+)/)||[])[1]||0.7),aoInt:0.35,specGain:4,mats:{wa:pl&&pl.material,fl:fl&&fl.material},
    onBaked:n=>{ const L=[]; K.traverse(x=>{ if(x.isMesh&&x.material&&x.material.lightMap&&!L.includes(x.material)){ L.push(x.material); x.material.userData.lm0=x.material.lightMapIntensity; } }); info.lmMats=L; info.baked=n; }};
   info.fx=ZSBake.realism(K,sc,op); info.ready=true; if(/[?&]zsbroom=kue/.test(location.search)) setTimeout(()=>{ window.__ZSB={G:K,sc,o:op}; },4000); };

@@ -280,3 +280,29 @@ if 'kram' in WHICH:
     Wc(-11.35,1.52,-0.65,0.004,0.12,CR,axis='y',v=6)
     Wc(-10.0,2.28,-0.905,0.13,0.03,mat('uhr',0xd8cfa8,var=0.05,rough=0.4),axis='z',v=32) if False else None
     done('kue_kram',TEX,rough=0.5,ao_k=0.85,ao_dist=0.08)
+
+if 'wand' in WHICH:
+    # Südwand rechts der Tür: Wandtelefon mit Wählscheibe (farngrün, 80er Post-Stil, ohne Marke), Spiralkabel, Anschlussdose; Telefonliste am Nagel mit Bleistift an Schnur
+    reset(); MATS.clear(); OBJS.clear(); GR=mat('fgruen',0x56744e,var=0.05,rough=0.35); GD=mat('fgruend',0x3e5638,var=0.05,rough=0.4); WH=mat('dose',0xd8d2c2,var=0.05,rough=0.4)
+    zW=-0.92
+    W(-9.27,-9.09,1.36,1.58,zW,zW+0.085,GR,bev=0.018)
+    lbox(-9.235,-9.125,1.405,1.515,zW+0.085,zW+0.091,GR,{'+z':('waehl.png',None,None)})
+    W(-9.26,-9.10,1.575,1.595,zW+0.02,zW+0.075,GD,bev=0.006)                       # Gabel
+    W(-9.29,-9.07,1.598,1.622,zW+0.035,zW+0.065,GR,bev=0.01)                        # Hörer: Griff
+    W(-9.315,-9.245,1.592,1.65,zW+0.02,zW+0.08,GR,bev=0.014); W(-9.115,-9.045,1.592,1.65,zW+0.02,zW+0.08,GR,bev=0.014)   # Hör-/Sprechkapsel
+    # Spiralkabel: Helix entlang eines Durchhangs vom Hörer links unten zur Gehäuseunterseite
+    A=(-9.30,1.595,zW+0.05); Bm=(-9.33,1.10,zW+0.06); B=(-9.25,1.365,zW+0.05)
+    def bz(t):
+        return tuple((1-t)**2*A[i]+2*(1-t)*t*Bm[i]+t*t*B[i] for i in range(3))
+    pts=[]; n=170
+    for k in range(n+1):
+        t=k/n; p=bz(t); q=bz(min(1,t+0.002)); a=k*0.9
+        pts.append((p[0]+0.008*math.cos(a),p[1],p[2]+0.008*math.sin(a)))
+    Wcable(pts,0.0022,GD)
+    Wcable([(-9.12,1.365,zW+0.01),(-9.115,0.9,zW+0.006),(-9.12,0.4,zW+0.006),(-9.12,0.37,zW+0.012)],0.0025,mat('kabel',0x2a2a28))
+    W(-9.16,-9.08,0.30,0.38,zW,zW+0.022,WH,bev=0.005)
+    lbox(-8.93,-8.75,1.30,1.54,zW+0.001,zW+0.003,mat('papier',0xe8e2cc),{'+z':('telliste.png',None,None)})
+    Wc(-8.84,1.531,zW+0.006,0.0025,0.012,mat('nagel',0x8a8a84,rough=0.3),axis='z',v=6)
+    Wcable([(-8.84,1.53,zW+0.007),(-8.755,1.38,zW+0.008),(-8.735,1.24,zW+0.01)],0.0008,mat('schnur',0xc8c0a8))
+    Wc(-8.735,1.17,zW+0.012,0.0038,0.15,mat('bleistift',0xd8b030,rough=0.5),axis='y',v=6)
+    done('kue_wand',1024,rough=0.45,ao_k=0.85,ao_dist=0.05)
