@@ -158,7 +158,7 @@
   },
   "assi_head": {
    "pivot": [
-    2.3949,
+    2.3972,
     0.7292,
     -0.1297
    ],
@@ -362,7 +362,7 @@
   1.5164,
   -2.3043
  ],
- "vlScale": 3.5589241576194817,
+ "vlScale": 3.7817970514296646,
  "vl": [
   "wr_fig_assi",
   "wr_fig_brand",
@@ -400,14 +400,14 @@
   "S_wr_emit": 32,
   "S_wr_fabric": 12,
   "S_wr_fig": 104,
-  "S_wr_fig_assi": 7246,
-  "S_wr_fig_brand": 8890,
-  "S_wr_fig_decke": 7577,
-  "S_wr_fig_frl": 7923,
-  "S_wr_fig_gruen": 8496,
-  "S_wr_fig_jaeger": 8731,
-  "S_wr_fig_oma": 8220,
-  "S_wr_fig_taucher": 9461,
+  "S_wr_fig_assi": 4428,
+  "S_wr_fig_brand": 8537,
+  "S_wr_fig_decke": 6996,
+  "S_wr_fig_frl": 6115,
+  "S_wr_fig_gruen": 8146,
+  "S_wr_fig_jaeger": 7141,
+  "S_wr_fig_oma": 7706,
+  "S_wr_fig_taucher": 9103,
   "S_wr_flip": 2,
   "S_wr_floor": 1524,
   "S_wr_glass": 24,
@@ -585,5 +585,5 @@
    0.465
   ]
  ],
- "lmScale": 20.68880271911621
+ "lmScale": 20.578125
 }
