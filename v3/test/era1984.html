@@ -32,16 +32,19 @@ S.addEventListener('loaded',()=>{
  const tex=(u,cb)=>TL.load(u,t=>{t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;cb&&cb(t);});
  const std=o=>new T.MeshStandardMaterial(o);
  const B84=window.__B84=build84(S);
- // ---------- grabbables: VHS (c1-c3), book (c4), cereal (c5) ----------
+ // ---------- grabbables: VHS (c1-c2), Teenie-Heft APPLAUS (c3), book (c4), cereal (c5), Satireheft IRRE ----------
  const items=[];
- function item(n,w,h,d,x,y,z,ry,spine,page,flat){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg?v=2',t=>{fm.map=t;fm.needsUpdate=true;});
-  const sm=std({color:spine,roughness:0.7}); const pm=page?std({color:page,roughness:0.9}):sm; const mats=[pm,sm,pm,pm,fm,sm];
+ function item(n,w,h,d,x,y,z,ry,spine,page,flat,faces){ const fm=std({color:0xffffff,roughness:0.6}); tex('../assets/era1984/'+n+'.jpg?v=3',t=>{fm.map=t;fm.needsUpdate=true;});
+  const sm=std({color:spine,roughness:0.7}); const pm=page?std({color:page,roughness:0.9}):sm;
+  const ft=k=>{ const m=std({color:0xffffff,roughness:0.75}); tex('../assets/era1984/'+k+'.jpg?v=3',t=>{m.map=t;m.needsUpdate=true;}); return m; }; // eigene Textur je Seite (z. B. Müslipackung rundum bedruckt)
+  const mats=faces?[ft(faces.px),ft(faces.nx),ft(faces.py),ft(faces.ny),fm,ft(faces.nz)]:[pm,sm,pm,pm,fm,sm];
   const el=document.createElement('a-entity'); el.classList.add('clickable'); S.appendChild(el);
   el.addEventListener('loaded',()=>{ const me=new T.Mesh(new T.BoxGeometry(w,h,d),mats); el.setObject3D('mesh',me); if(flat){ el.object3D.position.set(x,y+d/2,z); el.object3D.rotation.set(-Math.PI/2,0,0); el.object3D.rotateOnWorldAxis(new T.Vector3(0,1,0),ry); } else { el.object3D.position.set(x,y+h/2,z); el.object3D.rotation.y=ry; } });
   const it={el,n,h:flat?d:h,flat,home:new T.Vector3(x,y+h/2,z),vy:0,held:null}; items.push(it);
   el.addEventListener('click',e=>{ e.stopPropagation&&e.stopPropagation(); grab(it,e.detail&&e.detail.cursorEl); }); return it; }
  item('c1',0.105,0.19,0.025,-0.38,0,-1.82,0.25,0x111111); item('c2',0.15,0.22,0.035,-0.25,0,-1.8,0.1,0x3a1d12,0xcbbf9e); { const c3=item('c3',0.19,0.27,0.006,1.62,0.76,-0.72,0.2,0xd8d0c0,0xd8d0c0,true); /* Comic liegt halb auf dem Nokio (Fundort) */ c3.el.addEventListener('loaded',()=>{ const o=c3.el.object3D; o.position.y+=0.016; o.rotateOnWorldAxis(new T.Vector3(Math.cos(0.2),0,-Math.sin(0.2)),-0.08); /* Kante liegt auf dem Handy, andere Kante auf dem Tisch */ }); }
- item('c4',0.15,0.22,0.035,1.85,1.13,-1.8,-0.1,0x5a2a1a); item('c5',0.19,0.28,0.07,1.7,0.76,-0.05,-0.4,0xd8c070);
+ item('c4',0.15,0.22,0.035,1.85,1.13,-1.8,-0.1,0x5a2a1a); item('c5',0.19,0.28,0.07,1.7,0.76,-0.05,-0.4,0xd8c070,0,false,{px:'c5_side',nx:'c5_side',py:'c5_top',ny:'c5_top',nz:'c5_back'}); // Zeitflakes rundum bedruckt (vorher einfarbige Seiten)
+ item('irre',0.2,0.267,0.004,1.8,0.76,-0.32,-0.35,0xe8e0cc,0xe8e0cc,true); // Satireheft IRRE (Parodie), achtlos auf den Tisch geworfen
  let held=null, grabs=0;
  function grab(it,src){ if(held&&held!==it) drop(); if(held===it){ drop(); return; }
   const hand=(src&&src.id&&src.id!=='')?src:null; const par=(hand&&(hand.id==='hl'||hand.id==='hr'))?hand.object3D:document.getElementById('cam').object3D;
