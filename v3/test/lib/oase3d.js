@@ -7,7 +7,10 @@
 (function(){
 const T=THREE, Q=new URLSearchParams(location.search), MUTE=Q.has('mute');
 const C=Object.assign({fig:{lie:'../assets/oase/kundin_lie.glb',up:'../assets/oase/kundin_up.glb'},base:'../assets/oase/'},window.OASE||{});
-const ADULT=()=>window.ZS_ADULT===true;   // jedes Mal neu prüfen (kein zwischengespeicherter Zustand)
+const ADULT=()=>window.ZS_ADULT===true;
+// Brust-Zone (figur-lokal, Draufsicht): dort KEIN Öl, KEINE Verformung, keine Wirkung – nur der Ohrfeigen-Gag, wenn man dort 15–20 s verweilt (nur ab 18). Neue Figur: window.OASE.chest anpassen.
+const CHEST=Object.assign({x0:-0.56,x1:-0.30,zIn:0.16,zOut:9},C.chest||{});
+const inChest=(lx,lz)=>lx>CHEST.x0&&lx<CHEST.x1&&Math.abs(lz)>CHEST.zIn&&Math.abs(lz)<CHEST.zOut;   // jedes Mal neu prüfen (kein zwischengespeicherter Zustand)
 const RW={x0:-2.0,x1:2.0,z0:-2.2,z1:2.0,h:2.55};   // Raum
 const TB={x:-0.35,z:-0.35,len:1.75,w:0.66,top:0.70}; // Massageliege (Polster-Oberkante)
 const FIG={x:-0.40,y:TB.top,z:-0.35};                // Ursprung der Figur
@@ -167,6 +170,7 @@ function buildCurtain(){ // Perlenvorhang (Holz/Bernstein), 1 Draw (Instanzen), 
  beads.instanceMatrix.setUsage(T.DynamicDrawUsage); G.add(beads); }
 // ---------------------------------------------------------------- Figur + Öl-Shader
 const MW=512, MH=192, X0=-0.98, X1=1.0, Z0=-0.37, Z1=0.37;   // Masken-Fenster (Figur lokal, Draufsicht)
+const uT={value:0}, uPress={value:new T.Vector4(0,0,0.055,0)}; let pressGoal=0, pressAt=0;
 let mask=null, maskTex=null, fig={}, figRoot=null, pose='lie', oilU={value:null}, oilAmt={value:0}, glint={value:0};
 const GX=128, GZ=48; let target=null, got=null, nTarget=1;
 function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.height=MH; const x=mask.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,MW,MH); maskTex=new T.CanvasTexture(mask); maskTex.flipY=false; maskTex.colorSpace=T.NoColorSpace; maskTex.minFilter=T.LinearFilter; maskTex.generateMipmaps=false; oilU.value=maskTex; }
@@ -175,7 +179,11 @@ let brush=null; function makeBrush(){ brush=document.createElement('canvas'); br
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht
  const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position;');
+  sh.uniforms.uT=uT; sh.uniforms.uPress=uPress;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress;').replace('#include <begin_vertex>',`#include <begin_vertex>
+  vOP=position;
+  { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)); transformed+=objectNormal*(0.0032*wb*(0.5+0.5*sin(uT*1.35)));   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
+    float dp=distance(position.xz,uPress.xy); transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp)); }   // Haut gibt unter der Hand nach`);
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec3 vOP; uniform sampler2D oilMap; uniform float oilGlint; float oilK=0.0;
 float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
   .replace('#include <color_fragment>',`#include <color_fragment>
@@ -215,6 +223,7 @@ function buildTarget(f){ // ölbare Zellen = was man von oben wirklich sieht (Ha
  const xe=R.xr.enabled; R.xr.enabled=false; const prev=R.getRenderTarget(); R.setRenderTarget(rt); R.setClearColor(0x000000,0); R.clear(); R.render(sc2,oc); const px=new Uint8Array(GX*GZ*4); R.readRenderTargetPixels(rt,0,0,GX,GZ,px); R.setRenderTarget(prev); R.xr.enabled=xe;
  keep.forEach(([o,m])=>o.material=m); f.root.position.copy(pos); if(par) par.add(f.root); rt.dispose();
  for(let r=0;r<GZ;r++) for(let c=0;c<GX;c++){ const k=(r*GX+c)*4; if(px[k+2]>128&&px[k]>150&&px[k+1]>150){ const z=-(-Z1+(r+0.5)/GZ*(Z1-Z0)); const gz=Math.floor((z-Z0)/(Z1-Z0)*GZ); if(gz>=0&&gz<GZ){ target[gz*GX+c]=1; nTarget++; } } }
+ for(let r=0;r<GZ;r++) for(let c=0;c<GX;c++){ const lx=X0+(c+0.5)/GX*(X1-X0), lz=Z0+(r+0.5)/GZ*(Z1-Z0); if(target[r*GX+c]&&inChest(lx,lz)){ target[r*GX+c]=0; nTarget--; } }
  nTarget=Math.max(1,nTarget); window.__oaseTarget=nTarget; window.__oaseTargetArr=target; }
 function coverage(){ let k=0; for(let i=0;i<target.length;i++) if(target[i]&&got[i]>=0.6) k++; return k/nTarget; }
 let lastPaint=null;
@@ -227,7 +236,7 @@ const st={oiled:false,phase:'idle',said:{},spoke:0,cov:0,done:false,lastNoOil:0,
 function aud(f,vol){ const a=new Audio(C.base+f); a.volume=MUTE?0:(vol==null?0.95:vol); a.play().catch(()=>{}); return a; }
 let radio=null, hum=null; function startAmb(){ if(radio) return; radio=new Audio(C.base+'radio_panfloete.mp3'); radio.loop=true; radio.volume=MUTE?0:0.32; hum=new Audio(C.base+'sonnenbank_brumm.mp3'); hum.loop=true; hum.volume=MUTE?0:0.16; radio.play().catch(()=>{ radio=null; }); hum.play().catch(()=>{}); }
 const LINES={a0:'Na endlich, der Neue. Das Öl steht auf dem Wagen. Und nicht so rumstehen.',a1:'Mmh … nicht so schüchtern, Süßer. Das Öl beißt nicht.',a2:'Etwas tiefer. Nein – nicht SO tief. Frecher Kerl.',a3:'Wenn du so weitermachst, muss ich dir Trinkgeld geben.',
- h0:'Bist du die Aushilfe? Das Öl steht auf dem Wagen.',h1:'Ah, die Schultern. Da sitzt der ganze Einkaufsstress.',h2:'Schön gleichmäßig verteilen, sonst werd ich gestreift wie ein Zebra.',h3:'Du hast ja goldene Hände. Wie mein Friseur.',oel:'Erst das Öl, Schätzchen. Sonst quietscht’s.',punch:'Danke, Kleiner.'};
+ h0:'Bist du die Aushilfe? Das Öl steht auf dem Wagen.',h1:'Ah, die Schultern. Da sitzt der ganze Einkaufsstress.',h2:'Schön gleichmäßig verteilen, sonst werd ich gestreift wie ein Zebra.',h3:'Du hast ja goldene Hände. Wie mein Friseur.',oel:'Erst das Öl, Schätzchen. Sonst quietscht’s.',slap:'Hey! Finger weg, Freundchen. Das hier ist kein Streichelzoo!',punch:'Danke, Kleiner.'};
 let subEl=null, subM=null;
 function say(k,who){ const a=aud('vo_'+k+'.mp3'); st.spoke=performance.now(); const t=(who||'Kundin')+': „'+LINES[k]+'“';
  if(!subEl) subEl=document.getElementById('sub'); if(subEl){ subEl.textContent=t; subEl.style.display='block'; clearTimeout(subEl._t); subEl._t=setTimeout(()=>subEl.style.display='none',4200); }
@@ -244,7 +253,7 @@ function takeOil(){ if(st.oiled||st.done) return; st.oiled=true; startAmb(); try
   if(k<1) requestAnimationFrame(anim); else { par.attach(bottle); bottle.position.copy(par.worldToLocal(bottleHome.clone())); bottle.rotation.set(0,0,0); } }; anim();
  drip(); }
 function drip(){ const a=new (window.AudioContext||window.webkitAudioContext)(); if(MUTE) return; [0.9,1.25,1.6].forEach(d=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(900,a.currentTime+d); o.frequency.exponentialRampToValueAtTime(260,a.currentTime+d+0.09); g.gain.setValueAtTime(0.0001,a.currentTime+d); g.gain.linearRampToValueAtTime(0.12,a.currentTime+d+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d+0.14); o.connect(g); g.connect(a.destination); o.start(a.currentTime+d); o.stop(a.currentTime+d+0.2); }); }
-function rub(lx,lz,len){ if(st.done) return; if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; }
+function rub(lx,lz,len){ if(st.done) return; if(inChest(lx,lz)) return; uPress.value.x=lx; uPress.value.y=lz; pressGoal=0.006; pressAt=performance.now(); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; }
  startAmb(); paintAt(lx,lz,0.35+Math.min(0.5,len*6)); st.dist+=len; }
 function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; oilAmt.value=c; const ad=ADULT(), p=ad?'a':'h'; const now=performance.now();
  [[0.12,1],[0.42,2],[0.68,3]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
@@ -268,20 +277,43 @@ function hitBottle(ray){ rc.ray.copy(ray); rc.far=4; return rc.intersectObject(b
 let drag=null;
 function setupPointer(){ const cv=S.el?S.el.canvas:document.querySelector('a-scene').canvas; cv.style.touchAction='none'; const camEl=document.getElementById('cam');
  const ray=e=>{ const r=cv.getBoundingClientRect(); rc.setFromCamera({x:(e.clientX-r.left)/r.width*2-1,y:-(e.clientY-r.top)/r.height*2+1},S.el?S.el.camera:document.querySelector('a-scene').camera); return rc.ray.clone(); };
- cv.addEventListener('pointerdown',e=>{ if(R.xr.isPresenting) return; startAmb(); const r=ray(e); if(hitBottle(r)) { takeOil(); return; } const h=hitBody(r); if(h){ drag={id:e.pointerId,last:h.cover?null:h}; camEl.setAttribute('look-controls','enabled',false); try{ cv.setPointerCapture(e.pointerId); }catch(_){} } },true);
- cv.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; const h=hitBody(ray(e)); if(h&&!h.cover){ const len=drag.last&&drag.last.p?h.p.distanceTo(drag.last.p):0.02; if(len>0.004){ rub(h.lx,h.lz,Math.min(len,0.08)); drag.last=h; } } else if(h&&h.cover) lastPaint=null; });
+ cv.addEventListener('pointerdown',e=>{ if(R.xr.isPresenting) return; startAmb(); const r=ray(e); if(hitBottle(r)) { takeOil(); return; } const h=hitBody(r); if(h){ drag={id:e.pointerId,last:h.cover?null:h,zone:!!(h&&!h.cover&&inChest(h.lx,h.lz))}; camEl.setAttribute('look-controls','enabled',false); try{ cv.setPointerCapture(e.pointerId); }catch(_){} } },true);
+ cv.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; const h=hitBody(ray(e)); drag.zone=!!(h&&!h.cover&&inChest(h.lx,h.lz)); if(h&&!h.cover){ const len=drag.last&&drag.last.p?h.p.distanceTo(drag.last.p):0.02; if(len>0.004){ rub(h.lx,h.lz,Math.min(len,0.08)); drag.last=h; } } else if(h&&h.cover) lastPaint=null; });
  const up=e=>{ if(!drag||e.pointerId!==drag.id) return; drag=null; lastPaint=null; setTimeout(()=>camEl.setAttribute('look-controls','enabled',true),0); };
  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
  // Klick-Pfad für Handy-Tipp (touchctl → Maus-Klick) auf die Flasche
  cv.addEventListener('click',e=>{ if(R.xr.isPresenting) return; if(hitBottle(ray(e))) takeOil(); }); }
 const ctl=[{held:false,last:null},{held:false,last:null}];
-function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=()=>{ ctl[i].held=true; startAmb(); const p=ctrlPos(c,tmpV); if(p.distanceTo(bottleHome)<0.22||(!st.oiled&&hitBottle(ctrlRay(c)))) takeOil(); }, upf=()=>{ ctl[i].held=false; ctl[i].last=null; lastPaint=null; };
+function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=()=>{ ctl[i].held=true; startAmb(); const p=ctrlPos(c,tmpV); if(p.distanceTo(bottleHome)<0.22||(!st.oiled&&hitBottle(ctrlRay(c)))) takeOil(); }, upf=()=>{ ctl[i].held=false; ctl[i].zone=false; ctl[i].last=null; lastPaint=null; };
   c.addEventListener('selectstart',dn); c.addEventListener('squeezestart',dn); c.addEventListener('selectend',upf); c.addEventListener('squeezeend',upf); }); }
 function xrTick(){ if(!R.xr.isPresenting) return; const sc=document.querySelector('a-scene'); const ses=R.xr.getSession&&R.xr.getSession();
  [0,1].forEach(i=>{ if(!ctl[i].held) return; const c=R.xr.getController(i); const p=ctrlPos(c,tmpV).clone();
   // Strahl von knapp über dem Controller senkrecht nach unten: trifft die Haut innerhalb von 7 cm → einreiben
-  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.12,0)),new T.Vector3(0,-1,0))); if(!h||h.cover||Math.abs(h.p.y-p.y)>0.07){ ctl[i].last=null; return; }
+  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.12,0)),new T.Vector3(0,-1,0))); if(!h||h.cover||Math.abs(h.p.y-p.y)>0.07){ ctl[i].last=null; ctl[i].zone=false; return; } ctl[i].zone=inChest(h.lx,h.lz);
   const len=ctl[i].last?h.p.distanceTo(ctl[i].last):0; ctl[i].last=h.p.clone(); if(len>0.003){ rub(h.lx,h.lz,len); if(st.oiled&&ses){ const src=[...ses.inputSources].find(s=>s.handedness===(i?'right':'left'))||ses.inputSources[i]; const ha=src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(0.18,18); } } }); }
+// ---------------------------------------------------------------- Ohrfeigen-Gag (nur ab 18): Hand verweilt 15–20 s (zufällig) in der Brust-Zone → Klatsch, roter Rand, Zeile, Stempel „Das kommt in Ihre Akte!“ auf einem Zettel am Wagen
+const gag={t:0,need:15+Math.random()*5,n:0,slip:null};
+function sfxSlap(){ if(MUTE) return; const a=new (window.AudioContext||window.webkitAudioContext)(), n=a.sampleRate*0.25|0, b=a.createBuffer(1,n,a.sampleRate), d=b.getChannelData(0);
+ for(let i=0;i<n;i++){ const t=i/a.sampleRate; d[i]=(Math.random()*2-1)*Math.exp(-t*38)+0.6*Math.sin(2*Math.PI*180*t)*Math.exp(-t*30); }
+ const s=a.createBufferSource(), f=a.createBiquadFilter(), g=a.createGain(); f.type='lowpass'; f.frequency.value=3200; g.gain.value=0.9; s.buffer=b; s.connect(f); f.connect(g); g.connect(a.destination); s.start(); }
+function sfxStamp(){ if(MUTE) return; const a=new (window.AudioContext||window.webkitAudioContext)(), n=a.sampleRate*0.3|0, b=a.createBuffer(1,n,a.sampleRate), d=b.getChannelData(0);
+ for(let i=0;i<n;i++){ const t=i/a.sampleRate; d[i]=0.9*Math.sin(2*Math.PI*(95-60*t)*t)*Math.exp(-t*16)+(t>0.012&&t<0.03?(Math.random()*2-1)*0.5:0)+(Math.random()*2-1)*0.25*Math.exp(-t*60); }
+ const s=a.createBufferSource(), g=a.createGain(); g.gain.value=0.9; s.buffer=b; s.connect(g); g.connect(a.destination); s.start(); }
+function redFlash(){ // Bildschirm: kurzer roter Rand (DOM). VR: rote Hohlkugel, die an der Kopfposition in der WELT steht (folgt dem Kopf nicht) und in 0,45 s verblasst
+ if(R.xr.isPresenting){ const h=new T.Vector3(); cam.getWorldPosition(h); const m=new T.Mesh(new T.SphereGeometry(0.6,24,16),new T.MeshBasicMaterial({color:0xb01010,side:T.BackSide,transparent:true,opacity:0.32,depthTest:false,depthWrite:false,fog:false,toneMapped:false})); m.renderOrder=999; m.position.copy(h); S.add(m);
+  const t0=performance.now(), f=()=>{ const k=(performance.now()-t0)/450; if(k>=1){ S.remove(m); m.geometry.dispose(); return; } m.material.opacity=0.32*(1-k); requestAnimationFrame(f); }; f(); return; }
+ const d=document.createElement('div'); d.style.cssText='position:fixed;inset:0;z-index:7;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(160,0,0,0) 45%,rgba(170,10,10,.75) 100%);opacity:1;transition:opacity .45s ease-out'; document.body.appendChild(d);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{ d.style.opacity='0'; })); setTimeout(()=>d.remove(),600); }
+function slipTex(){ return cv(512,256,(x,w,h)=>{ x.fillStyle='#eee3c8'; x.fillRect(0,0,w,h); for(let i=0;i<2500;i++){ x.fillStyle=`rgba(90,70,40,${rnd()*0.06})`; x.fillRect(rnd()*w,rnd()*h,2,2); }
+  x.fillStyle='#3a3226'; x.font='600 20px "DejaVu Sans Mono",monospace'; x.fillText('SONNEN-OASE · KUNDENKARTEI',22,34); x.fillRect(22,42,468,2); x.font='18px "DejaVu Sans Mono",monospace'; x.fillText('Vorfall: Aushilfe, Hände am falschen Ort',22,72);
+  x.save(); x.translate(256,160); x.rotate(-0.12); x.strokeStyle='rgba(176,30,36,0.88)'; x.lineWidth=6; x.strokeRect(-218,-46,436,92); x.fillStyle='rgba(176,30,36,0.9)'; x.font='700 40px "DejaVu Sans Condensed",sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('Das kommt in Ihre Akte!',0,2);
+  x.globalCompositeOperation='destination-out'; for(let i=0;i<600;i++){ x.fillStyle=`rgba(0,0,0,${0.3+rnd()*0.6})`; x.fillRect(-230+rnd()*460,-55+rnd()*110,1+rnd()*3,1+rnd()*2); } x.restore(); }); }
+function slapGag(){ gag.n++; gag.t=0; gag.need=15+Math.random()*5; drag=null; lastPaint=null; ctl.forEach(c=>{ c.zone=false; c.last=null; });
+ try{ document.getElementById('cam').setAttribute('look-controls','enabled',true); }catch(e){}
+ sfxSlap(); redFlash(); const ses=R.xr.isPresenting&&R.xr.getSession&&R.xr.getSession(); if(ses) [...ses.inputSources].forEach(s=>{ const ha=s.gamepad&&s.gamepad.hapticActuators&&s.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(1.0,220); });
+ setTimeout(()=>say('slap'),350);
+ setTimeout(()=>{ sfxStamp(); if(!gag.slip){ const m=new T.Mesh(new T.PlaneGeometry(0.21,0.105),new T.MeshStandardMaterial({map:slipTex(),roughness:0.9})); m.rotation.x=-Math.PI/2; m.rotation.z=0.25; m.position.set(CART.x-0.12,0.792,CART.z-0.02); G.add(m); gag.slip=m; } else { gag.slip.rotation.z+=0.3; } window.__oaseGag=gag.n; },1700); }
+function gagTick(d){ if(!ADULT()||st.done){ gag.t=0; return; } const z=(drag&&drag.zone)||ctl.some(c=>c.held&&c.zone); if(z) gag.t+=d; else gag.t=Math.max(0,gag.t-d*2); if(gag.t>=gag.need) slapGag(); }
 // ---------------------------------------------------------------- Bewegung + Kollision (Kopf ≥ 0,15 m von Möbeln, ≥ 0,12 m von der Figur; Boden y=0)
 const BOX=[[-1.36,0.64,TB.z-TB.w/2-0.02,TB.z+TB.w/2+0.02,0.15],[0.02,1.98,-2.17,-1.15,0.15],[CART.x-0.3,CART.x+0.3,CART.z-0.2,CART.z+0.2,0.15],[RW.x0,RW.x0+0.62,RW.z0,RW.z0+0.62,0.1],[1.48,1.82,0.78,1.12,0.12]];
 function collide(){ const h=new T.Vector3(); cam.getWorldPosition(h); const o={x:h.x,z:h.z};
@@ -301,7 +333,7 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   this.el.hasLoaded?go():this.el.addEventListener('loaded',go); },
  tick(t,dt){ if(!this.mov) return; const d=Math.min(dt||16,50)/1000; const [x,y]=this.ax;
   if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new T.Quaternion(); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new T.Vector3(-f.z,0,f.x); rig.position.addScaledVector(f,-y*d*1.6).addScaledVector(r,x*d*1.6); }
-  collide(); xrTick(); if(t%200<20||st.cov>0.85) progress();
+  collide(); xrTick(); gagTick(d); uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); if(t%200<20||st.cov>0.85) progress();
   // Begrüßung, wenn man nah genug ist (einmal) – gesprochene Zeile, kein Tipp-Fenster
   if(!st.greet&&window.__oase.ready){ const h=new T.Vector3(); cam.getWorldPosition(h); if(Math.hypot(h.x-TB.x,h.z-TB.z)<1.5&&t>2500){ st.greet=true; startAmb(); say(ADULT()?'a0':'h0'); } }
   // Perlenvorhang schwingt, wenn der Kopf durchgeht; Rauch, Röhrenflimmern, Glanz-Glitzern
@@ -310,5 +342,5 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   if(window.__oaseSmoke){ window.__oaseSmoke.material.opacity=0.42+0.14*Math.sin(t*0.0013); window.__oaseSmoke.rotation.y=Math.sin(t*0.0005)*0.6; }
   if(window.__oaseTubes) window.__oaseTubes.emissiveIntensity=1.05+0.04*Math.sin(t*0.31)+(Math.random()<0.004?-0.4:0);
   if(window.__oaseNeon) window.__oaseNeon.color.setHex(Math.random()<0.003?0x704050:0xd07090); }});
-window.__oase={st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},ADULT};
+window.__oase={gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},ADULT};
 })();
