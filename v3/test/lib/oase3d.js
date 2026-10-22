@@ -205,12 +205,13 @@ float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
 `);
  }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0)+(skin.tx?'t':'')+(skin.soft?'s':''); return m; }
 function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[which+'Adult']:C.fig[which]; // Ab-18-Datei nur bei ZS_ADULT === true
- new T.GLTFLoader().load(url,gl=>{ const r=gl.scene, parts={body:[],hair:[],towel:[],robe:[],strap:[],chest:[],top:[]}; let named=false;
+ new T.GLTFLoader().load(url,gl=>{ const r=gl.scene, parts={body:[],hair:[],towel:[],robe:[],strap:[],chest:[],top:[],glasses:[]}; let named=false;
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
   parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; o.material=oilMat(o.material,{vc,tx,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
   const hT=hairTex(); parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:0.6,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xe0b070),sheenRoughness:0.4}));
   [...parts.towel,...parts.chest].forEach(o=>{ o.material=terry('#f4ece0','#d98aa0'); if(ADULT()){ const t=terryTex('#e2d6c4','#c4868e'); o.material=new T.MeshStandardMaterial({map:t,bumpMap:t,bumpScale:0.8,vertexColors:true,roughness:1,color:0xe8dccc}); } });   // ab 18: gedämpfteres, weiches Frottee (nicht leuchtend weiß) parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
+  parts.glasses.forEach(o=>o.material=new T.MeshPhysicalMaterial({color:0x22150e,roughness:0.12,metalness:0.1,clearcoat:1,clearcoatRoughness:0.06}));   // 80er-Sonnenbrille (o7)
   [...parts.strap,...parts.top].forEach(o=>o.material=new T.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:0.45}));
   r.traverse(o=>{ if(o.isMesh&&!o.userData.keepUV){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
   r.position.set(FIG.x,FIG.y,FIG.z); cb({root:r,parts,named}); },undefined,e=>{ console.warn('[oase] Figur fehlt',url); cb(null); }); }

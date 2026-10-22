@@ -136,6 +136,39 @@ def hair(p,up):
   d=smax(d,(face_w(x,z)-0.30)*0.10*sst(0.06,0.10,y),0.01)           # Gesicht frei
   d=smax(d,-(torso(r)-0.0015),0.004)
   return smax(d,-(p[:,1]+0.002),0.01)
+
+# ---------------- 80er-Sonnenbrille (o7): verdeckt die Augen-Partie des Fotogesichts, gibt dem Profil Tiefe
+LENS=[(-0.808,-0.016),(-0.806,0.046)]
+def surf_y(x,z):
+  ys=np.arange(0.30,0.05,-0.0005); P=np.stack([np.full_like(ys,x),ys,np.full_like(ys,z)],1); d=torso(P); k=np.argmax(d<0); return ys[k] if d[k]<0 else 0.0
+def snorm(c,e=0.002):
+  g=np.array([(torso(np.array([c+dv]))-torso(np.array([c-dv])))[0] for dv in np.eye(3)*e]); return nrm(g)
+_GL=None
+def gl_frames():
+  global _GL
+  if _GL is None:
+    _GL=[]
+    for (lx,lz) in LENS:
+      c=np.array([lx,surf_y(lx,lz),lz]); n=snorm(c); n=nrm(n+np.array([0,0.6,0]))      # etwas zum Gesichts-"Oben" geneigt, liegt nicht in der Wange
+      t1=nrm(np.array([1.0,0,0])-n*n[0]); t2=np.cross(t1,n); _GL.append((c+n*0.011,np.stack([t1,n,t2],1)))
+  return _GL
+def glasses_sdf(p):
+  d=np.full(len(p),9.0); F=gl_frames()
+  for (c,R) in F:
+    q=(p-c)@R
+    e=np.sqrt((q[:,0]/0.024)**2+(np.maximum(np.abs(q[:,2])-0.004,0)/0.026)**2)-1
+    lens=np.sqrt((np.maximum(e,0)*0.024)**2+np.maximum(np.abs(q[:,1])-0.0022,0)**2)-0.0008
+    rim=np.maximum(np.abs(e)*0.025-0.0024,np.abs(q[:,1])-0.0040)
+    d=np.minimum(d,np.minimum(lens,rim))
+  (ca,Ra),(cb,Rb)=F; d=smin(d,cap(p,ca+Ra[:,0]*(-0.012)+Ra[:,2]*0.028,cb+Rb[:,0]*(-0.012)-Rb[:,2]*0.028,0.0030),0.004)   # Steg
+  for (c,R),sg in ((F[0],-1),(F[1],1)):
+    e0=c+R[:,2]*sg*0.031+R[:,0]*(-0.008); e1=e0-R[:,1]*0.05+R[:,2]*sg*0.012+np.array([-0.02,0,0]); d=smin(d,cap(p,e0,e1,0.0026),0.004)   # Bügel ins Haar
+  return d
+def glasses(up):
+  m=mesh(glasses_sdf,[-0.87,0.08,-0.10],[-0.74,0.26,0.14],0.0011,80000)
+  ok=np.all((m.vertices>[-0.88,0.07,-0.11])&(m.vertices<[-0.73,0.27,0.15]),1); m.update_faces(ok[m.faces].all(1)); m.remove_unreferenced_vertices()
+  if up: m=trimesh.Trimesh(bend(headrot(m.vertices,hw(m.vertices[:,0]))),m.faces,process=False)
+  return m
 def evalg(f,lo,hi,h):
   xs=[np.arange(lo[i],hi[i]+h,h) for i in range(3)]; n=[len(a) for a in xs]
   G=np.stack(np.meshgrid(*xs,indexing='ij'),-1).reshape(-1,3); v=np.empty(len(G),np.float32)
@@ -198,13 +231,13 @@ def skin_tex():
   blob(-0.19,0.0,0.006,0.006,[0.45,0.28,0.22],0.6,0.8)              # Nabel
   # Gesicht aus der Referenz (gespiegelt), Teil-Entlichtung, Farbabgleich, weicher Rand
   i,j=crop_uv(X,Z); w=face_w(X,Z); w=np.clip(w*2.4-0.30,0,1); sel=w>0   # Fotogesicht nur vorn, seitlich Haut
-  hc=HC.copy(); L=hc.mean(2); Lb=gaussian_filter(L,45); hc=hc/np.clip(Lb,0.05,None)[...,None]**0.55
+  hc=np.stack([gaussian_filter(HC[...,c],5) for c in range(3)],-1); L=hc.mean(2); Lb=gaussian_filter(L,45); hc=hc/np.clip(Lb,0.05,None)[...,None]**0.55
   core=(face_w(X,Z)>0.55); fc=np.stack([map_coordinates(hc[...,c],[j[core]*4,i[core]*4],order=1,mode='nearest') for c in range(3)],1)
   gain=(T[core].mean(0)/fc.mean(0))
   F=np.stack([map_coordinates(hc[...,c],[j[sel]*4,i[sel]*4],order=1,mode='nearest') for c in range(3)],1)*gain
   Lf=F.mean(1,keepdims=True); sk=T[sel]/np.clip(T[sel].mean(1,keepdims=True),1e-3,None); blue=np.clip((F[:,2]-F[:,0])*6+0.3,0,1)[:,None]
   F=F*(1-blue)+Lf*sk*blue; F=F*0.75+Lf*sk*0.25
-  F=np.clip(F,0,1.2); T[sel]=T[sel]*(1-w[sel,None])+F*w[sel,None]
+  F=np.clip(F,0,1.1); w=w*0.85; T[sel]=T[sel]*(1-w[sel,None])+F*w[sel,None]
   return np.clip(T,0,1)
 def tex_img(T): return Image.fromarray((T*255).astype(np.uint8))
 # ---------------- GLB
@@ -248,6 +281,7 @@ def vattr(m,rest,fall,kind):
   soft=0.35+0.35*np.exp(-((x+0.17)/0.13)**2)*sst(0.10,0.15,y)        # Bauch
   soft=np.maximum(soft,0.55*(x>0.06)*(x<0.42)*sst(0.04,0.11,y))      # Oberschenkel
   soft=np.maximum(soft,br); soft*=np.clip((x+0.64)/0.08,0,1)
+  a=a*(1-0.18*np.clip((-0.66-x)/0.06,0,1))
   C=np.stack([a,a,a,oil],1); C=(np.clip(C,0,1)*255+0.5).astype(np.uint8)
   S=np.stack([soft,br],1).astype(np.float32)
   uv=np.stack([(x-X0)/(X1-X0),(z-Z0)/(Z1-Z0)],1).astype(np.float32)
@@ -259,6 +293,7 @@ def build(up,img):
   Hm=mesh(fh,[-0.80,0.12,-0.26] if up else [-1.0,-0.01,-0.24],[-0.02,0.95,0.26] if up else [-0.55,0.24,0.24],0.0035,22000)
   nodes={'body':(Bm,vattr(Bm,rest,fall,'body'),True)}
   ha=ao(Hm,fall); ha=0.55+0.45*ha; hc=np.stack([np.minimum(1,ha*1.0),np.minimum(1,ha*0.9),ha*0.66,0*ha],1); nodes['hair']=(Hm,{'COLOR_0':((hc*255).astype(np.uint8),'VEC4')},False)
+  Gm=glasses(up); nodes['glasses']=(Gm,{},False)
   Tw=towel(lambda q:torso(q)) ; 
   if up: Tw=trimesh.Trimesh(bend(Tw.vertices),Tw.faces,process=False)
   ta=np.clip(ao(Tw,fb)*0.35+0.65,0,1); nodes['towel']=(Tw,{'COLOR_0':((np.stack([ta,ta,ta,0*ta],1)*255).astype(np.uint8),'VEC4')},False)
