@@ -128,7 +128,7 @@ if 'kram' in WHICH:
         px,py=P(0.047,-0.02); box(px,py,0.06,0.006,0.14,0.022,NV,rot=(0,0,ry+0.25))
         px,py=P(-0.047,-0.02); box(px,py,0.06,0.006,0.14,0.022,NV,rot=(0,0,ry-0.25))
         px,py=P(0,-0.125); box(px,py,0.06,0.07,0.012,0.04,RD,rot=(0,0,ry))
-    sneaker(-0.88,0.62,0.4); sneaker(-0.72,0.48,1.9)
+    sneaker(0.22,1.78,0.3); sneaker(0.36,1.62,1.75)
     # Rucksack an der rechten Wand (Welt x≈1,97, z≈0,75), leicht angelehnt
     bx,by,_=W2B(1.93,0,0.78); CV=mat('canvas',0x4a5a3a,var=0.12,scale=180,dirt=0x2a301e,rough=0.9); LT=mat('leder',0x3a2618,var=0.1)
     o=subbox(bx,by,0.22,0.17,0.32,0.42,CV,lvl=2,rot=(0,-0.18,0)); lumpy(o,0.006,3)
@@ -141,7 +141,7 @@ if 'kram' in WHICH:
         zz=sz/2+(0.035 if col!=0x3a5078 else 0)+(0.03 if col==0xb8b4a8 else 0)
         o=subbox(bx+dx,by+dy,zz,sx,sy,sz,mat('w%x'%col,col,var=0.15,scale=160,rough=0.95),lvl=2,rot=(0,0,rz)); lumpy(o,0.012,sd)
     # Comic-/Heftstapel neben dem Bett (Welt −0,95 / −0,55)
-    bx,by,_=W2B(-0.95,0,-0.55); CC=[0xc83a2a,0x2a5aa8,0xe8c040,0x3a8a4a,0xe8e0d0,0x8a3a8a,0xd86a20]
+    bx,by,_=W2B(-1.0,0,-1.12); CC=[0xc83a2a,0x2a5aa8,0xe8c040,0x3a8a4a,0xe8e0d0,0x8a3a8a,0xd86a20]
     for i in range(7): box(bx+random.uniform(-0.015,0.015),by+random.uniform(-0.015,0.015),0.004+i*0.0085,0.17,0.25,0.007,mat('h%d'%i,CC[i],var=0.25,scale=30,rough=0.7),rot=(0,0,random.uniform(-0.25,0.25)))
     # Papierkorb (Welt 1,9 / −1,25) mit Papierknäueln
     bx,by,_=W2B(1.88,0,-1.25); PK=mat('korb',0x3a4a48,var=0.1,rough=0.5)
@@ -175,4 +175,8 @@ if 'kram' in WHICH:
     for t in (-1,1): cyl(bx-0.1+t*0.075*math.cos(0.8),by+0.08+t*0.075*math.sin(0.8),bz+0.012,0.024,0.018,mat('kpolster',0xc86a20,var=0.15,scale=200,rough=0.95),v=16)
     curve_cable([(bx-0.1,by+0.005,bz+0.012),(bx-0.06,by-0.02,bz+0.003),(bx-0.02,by-0.02,bz+0.003),(bx-0.03,by+0.03,bz+0.012)],0.0018,mat('kkabel',0x111111,var=0.05))
     bx,by,bz=W2B(1.62,0.778,-0.15); box(bx,by,bz+0.004,0.16,0.22,0.007,mat('heft',0x2a5a9a,var=0.1,rough=0.7),rot=(0,0,-0.15)); box(bx+0.01,by,bz+0.0085,0.145,0.205,0.002,mat('heftp',0xe8e4d8,var=0.06),rot=(0,0,-0.15))
+    # Lichtschalter + Steckdose neben der Tür (Front-Wand z=2, Tür x 1,01..1,99): Creme-Wippe, 80er
+    SW=mat('schalter',0xd8d0b8,var=0.06,rough=0.4)
+    bx,by,_=W2B(0.9,0,1.996); box(bx,by,1.05,0.08,0.012,0.08,SW,bev=0.004); box(bx,by-0.008,1.05,0.05,0.006,0.05,mat('wippe',0xe4dcc8,var=0.05,rough=0.35),bev=0.003)
+    box(bx,by,0.3,0.075,0.012,0.075,SW,bev=0.004); cyl(bx,by-0.007,0.3,0.022,0.004,mat('dose',0xc8c0a8,var=0.05),axis='Y',v=18)
     ob=finish('sz_kram',1024,rough=0.85,ao_k=0.85,ao_dist=0.1); export('sz_kram',[ob])

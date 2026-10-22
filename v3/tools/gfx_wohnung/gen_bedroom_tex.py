@@ -159,7 +159,35 @@ def tapete(N=1024):
     col=np.array([150,92,72]); c=c*(1-0.7*mot[...,None])+col*0.7*mot[...,None]
     leaf=np.exp(-(((u-0.5)*P)**2/8 + ((((y+64)%128)/128-0.5)*128)**2/120)); c=c*(1-0.35*leaf[...,None])+np.array([110,120,80])*0.35*leaf[...,None]
     im=Image.fromarray(np.clip(c,0,255).astype(np.uint8)); im.save(OUT+'src/sz_tapete.png'); im.save(OUT+'sz_tapete.jpg',quality=90)
+def hofoben(W=1024,H=512):
+    # Ergänzung über dem Hof-Foto (oberer Fensterteil): obere Etagen des Hinterhauses mit ein paar warmen Fenstern, Dachkante, Schornsteine, Stadtnachthimmel
+    y,x=np.mgrid[0:H,0:W].astype(float); v=1-y/H; roof=0.33+0.006*np.sin(x/W*7)
+    sky=np.array([20,24,36])*(v[...,None])+np.array([52,44,46])*(1-v[...,None]); cl=pnoise(1024,40)[:H,:W]; sky=sky*(0.9+0.2*cl[...,None])
+    fac=np.array([30,31,30])*(0.85+0.25*pnoise(1024,6)[:H,:W][...,None])*(0.9+0.15*pnoise(1024,60)[:H,:W][...,None])
+    c=np.where((v<roof)[...,None],fac,sky)
+    im=Image.fromarray(np.clip(c,0,255).astype(np.uint8)); d=ImageDraw.Draw(im)
+    rt=int(H*(1-0.33)); d.rectangle([0,rt-6,W,rt+4],fill=(18,18,20)); d.rectangle([0,rt+4,W,rt+10],fill=(40,38,36))  # Dachrinne
+    for cx in (140,470,800): d.rectangle([cx,rt-58,cx+34,rt-6],fill=(16,16,18)); d.rectangle([cx-4,rt-64,cx+38,rt-56],fill=(22,22,24))
+    random.seed(7)
+    for row in range(2):
+        for col in range(8):
+            x0=40+col*125; y0=rt+40+row*95; lit=(row,col) in [(0,2),(1,5),(1,1)]; tv=(row,col)==(0,6)
+            g=(150,102,56) if lit else ((48,60,92) if tv else (14,16,20)); d.rectangle([x0-6,y0-6,x0+56,y0+76],fill=(40,40,38)); d.rectangle([x0,y0,x0+50,y0+70],fill=g)
+            if lit: d.rectangle([x0,y0,x0+16,y0+70],fill=(104,64,36)); d.rectangle([x0+34,y0,x0+50,y0+70],fill=(104,64,36))
+            d.line([(x0+25,y0),(x0+25,y0+70)],fill=(30,26,22),width=3); d.line([(x0,y0+30),(x0+50,y0+30)],fill=(30,26,22),width=3)
+    im=im.filter(ImageFilter.GaussianBlur(2.2)); a=np.asarray(im,float)*(0.92+0.16*rng.random((H,W,1))); im=Image.fromarray(np.clip(a,0,255).astype(np.uint8)); im.save(OUT+'src/sz_hof_oben.png'); im.save(OUT+'sz_hof_oben.jpg',quality=88)
+def vorhang(W=512,H=1024):
+    # Übergardine 80er: Rost/Ocker, grobes Gewebe, feine Längsstreifen, Kreis-Bordüre unten, Saum + Kräuselband; horizontal nahtlos (repeat 2 auf 0,5 m)
+    y,x=np.mgrid[0:H,0:W].astype(float); base=np.array([128,74,40],float)
+    wv=(np.sin(x*math.pi/2)*np.sin(y*math.pi/2))*0.5+0.5; fib=pnoise(1024,1.5)[:H,:W]
+    c=base*(0.86+0.1*wv[...,None]+0.08*fib[...,None])
+    st=np.exp(-(((x%128)-64)/5)**2); c=c*(1-0.12*st[...,None])+np.array([170,120,60])*0.12*st[...,None]
+    by=H*0.82; ring=np.abs(np.hypot((x%128)-64,y-by)-34)<5; c[ring]=c[ring]*0.55+np.array([190,140,70])*0.45
+    band=(np.abs(y-by+52)<3)|(np.abs(y-by-52)<3); c[band]=c[band]*0.5+np.array([180,130,64])*0.5
+    c[y>H*0.97]*=0.8; c[y<H*0.03]=c[y<H*0.03]*0.6+np.array([200,190,170])*0.4
+    low=pnoise(1024,80)[:H,:W]; c*=(0.92+0.12*low[...,None])
+    im=Image.fromarray(np.clip(c,0,255).astype(np.uint8)); im.save(OUT+'src/sz_vorhang.png'); im.save(OUT+'sz_vorhang.jpg',quality=88)
 import sys
 which=sys.argv[1].split(',') if len(sys.argv)>1 else ['rug','pinboard','kalender','hof','tapete']
-for w in which: globals()[{'rug':'rug','pinboard':'pinboard','kalender':'kalender','hof':'hof','tapete':'tapete'}[w]]()
+for w in which: globals()[{'rug':'rug','pinboard':'pinboard','kalender':'kalender','hof':'hof','tapete':'tapete','hofoben':'hofoben','vorhang':'vorhang'}[w]]()
 print('ok')

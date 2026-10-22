@@ -31,8 +31,9 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  setTimeout(wagen,0);
  // ---- 3) Fensterblick: Canvas-Schichten (hinter der Wand) raus, Bild+Tiefe rein ----
  G.children.filter(o=>o.isMesh&&o.material&&o.material.isMeshBasicMaterial&&o.material.fog===false&&o.position.z<-3).forEach(o=>{ G.remove(o); });
- const mkView=()=>{ info.pending++; DepthBG.build({img:'../sky/backdrop/sz_hinterhof.jpg',depth:'../sky/backdrop/sz_hinterhof_depth.png',position:[0,0,0],hfov:88,aspect:2048/1031,near:6,far:28,fade:0.1,tint:0xe0e0e0,grid:[96,56]}).then(m=>{
-   const g=new T.Group(); g.position.set(0.45,1.6,-2.0-0.6); m.rotation.x=-0.5; g.add(m); G.add(g); info.view=true; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
+ const mkView=()=>{ info.pending++; DepthBG.build({img:'../sky/backdrop/sz_hinterhof.jpg',depth:'../sky/backdrop/sz_hinterhof_depth.png',position:[0,0,0],hfov:88,aspect:2048/1031,near:6,far:28,fade:0.1,tint:0xf0f0f0,grid:[96,56]}).then(m=>{
+   const g=new T.Group(); g.position.set(0.45,1.6,-2.0-0.6); m.rotation.x=-0.5; g.add(m); G.add(g); // obere Fensterhälfte: Hinterhaus-Etagen + Dach + Stadthimmel (PIL), weit hinter dem Tiefenbild (−5°…+45°), sonst schwarz
+   const fp=new T.Mesh(new T.PlaneGeometry(57,26.1),new T.MeshBasicMaterial({color:0xb0b0b0,fog:false})); fp.position.set(0,10.95,-24); fp.name='sz_hof_oben'; g.add(fp); tx('sz_hof_oben.jpg',t=>{ fp.material.map=t; fp.material.needsUpdate=true; }); info.view=true; info.pending--; }).catch(e=>{ console.warn('gfx_sz fenster',e); info.pending--; info.viewFail=true; }); };
  if(window.DepthBG) mkView(); else { let s=document.querySelector('script[src*="depthbg.js"]'); if(!s){ s=document.createElement('script'); s.src='lib/depthbg.js?v=1'; document.head.appendChild(s); }
   const wait=()=>{ if(window.DepthBG) mkView(); else if(Date.now()-t0>15000) info.viewFail=true; else setTimeout(wait,100); }, t0=Date.now(); wait(); }
  put('sz_schrank.glb','sz_schrank',G,[-0.5,0,1.70],0,1.05);
@@ -42,6 +43,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  const TL=new T.TextureLoader(), tx=(f,cb)=>TL.load('../'+SB+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; if(cb) cb(t); });
  if(shell[2]) tx('sz_tapete.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; shell[2].material.map=t; shell[2].material.needsUpdate=true; }); // Tapete: Streifen mit Rautenblüte, Papierfaser (gen_bedroom_tex.py) statt fleckiger Kachel
  G.children.forEach(o=>{ if(!o.isMesh) return; const g=o.geometry, pr=g.parameters||{};
+  if(o.material&&o.material.map&&o.material.map.image&&/curtain_c/.test(o.material.map.image.src||'')){ const m=o.material; tx('sz_vorhang.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(2,1); m.map=t; m.color.setHex(0xffffff); m.needsUpdate=true; }); o.name='sz_vorhang'; return; }
   if(g.type==='PlaneGeometry'&&pr.widthSegments===24&&pr.heightSegments===40){ // Bettdecke: Matratze darf nicht durchstoßen, Fußende hängt über
    const P=g.attributes.position, hw=pr.width/2; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), ax=Math.abs(x); let lim=ax<0.4?-0.012:-0.012-Math.pow((ax-0.4)/(hw-0.4),2)*0.17; let z=Math.max(P.getZ(i),lim);
     if(y<-pr.height/2+0.12) z-=Math.pow((-pr.height/2+0.12-y)/0.12,2)*0.12; P.setZ(i,z); } g.computeVertexNormals(); o.name='sz_decke'; }
@@ -52,15 +54,18 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.75)<1e-3&&Math.abs(pr.height-0.28)<1e-3&&o.material.blending===T.AdditiveBlending){ o.material.color.setHex(0x6a6a6a); o.name='sz_neon'; }
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.5)<1e-3&&Math.abs(pr.height-0.72)<1e-3&&o.position.z>1.9){ o.position.set(-0.25,1.33,1.385); o.scale.set(0.8,0.8,1); o.rotation.z=-0.01; o.name='sz_poster_schrank'; }
  });
- added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.28; o.distance=2.2; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } }); // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
+ added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.2; o.distance=3.0; o.position.x=1.3; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } }); // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
  { const m=new T.Mesh(new T.BoxGeometry(0.8,0.55,0.022),new T.MeshStandardMaterial({color:0xb0a898,roughness:0.85})); tx('sz_pinboard.jpg',t=>{ m.material.map=t; m.material.needsUpdate=true; });
    m.position.set(2.1-0.012,1.36,-0.22); m.rotation.y=-Math.PI/2; m.name='sz_pinnwand'; G.add(m);
    const k=new T.Mesh(new T.PlaneGeometry(0.3,0.45),new T.MeshStandardMaterial({color:0xb8b0a4,roughness:0.8})); tx('sz_kalender.jpg',t=>{ k.material.map=t; k.material.needsUpdate=true; });
    k.position.set(0.52,1.52,2.0-0.004); k.rotation.set(0,Math.PI,0.015); k.name='sz_kalender'; G.add(k); }
  // ---- 3c) Sperrzonen (x0,x1,z0,z1) – hardClamp addiert 0,22 Kopfradius → ~0,34 m Abstand ----
- const ZONES=[[-2.1,-1.01,-2.0,0.18],[-1.12,-0.38,-2.0,-1.38],[1.36,2.1,-1.02,0.52],[0.98,1.62,-0.55,0.15],[1.18,2.1,-2.0,-1.43],[1.64,2.1,-1.5,-1.0],
-  [-2.1,-1.51,0.03,1.07],[-2.1,-1.03,0.93,2.0],[-1.12,0.12,1.29,2.0],[0.6,1.1,-2.0,-1.5],[-1.1,-0.8,-0.7,-0.4],[-1.02,-0.6,0.35,0.8],[1.7,2.1,0.55,1.0]];
- window.__gfxSZ.zones=ZONES;
+ // zusammenhängende Blöcke, keine schmalen Spalten zwischen Zonen (sonst schiebt hardClamp hin und her)
+ const ZONES=[[-2.1,-0.9,-2.0,0.18],[-2.1,-0.38,-2.0,-1.38],        // Bett (+ Hefte daneben), Nachttisch
+  [-2.1,-1.51,0.03,1.07],[-2.1,0.5,0.93,2.0],                         // Kommode; TV-Wagen + Schrank + Turnschuhe (Front-Wand links der Tür)
+  [1.36,2.1,-2.0,0.52],[0.6,2.1,-2.0,-1.43],[0.98,1.62,-0.55,0.15],   // Schreibtisch/Papierkorb/Regal, Wäsche unterm Fenster bis Regal, Stuhl
+  [1.7,2.1,0.52,1.0]];                                                // Rucksack
+ info.zoneRects=ZONES;
  const sol=()=>{ const R=window.__apt&&__apt.ROOMS&&__apt.ROOMS.bedroom; if(!R){ setTimeout(sol,200); return; } R.solid=R.solid||[]; R.solid.length=0; ZONES.forEach(z=>R.solid.push(z.slice())); info.zones=true; };
  setTimeout(sol,0);
  // ---- 4) Licht: Hemi etwas heller/wärmer (düster, nicht schwarz) ----
