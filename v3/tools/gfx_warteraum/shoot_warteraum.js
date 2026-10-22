@@ -9,13 +9,14 @@ let V=[['row',0.7,1.45,0.15,92,-6,70],['counter',0.25,1.55,-0.7,-22,-3,70],['noe
  ['mid0',0,1.6,0,0,-5,80],['mid90',0,1.6,0,90,-5,80],['mid180',0,1.6,0,180,-5,80],['mid270',0,1.6,0,270,-5,80],
  ['f_oma',-1.4,1.25,1.55,95,-12,50],['f_gruen',-1.4,1.3,0.95,95,-12,50],['f_brand',-1.45,1.3,0.15,95,-12,50],['f_jaeger',-1.5,1.2,-1.5,100,-14,50],
  ['f_taucher',-0.5,1.3,1.1,160,-15,55],['f_assi',1.35,1.3,0.2,-90,-12,55],['f_frl',1.05,1.5,-1.45,-6,-4,50]];
+if(process.env.XV) V=V.concat(JSON.parse(process.env.XV));
 if(process.env.VIEWS) V=V.filter(v=>process.env.VIEWS.split(',').includes(v[0]));
 fs.mkdirSync(OUT,{recursive:true});
 (async()=>{ const br=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist',`--window-size=${W},${H}`]});
  const pg=await br.newPage(); await pg.setViewport({width:W,height:H}); const errs=[];
  pg.on('pageerror',e=>errs.push(String(e.message).slice(0,200))); pg.on('console',m=>{ if(m.type()==='error'||m.type()==='warning') errs.push(m.text().slice(0,200)); });
  await pg.goto(URL,{waitUntil:'load',timeout:90000});
- await pg.addStyleTag({content:'#hud,.a-enter-vr,.a-enter-ar,.a-orientation-modal,.a-loader-title{display:none!important}'});
+ await pg.addStyleTag({content:'#hud,#zsh,#zsh-btn,#ff,#grain,.a-enter-vr,.a-enter-ar,.a-orientation-modal,.a-loader-title{display:none!important}'});
  await pg.waitForFunction(()=>window.__wr&&window.__wr.ready,{timeout:90000});
  await pg.evaluate(()=>{ const s=document.querySelector('a-scene'), r=s.renderer; window.__dc=[]; const o=r.render.bind(r); r.render=function(a,b){ o(a,b); window.__dc.push(r.info.render.calls+'|'+r.info.render.triangles); if(window.__dc.length>60) window.__dc.shift(); };
   const c=document.getElementById('cam'); c.setAttribute('look-controls','enabled:false'); c.removeAttribute('wasd-controls'); const cm=s.components.warteraum; cm.clamp=()=>{}; });

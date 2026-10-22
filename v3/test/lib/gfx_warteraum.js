@@ -10,53 +10,40 @@ const Q=location.search, num=(k,d)=>{ const m=Q.match(new RegExp('[?&]'+k+'=([\\
 const BASE='../assets/warteraum/';
 AFRAME.registerComponent('warteraum',{
  init(){ const T=THREE, sc=this.el, self=this; this.t0=performance.now(); window.__wr={ready:false};
-  fetch(BASE+'scene.json?v=4').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
+  fetch(BASE+'scene.json?v=6b').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
-  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=4'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',0.68); // 0.68: düsterer, Neonröhren übernehmen die Lichtinseln
-  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=4'); sc.appendChild(el);
+  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=6b'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',0.95); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=6b'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
-    if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
-     // Neon-Stimmung: Lightmap leicht kalt-grünlich getönt (Bake bleibt, nur der Anteil im Shader)
-     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','lightMapTexel.rgb * lightMapIntensity * vec3(0.84,0.97,0.90)')); }; m.customProgramCacheKey=()=>'wrlm'; }
+    if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
+     // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter)
+     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','lightMapTexel.rgb * lightMapIntensity * vec3(1.0,0.97,0.92)')); }; m.customProgramCacheKey=()=>'wrlm'; }
     if(m.metalness>0.2) m.metalness=0.35; m.needsUpdate=true; });
    // Sonder-Materialien
    const swap=(name,mk)=>{ const old=M[name]; if(!old) return; const nm=mk(old); root.traverse(o=>{ if(o.isMesh&&o.material===old) o.material=nm; }); M[name]=nm; };
    swap('wr_emit',o=>new T.MeshBasicMaterial({color:new T.Color(0x6cd858).multiplyScalar(0.9),vertexColors:false,fog:false}));
    swap('wr_glass',o=>new T.MeshStandardMaterial({color:0x9ab0a8,roughness:0.1,metalness:0,transparent:true,opacity:0.13,depthWrite:false}));
-   if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xc07a38); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.4; M.wr_shade.side=T.DoubleSide; }
+   if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xd09050); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.62; M.wr_shade.side=T.DoubleSide; } // v4: Schirm ohne Lightmap (Hunyuan-Inseln), leuchtet gleichmäßig von innen, nicht ausgebrannt
    if(M.wr_noexit){ M.wr_noexit.emissive=new T.Color(0xb8d8a8); M.wr_noexit.emissiveMap=M.wr_noexit.map; M.wr_noexit.emissiveIntensity=0.5; }
+   if(M.wr_vinyl){ M.wr_vinyl.roughness=0.72; } // Sofa/Sessel: mattes altes Kunstleder, keine Glanzstreifen
    if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.24; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
    swap('wr_flip',o=>new T.MeshBasicMaterial({map:ft,color:0x9a9a90}));
    self.drawFlip(4,4,1);
-   // Lichter (max 4): Hemi + 2 Neonröhren + grünes Fenster. Tischlampen/Rot kommen aus der Lightmap.
-   const hemi=new T.HemisphereLight(0x2e4a46,0x090e0d,0.26); sc.object3D.add(hemi);
-   const gw=S.window; const green=new T.PointLight(0x78ff60,0.7,4.5,2); green.position.set(gw[0],gw[1],gw[2]); sc.object3D.add(green);
-   // Deckenleuchten (Rasterleuchte mit Prismen-Abdeckung, 2 Röhren) – 2 Draws (InstancedMesh Gehäuse + Abdeckung)
-   const ch=z=>2.6+(z+2.68)/5.18*0.15-0.005; // Deckenhöhe (Decke fällt nach -z ab)
-   const FX=[[0.8,-1.45,1.0],[0.8,0.55,1.0],[-1.65,-0.85,0.62],[-1.65,1.35,0.42]]; // x,z,Helligkeit (1 = mit Lichtquelle)
-   const hc=document.createElement('canvas'); hc.width=256; hc.height=64; const hx=hc.getContext('2d');
-   hx.fillStyle='#7f978a'; hx.fillRect(0,0,256,64);
-   [20,44].forEach(y=>{ const g=hx.createLinearGradient(0,y-12,0,y+12); g.addColorStop(0,'rgba(235,255,240,0)'); g.addColorStop(0.5,'rgba(240,255,244,1)'); g.addColorStop(1,'rgba(235,255,240,0)'); hx.fillStyle=g; hx.fillRect(4,y-12,248,24); });
-   hx.globalAlpha=0.16; hx.fillStyle='#203028'; for(let i=0;i<256;i+=4) hx.fillRect(i,0,1,64); for(let j=0;j<64;j+=4) hx.fillRect(0,j,256,1); hx.globalAlpha=1;
-   const eg=hx.createLinearGradient(0,0,256,0); eg.addColorStop(0,'rgba(20,30,24,.55)'); eg.addColorStop(0.06,'rgba(0,0,0,0)'); eg.addColorStop(0.94,'rgba(0,0,0,0)'); eg.addColorStop(1,'rgba(20,30,24,.55)'); hx.fillStyle=eg; hx.fillRect(0,0,256,64);
-   const dt=new T.CanvasTexture(hc); dt.colorSpace=T.SRGBColorSpace; dt.anisotropy=8;
-   const hous=new T.InstancedMesh(new T.BoxGeometry(1.3,0.07,0.36),new T.MeshStandardMaterial({color:0x3a3f3a,roughness:0.55,metalness:0.35}),FX.length);
-   const dg=new T.PlaneGeometry(1.22,0.28); dg.rotateX(Math.PI/2);
-   const diff=new T.InstancedMesh(dg,new T.MeshBasicMaterial({map:dt,color:0xffffff,fog:false}),FX.length);
-   const mtx=new T.Matrix4(), col=new T.Color(); const TUBE=new T.Color(0xc8e8d2);
-   FX.forEach(([x,z,k],i)=>{ const y=ch(z); mtx.makeTranslation(x,y-0.035,z); hous.setMatrixAt(i,mtx); mtx.makeTranslation(x,y-0.072,z); diff.setMatrixAt(i,mtx); diff.setColorAt(i,col.copy(TUBE).multiplyScalar(k)); });
-   diff.instanceColor.setUsage(T.DynamicDrawUsage); [hous,diff].forEach(o=>{ o.frustumCulled=false; sc.object3D.add(o); });
-   const tA=new T.PointLight(0xd6f5e0,2.4,5.2,2); tA.position.set(FX[0][0],ch(FX[0][1])-0.3,FX[0][1]); sc.object3D.add(tA);
-   const tB=new T.PointLight(0xd6f5e0,2.1,5.0,2); tB.position.set(FX[1][0],ch(FX[1][1])-0.3,FX[1][1]); sc.object3D.add(tB);
-   self.neon={diff,tB,base:2.1,col:TUBE,lvl:1,tgt:1,next:3,hold:0};
-   const warm=null, red=null;
-   self.L={hemi,warm,green,red,tA,tB};
+   // Pin-ups (eigene Textur pinups.png im GLB). Erwachsenen-Variante: nur wenn window.ZS_ADULT gesetzt ist (derzeit nirgends) wird
+   // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
+   if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
+   // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
+   const hemi=new T.HemisphereLight(0x4a4236,0x0c0b09,0.30); sc.object3D.add(hemi);
+   const gw=S.window; const green=new T.PointLight(0x78ff60,0.55,4.0,2); green.position.set(gw[0],gw[1],gw[2]); sc.object3D.add(green);
+   const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,i?1.0:1.3,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
+   const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
+   self.L={hemi,green,warm:warmL};
    // Rauchfaden (1 Draw: Points)
    const sm=S.anchors.smoke, N=14, g=new T.BufferGeometry(), P=new Float32Array(N*3), A=new Float32Array(N);
    g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(A,1));
@@ -102,7 +89,7 @@ AFRAME.registerComponent('warteraum',{
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
   const D=this.motes; if(D){ for(let i=0;i<D.N;i++){ const k=i*3, u=s*0.05+i*1.7; D.P[k]=D.S0[k]+0.12*Math.sin(u*0.9+i); D.P[k+1]=D.S0[k+1]+0.10*Math.sin(u*0.6+i*0.3)-((s*0.012+i*0.37)%1)*0.08; D.P[k+2]=D.S0[k+2]+0.12*Math.cos(u*0.7+i*2.1); } D.g.attributes.position.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
-  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.7*f)-this.L.green.intensity)*0.3; }
+  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.55*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
@@ -159,12 +146,12 @@ AFRAME.registerComponent('warteraum',{
  clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
   const p=this.push({x:h.x,z:h.z});
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
- // Staubkörnchen im Neonlicht (1 Draw, Points, additiv sehr schwach, keine Lichtpunkte)
+ // Staubkörnchen im Lampenlicht (1 Draw, Points, additiv sehr schwach, keine Lichtpunkte)
  dust(T,sc,FX,ch){ const N=260, g=new T.BufferGeometry(), P=new Float32Array(N*3), S0=new Float32Array(N*3);
   for(let i=0;i<N;i++){ const f=FX[i%2]; const r=Math.sqrt(Math.random())*1.1, a=Math.random()*6.283; S0[i*3]=f[0]+Math.cos(a)*r*1.1; S0[i*3+1]=0.5+Math.random()*1.9; S0[i*3+2]=f[1]+Math.sin(a)*r*0.8; }
   P.set(S0); g.setAttribute('position',new T.BufferAttribute(P,3));
   const c=document.createElement('canvas'); c.width=c.height=32; const x=c.getContext('2d'), gr=x.createRadialGradient(16,16,0,16,16,15); gr.addColorStop(0,'rgba(220,240,226,0.9)'); gr.addColorStop(0.5,'rgba(220,240,226,0.25)'); gr.addColorStop(1,'rgba(220,240,226,0)'); x.fillStyle=gr; x.fillRect(0,0,32,32);
-  const m=new T.PointsMaterial({map:new T.CanvasTexture(c),size:0.011,sizeAttenuation:true,transparent:true,opacity:0.32,depthWrite:false,blending:T.AdditiveBlending,color:0xbfd8c8,fog:true});
+  const m=new T.PointsMaterial({map:new T.CanvasTexture(c),size:0.011,sizeAttenuation:true,transparent:true,opacity:0.30,depthWrite:false,blending:T.AdditiveBlending,color:0xe0cfb0,fog:true});
   const pts=new T.Points(g,m); pts.frustumCulled=false; sc.object3D.add(pts); this.motes={g,P,S0,N}; },
  // ---------------- Ton ----------------
  audioArm(){ if(/[?&]mute=1/.test(Q)) return; const go=()=>{ if(this.ac) { if(this.ac.state!=='running') this.ac.resume(); return; } this.audioStart(); };
@@ -185,7 +172,7 @@ AFRAME.registerComponent('warteraum',{
   const pk=ac.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=1300; pk.gain.value=5; pk.Q.value=0.8; const ws=ac.createWaveShaper(); const cu=new Float32Array(1024); for(let i=0;i<1024;i++){ const x=i/511.5-1; cu[i]=Math.tanh(x*1.8)/Math.tanh(1.8); } ws.curve=cu;
   hp.connect(lp); lp.connect(pk); pk.connect(ws);
   loop('elevator',A.radio,0.55,[[hp,ws]]); loop('crackle',A.radio,0.22);
-  loop('hum',A.office,0.10); loop('hum',A.tube,0.05); loop('tick',A.clock,0.35); loop('voices',A.office,0.30); loop('typewriter',A.office,0.16);
+  loop('hum',A.office,0.10); loop('tick',A.clock,0.35); loop('voices',A.office,0.30); loop('typewriter',A.office,0.16);
   // zufällige Geräusche der Wartenden
   const who=['oma','gruen','brand','jaeger','taucher','assi'];
   const rnd=()=>{ const n=['cough1','cough2','cough3','page','creak','creak2'][Math.floor(Math.random()*6)]; const p=A[who[Math.floor(Math.random()*who.length)]]; this.play(n,p,n.startsWith('cough')?0.45:0.5); setTimeout(rnd,4000+Math.random()*9000); };

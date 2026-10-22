@@ -36,7 +36,8 @@ MT=dict(
  fabric=M('wr_fabric','fabric_col.png',None,0.92), vinyl=M('wr_vinyl','fig_col.png',None,0.42), metal=M('wr_metal',None,None,0.38,0.75), shade=M('wr_shade','shade_col.png',None,0.9),
  paint=M('wr_paint','paintings.png',None,0.45), signs=M('wr_signs','signs.png',None,0.5), paper=M('wr_paper','paper.png',None,0.85),
  glass=M('wr_glass',None,None,0.08,0.0,alpha=0.15), redglass=M('wr_redglass',None,None,0.25), fig=M('wr_fig','fig_col.png',None,0.62),
- emit=M('wr_emit',None,None,1.0,emit=(0x9cff7a,6.0)), flip=M('wr_flip',None,None,0.6), noexit=M('wr_noexit','signs.png',None,0.5))
+ emit=M('wr_emit',None,None,1.0,emit=(0x9cff7a,6.0)), flip=M('wr_flip',None,None,0.6), noexit=M('wr_noexit','signs.png',None,0.5),
+ pinup=M('wr_pinup','pinups.png',None,0.38))   # v4: Pin-ups (gen_beetle.py) – eigene, austauschbare Textur
 AX={}
 MOVERS=[]  # bewegliche Teile (eigene Objekte, Ursprung = Gelenk)
 # ------------------------------------------------------------------ Raumhülle (Caligari: schräge Wände, Boden flach y=0)
@@ -216,7 +217,7 @@ iL0,iR0,iL1,iR1=xa+0.16,xb-0.14,xa+0.24,xb-0.20; zt0,zt1=2.08,2.18
 jamb=[xz_poly('j1',[(xa-0.06,0),(iL0,0),(iL1,zt0),(xa-0.06,zt0)],-2.58,-2.42,MT['wood']),
       xz_poly('j2',[(iR0,0),(xb+0.06,0),(xb+0.06,zt1),(iR1,zt1)],-2.58,-2.42,MT['wood']),
       xz_poly('j3',[(xa-0.06,zt0),(iL1,zt0),(iR1,zt1),(xb+0.06,zt1),(xb+0.06,DOOR[3]+0.06),(xa-0.06,DOOR[3]+0.06)],-2.58,-2.42,MT['wood'])]
-o=join(jamb,'door_frame'); box_uv(o,2); vc_const(o,0x24302a)
+o=join(jamb,'door_frame'); box_uv(o,2); vc_const(o,0x3e5444)
 # Schacht
 SY=-3.55
 sh=[quad('sh_l',[(xa,-2.5,0),(xa,SY,0),(xa,SY,2.5),(xa,-2.5,2.5)],MT['wall']),quad('sh_r',[(xb,SY,0),(xb,-2.5,0),(xb,-2.5,2.5),(xb,SY,2.5)],MT['wall']),
@@ -226,35 +227,41 @@ o=grid_quad('sh_floor',V((xa,SY,0)),V((xb,SY,0)),V((xa,-2.5,0)),V((xb,-2.5,0)),3
 em=quad('sh_glow',[(xa,SY+0.01,0),(xb,SY+0.01,0),(xb,SY+0.01,2.5),(xa,SY+0.01,2.5)],MT['emit']); vc_const(em,0xffffff)
 for p in em.data.polygons: p.flip()
 lat=[]
-for x in [xa+0.18,(xa+xb)/2,xb-0.18]: lat.append(box('pf',(x,-2.95,1.25),(0.06,0.06,2.5),MT['wood']))
-for i in range(9):
-    z=0.25+i*0.26; lat.append(box('lt',((xa+xb)/2,-3.05,z),(xb-xa,0.04,0.07),MT['wood'],rot=(0,math.radians(-22),0)))
-for i in range(4):
-    z=0.4+i*0.55; lat.append(box('lt2',((xa+xb)/2,-3.3,z),(xb-xa,0.04,0.06),MT['wood'],rot=(0,math.radians(18),0)))
-o=join(lat,'slats'); box_uv(o,2); vc_const(o,0x3a3226)
+RL=random.Random(23)
+for i,x in enumerate([xa+0.12,xa+0.34,xa+0.58,xb-0.36,xb-0.13]):   # v4: dünne, leicht krumme Stangen (Pete 06)
+    c=cyl('pf',(x,-2.62-0.12*(i%2),1.25),0.022,2.5,MT['wood'],seg=6,rot=(RL.uniform(-0.03,0.03),RL.uniform(-0.03,0.03),0)); lat.append(c)
+for i in range(11):   # kurze, schräge Sprossen in der Tiefe, unregelmäßig
+    z=0.22+i*0.2+RL.uniform(-0.04,0.04); y=-2.95-0.45*(i%3)/2; L=RL.uniform(0.35,0.75); xc=RL.uniform(xa+L/2,xb-L/2)
+    lat.append(box('lt',(xc,y,z),(L,0.035,0.04),MT['wood'],rot=(0,math.radians(RL.uniform(-14,14)),0)))
+o=join(lat,'slats'); box_uv(o,2); vc_const(o,0x2c4a30)
 s=box('noexit',((xa+xb)/2,-2.4,2.31),(0.5,0.02,0.156),MT['noexit']); cell_uv(s,ATL['noexit'],axis='-y'); vc_const(s,0xffffff)
 # ------------------------------------------------------------------ Wandschmuck: Gemälde, Plakate, Sternleuchten, Uhr
 def painting(W,cell,a0,a1,b0,b1,frame=0x2a1c10):
     fw=0.06; fr=[wbox(W,a0-fw,a1+fw,b1,b1+fw,0.0,0.05,MT['wood']),wbox(W,a0-fw,a1+fw,b0-fw,b0,0.0,0.05,MT['wood']),wbox(W,a0-fw,a0,b0,b1,0.0,0.05,MT['wood']),wbox(W,a1,a1+fw,b0,b1,0.0,0.05,MT['wood'])]
     o=join(fr,'frame'); box_uv(o,3); vc_const(o,frame); onwall(o,W)
-    c=wbox(W,a0,a1,b0,b1,0.0,0.02,MT['paint']); cell_uv(c,[(cell%2)*512,(cell//2)*512,512,512],atlas=1024,axis='y'); vc_const(c,0xffffff); onwall(c,W)
+    asp=(a1-a0)/(b1-b0); cw,chh=(512,512/asp) if asp>=1 else (512*asp,512); X0=(cell%2)*512+(512-cw)/2; Y0=(cell//2)*512+(512-chh)/2
+    c=wbox(W,a0,a1,b0,b1,0.0,0.02,MT['paint']); cell_uv(c,[X0,Y0,cw,chh],atlas=1024,axis='y'); vc_const(c,0xffffff); onwall(c,W)
 WW,WE=WALLS['W'],WALLS['E']
 painting(WN,1,0.25,1.30,1.02,1.72); painting(WW,0,0.65,1.55,1.30,1.95); painting(WW,2,2.60,3.30,1.30,1.95,0x3a2a16); painting(WE,1,2.05,3.55,1.22,1.90); painting(WS,3,3.90,4.95,1.15,1.82,0x302214)
-sign(WW,'formular',4.10,4.50,1.10,1.667,c=0.002,th=0.003,mat=MT['signs']); sign(WE,'handbuch',0.55,0.95,1.10,1.667,c=0.002,th=0.003); sign(WE,'seelen',4.0,4.9,1.85,2.05); sign(WE,'spuk',4.15,4.75,1.42,1.62,c=0.002,th=0.003)
+sign(WW,'formular',4.56,4.94,1.12,1.659,c=0.002,th=0.003,mat=MT['signs']); sign(WE,'handbuch',0.55,0.95,1.10,1.667,c=0.002,th=0.003); sign(WE,'seelen',4.0,4.9,1.85,2.05); sign(WE,'spuk',4.15,4.75,1.42,1.62,c=0.002,th=0.003)
 # Verblichene Amts-Plakate (gen_posters.py, Zellen im Schilder-Atlas)
-sign(WS,'p_a38',1.85,2.45,1.25,1.604,c=0.002,th=0.003); sign(WE,'p_laecheln',1.70,1.97,1.15,1.533,c=0.002,th=0.003)
+sign(WS,'p_a38',5.32,5.88,1.22,1.55,c=0.002,th=0.003); sign(WE,'p_laecheln',1.70,1.97,1.15,1.533,c=0.002,th=0.003)
 sign(WE,'p_geduld',4.22,4.49,0.98,1.363,c=0.002,th=0.003); sign(WW,'p_klopfen',2.58,3.32,2.08,2.311,c=0.002,th=0.003)
+# v4: zwei freche 80er-Pin-ups (eigenes Material wr_pinup, Atlas pinups.png 1024², Zellen 512x683 = 3:4)
+PIN=json.load(open(SRC+'/atlas.json'))['pinups']
+sign(WW,PIN['gruft'],4.02,4.46,1.26,1.847,c=0.002,th=0.003,atlas=1024,mat=MT['pinup'])
+sign(WS,PIN['revue'],0.60,1.04,1.30,1.887,c=0.002,th=0.003,atlas=1024,mat=MT['pinup'])
 def star(W,a,b,name):
-    parts=[]; hub=sphere('hub',(a,0.09,b),0.045,MT['metal'],u=12,v=8); parts.append(hub)
-    for i in range(14):
-        ang=i/14*2*math.pi+0.1; L=random.uniform(0.16,0.27) if i%2 else random.uniform(0.09,0.14)
-        c=cyl('sp',(0,0,0),0.016,L,MT['metal'],seg=6,r2=0.0); xf(c,(0,0,L/2)); xf(c,(0,0,0),(0,ang,0)); 
+    parts=[]; hub=sphere('hub',(a,0.09,b),0.07,MT['metal'],u=12,v=8); parts.append(hub); RS=random.Random(hash(name)%997)
+    for i in range(18):
+        ang=i/18*2*math.pi+0.1; L=RS.uniform(0.30,0.46) if i%2 else RS.uniform(0.14,0.22)
+        c=cyl('sp',(0,0,0),0.022,L,MT['metal'],seg=6,r2=0.0); xf(c,(0,0,L/2)); xf(c,(0,0,0),(0,ang,0)); 
         for v in c.data.vertices: v.co=V((v.co.x+a,0.09+ (0.03 if i%3==0 else 0.0)*v.co.z/L,v.co.z+b))
         parts.append(c)
-    disc=cyl('dc',(a,0.075,b),0.07,0.015,MT['metal'],seg=16,rot=(math.pi/2,0,0)); parts.append(disc)
+    disc=cyl('dc',(a,0.075,b),0.11,0.02,MT['metal'],seg=16,rot=(math.pi/2,0,0)); parts.append(disc)
     br=cyl('br',(a,0.04,b),0.012,0.08,MT['metal'],seg=6,rot=(math.pi/2,0,0)); parts.append(br)
     o=join(parts,name); vc_const(o,0x5a4a2a); onwall(o,W); return o
-star(WN,1.75,1.62,'star_n'); star(WW,2.12,1.72,'star_w'); star(WS,3.2,1.78,'star_s')
+star(WN,1.75,1.62,'star_n'); star(WW,2.10,1.74,'star_w'); star(WS,3.2,1.9,'star_s')
 # Uhr (S-Wand, Ziffern linksherum), Zeiger beweglich
 CX,CY,CZ=-2.35,-2.5+0.06,2.08
 o=cyl('clock_body',(CX,CY-0.02,CZ),0.19,0.05,MT['wood'],seg=32,rot=(math.pi/2,0,0)); vc_const(o,0x1a1410); box_uv(o,3)
@@ -365,6 +372,48 @@ def dispenser(P):
 # Figuren aus Hunyuan3D-Meshes (fig/figs.blend, siehe fig/README) bringen ihren Stuhl mit -> dort keinen eigenen Stuhl bauen
 FIGBLEND=HERE+'/fig/figs.blend'; HY=os.path.exists(FIGBLEND) and '--procfig' not in argv
 HYCH={'k','c','club','h'} if HY else set()
+# ------------------------------------------------------------------ v4: Möbel aus Hunyuan3D-2mv (props/*_npy, eigene Konzeptbilder, beste von 3–4 Seeds)
+# Form von Hunyuan, Material lokal: Dreiecke nach Höhe/Lage in Regionen geteilt (Schirm/Fuß/Stange, Polster/Beine, Platte/Ablage/Beine)
+import numpy as _np
+PROPD=HERE+'/props'; PROPBOX=[]
+def hy_mesh(name,H):
+    v=_np.load(PROPD+'/%s_v.npy'%name).astype(float); t=_np.load(PROPD+'/%s_t.npy'%name)
+    v[:,0]*=-1; v[:,1]*=-1                                   # Hunyuan-Front -Y -> Szenen-Front +Y
+    v[:,2]-=v[:,2].min(); v*=H/v[:,2].max(); c=(v.min(0)+v.max(0))/2; v[:,0]-=c[0]; v[:,1]-=c[1]
+    return v,t
+def hy_prop(name,v,t,regions,x,y,yaw,z=0.0):
+    cen=v[t].mean(1); used=_np.zeros(len(t),bool); out={}
+    for key,mat,col,uvs,fn in regions:
+        m=(~used)&fn(cen); used|=m
+        if not m.any(): continue
+        tt=t[m]; idx=_np.unique(tt); rm=-_np.ones(len(v),int); rm[idx]=_np.arange(len(idx))
+        o=mesh_obj('hyp_%s_%s'%(name,key),[tuple(map(float,q)) for q in v[idx]],[tuple(map(int,f)) for f in rm[tt]],mat)
+        box_uv(o,uvs); vc_const(o,col) if isinstance(col,int) else set_vc(o,col); smooth(o); place(o,x,y,yaw,z); out[key]=o
+    PROPBOX.append(list(out.values())); return out
+LAMPV=hy_mesh('lamp',1.78)
+def hy_lamp(x,y,name,base=0x3e6a48):
+    v,t=LAMPV; H=1.78
+    hy_prop(name,v,t,[('shade',MT['shade'],0xffffff,1.5,lambda c:c[:,2]>0.69*H),('base',MT['crack'],base,2.2,lambda c:c[:,2]<0.345*H),('pole',MT['metal'],0x9a7a3a,2.0,lambda c:c[:,2]>-1)],x,y,0.3)
+    for o in bpy.data.objects:
+        if o.name=='hyp_%s_shade'%name:
+            o.name=name; ul=o.data.uv_layers['UVMap']
+            for li,l in enumerate(o.data.loops):
+                p_=o.data.vertices[l.vertex_index].co; ul.data[li].uv=(math.atan2(p_.y-y,p_.x-x)/math.pi*1.5,p_.z*1.5)
+    return (x,y,0.84*H)
+def hy_sofa(x,y,yaw):
+    v,t=hy_mesh('sofa',0.86)
+    o=hy_prop('sofa',v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.11),('body',MT['vinyl'],0xa89a7c,1.6,lambda c:c[:,2]>-1)],x,y,yaw)
+    m=(_np.abs(v[:,0])<0.55)&(v[:,1]>0.0)&(v[:,1]<0.3)&(v[:,2]<0.65); seat=float(v[m,2].max())
+    zb=(v[:,2]>seat+0.10)&(v[:,2]<seat+0.30)&(_np.abs(v[:,0])<0.6)&(v[:,1]<0.1); back=float(v[zb,1].max())
+    print('Sofa Sitz',round(seat,3),'Lehne vorn',round(back,3)); return seat,back
+def hy_table(x,y,yaw):
+    v,t=hy_mesh('table',0.50); H=0.5
+    hy_prop('table',v,t,[('top',MT['vinyl'],0x9c8c70,1.2,lambda c:c[:,2]>0.84*H),('shelf',MT['vinyl'],0x8c7c62,1.2,lambda c:(c[:,2]>0.395*H)&(c[:,2]<0.51*H)),
+        ('legs',MT['metal'],0x141210,3.0,lambda c:c[:,2]>-1)],x,y,yaw)
+    return float(v[:,2].max()),float(v[(v[:,2]>0.39*H)&(v[:,2]<0.52*H),2].max())
+WINGV=hy_mesh('wing',1.12)
+def hy_wing(x,y,yaw,col=0x4a1814):
+    v,t=WINGV; hy_prop('wing%d'%len(PROPBOX),v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.16),('body',MT['vinyl'],col,1.4,lambda c:c[:,2]>-1)],x,y,yaw)
 # Westseite: Stuhlreihe (Wand leicht schräg → Reihe folgt ihr)
 def wpos(a,c): p=WP(WW,a,0,c); return p.x,p.y
 wyaw=-math.pi/2+math.atan2(0.15,5.0)
@@ -372,14 +421,17 @@ CH={}
 for nm,a,fn in [('k',0.80,kitchen_chair),('c',1.50,chrome_chair),('club',2.30,club_chair),('e',3.05,shell_chair),('h',4.15,shell_chair)]:
     x,y=wpos(a,0.36); CH[nm]=(x,y)
     if nm in HYCH: continue
+    if nm=='e' and HY: x,y=wpos(a,0.43); CH[nm]=(x,y); hy_wing(x,y,wyaw); continue
     fn(x,y,wyaw) if fn!=shell_chair else fn(x,y,wyaw,0x7a5a24 if nm=='e' else 0x3a4a3a)
 LAMPS=[]
-x,y=wpos(3.6,0.28); LAMPS.append(floor_lamp(x,y,'shade_w'))
+x,y=wpos(3.6,0.36); LAMPS.append(hy_lamp(x,y,'shade_w') if HY else floor_lamp(x,y,'shade_w'))
 # Ostseite: Sofa, Lampe
 def epos(a,c): p=WP(WE,a,0,c); return p.x,p.y
 eyaw=math.pi/2+math.atan2(0.15,5.0)
-x,y=epos(2.8,0.5); sofa(x,y,eyaw); SOFA=(x,y)
-x,y=epos(1.35,0.3); LAMPS.append(floor_lamp(x,y,'shade_e',0x6a5a2a))
+x,y=epos(2.8,0.47); SOFA=(x,y)
+if HY: SOFA_SEAT,SOFA_BACK=hy_sofa(x,y,eyaw)
+else: sofa(x,y,eyaw)
+x,y=epos(1.28,0.36); LAMPS.append(hy_lamp(x,y,'shade_e',0x5a6a3a) if HY else floor_lamp(x,y,'shade_e',0x6a5a2a))
 def ashtray_stand(x,y):
     RA=random.Random(9)
     p=[cyl('ab',(x,y,0.012),0.14,0.024,MT['metal'],seg=20),cyl('ap',(x,y,0.33),0.014,0.62,MT['metal'],seg=10)]
@@ -390,17 +442,17 @@ def ashtray_stand(x,y):
     for i in range(6):
         a=RA.uniform(0,6.28); r=RA.uniform(0.02,0.08); c=cyl('butt',(0,0,0),0.0045,RA.uniform(0.022,0.034),MT['paper'],seg=6,rot=(math.pi/2,0,0)); xf(c,(x+r*math.cos(a),y+r*math.sin(a),0.654),(0,0,RA.uniform(0,6.28))); bt.append(c)
     o=join(bt,'butts'); vc_const(o,0xd8ccb0); box_uv(o,8)
-x,y=epos(4.18,0.36); ashtray_stand(x,y)
+x,y=epos(0.62,0.3); ashtray_stand(x,y)   # v4: Südende ist jetzt der Zauberkasten mit den Beinen
 # Süd: Taucher im Ohrensessel, Lampe, Beistelltisch mit Radio
-DIVER=(-1.05,-1.86) if HY else (-1.05,-2.05)
+DIVER=(-1.25,-1.86) if HY else (-1.05,-2.05)
 if not HY: wing_chair(-1.05,-2.05,-0.45)
-LAMPS.append(floor_lamp(1.55,-2.18,'shade_s'))
+LAMPS.append(hy_lamp(1.6,-2.12,'shade_s') if HY else floor_lamp(1.55,-2.18,'shade_s'))
 side_table(2.45,-2.2,0.1); RADIO=(2.45,-2.2,0.6); radio(2.45,-2.2,math.pi+0.1+math.pi,0.6)
-kidney_table(-1.6,0.05,math.pi/2+0.12)
+TZ=hy_table(-1.6,0.05,math.pi/2+0.12) if HY else (kidney_table(-1.6,0.05,math.pi/2+0.12),(0.45,0.22))[1]
 dispenser(WP(WN,2.4,0,0.32))
 # Tischdeko: Illustrierte
 mg=[]
-for i,(dx,dy,r,z) in enumerate([(-0.1,-0.25,0.3,0.452),(0.12,0.1,-0.4,0.452),(0.05,0.2,0.1,0.458),(-0.05,-0.1,1.2,0.212),(0.1,0.15,0.7,0.212)]):
+for i,(dx,dy,r,z) in enumerate([(-0.1,-0.25,0.3,TZ[0]+0.002),(0.12,0.1,-0.4,TZ[0]+0.002),(0.05,0.2,0.1,TZ[0]+0.008),(-0.05,-0.1,1.2,TZ[1]+0.002),(0.1,0.15,0.7,TZ[1]+0.002)]):
     m=box('mag',(0,0,0),(0.21,0.28,0.006),MT['paper']); cell_uv(m,[(i%4)*256,(i//4)*256,256,256],atlas=1024,axis='z'); xf(m,(0,0,0.003),(0,0,r)); 
     c=Vector((dx,dy,z)); R=Matrix.Rotation(math.pi/2+0.12,3,'Z'); c=R@c; xf(m,(-1.6+c.x,0.05+c.y,c.z)); mg.append(m)
 # Papier auf dem Boden (leicht zerknüllt)
@@ -415,15 +467,14 @@ o=join(mg,'papers'); vc_const(o,0xffffff)
 # Rote Pendelleuchten-Traube
 PX,PY=-0.35,-0.85; czz=2.75-(PY+2.5)*0.03
 pp=[cyl('can',(PX,PY,czz-0.02),0.08,0.04,MT['metal'],seg=16)]; red=[]; REDL=[]
-for i in range(6):
-    a=i/6*2*math.pi; r=0.0 if i==0 else 0.2; x=PX+r*math.cos(a); y=PY+r*math.sin(a); z=czz-0.5-random.uniform(0,0.45)
+RPd=random.Random(31)
+for i in range(9):
+    a=i/8*2*math.pi; r=0.0 if i==0 else (0.24 if i%2 else 0.36); x=PX+r*math.cos(a); y=PY+r*math.sin(a); z=czz-0.36-RPd.uniform(0,0.34)   # Unterkante >= 1.83 m (Kopf geht drunter durch)
     pp.append(cyl('cord',(x,y,(czz+z)/2+0.1),0.004,czz-z-0.2,MT['metal'],seg=4))
-    g=lathe('rg',[(0.075,-0.13),(0.07,-0.05),(0.055,0.06),(0.03,0.1),(0.012,0.11)],MT['redglass'],seg=16,c=(x,y,z)); md=g.modifiers.new('so','SOLIDIFY'); md.thickness=0.004; apply_mods(g); smooth(g); red.append(g); REDL.append((x,y,z-0.04))
+    g=lathe('rg',[(0.095,-0.2),(0.092,-0.08),(0.085,0.08),(0.05,0.13),(0.014,0.14)],MT['redglass'],seg=16,c=(x,y,z)); md=g.modifiers.new('so','SOLIDIFY'); md.thickness=0.004; apply_mods(g); smooth(g); red.append(g); REDL.append((x,y,z-0.04))
 o=join(pp,'pend_metal'); vc_const(o,0x2a2420); o=join(red,'pend_glass'); vc_const(o,0x5a2a22)
 # Toter Leuchtstoff-Kasten an der Decke + vertrocknete Topfpflanze (NO-Ecke)
 fz=2.75-(0.5+2.5)*0.03
-o=box('fixture',(0.7,0.5,fz-0.05),(1.25,0.3,0.08),MT['metal']); vc_const(o,0x4a4a44)
-o=box('diffusor',(0.7,0.5,fz-0.092),(1.2,0.26,0.004),MT['vinyl']); vc_const(o,0x8a8a70)
 pt=lathe('pot',[(0.0,0),(0.12,0),(0.17,0.3),(0.18,0.32),(0.0,0.32)],MT['vinyl'],seg=16,c=(2.4,2.15,0)); vc_const(pt,0x6a3a22)
 lv=[]; PTIPS=[]
 for i in range(9):
@@ -571,28 +622,16 @@ def hy_figures():
     for n,key in [('oma','k'),('gruen','c'),('brand','club'),('jaeger','h')]:
         a_={'k':0.80,'c':1.50,'club':2.30,'h':4.15}[key]; x,y=wpos(a_,depth(n)+0.05); CH[key]=(x,y); put(n,x,y,wyaw)
     put('taucher',DIVER[0],DIVER[1],-0.45)
-    # Zersägte Assistentin (v3): Oberkörper (+Kopf) sitzt auf dem Schnitt am Nordende, angelehnt; Unterleib sitzt am Südende auf der Polsterkante, Füße am Boden.
-    # Sofa: Kissen-Oberkante ~0.51 (Mitte 3 cm eingesunken), Sockel-Front lokal y=+0.43, Rückenkissen-Front ~-0.23.
+    # Zersägte Assistentin (v4, Showgirl): Oberkörper sitzt mit dem Schnitt AUF dem Sofapolster, Rücken an der Lehne (nicht mehr auf der Vorderkante);
+    # Unterleib sitzt neben dem Sofa auf dem schwarzen Zauberkasten (gehört zum Hunyuan-Modell), Beine übereinandergeschlagen.
     sx,sy=SOFA
     def sofapos(off): p=V((sx,sy,0))+V((math.cos(eyaw),math.sin(eyaw),0))*off; return p.x,p.y
-    SEAT=0.488   # Sitzfläche inkl. 1–2 cm Einsinken
-    # Unterleib: Gesäß-Unterseite (Hunyuan: schräg 0.475..0.56) flach auf SEAT ziehen, Unterschenkel leicht nach vorn (Füße vor dem Sockel)
-    L=objs['assi_legs']; ZB=[(-0.20,0.558),(-0.15,0.524),(-0.10,0.502),(-0.05,0.475),(0.0,0.475)]
-    def zbot(y):
-        if y<=ZB[0][0]: return ZB[0][1]
-        for (y0,z0),(y1,z1) in zip(ZB,ZB[1:]):
-            if y<=y1: return z0+(z1-z0)*(y-y0)/(y1-y0)
-        return ZB[-1][1]
-    for v in L.data.vertices:
-        x,y,z=v.co
-        if y<0.0 and z<0.6 and z>0.4:
-            zb=zbot(y); t=max(0.0,min(1.0,(0.6-z)/max(1e-3,0.6-zb))); z=z-t*(zb-SEAT)
-        if z<0.45: y+=(0.45-z)*0.42
-        v.co=V((x,y,z))
-    L.data.update()
-    zc=min(v.co.z for v in objs['assi_body'].data.vertices)
-    x,y=sofapos(-0.55); put('assi',x,y,eyaw,z=SEAT-zc,only={'assi_body','assi_head'},fwd=0.03)
-    x,y=sofapos(0.5); put('assi',x,y,eyaw,z=0.0,only={'assi_legs'},fwd=0.37)
+    B_=objs['assi_body']; zc=min(v.co.z for v in B_.data.vertices)
+    back=min(v.co.y for v in B_.data.vertices if zc+0.05<v.co.z<zc+0.32)   # unterer Rücken (Haare hängen höher und weiter hinten)
+    fwd=SOFA_BACK-back+0.015
+    x,y=sofapos(0.42); put('assi',x,y,eyaw,z=SOFA_SEAT-zc-0.012,only={'assi_body','assi_head'},fwd=fwd)
+    x,y=sofapos(-1.40); put('assi',x,y,eyaw+0.25,z=0.0,only={'assi_legs'},fwd=0.12)
+    print('Assi: Schnitt',round(zc,3),'Rücken',round(back,3),'fwd',round(fwd,3))
     # Schnittflächen wie aus dem Zauberkasten: Messingrand + dunkelroter Samt, Form = konvexe Hülle des Querschnitts (keine runde "Platte")
     def hull2(pts):
         pts=sorted(set((round(p[0],4),round(p[1],4)) for p in pts))
@@ -620,7 +659,9 @@ def hy_figures():
         return out
     cap('cap_legs',objs['assi_legs'],True); cap('cap_body',objs['assi_body'],False)
     # Fräulein hinter dem Schalter (auf hohem Hocker)
-    cp=WP(WN,4.0,0,-0.42); put('frl',cp.x,cp.y,math.pi,z=0.3)
+    cp=WP(WN,4.0,0,-0.42); put('frl',cp.x,cp.y,math.pi,z=0.0)   # v4: steht mit eigenem Barhocker am Boden
+    # v4: Mann in der blauen Steppdecke steht neben der NO-EXIT-Tür (Pete 06)
+    put('decke',-0.42,-2.08,0.22)
     return cp
 if HY:
     cp=hy_figures()
@@ -701,7 +742,7 @@ print('Objekte',len(ALL),'Tris',sum(sum(len(p.vertices)-2 for p in o.data.polygo
 json.dump({'lamps':LAMPS,'red':REDL,'radio':RADIO,'chairs':CH,'sofa':SOFA,'diver':DIVER},open(HERE+'/layout.json','w'),indent=1)
 COLL=[]
 for o in [o for o in bpy.data.objects if o.type=='MESH']:
-    if o.name.startswith(('floor','wall','ceil','pap','papers','sh_','win','off','shelf','tube','fixture','diffusor','pend','can','cord')) or 'head' in o.name or 'collar' in o.name: continue
+    if o.name.startswith(('floor','wall','ceil','pap','papers','sh_','win','off','shelf','tube','fixture','diffusor','pend','can','cord','hyp_')) or 'head' in o.name or 'collar' in o.name: continue
     ws=[o.matrix_world@v.co for v in o.data.vertices]
     if not ws: continue
     z0=min(w.z for w in ws); z1=max(w.z for w in ws)
@@ -709,6 +750,10 @@ for o in [o for o in bpy.data.objects if o.type=='MESH']:
     x0=min(w.x for w in ws); x1=max(w.x for w in ws); y0=min(w.y for w in ws); y1=max(w.y for w in ws)
     if x1-x0>2.8 or y1-y0>2.8 or (x1-x0)*(y1-y0)<0.01: continue
     COLL.append([round(x0+0.03,3),round(x1-0.03,3),round(-y1+0.03,3),round(-y0-0.03,3),o.name])
+for parts in PROPBOX:   # v4: Hunyuan-Möbel als Ganzes (Lampe inkl. Schirm, Tisch inkl. Platte), 3 cm eingerückt wie oben
+    ws=[o.matrix_world@v.co for o in parts for v in o.data.vertices]
+    x0=min(w.x for w in ws); x1=max(w.x for w in ws); y0=min(w.y for w in ws); y1=max(w.y for w in ws)
+    COLL.append([round(x0+0.03,3),round(x1-0.03,3),round(-y1+0.03,3),round(-y0-0.03,3),parts[0].name])
 print('Kollision',len(COLL),[c[4] for c in COLL])
 # ================================================================== Licht (nur für den Bake; Echtzeit-Lichter macht gfx_warteraum.js)
 def plight(name,loc,col,W,r=0.05,kind='POINT',size=(1,1),rot=(0,0,0)):
@@ -717,13 +762,13 @@ def plight(name,loc,col,W,r=0.05,kind='POINT',size=(1,1),rot=(0,0,0)):
     if kind=='AREA': d.shape='RECTANGLE'; d.size=size[0]; d.size_y=size[1]
     o=bpy.data.objects.new(name,d); o.location=loc; o.rotation_euler=rot; link(o); return o
 WARM=(1.0,0.54,0.24); GREEN=(0.42,1.0,0.36)
-for i,(x,y,z) in enumerate(LAMPS): plight('lamp%d'%i,(x,y,z),WARM,100,0.06)
-SCON=[(WN,1.75,1.62),(WW,2.12,1.72),(WS,3.2,1.78)]
-for i,(W,a,b) in enumerate(SCON): plight('scon%d'%i,WP(W,a,b,0.035),(1.0,0.55,0.25),14,0.02)
-for i,p in enumerate(REDL): plight('red%d'%i,p,(1.0,0.32,0.18),1.6,0.03)
+for i,(x,y,z) in enumerate(LAMPS): plight('lamp%d'%i,(x,y,z),WARM,125,0.06)   # v4: ohne Neonröhren tragen die Lampen den Raum
+SCON=[(WN,1.75,1.62),(WW,2.10,1.74),(WS,3.2,1.9)]
+for i,(W,a,b) in enumerate(SCON): plight('scon%d'%i,WP(W,a,b,0.035),(1.0,0.55,0.25),32,0.02)   # v4: großer Stern = echte Lichtinsel (Pete 03/05)
+for i,p in enumerate(REDL): plight('red%d'%i,p,(1.0,0.36,0.2),3.2,0.03)
 plight('shaft',((xa+xb)/2,SY+0.12,1.3),GREEN,260,kind='AREA',size=(xb-xa-0.05,2.4),rot=(-math.pi/2,0,0))
 plight('office',(1.1,3.25,OZ-0.12),(0.62,1.0,0.6),80,kind='AREA',size=(1.8,0.9))
-plight('fill',(0,0,2.55),(0.42,0.58,0.56),14,kind='AREA',size=(5.0,4.0))
+plight('fill',(0,0,2.55),(0.70,0.62,0.52),16,kind='AREA',size=(5.0,4.0))   # v4: warm statt kalt
 plight('noexit_l',((xa+xb)/2,-2.25,2.12),(0.55,1.0,0.5),3.0,0.03)
 plight('radio',(RADIO[0]+0.13,RADIO[1]+0.25,RADIO[2]+0.17),(1.0,0.7,0.35),0.6,0.01)
 w=bpy.data.worlds.new('w'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.03,0.04,0.04,1); w.node_tree.nodes['Background'].inputs[1].default_value=0.18

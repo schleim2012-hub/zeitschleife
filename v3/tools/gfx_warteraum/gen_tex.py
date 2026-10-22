@@ -30,23 +30,30 @@ def col(h): return np.array([((h>>16)&255)/255,((h>>8)&255)/255,(h&255)/255])
 N=1024
 base=fnoise(N,2.2,1); fine=fnoise(N,1.0,2)
 pits=np.zeros((N,N))
-for i in range(5200):  # Sand-Pocken
-    x,y=rng.integers(0,N,2); r=rng.uniform(1.5,9)**1.0
+for i in range(1700):  # Sand-Pocken (v4: weniger, ruhiger – Film-Stuck statt Sprenkel)
+    x,y=rng.integers(0,N,2); r=rng.uniform(1.5,6)**1.0
     yy,xx=np.ogrid[-12:13,-12:13]; d=np.sqrt(xx**2+yy**2); p=np.clip(1-d/r,0,1)**1.5*rng.uniform(0.5,1)
     ys=(np.arange(y-12,y+13))%N; xs=(np.arange(x-12,x+13))%N; pits[np.ix_(ys,xs)]=np.maximum(pits[np.ix_(ys,xs)],p)
-h=base*0.55+fine*0.12-pits*0.65
+# v4: Stuck-Ornament wie Petes Screenshots (große, flache Muschel-/Fächerbögen im Putz, kaum sichtbar)
+yy_,xx_=np.mgrid[0:N,0:N]/N
+orn=np.zeros((N,N))
+for cx_,cy_ in [(0.25,0.3),(0.75,0.3),(0.25,0.8),(0.75,0.8),(0.5,0.55),(0.0,0.55),(1.0,0.55)]:
+    for ox in (-1,0,1):
+        dd=np.sqrt((xx_-cx_-ox)**2+((yy_-cy_)*1.15)**2); orn+=np.clip(np.cos(dd*math.pi*22),0,1)**6*np.clip(1-dd/0.26,0,1)
+orn=blur(orn,2.0)
+h=base*0.55+fine*0.12-pits*0.45+orn*0.10
 h=(h-h.min())/(h.max()-h.min())
 hb=blur(h,1.2)
 # Farbe: Graphit-Teal in Senken, Silber-Trockenpinsel auf Graten, Lack-Tönung
-teal_dark=col(0x17221f); teal=col(0x34423d); silver=col(0x8a918a)
+teal_dark=col(0x141f24); teal=col(0x2f4448); silver=col(0x98a2a2)   # v4: blaustichiges Flaschengrün wie im Film
 ridge=np.clip((hb-0.55)*3.2,0,1)**1.4*(0.5+0.5*fnoise(N,1.6,3))
 blotch=fnoise(N,2.6,4)
 c=lerp(teal_dark[None,None,:],teal[None,None,:],np.clip(hb*1.3,0,1)[...,None])
 c=lerp(c,silver[None,None,:],(ridge*0.55)[...,None])
 c*=(0.75+0.4*blotch)[...,None]
-c=lerp(c,c*col(0xb8c890)[None,None,:],0.15)  # leicht gelblicher Lack (grau-teal bleibt)
+c=lerp(c,c*col(0xa8bcc4)[None,None,:],0.15)  # v4: kühler, leicht bläulicher Lack
 c=lerp(c,c*col(0x6a6450)[None,None,:],(np.clip((fnoise(N,2.8,21)-0.5)*2.2,0,1)*0.5)[...,None])  # Nikotin-/Schmutzwolken
-c*=(1-0.55*pits)[...,None]
+c*=(1-0.35*pits)[...,None]
 save(c,'wall_col.png'); save(normal_from_h(hb,9.0),'wall_nrm.png')
 # Rauheit/Metall in einen Kanal: (glTF metallicRoughness: G=rough, B=metal)
 mr=np.dstack([np.zeros((N,N)),0.85-ridge*0.45,ridge*0.6]); save(mr,'wall_mr.png')
@@ -95,7 +102,7 @@ rough=np.dstack([np.zeros((N//2,N//2)),(0.45+0.45*grime[::2,::2]+0.3*grout[::2,:
 
 # ---------- Decke: Akustikputz, vergilbt, Wasserflecken ----------
 N=512; a=fnoise(N,1.2,8); b=fnoise(N,2.8,9)
-c=lerp(col(0x5d5f50)[None,None,:],col(0x8a8b72)[None,None,:],a[...,None])*(0.7+0.4*b)[...,None]
+c=lerp(col(0x7a6c56)[None,None,:],col(0xa8987a)[None,None,:],a[...,None])   # v4: warmes Beige wie im Film*(0.7+0.4*b)[...,None]
 st=np.clip((fnoise(N,3.0,10)-0.62)*4,0,1); c=lerp(c,col(0x4a3c22)[None,None,:],st[...,None]*0.5)
 save(c,'ceil_col.png')
 
@@ -103,7 +110,7 @@ save(c,'ceil_col.png')
 N=512; y,x=np.mgrid[0:N,0:N]
 streak=blur(np.repeat(rng.random((1,N)),N,0)*0.6+fnoise(N,2.0,11)*0.4,1)
 rust=np.clip((fnoise(N,2.4,12)-0.6)*3,0,1)*np.clip(y/N*1.5,0,1)
-c=lerp(col(0x6f7a6c)[None,None,:],col(0x9aa08e)[None,None,:],streak[...,None])
+c=lerp(col(0x8e8c7c)[None,None,:],col(0xbab6a2)[None,None,:],streak[...,None])   # v4: helles, beige-silbernes Wellblech (Pete 01)
 c=lerp(c,col(0x5a3a1c)[None,None,:],rust[...,None]*0.7)*(0.85+0.2*fnoise(N,1.0,13))[...,None]
 save(c,'metal_col.png')
 
@@ -138,7 +145,7 @@ c=(0.62+0.12*weave+0.22*fnoise(N,1.8,17)-0.15*np.clip((fnoise(N,2.6,18)-0.6)*3,0
 save(np.dstack([c,c,c]),'fabric_col.png')
 # Lampenschirm Leinen (vergilbt, Flecken)
 c=lerp(col(0xc9b48c)[None,None,:],col(0xe6d6ae)[None,None,:],(0.5*weave+0.5*fnoise(N,1.5,19))[...,None])
-c=lerp(c,col(0x8a6a3a)[None,None,:],np.clip((fnoise(N,2.8,20)-0.62)*3,0,1)[...,None]*0.5)
+c=lerp(c,col(0x8a6a3a)[None,None,:],np.clip((fnoise(N,2.8,20)-0.62)*3,0,1)[...,None]*0.18)   # v4: kaum Flecken (leuchtet jetzt gleichmäßig)
 save(c,'shade_col.png')
 # Figuren-Haut/Stoff-Detail (neutral; VC trägt die Farbe)
 N=512; c=0.78+0.14*fnoise(N,1.0,21)+0.1*fnoise(N,2.4,22); c-=0.18*np.clip((fnoise(N,0.6,23)-0.75)*4,0,1)
