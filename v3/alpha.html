@@ -1,10 +1,50 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1021u4"></script><script src="test/lib/helpmenu.js?v=1021u2"></script><script src="test/lib/alpha.js?v=m1741"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
-<style>body{margin:0;background:#000;font-family:sans-serif}#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#141210,#000);color:#d8c8a8;cursor:pointer}
-#start h1{font:700 44px/1 "DejaVu Sans Condensed",sans-serif;letter-spacing:10px;margin:0 0 14px}#start p{opacity:.7;margin:4px;font-size:14px;letter-spacing:1px}#start b{margin-top:18px;border:1px solid #6a5a40;padding:12px 26px;letter-spacing:4px}
-#start .r{position:absolute;bottom:18px;font-size:12px;opacity:.5;cursor:pointer;text-decoration:underline}</style></head><body>
-<div id="start"><h1>REWIND</h1><p>Alpha · Zeitschleife V3</p><p id="sub">Intro → Backrooms → 12 Räume · jede Tür führt weiter</p><b id="govr" style="display:none">▶ IN VR STARTEN</b><b id="go">▶ AM BILDSCHIRM STARTEN</b><p id="hint" style="margin-top:18px">Laser + Trigger auf die Tür, oder einfach hindurchgehen · linker Stick gehen, rechter Stick drehen</p><span class="r" id="reset">Von vorn beginnen</span></div>
+<style>@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-SemiBold.ttf);font-weight:600;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Medium.ttf);font-weight:500;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Bold.ttf);font-weight:700;font-display:swap}
+body{margin:0;background:#000;font-family:sans-serif}
+#start{position:fixed;inset:0;z-index:40;overflow:hidden;background:#15130e url(stills/title_bg.jpg) center/cover;color:#dccfb2;cursor:pointer;font-family:ZSRaj,"DejaVu Sans Condensed",sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
+#start #tbg{position:absolute;inset:-2%;width:104%;height:104%;object-fit:cover;filter:sepia(.22) saturate(.85) brightness(.9) contrast(1.06);animation:zsKB 38s ease-in-out infinite alternate,zsTrk 9.3s steps(1) infinite}
+@keyframes zsKB{from{transform:scale(1.0) translate(0,0)}to{transform:scale(1.07) translate(-1.2%,.6%)}}
+@keyframes zsTrk{0%,96%,100%{translate:0 0}96.5%{translate:2px 0}97.2%{translate:-1px 1px}97.8%{translate:1px 0}}
+#start .fx{position:absolute;inset:0;pointer-events:none}
+#start .vig{background:radial-gradient(ellipse 120% 100% at 62% 45%,rgba(0,0,0,0) 30%,rgba(8,6,3,.55) 72%,rgba(6,4,2,.85) 100%),linear-gradient(90deg,rgba(10,8,4,.82) 0%,rgba(10,8,4,.55) 32%,rgba(10,8,4,0) 60%)}
+#start .scan{background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,rgba(0,0,0,0) 1px 3px);mix-blend-mode:multiply}
+#start .grain{inset:-50%;opacity:.13;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .9 0 0 0 0 .85 0 0 0 0 .7 0 0 0 1.6 -.3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");animation:zsGrain .5s steps(5) infinite}
+@keyframes zsGrain{0%{transform:translate(0,0)}20%{transform:translate(-7%,4%)}40%{transform:translate(5%,-6%)}60%{transform:translate(-3%,-9%)}80%{transform:translate(8%,3%)}100%{transform:translate(0,0)}}
+#start .band{top:-20%;height:14%;background:linear-gradient(180deg,rgba(255,240,210,0),rgba(255,240,210,.045) 45%,rgba(255,255,255,.07) 50%,rgba(255,240,210,.03) 55%,rgba(255,240,210,0));animation:zsBand 11s linear infinite}
+@keyframes zsBand{0%{transform:translateY(0)}55%,100%{transform:translateY(900%)}}
+#start .col{position:absolute;left:clamp(28px,7.5vw,120px);top:53%;transform:translateY(-50%);width:min(520px,52vw);animation:zsIn 1.6s ease-out both}
+@keyframes zsIn{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
+#start .tag{font:600 clamp(10px,1.55vh,13px)/1 ZSRaj,sans-serif;letter-spacing:.42em;color:#a8946c;display:flex;align-items:center;gap:.9em;margin:0 0 clamp(6px,1.6vh,14px) .2em;opacity:.85}
+#start .tag i{font-style:normal;letter-spacing:-.12em;font-size:1.25em;color:#c9a96a}
+#start .tag:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,169,106,.5),rgba(201,169,106,0))}
+#start h1{font:700 clamp(58px,17vh,132px)/.86 ZSRaj,"DejaVu Sans Condensed",sans-serif;letter-spacing:.14em;margin:0 0 0 -.04em;color:#ece2c9;text-shadow:-1.6px 0 rgba(255,70,40,.38),1.6px 0 rgba(40,190,255,.28),0 0 1px rgba(255,240,210,.4),0 6px 30px rgba(0,0,0,.6);white-space:nowrap}
+#start .st{font:500 clamp(14px,3.2vh,24px)/1 ZSRaj,sans-serif;letter-spacing:.62em;color:#c8b48a;margin:clamp(6px,1.6vh,12px) 0 0 .25em;opacity:.9;text-transform:uppercase}
+#start #sub{display:none}
+#start nav{margin-top:clamp(18px,6vh,46px);display:flex;flex-direction:column;border-bottom:1px solid rgba(220,205,170,.13)}
+#start nav b,#start nav .r{display:block;position:relative;font:600 clamp(13px,3.3vh,17px)/1.2 ZSRaj,sans-serif;letter-spacing:.26em;text-transform:uppercase;color:#dccfb2;padding:clamp(9px,2.6vh,14px) 0 clamp(9px,2.6vh,14px) 1.6em;border-top:1px solid rgba(220,205,170,.13);transition:color .25s,background .35s,padding .35s;text-decoration:none;cursor:pointer}
+#start nav b:before,#start nav .r:before{content:"";position:absolute;left:0;top:50%;width:.7em;height:1px;background:#c9a96a;opacity:.45;transition:width .35s,opacity .35s}
+#start nav b:hover,#start nav b:focus,#start nav .r:hover,#start nav b:active{color:#fff4dc;background:linear-gradient(90deg,rgba(201,160,90,.16),rgba(201,160,90,0) 85%);padding-left:2em}
+#start nav b:hover:before,#start nav b:active:before,#start nav .r:hover:before{width:1.2em;opacity:1}
+#start nav #go{font-size:clamp(14px,3.7vh,19px);letter-spacing:.2em;color:#f0e4c6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#start nav .r{font-size:clamp(11px,2.7vh,13px);letter-spacing:.3em;color:#a8987a;opacity:1;white-space:normal}
+#start nav .r.save{color:#bfae8c}
+#start #hint{position:absolute;left:clamp(28px,7.5vw,120px);bottom:clamp(12px,3.4vh,26px);margin:0;max-width:min(560px,58vw);font:500 clamp(11px,2.6vh,13px)/1.35 ZSRaj,sans-serif;letter-spacing:.06em;color:#9c8f74;opacity:.85}
+#start .ver{font:500 11px/1 ZSRaj,sans-serif;letter-spacing:.3em;color:#7d7058;text-shadow:none;margin-left:2.2em;vertical-align:2px}
+#start .osd{position:absolute;left:clamp(28px,7.5vw,120px);top:clamp(14px,3.6vh,28px);font:600 clamp(12px,2.9vh,16px)/1 "DejaVu Sans Mono",monospace;letter-spacing:.12em;color:rgba(236,226,201,.55);text-shadow:-1px 0 rgba(255,70,40,.35),1px 0 rgba(40,190,255,.3)}
+#start .osd i{font-style:normal;letter-spacing:-.15em;margin-right:.6em}
+@media (max-height:460px){#start .col{width:min(470px,54vw)}#start .ver{font-size:10px}}
+@media (max-aspect-ratio:1/1){#start .col{width:84vw}#start .vig{background:radial-gradient(ellipse at 50% 40%,rgba(0,0,0,0) 20%,rgba(8,6,3,.7) 80%),linear-gradient(0deg,rgba(10,8,4,.85),rgba(10,8,4,.2) 70%)}}
+@media (prefers-reduced-motion:reduce){#start #tbg,#start .grain,#start .band{animation:none}}</style></head><body>
+<div id="start"><video id="tbg" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture poster="stills/title_bg.jpg" src="video/title_loop.mp4"></video><div class="fx vig"></div><div class="fx band"></div><div class="fx scan"></div><div class="fx grain"></div>
+<div class="osd"><i>◀◀</i>REW <span id="tcount">0:00:00</span><span class="ver">ALPHA · V3 · BUILD 10·22</span></div>
+<div class="col"><div class="tag"><i>◀◀</i>Ein Spiel über verlorene Zeit</div><h1>REWIND</h1><p class="st">Zeitschleife</p><p id="sub">Intro → Backrooms → 12 Räume · jede Tür führt weiter</p>
+<nav><b id="govr" style="display:none">▶ IN VR STARTEN</b><b id="go">▶ AM BILDSCHIRM STARTEN</b><span class="r" id="reset">Von vorn beginnen</span></nav></div>
+<p id="hint">Laser + Trigger auf die Tür, oder einfach hindurchgehen · linker Stick gehen, rechter Stick drehen</p></div>
+<script>(()=>{ const c=document.getElementById('tcount'); let t=2*3600+47*60+13; const f=()=>{ if(!c.isConnected||document.getElementById('start').style.display==='none') return; t=t>0?t-1:2*3600+47*60+13; const h=Math.floor(t/3600),m=Math.floor(t/60)%60,s=t%60; c.textContent=h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); setTimeout(f,1000); }; f();
+ const v=document.getElementById('tbg'); const kick=()=>{ v.muted=true; const p=v.play(); p&&p.catch(()=>{}); }; kick(); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) kick(); });
+ new MutationObserver(()=>{ if(document.getElementById('start').style.display==='none'){ v.pause(); v.removeAttribute('src'); v.load(); } }).observe(document.getElementById('start'),{attributes:true,attributeFilter:['style']}); })();</script>
 <script>setTimeout(()=>{ if(window.ZSTouch&&ZSTouch.active){ const h=document.getElementById('hint'); if(h) h.textContent='Wischen = umsehen · Boden antippen = hingehen · Tür antippen = weiter · 🎒 = Inventar (Handy)'; } },0); document.addEventListener('DOMContentLoaded',()=>{ if(window.ZSTouch&&ZSTouch.active){ const h=document.getElementById('hint'); if(h) h.textContent='Wischen = umsehen · Boden antippen = hingehen · Tür antippen = weiter · 🎒 = Inventar (Handy)'; } });</script>
 <a-scene light="defaultLightsEnabled:false" renderer="colorManagement:true; antialias:true; foveationLevel:0.2" webxr="referenceSpaceType:local-floor" background="color:#000" fog="type:exponential; color:#050504; density:0.085">
  <a-entity id="rig" stick-move><a-entity id="cam" camera look-controls position="0 1.6 0"></a-entity>
@@ -15,7 +55,7 @@ window.zsSnapTurn=window.zsSnapTurn||function(rigO,s,sc){ /* Snap-Drehung um den
 AFRAME.registerComponent('stick-move',{init(){ this.ax=[0,0]; this.snap=0; const sc=this.el.sceneEl; sc.addEventListener('thumbstickmoved',e=>{ const h=e.target.getAttribute('laser-controls'); if(h&&h.hand==='left') this.ax=[e.detail.x,e.detail.y]; else { if(Math.abs(e.detail.x)>0.7&&!this.snap){ this.snap=1; zsSnapTurn(this.el.object3D,Math.sign(e.detail.x),sc); } if(Math.abs(e.detail.x)<0.3) this.snap=0; } }); },
  tick(t,dt){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const cam=this.el.sceneEl.camera; const q=new THREE.Quaternion(); cam.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new THREE.Vector3(-f.z,0,f.x); const o=this.el.object3D.position; o.addScaledVector(f,-y*dt*0.0016).addScaledVector(r,x*dt*0.0016); if(window.__br) __br.collide(o); }});
 const sc=document.querySelector('a-scene'), mode=(ZSA.cur().id); // intro | backrooms | end
-{ const rs=document.getElementById('reset'), hasSave=ZSA.step>0; rs.textContent=hasSave?'✦ Neues Spiel':'Von vorn beginnen'; if(hasSave){ rs.style.cssText='position:absolute;bottom:22px;font-size:15px;opacity:.85;border:1px solid #4a3e2c;padding:9px 20px;text-decoration:none;letter-spacing:2px'; } let arm=0;
+{ const rs=document.getElementById('reset'), hasSave=ZSA.step>0; rs.textContent=hasSave?'✦ Neues Spiel':'Von vorn beginnen'; if(hasSave){ rs.classList.add('save'); } let arm=0;
  rs.onclick=e=>{ e.stopPropagation(); e.preventDefault&&e.preventDefault(); if(hasSave&&performance.now()-arm>4000){ arm=performance.now(); rs.textContent='Wirklich? Spielstand wird gelöscht – nochmal tippen'; setTimeout(()=>{ if(performance.now()-arm>=3900) rs.textContent='✦ Neues Spiel'; },4000); return; } ZSHelp&&ZSHelp.newGame?ZSHelp.newGame():(ZSA.reset(),location.href='alpha.html?alpha=1&step=0#intro'); };
  ['touchstart','touchend','mousedown'].forEach(t=>rs.addEventListener(t,e=>e.stopPropagation())); }
 if(ZSA.cur().page!=='alpha.html'){ /* gespeicherter Fortschritt in einem Raum → dort weitermachen */ document.getElementById('go').textContent='▶ WEITERSPIELEN: '+ZSA.cur().title;  }
