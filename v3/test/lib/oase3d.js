@@ -102,6 +102,12 @@ function buildTable(std){ // Massageliege: Kunstleder-Polster (bordeaux), Chromg
  const sb=new T.Mesh(new T.CylinderGeometry(0.012,0.012,1.51,8),chrome); sb.rotation.z=Math.PI/2; sb.position.set(0.075,0.16,0); g.add(sb);
  // Handtuchrolle unter den Füßen
  const roll=new T.Mesh(new T.CylinderGeometry(0.05,0.05,0.4,16),std({map:terryTex('#efe6da','#d98aa0'),roughness:1})); roll.rotation.x=Math.PI/2; roll.position.set(0.86,TB.top+0.02,0); g.add(roll); }
+let _hair=null; function hairTex(){ if(_hair) return _hair; // Föhnwelle: feine Strähnen längs der Körperachse (u), leicht gewellt; Farbe hell/dunkel moduliert, Bump aus derselben Zeichnung
+ const draw=(x,w,h,bump)=>{ x.fillStyle=bump?'#808080':'#b89070'; x.fillRect(0,0,w,h); for(let i=0;i<2600;i++){ const y=rnd()*h, a=rnd()*8, L=60+rnd()*260, x0=rnd()*w; const v=rnd();
+   x.strokeStyle=bump?(v<0.5?`rgba(0,0,0,${0.25+rnd()*0.3})`:`rgba(255,255,255,${0.25+rnd()*0.3})`):(v<0.45?`rgba(70,40,20,${0.18+rnd()*0.25})`:`rgba(255,225,170,${0.15+rnd()*0.25})`); x.lineWidth=0.6+rnd()*1.4;
+   x.beginPath(); x.moveTo(x0,y); for(let k=1;k<=8;k++){ const xx=x0+L*k/8; x.lineTo(xx,y+Math.sin(xx*0.035+a)*6); } x.stroke(); } };
+ const mk=b=>{ const c=document.createElement('canvas'); c.width=512; c.height=256; draw(c.getContext('2d'),512,256,b); const t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=8; if(!b) t.colorSpace=T.SRGBColorSpace; return t; };
+ _hair={c:mk(false),b:mk(true)}; return _hair; }
 function terryTex(base,stripe){ return cv(256,256,(x,w,h)=>{ x.fillStyle=base; x.fillRect(0,0,w,h); if(stripe){ x.fillStyle=stripe; x.fillRect(0,36,w,18); x.fillRect(0,64,w,6); x.fillRect(0,186,w,6); x.fillRect(0,200,w,18); }
   for(let i=0;i<9000;i++){ const v=rnd(); x.fillStyle=v<0.5?`rgba(0,0,0,${0.05+rnd()*0.07})`:`rgba(255,255,255,${0.05+rnd()*0.1})`; x.fillRect(rnd()*w,rnd()*h,1+rnd()*2,1+rnd()*2); } }); }
 let bottle=null, bottleHome=new T.Vector3();
@@ -163,7 +169,7 @@ function buildCurtain(){ // Perlenvorhang (Holz/Bernstein), 1 Draw (Instanzen), 
 const MW=512, MH=192, X0=-0.98, X1=1.0, Z0=-0.37, Z1=0.37;   // Masken-Fenster (Figur lokal, Draufsicht)
 let mask=null, maskTex=null, fig={}, figRoot=null, pose='lie', oilU={value:null}, oilAmt={value:0}, glint={value:0};
 const GX=128, GZ=48; let target=null, got=null, nTarget=1;
-function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.height=MH; const x=mask.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,MW,MH); maskTex=new T.CanvasTexture(mask); maskTex.colorSpace=T.NoColorSpace; maskTex.minFilter=T.LinearFilter; maskTex.generateMipmaps=false; oilU.value=maskTex; }
+function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.height=MH; const x=mask.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,MW,MH); maskTex=new T.CanvasTexture(mask); maskTex.flipY=false; maskTex.colorSpace=T.NoColorSpace; maskTex.minFilter=T.LinearFilter; maskTex.generateMipmaps=false; oilU.value=maskTex; }
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht
@@ -189,7 +195,7 @@ function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[whic
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
   parts.body.forEach(o=>{ const vc=!!o.geometry.attributes.color; o.material=oilMat(o.material,{vc}); });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
-  parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xc06030),sheenRoughness:0.4}));
+  const hT=hairTex(); parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:1.2,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xd08040),sheenRoughness:0.35}));
   [...parts.towel,...parts.chest].forEach(o=>o.material=terry('#f4ece0','#d98aa0')); parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
   [...parts.strap,...parts.top].forEach(o=>o.material=new T.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:0.45}));
   r.traverse(o=>{ if(o.isMesh){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
@@ -209,7 +215,7 @@ function buildTarget(f){ // ölbare Zellen = was man von oben wirklich sieht (Ha
  const xe=R.xr.enabled; R.xr.enabled=false; const prev=R.getRenderTarget(); R.setRenderTarget(rt); R.setClearColor(0x000000,0); R.clear(); R.render(sc2,oc); const px=new Uint8Array(GX*GZ*4); R.readRenderTargetPixels(rt,0,0,GX,GZ,px); R.setRenderTarget(prev); R.xr.enabled=xe;
  keep.forEach(([o,m])=>o.material=m); f.root.position.copy(pos); if(par) par.add(f.root); rt.dispose();
  for(let r=0;r<GZ;r++) for(let c=0;c<GX;c++){ const k=(r*GX+c)*4; if(px[k+2]>128&&px[k]>150&&px[k+1]>150){ const z=-(-Z1+(r+0.5)/GZ*(Z1-Z0)); const gz=Math.floor((z-Z0)/(Z1-Z0)*GZ); if(gz>=0&&gz<GZ){ target[gz*GX+c]=1; nTarget++; } } }
- nTarget=Math.max(1,nTarget); window.__oaseTarget=nTarget; }
+ nTarget=Math.max(1,nTarget); window.__oaseTarget=nTarget; window.__oaseTargetArr=target; }
 function coverage(){ let k=0; for(let i=0;i<target.length;i++) if(target[i]&&got[i]>=0.6) k++; return k/nTarget; }
 let lastPaint=null;
 function paintAt(lx,lz,str){ const u=(lx-X0)/(X1-X0), v=(lz-Z0)/(Z1-Z0); if(u<0||u>1||v<0||v>1) return 0;
@@ -262,8 +268,8 @@ function hitBottle(ray){ rc.ray.copy(ray); rc.far=4; return rc.intersectObject(b
 let drag=null;
 function setupPointer(){ const cv=S.el?S.el.canvas:document.querySelector('a-scene').canvas; cv.style.touchAction='none'; const camEl=document.getElementById('cam');
  const ray=e=>{ const r=cv.getBoundingClientRect(); rc.setFromCamera({x:(e.clientX-r.left)/r.width*2-1,y:-(e.clientY-r.top)/r.height*2+1},S.el?S.el.camera:document.querySelector('a-scene').camera); return rc.ray.clone(); };
- cv.addEventListener('pointerdown',e=>{ if(R.xr.isPresenting) return; startAmb(); const r=ray(e); if(hitBottle(r)) { takeOil(); return; } const h=hitBody(r); if(h&&!h.cover){ drag={id:e.pointerId,last:h}; camEl.setAttribute('look-controls','enabled',false); try{ cv.setPointerCapture(e.pointerId); }catch(_){} } },true);
- cv.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; const h=hitBody(ray(e)); if(h&&!h.cover){ const len=drag.last&&drag.last.p?h.p.distanceTo(drag.last.p):0; if(len>0.004){ rub(h.lx,h.lz,len); drag.last=h; } } });
+ cv.addEventListener('pointerdown',e=>{ if(R.xr.isPresenting) return; startAmb(); const r=ray(e); if(hitBottle(r)) { takeOil(); return; } const h=hitBody(r); if(h){ drag={id:e.pointerId,last:h.cover?null:h}; camEl.setAttribute('look-controls','enabled',false); try{ cv.setPointerCapture(e.pointerId); }catch(_){} } },true);
+ cv.addEventListener('pointermove',e=>{ if(!drag||e.pointerId!==drag.id) return; const h=hitBody(ray(e)); if(h&&!h.cover){ const len=drag.last&&drag.last.p?h.p.distanceTo(drag.last.p):0.02; if(len>0.004){ rub(h.lx,h.lz,Math.min(len,0.08)); drag.last=h; } } else if(h&&h.cover) lastPaint=null; });
  const up=e=>{ if(!drag||e.pointerId!==drag.id) return; drag=null; lastPaint=null; setTimeout(()=>camEl.setAttribute('look-controls','enabled',true),0); };
  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
  // Klick-Pfad für Handy-Tipp (touchctl → Maus-Klick) auf die Flasche

@@ -95,7 +95,7 @@ def drape(P,x0,x1,off,fold,rgb):
       a=i*nz+j; b=a+nz; F+= [[a,a+1,b],[b,a+1,b+1]]
   m=trimesh.Trimesh(V,np.array(F),process=False)
   if (m.face_normals[:,1].mean()<0): m.invert()
-  cr=np.clip(1-12.0*np.maximum(0,gaussian_filter(H,2.0)-H).ravel(),0.72,1)
+  cr=np.clip(1-5.0*np.maximum(0,gaussian_filter(H,2.0)-H).ravel(),0.86,1)
   sh=np.where(side.ravel(),0.72,1.0)
   c=np.ones((len(V),4)); c[:,:3]=np.asarray(rgb)[None,:]*(cr*sh)[:,None]; c[:,3]=0; m.visual.vertex_colors=(c*255).astype(np.uint8); return m
 def ao(m,f):
@@ -115,10 +115,10 @@ def build(up):
   a=np.clip((np.linalg.norm(v-P.Hc,axis=1)-0.13)/0.06,0,1)       # Kopf nicht ölen (weicher Übergang)
   aoB=ao(B,fall); C=np.ones((len(v),4)); C[:,:3]=c*aoB[:,None]; C[:,3]=a
   B.visual.vertex_colors=(C*255).astype(np.uint8)
-  Hm.visual.vertex_colors=(col(Hm,[0.30,0.10,0.05],0,fall)*255).astype(np.uint8)
+  Hm.visual.vertex_colors=(col(Hm,[0.95,0.70,0.40],0,fall)*255).astype(np.uint8)
   nodes={'body':B,'hair':Hm}
   nodes['towel']=drape(P,-0.085,0.37,0.016,0.004,[0.95,0.92,0.86])
-  nodes['robe']=drape(P,-0.30 if not up else -0.22,0.97,0.024,0.0035,[0.98,0.80,0.86])
+  nodes['robe']=drape(P,-0.12,0.97,0.022,0.0035,[0.98,0.80,0.86])
   if not up:
     st=mesh(lambda q:shell(q,P,0.0035,-0.425,-0.40),lo,hi,h,1500); st.visual.vertex_colors=(col(st,[0.38,0.05,0.07],0,fb)*255).astype(np.uint8); nodes['strap']=st
   else:

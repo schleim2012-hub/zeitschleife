@@ -13,7 +13,8 @@ window.ZS_ADULT=on();
 // ---------- Fragenpool (70er/80er, BRD/DDR-Alltag) – richtige Antwort steht jeweils zuerst, wird gemischt ----------
 const Q=[
  ['Wie viele Stellen hatte eine westdeutsche Postleitzahl vor 1993?',['Vier','Fünf','Sechs','Postleit-was? Man schrieb „Bei Oma“ drauf']],
- ['Wer war von 1982 bis 1998 Bundeskanzler?',['Helmut Kohl','Helmut Schmidt','Willy Brandt','Der Hausmeister vom Bundestag']],
+ ['Was lag in der Videothek hinter dem Vorhang mit dem Schild „Ab 18“?',['Die Filme, für die man den Ausweis zeigen musste','Das Lager für kaputte Kassetten','Die Toilette fürs Personal','Der Rückspul-Automat']],
+ ['Wo standen am Kiosk die Herrenmagazine?',['Ganz oben im Regal, wo Kinder nicht hinkamen','Neben den Micky-Maus-Heften','In der Kühltruhe beim Eis','Gar nicht – die gab es nur per Post']],
  ['Bis wann hatten die Läden an einem normalen Samstag in den 80ern (West) offen?',['Bis 14 Uhr','Bis 20 Uhr','Rund um die Uhr','Samstag war Ruhetag, nur der Bäcker durfte']],
  ['Wie viel Promille durfte man in der BRD der 80er beim Autofahren höchstens haben?',['0,8','0,0','0,3','So viel, wie in den Kofferraum passt']],
  ['Wie schnell durfte man auf DDR-Autobahnen höchstens fahren?',['100 km/h','130 km/h','Unbegrenzt','So schnell, wie der Trabbel eben kann: 60']],
