@@ -16,7 +16,7 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.05), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.012), LMC=num('lmc',1.32), LMB=num('lmb',1.10), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=7c'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
@@ -26,7 +26,11 @@ AFRAME.registerComponent('warteraum',{
      m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3); }
     else if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
      // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter); v7: Schatten sanft angehoben (lift), Lichtinseln bleiben
-     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','( lightMapTexel.rgb + '+LIFT.toFixed(3)+' * (1.0 - lightMapTexel.rgb) ) * lightMapIntensity * vec3(1.0,0.97,0.92)')); }; m.customProgramCacheKey=()=>'wrlm'+LIFT.toFixed(3); }
+     // v8: Film-Kontrast – Lightmap-Kurve (Lichtinseln bleiben, Mitten/Schatten tiefer) + raumfeste Abdunklung zu Ecken und Decke (Weltkoordinaten, nie kopffest)
+     m.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWq;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWq=(modelMatrix*vec4(transformed,1.0)).xyz;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWq;\nfloat wrFall(vec3 p){ float ex=smoothstep(1.55,2.65,abs(p.x+0.05)), ez=smoothstep(1.25,2.25,abs(p.z)); float cor=ex*ez; float side=max(ex,ez)*0.35; float up=smoothstep(2.05,2.95,p.y); return clamp(1.0-'+VIG.toFixed(3)+'*(cor+side)-'+CEILD.toFixed(3)+'*up,0.18,1.0); }')
+       .replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','( pow(lightMapTexel.rgb,vec3('+LMC.toFixed(3)+')) * '+LMB.toFixed(3)+' + '+LIFT.toFixed(3)+' * (1.0 - lightMapTexel.rgb) ) * wrFall(vWq) * lightMapIntensity * vec3(1.0,0.96,0.90)')); };
+     m.customProgramCacheKey=()=>'wrlm8'+[LIFT,LMC,LMB,VIG,CEILD].map(x=>x.toFixed(3)).join('_'); }
     if(m.metalness>0.2) m.metalness=0.35; m.needsUpdate=true; });
    // Sonder-Materialien
    const swap=(name,mk)=>{ const old=M[name]; if(!old) return; const nm=mk(old); root.traverse(o=>{ if(o.isMesh&&o.material===old) o.material=nm; }); M[name]=nm; };
@@ -48,7 +52,7 @@ AFRAME.registerComponent('warteraum',{
    if(M.wr_vinyl){ M.wr_vinyl.roughness=0.72; } // Sofa/Sessel: mattes altes Kunstleder, keine Glanzstreifen
    // v7: Sofa = eigenes Material wr_sofa (Vertex-Licht mit Kontaktschatten, warmes Beige) – der v6-Sonderdraw ohne Licht entfällt
    if(M.wr_sofa){ M.wr_sofa.roughness=0.72; }
-   if(M.wr_ceil){ M.wr_ceil.color.setScalar(num('ceil',0.78)); } // v7b: Decke dunkler wie im Film (Pete 05/06) – kein heller Fleck über den Stehlampen
+   if(M.wr_ceil){ M.wr_ceil.color.setScalar(num('ceil',0.66)); } // v7b: Decke dunkler wie im Film (Pete 05/06) – kein heller Fleck über den Stehlampen
    if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.24; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
@@ -58,7 +62,8 @@ AFRAME.registerComponent('warteraum',{
    // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
    if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
-   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,0.30); sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
+   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.21)); // v8: etwas weniger Grundlicht (v7 0.30, flach)
+   sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
    const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
    const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,i?1.0:1.3,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
