@@ -16,21 +16,22 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.012), LMC=num('lmc',1.32), LMB=num('lmb',1.10), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=7c'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
     if(VLN.has(m.name)){ // v7: gebackenes Vertex-Licht (Col = Tönung × Licht/vlScale) → als Eigenleuchten, gleiche Skala wie die Lightmap
-     m.lightMap=null; m.vertexColors=true; m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * '+VLG.toFixed(4)+' * vec3(1.0,0.97,0.92);'); };
-     m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3); }
+     m.lightMap=null; m.vertexColors=true; m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * '+(VLG*(m.name==='wr_sofa'?num('sofag',0.86):1)).toFixed(4)+' * vec3(1.0,0.97,0.92);'); }; // v8: Sofa etwas zurückgenommen (war heller als der Raum)
+     m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3)+m.name; }
     else if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
      // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter); v7: Schatten sanft angehoben (lift), Lichtinseln bleiben
      // v8: Film-Kontrast – Lightmap-Kurve (Lichtinseln bleiben, Mitten/Schatten tiefer) + raumfeste Abdunklung zu Ecken und Decke (Weltkoordinaten, nie kopffest)
      m.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWq;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWq=(modelMatrix*vec4(transformed,1.0)).xyz;');
-      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWq;\nfloat wrFall(vec3 p){ float ex=smoothstep(1.55,2.65,abs(p.x+0.05)), ez=smoothstep(1.25,2.25,abs(p.z)); float cor=ex*ez; float side=max(ex,ez)*0.35; float up=smoothstep(2.05,2.95,p.y); return clamp(1.0-'+VIG.toFixed(3)+'*(cor+side)-'+CEILD.toFixed(3)+'*up,0.18,1.0); }')
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWq;\nfloat wrFall(vec3 p){ '+POOLS+' float ex=smoothstep(1.55,2.65,abs(p.x+0.05)), ez=smoothstep(1.25,2.25,abs(p.z)); float cor=ex*ez; float side=max(ex,ez)*0.35; float up=smoothstep(2.05,2.95,p.y); return clamp((1.0-'+VIG.toFixed(3)+'*(cor+side)-'+CEILD.toFixed(3)+'*up)*mix('+POOLD.toFixed(3)+',1.06,pl),0.16,1.08); }')
        .replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','( pow(lightMapTexel.rgb,vec3('+LMC.toFixed(3)+')) * '+LMB.toFixed(3)+' + '+LIFT.toFixed(3)+' * (1.0 - lightMapTexel.rgb) ) * wrFall(vWq) * lightMapIntensity * vec3(1.0,0.96,0.90)')); };
-     m.customProgramCacheKey=()=>'wrlm8'+[LIFT,LMC,LMB,VIG,CEILD].map(x=>x.toFixed(3)).join('_'); }
+     m.customProgramCacheKey=()=>'wrlm8'+[LIFT,LMC,LMB,VIG,CEILD,POOLD].map(x=>x.toFixed(3)).join('_'); }
     if(m.metalness>0.2) m.metalness=0.35; m.needsUpdate=true; });
    // Sonder-Materialien
    const swap=(name,mk)=>{ const old=M[name]; if(!old) return; const nm=mk(old); root.traverse(o=>{ if(o.isMesh&&o.material===old) o.material=nm; }); M[name]=nm; };
