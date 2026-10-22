@@ -1,1 +1,1 @@
-{"meshes": {"sz_fl": {"offset": 0, "count": 1632, "c": [0, 0, 0]}, "sz_ce": {"offset": 13056, "count": 1632, "c": [0, 2.5, 0]}, "sz_wa": {"offset": 26112, "count": 4080, "c": [0, 1.25, -0.125]}}, "res": 1024, "lmScale": 1.800797700881958, "lmIntensity": 5.6574}
+{"meshes": {"sz_fl": {"offset": 0, "count": 1632, "c": [0, 0, 0]}, "sz_ce": {"offset": 13056, "count": 1632, "c": [0, 2.5, 0]}, "sz_wa": {"offset": 26112, "count": 4080, "c": [0, 1.25, -0.125]}}, "res": 1024, "lmScale": 1.8414195775985718, "lmIntensity": 5.785}
