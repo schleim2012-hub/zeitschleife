@@ -128,8 +128,8 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
   if(hemi) hemi.intensity=hemi.intensity+(B?0.08:0.42)*Kw*kin;
   if(L2&&kin>0.5){ const bI=L2.intensity/Math.max(1e-4,0.32*Kw*kin); L2.intensity*=B?1.6:4.2; L2.distance=6.0; if(B&&info.lmMats) info.lmMats.forEach(m=>{ m.lightMapIntensity=m.userData.lm0*(0.9+0.1*Math.min(1.2,bI)); }); }
   if(spot) spot.intensity*=B?0.35:0.7; };
- // ---- 6) Sperrzonen (x0,x1,z0,z1): Küchenzeile, Kühlschrank+Kiste, Eckbankgruppe, Treteimer ----
- const ZONES=[[-10.79,-7.0,1.675,2.5],[-11.5,-10.58,1.18,2.5],[-11.5,-10.38,-0.92,1.04],[-7.47,-7.0,1.36,2.5]];
+ // ---- 6) Sperrzonen (x0,x1,z0,z1): Küchenzeile, Westseite (Kühlschrank+Kiste+Eckbankgruppe), Treteimer ----
+ const ZONES=[[-10.79,-7.0,1.675,2.5],[-11.5,-10.38,-0.92,2.5],[-7.47,-7.0,1.36,2.5]]; // Kühlschrank+Kiste und Eckbank zu einer Zone: die 14-cm-Lücke dazwischen ließ den Kopf beim Teleport zwischen zwei Zonen hängen
  info.zoneRects=ZONES;
  const sol=()=>{ const R=window.__apt&&__apt.ROOMS&&__apt.ROOMS.kitchen; if(!R){ setTimeout(sol,200); return; } R.solid=R.solid||[]; R.solid.length=0; ZONES.forEach(z=>R.solid.push(z.slice())); info.zones=true; };
  setTimeout(sol,0);

@@ -230,8 +230,11 @@ if 'kram' in WHICH:
     for k in range(3): W(-9.79+k*0.02,-9.6+k*0.02,0.78+k*0.003,0.786+k*0.003,2.1-k*0.03,2.115-k*0.03,CR,rot=(0,0,0))
     for k in range(6): W(-9.45,-9.12,t+0.012+k*0.0,t+0.06,2.0+k*0.07,2.004+k*0.07,mat('gitter',0xd0d0cc,var=0.05))
     for k in range(4): Wl(-9.29,t+0.13,2.06+k*0.07,[(0,0),(0.08,0),(0.11,0.018),(0.105,0.02),(0.075,0.004),(0,0.004)],WH,seg=20) if False else None
-    for k in range(4):
-        o=Wc(-9.29,t+0.125,2.06+k*0.075,0.105,0.012,WH,axis='z',v=24)
+    import mathutils
+    DK=mat('dekor',0x8a5a2c,var=0.05,rough=0.3)
+    for k in range(4):   # Teller hochkant im Abtropfgitter: echte Tellerform (Spiegel, Fahne, brauner Dekorrand) statt Scheibe
+        for prof,mm in (([(0,0),(0.075,0),(0.088,0.012),(0.105,0.02),(0.108,0.016),(0.11,0.018),(0.104,0.022),(0.088,0.015),(0.075,0.004),(0,0.004)],WH),([(0.094,0.0168),(0.1,0.0196),(0.0998,0.0204),(0.0935,0.0176)],DK)):
+            o=Wl(0,0,0,prof,mm,seg=28); o.data.transform(mathutils.Matrix.Rotation(-math.pi/2,4,'X')); o.data.transform(mathutils.Matrix.Translation((-9.29,-(2.05+k*0.075),t+0.125)))
     Wl(-9.2,t+0.012,2.38,[(0,0.0),(0.035,0),(0.042,0.08),(0.0,0.08)],mat('tasse_b',0x2a4a7a,var=0.05,rough=0.3),seg=14)
     lcyl(-10.0,t+0.11,2.44,0.03,0.2,mat('spuelfl',0x3aa050,rough=0.3),'spueli.png',band=(0.15,0.8)); Wc(-10.0,t+0.225,2.44,0.012,0.03,mat('kappe',0xe8e0d0),v=10)
     W(-10.1,-10.02,t+0.008,t+0.035,2.3,2.36,mat('schwamm',0xc8b830,var=0.25,scale=300)); W(-10.1,-10.02,t+0.035,t+0.042,2.3,2.36,mat('schwammg',0x2a6a30,var=0.2,scale=300))
