@@ -38,7 +38,7 @@ MT=dict(
  glass=M('wr_glass',None,None,0.08,0.0,alpha=0.15), redglass=M('wr_redglass',None,None,0.25), fig=M('wr_fig','fig_col.png',None,0.62),
  emit=M('wr_emit',None,None,1.0,emit=(0x9cff7a,6.0)), flip=M('wr_flip',None,None,0.6), noexit=M('wr_noexit','signs.png',None,0.5),
  pinup=M('wr_pinup','pinups.png',None,0.38),
- sofa=M('wr_sofa','fig_col.png',None,0.7))   # v7: Sofa mit eigenem Material – Licht als Vertexfarbe gebacken (Hunyuan-UV-Inseln machten Flecken in der Lightmap)   # v4: Pin-ups (gen_beetle.py) – eigene, austauschbare Textur
+ sofa=M('wr_sofa','fabric_col.png',None,0.85))   # v7b: Stoff-Textur (Webmuster + Flecken) statt glattem Kunstleder   # v7: Sofa mit eigenem Material – Licht als Vertexfarbe gebacken (Hunyuan-UV-Inseln machten Flecken in der Lightmap)   # v4: Pin-ups (gen_beetle.py) – eigene, austauschbare Textur
 AX={}
 MOVERS=[]  # bewegliche Teile (eigene Objekte, Ursprung = Gelenk)
 # ------------------------------------------------------------------ Raumhülle (Caligari: schräge Wände, Boden flach y=0)
@@ -401,9 +401,28 @@ def hy_lamp(x,y,name,base=0x3e6a48):
             for li,l in enumerate(o.data.loops):
                 p_=o.data.vertices[l.vertex_index].co; ul.data[li].uv=(math.atan2(p_.y-y,p_.x-x)/math.pi*1.5,p_.z*1.5)
     return (x,y,0.84*H)
+def sofa_shade(o):
+    """v7b: Sofa nicht flach – Fugen/Falten (konkave Stellen) dunkler, Sitz-/Lehnenkanten abgewetzt heller, unten dunkler, leichte Fleckigkeit."""
+    bm=bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table(); bm.normal_update()
+    cav=[0.0]*len(bm.verts)
+    for vv in bm.verts:
+        ls=[e.other_vert(vv).co-vv.co for e in vv.link_edges]
+        if ls: cav[vv.index]=sum(l.dot(vv.normal)/max(l.length,1e-4) for l in ls)/len(ls)   # >0 = Mulde/Fuge, <0 = Kante
+    for _ in range(2):
+        cav=[0.5*cav[vv.index]+0.5*sum(cav[e.other_vert(vv).index] for e in vv.link_edges)/max(1,len(vv.link_edges)) for vv in bm.verts]
+    bm.free(); zs=[v.co.z for v in o.data.vertices]; z0,z1=min(zs),max(zs); base=hexc(0xa89482)
+    def fn(v):
+        i=fn.idx[(round(v.x,5),round(v.y,5),round(v.z,5))]; cv=cav[i]; h=(v.z-z0)/max(z1-z0,1e-3)
+        k=1.0-0.55*max(0.0,min(1.0,cv*3.0))+0.12*max(0.0,min(1.0,-cv*3.0))   # Fugen dunkel, Kanten heller
+        k*=0.78+0.22*min(1.0,h*1.6)                                          # zum Boden hin dunkler
+        k*=0.94+0.06*math.sin(v.x*7.3+1.1)*math.sin(v.y*5.1+0.4)            # leicht fleckig
+        return (base[0]*k,base[1]*k,base[2]*k)
+    fn.idx={(round(v.co.x,5),round(v.co.y,5),round(v.co.z,5)):v.index for v in o.data.vertices}
+    set_vc(o,fn)
 def hy_sofa(x,y,yaw):
     v,t=hy_mesh('sofa',0.86)
-    o=hy_prop('sofa',v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.11),('body',MT['sofa'],0xae9c82,1.6,lambda c:c[:,2]>-1)],x,y,yaw)   # v7: wärmeres Beige wie Pete 06
+    o=hy_prop('sofa',v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.11),('body',MT['sofa'],0xa89482,2.6,lambda c:c[:,2]>-1)],x,y,yaw)   # v7: wärmeres Beige wie Pete 06; v7b: etwas taupe, feineres Gewebe
+    sofa_shade(o['body'])
     m=(_np.abs(v[:,0])<0.55)&(v[:,1]>0.0)&(v[:,1]<0.3)&(v[:,2]<0.65); seat=float(v[m,2].max())
     zb=(v[:,2]>seat+0.10)&(v[:,2]<seat+0.30)&(_np.abs(v[:,0])<0.6)&(v[:,1]<0.1); back=float(v[zb,1].max())
     print('Sofa Sitz',round(seat,3),'Lehne vorn',round(back,3)); return seat,back
@@ -643,6 +662,49 @@ def hy_figures():
     hp=objs['assi_head']['piv'] if 'piv' in objs['assi_head'] else (0.024,-0.205,1.019)
     smooth_region(objs['assi_body'],(hp[0],hp[1]-0.02,hp[2]-0.09),(0.16,0,0.12))
     oh=objs['oma_head']; md=oh.modifiers.new('ss','SUBSURF'); md.levels=1; md.render_levels=1; md.uv_smooth='PRESERVE_BOUNDARIES'; apply_mods(oh); smooth(oh)
+    # v7b: Kopf-"Kragen" aus fig_proc (3 Ringe, 4 mm eingerückt) sind bei den dezimierten Hunyuan-Köpfen fast ganze Kopf-Kopien
+    # (Königin 1838 Flächen, Assistentin 2878) und stehen wegen uneinheitlicher Normalen teils VOR dem Kopf → Doppelgesicht der Königin
+    # beim Kopfdrehen, Sprenkel im Oma-Gesicht (nach der Unterteilung liegt der Kopf tiefer), Kanten am Dekolleté der Assistentin.
+    # Kragen-Inseln (≥90 % der Flächen < 8 mm an der Kopfhaut) bis auf einen schmalen, innen liegenden Halsring entfernen.
+    from mathutils.bvhtree import BVHTree
+    for n in ['oma','gruen','brand','jaeger','taucher','assi','frl','decke']:
+        h=objs.get(n+'_head'); b=objs.get(n+'_body')
+        if not h or not b or 'piv' not in h: continue
+        P=V(h['piv']); bvh=BVHTree.FromPolygons([v.co+P for v in h.data.vertices],[tuple(p.vertices) for p in h.data.polygons])
+        bm=bmesh.new(); bm.from_mesh(b.data); bm.faces.ensure_lookup_table(); seen=set(); kill=[]
+        for f0 in bm.faces:
+            if f0.index in seen: continue
+            st=[f0]; comp=[]; seen.add(f0.index)
+            while st:
+                g=st.pop(); comp.append(g)
+                for e in g.edges:
+                    for g2 in e.link_faces:
+                        if g2.index not in seen: seen.add(g2.index); st.append(g2)
+            R=[(f,bvh.find_nearest(f.calc_center_median(),0.008)) for f in comp]
+            if sum(r[0] is not None for f,r in R)<0.9*len(R): continue
+            for f,r in R:
+                c=f.calc_center_median()
+                if not (r[0] is not None and c.z<P.z+0.02 and (c-r[0]).dot(r[1])<-0.001): kill.append(f)
+        bmesh.ops.delete(bm,geom=kill,context='FACES'); bm.to_mesh(b.data); bm.free(); print('Kragen entfernt',n,len(kill))
+    # v7b: Hals der Assistentin – vorn am Hals treffen die Frontprojektions-UVs Kinnschatten/Haarsträhnen/Paillettenkante
+    # (dunkles "X" am Dekolleté). Ecken dort, die kein Hautpixel treffen, auf das nächste Hautpixel (≤ 48 px) im Konzeptbild ziehen.
+    def neck_uv(n,box):
+        import numpy as _n3
+        b=objs[n+'_body']; P=V(objs[n+'_head']['piv']); im=bpy.data.images.load(SRC+'/fig_%s.png'%n,check_existing=True); w_,h_=im.size
+        px=_n3.array(im.pixels[:],_n3.float32).reshape(h_,w_,4)[...,:3]
+        skin=(px.min(2)>0.62)&((px[...,0]-px[...,2])<0.10)&((px[...,0]-px[...,1])<0.10)
+        uv=b.data.uv_layers['UVMap'].data; fixed=0
+        for p_ in b.data.polygons:
+            c=p_.center-P
+            if not (abs(c.x)<box[0] and box[1]<c.z<box[2] and c.y>box[3] and p_.normal.y>0.1): continue
+            for li in p_.loop_indices:
+                u,v_=uv[li].uv; X=int(round(u*(w_-1))); Y=int(round(v_*(h_-1)))
+                if 0<=X<w_ and 0<=Y<h_ and skin[Y,X]: continue
+                y0,y1,x0,x1=max(0,Y-48),min(h_,Y+49),max(0,X-48),min(w_,X+49); ys,xs=_n3.nonzero(skin[y0:y1,x0:x1])
+                if not len(ys): continue
+                k=int(_n3.argmin((ys+y0-Y)**2+(xs+x0-X)**2)); uv[li].uv=((xs[k]+x0)/(w_-1),(ys[k]+y0)/(h_-1)); fixed+=1
+        print('Hals-UV',n,fixed)
+    neck_uv('assi',(0.06,-0.075,0.035,0.03))
     def depth(n): return max(abs(v.co.y) for v in objs[n+'_body'].data.vertices)
     for n,key in [('oma','k'),('gruen','c'),('brand','club'),('jaeger','h')]:
         a_={'k':0.80,'c':1.50,'club':2.30,'h':4.15}[key]; x,y=wpos(a_,depth(n)+0.05); CH[key]=(x,y); put(n,x,y,wyaw)
