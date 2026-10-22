@@ -163,8 +163,9 @@ function showVR(){ const sc=document.querySelector('a-scene'); if(!sc||!sc.camer
 function hideVR(){ if(!vrPanel) return; vrPanel.e.object3D.visible=false; vrPanel.e.classList.remove('clickable'); (vrPanel.btns||[]).forEach(b=>b.classList.remove('clickable')); LS.set('zs_help_vr_seen','1'); }
 
 function boot(){ el(); const sc=document.querySelector('a-scene');
- const auto=()=>{ if(!LS.get('zs_help_seen_v1')&&!(sc&&sc.is&&sc.is('vr-mode'))) setTimeout(()=>{ if(!LS.get('zs_help_seen_v1')) open('help'); },isPhone()?600:900); };
- if(sc){ sc.addEventListener('enter-vr',()=>{ const b=document.getElementById('zsh-btn'); if(b) b.style.display='none'; close(); if(!LS.get('zs_help_vr_seen')) setTimeout(showVR,1200); });
+ // Steuerungs-Hilfe NIE mehr automatisch (Pete, 22.10.): nur auf Wunsch über ☰ › Steuerung. (früher: beim ersten Besuch über dem Titelbild)
+ const auto=()=>{};
+ if(sc){ sc.addEventListener('enter-vr',()=>{ const b=document.getElementById('zsh-btn'); if(b) b.style.display='none'; close(); /* VR-Hilfetafel nicht mehr automatisch – nur per L-Stick-Klick */ });
   sc.addEventListener('exit-vr',()=>{ const b=document.getElementById('zsh-btn'); if(b) b.style.display=''; if(vrPanel) vrPanel.e.object3D.visible=false; });
   const hook=()=>{ ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(h&&id==='hl') h.addEventListener('thumbstickdown',()=>{ if(!sc.is('vr-mode')) return; if(vrPanel&&vrPanel.e.object3D.visible) hideVR(); else showVR(); }); }); };
   sc.hasLoaded?hook():sc.addEventListener('loaded',hook);

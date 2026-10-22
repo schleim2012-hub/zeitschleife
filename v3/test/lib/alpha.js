@@ -3,7 +3,10 @@
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=m1552')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z2')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z2')+'"><\/script>'); }
+// Keine automatischen Steuerungs-Tafeln (Pete, 22.10.): die festen #hud-Kästen der Räume ausblenden; Hilfe nur über ☰ › Steuerung
+{ const st=document.createElement('style'); st.textContent='#hud{display:none!important}'; (document.head||document.documentElement).appendChild(st); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)
  {id:'intro',      page:'alpha.html', title:'Intro'},
  {id:'backrooms',  page:'alpha.html', title:'Backrooms'},
@@ -71,7 +74,7 @@ const CUTS={
  warteraum_entry:null,             // Abstecher Warteraum (kleine Backrooms-Tür) – Platz frei, Ersatz-Clip kommt (W4 abgelehnt)
  haengematte:{f:'zw_haengematte'}, // Hängematten-Falle „einschlafen“ (W2a) – Falle gibt es noch nicht: ZSA.playCut(ZSA.CUTS.haengematte)
 };
-const CUT_V='1022a';
+const CUT_V='1022b';
 function playCut(c){ return new Promise(done=>{ const sc=document.querySelector('a-scene'), R=sc&&sc.renderer, xr=!!(R&&R.xr&&R.xr.isPresenting);
  const mob=!xr&&(!!(window.ZSTouch&&ZSTouch.active)||Math.max(screen.width,screen.height)<1000);
  const v=document.createElement('video'); v.src=ROOT+'clips/zw/'+c.f+(mob?'_m':'')+'.mp4?v='+CUT_V; v.playsInline=true; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline',''); v.preload='auto'; v.crossOrigin='anonymous'; v.disablePictureInPicture=true;
@@ -130,7 +133,7 @@ save({step});
 if(navigator.xr&&navigator.xr.addEventListener) navigator.xr.addEventListener('sessiongranted',()=>{ const sc=document.querySelector('a-scene'); if(sc){ const go=()=>sc.enterVR(); sc.hasLoaded?go():sc.addEventListener('loaded',go); } });
 // kleine Desktop-Anzeige (nur DOM, in VR unsichtbar)
 document.addEventListener('DOMContentLoaded',()=>{ const d=document.createElement('div'); d.id='zsaHud'; d.style.cssText='position:fixed;right:12px;bottom:12px;z-index:30;font:600 12px sans-serif;color:#c9b89a;background:rgba(0,0,0,.45);padding:5px 9px;border-radius:6px;letter-spacing:.5px';
- d.textContent='ALPHA · '+step+'/'+(STEPS.length-1)+' · '+(SD?SD.title+' (Abstecher)':STEPS[step].title)+(window.ZSTouch&&ZSTouch.active?' · Tür antippen = weiter':' · Tür = weiter'); document.body.appendChild(d); });
+ d.textContent='ALPHA · '+step+'/'+(STEPS.length-1)+' · '+(SD?SD.title+' (Abstecher)':STEPS[step].title); document.body.appendChild(d); });
 // ---------- Tür in der Welt (Holz-PBR, Zarge, abgegriffene Messingklinke, Lichtspalt unten), optional abgeschlossen bis der Schlüssel gefunden ist
 const AC=()=>{ try{ return window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); }catch(e){ return null; } };
 const noiseSnd=(dur,f,q,vol,shape)=>{ const ac=AC(); if(!ac) return; const n=Math.floor(ac.sampleRate*dur), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++){ const k=i/n; d[i]=(Math.random()*2-1)*vol*(shape?shape(k,i):Math.sin(Math.PI*k)); } const s=ac.createBufferSource(); s.buffer=b; const fl=ac.createBiquadFilter(); fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=q; s.connect(fl); fl.connect(ac.destination); s.start(); };
@@ -295,7 +298,7 @@ const VO_AT={
  era2041:[['v_2041_baum_e','enter',8],['v_2041_baum_m','key',0.8]], apartment:[['v_apt_m','enter',6]],
  kirmes:[['v_kirmes_m','enter',7]], sim:[['v_finale_m','key',0.8]] };
 let subM=null;
-window.zsaSay=function(id,sec){ const v=VO[id]; if(!v) return; const sc=document.querySelector('a-scene'); if(!sc||!sc.renderer) return; const T=THREE, S=sc.object3D;
+window.zsaSay=function(id,sec){ const v=VO[id]; if(!v) return; if(window.ZSMARA&&ZSMARA.route(v[0],v[1],ROOT+'assets/vo/'+id+'.mp3')!=='room') return; /* Mara nicht im Raum → Anruf/stumm (mara.js) */ const sc=document.querySelector('a-scene'); if(!sc||!sc.renderer) return; const T=THREE, S=sc.object3D;
  const a=new Audio(ROOT+'assets/vo/'+id+'.mp3'); a.volume=0.9; a.play().catch(()=>{});
  if(subM){ S.remove(subM); subM=null; } const c=document.createElement('canvas'); c.width=1024; c.height=72; const x=c.getContext('2d'); x.font='500 30px sans-serif'; const t=v[0]+': '+v[1]; let fs=30; while(x.measureText(t).width>980&&fs>18){ fs-=2; x.font='500 '+fs+'px sans-serif'; } const w=Math.min(1010,x.measureText(t).width+40);
  x.fillStyle='rgba(0,0,0,0.45)'; x.fillRect(512-w/2,6,w,60); x.fillStyle='#d9c79e'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,512,37);

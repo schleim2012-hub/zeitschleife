@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Kirmes-Test – Rewind V3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z1"></script><script src="lib/helpmenu.js?v=1021u2"></script><script src="lib/alpha.js?v=1022z1"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="lib/touchctl.js?v=1022z1"></script><script src="lib/helpmenu.js?v=1022z2"></script><script src="lib/alpha.js?v=1022z2"></script>
 <script src="lib/cannon.umd.js?v=1"></script><script src="lib/vrphys.js?v=3"></script><script src="lib/vrgrab.js?v=1"></script><script src="lib/basefog.js?v=1"></script><script src="lib/dust.js?v=m1552"></script><script src="lib/kirmes3d.js?v=2"></script>
 <style>#hud{position:fixed;left:12px;top:10px;z-index:5;color:#ffe7b0;font:600 14px sans-serif;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:10px;max-width:420px}</style>
 </head><body>
@@ -206,7 +206,7 @@ function softTick(sec=3){ const a=ac(), t0=a.currentTime; const n=Math.floor(sec
     g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.035,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
     o.connect(f); f.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.09); } }
 function clockTick(){ softTick(3); }
-function maraSay(t){ const el=document.getElementById('hud'); el.innerHTML=`Kirmes-Test<br><small style="color:#ffb0d8">Mara: „${t}“</small>`; setTimeout(()=>{ el.innerHTML='Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>Klick auf Bude = hingestellt = davor stellen · VR: greifen/werfen/schießen</small>'; },5000); }
+function maraSay(t){ if(window.ZSMARA&&ZSMARA.route('Mara','„'+t+'“')!=='room') return; const el=document.getElementById('hud'); el.innerHTML=`Kirmes-Test<br><small style="color:#ffb0d8">Mara: „${t}“</small>`; setTimeout(()=>{ el.innerHTML='Kirmes-Test: Dosenwerfen · Schießbude · Pferderennen<br><small>Klick auf Bude = hingestellt = davor stellen · VR: greifen/werfen/schießen</small>'; },5000); }
 function grantPrize(kind,title,bonusMin){
   if(prizesWon[kind]) return; prizesWon[kind]=true;
   const pl=plush([0xff8fb8,0x8fd8ff,0xffe08a][Object.keys(prizesWon).indexOf(kind)%3],2.4);

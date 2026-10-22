@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1022z1"></script><script src="test/lib/helpmenu.js?v=1021u2"></script><script src="test/lib/alpha.js?v=1022z1"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1022z1"></script><script src="test/lib/helpmenu.js?v=1022z2"></script><script src="test/lib/alpha.js?v=1022z2"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
 <style>@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-SemiBold.ttf);font-weight:600;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Medium.ttf);font-weight:500;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Bold.ttf);font-weight:700;font-display:swap}
 body{margin:0;background:#000;font-family:sans-serif}
 #start{position:fixed;inset:0;z-index:40;overflow:hidden;background:#15130e url(stills/title_bg.jpg) center/cover;color:#dccfb2;cursor:pointer;font-family:ZSRaj,"DejaVu Sans Condensed",sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
@@ -110,7 +110,7 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
   const cam=sc.camera; const hp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(hp); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize();
   m.position.copy(hp).addScaledVector(f,1.8); m.position.y=hp.y-0.42; m.lookAt(hp.x,m.position.y,hp.z); m.renderOrder=5; S.add(m); subM=m;
   setTimeout(()=>tween(800,k=>{ m.material.opacity=1-k; }).then(()=>{ if(subM===m){ S.remove(m); subM=null; } }),(sec||4)*1000); }
- function voice(file,who,text){ const a=new Audio('assets/vo/'+file); a.volume=0.9; a.play().catch(()=>{}); subtitle(who,text,4.2); }
+ function voice(file,who,text){ if(window.ZSMARA&&ZSMARA.route(who,text,'assets/vo/'+file)!=='room') return; const a=new Audio('assets/vo/'+file); a.volume=0.9; a.play().catch(()=>{}); subtitle(who,text,4.2); }
  const doorCfg=br.doorAt;
  const toNext=()=>ZSA.goStep(ZSA.step+1);
  function mkDoor(fn){ if(sc.__door) return; sc.__door=zsaDoor(sc,doorCfg,fn); }

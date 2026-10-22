@@ -4,7 +4,7 @@
 (function(){
 const X=window.ERAX||{}, T=THREE, S=document.querySelector('a-scene'), PW='../assets/posters_web/';
 let VO={}; fetch('../assets/vo/erax.json').then(r=>r.json()).then(j=>VO=j).catch(()=>{});
-function say(l){ if(!l) return; if(!l[2]&&VO[l[1]]) l=[l[0],l[1],'../assets/vo/'+VO[l[1]]]; if(window.eraSay) return window.eraSay(l[0],l[1],l[2],Math.max(3000,l[1].length*65));
+function say(l){ if(!l) return; if(!l[2]&&VO[l[1]]) l=[l[0],l[1],'../assets/vo/'+VO[l[1]]]; if(window.eraSay) return window.eraSay(l[0],l[1],l[2],Math.max(3000,l[1].length*65)); if(window.ZSMARA&&ZSMARA.route(l[0],l[1],l[2])!=='room') return;
  const sb=document.getElementById('sub'); sb.textContent=(l[0]?l[0]+': ':'')+l[1]; sb.style.display='block'; clearTimeout(say.t);
  const end=()=>{ say.t=setTimeout(()=>sb.style.display='none',600); };
  if(l[2]){ const a=new Audio(l[2]); a.volume=0.9; a.onended=a.onerror=end; a.play().catch(()=>setTimeout(end,3500)); } else say.t=setTimeout(()=>sb.style.display='none',Math.max(3200,l[1].length*65)); }

@@ -36,6 +36,15 @@ function envelope(x,y){ lx.strokeStyle='#000'; lx.lineWidth=1; lx.strokeRect(x+0
 function drawIdle(){ clr(); bars(); lx.textAlign='center'; txt('NOKIO',LW/2,1,FONTB); const d=new Date(); const yr=['1984','1989','1996','2041','2079','????'][Math.floor(performance.now()/1700)%6];
  txt(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),LW/2,18,FONTB); txt(yr,LW/2,29);
  if(N.unread){ envelope(LW/2-7,40); txt(N.unread+' neue SMS',LW/2,52); } else txt('Menü',LW/2,54); lx.textAlign='left'; present(); }
+// Anruf (mara.js): klingeln → abheben (Handy nehmen/ansehen) → Text läuft mit; verpasst → „Anruf in Abwesenheit“
+function drawCall(){ const c=N.call; clr(); bars(); lx.textAlign='center'; txt((c.who||'MARA').toUpperCase(),LW/2,1,FONTB); lx.fillRect(0,11,LW,1);
+ const now=performance.now();
+ if(c.state==='ring'){ const on=Math.floor(now/400)%2; if(on){ lx.fillRect(LW/2-9,20,18,4); lx.fillRect(LW/2-9,20,4,9); lx.fillRect(LW/2+5,20,4,9); } txt('ruft an …',LW/2,34); txt('Handy nehmen',LW/2,46); txt('= abheben',LW/2,55); }
+ else if(c.state==='missed'){ txt('1 Anruf in',LW/2,22); txt('Abwesenheit',LW/2,31); txt('ansehen =',LW/2,46); txt('Mailbox',LW/2,55); }
+ else { const el=Math.max(0,(now-c.t0)/1000), mm=Math.floor(el/60), ss=Math.floor(el%60); txt((c.mailbox?'Mailbox ':'')+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0'),LW/2,13); lx.textAlign='left';
+  const L=wrapL(c.text||'',LW-4), per=4, pages=Math.max(1,Math.ceil(L.length/per)), pg=Math.min(pages-1,Math.floor(el/Math.max(1,(c.dur||4)/pages)));
+  L.slice(pg*per,pg*per+per).forEach((l,i)=>txt(l,2,24+i*9)); }
+ lx.textAlign='left'; present(); }
 function drawMsg(){ const m=N.inbox[N.idx]; if(!m) return drawIdle(); clr(); envelope(1,0); txt(m.from.slice(0,13),19,1,FONTB); lx.fillRect(0,11,LW,1);
  txt(m.ts,2,13); lx.fillRect(0,22,LW,1); const L=wrapL(m.text,LW-4), per=3, pages=Math.max(1,Math.ceil(L.length/per)); N.pages=pages; N.page=Math.min(N.page,pages-1);
  L.slice(N.page*per,N.page*per+per).forEach((l,i)=>txt(l,2,24+i*9)); lx.fillRect(0,LH-11,LW,1);
@@ -53,7 +62,7 @@ function drawSnake(){ clr(); txt('Pkt '+G.pts,2,0); lx.textAlign='right'; txt('2
  G.s.forEach(p=>lx.fillRect(2+p[0]*4,11+p[1]*4,3,3)); lx.fillRect(2+G.f[0]*4+1,11+G.f[1]*4,1,3); lx.fillRect(2+G.f[0]*4,11+G.f[1]*4+1,3,1);
  if(G.dead){ lx.clearRect(8,22,80,22); lx.strokeRect(8.5,22.5,79,21); lx.textAlign='center'; txt('Zeit abgelaufen',LW/2,25); txt('nochmal: Stick',LW/2,34); lx.textAlign='left'; }
  present(); }
-function redraw(){ if(N.mode==='read') drawMsg(); else if(N.mode==='menu') drawMenu(); else if(N.mode==='snake') drawSnake(); else drawIdle(); }
+function redraw(){ if(N.call) return drawCall(); if(N.mode==='read') drawMsg(); else if(N.mode==='menu') drawMenu(); else if(N.mode==='snake') drawSnake(); else drawIdle(); }
 // ---------- Klang: eigener, leiser 2000er-Klingelton (Rechteck-Welle, kein Original)
 const AC=()=>{ try{ return window.__zsaAC||(window.__zsaAC=new (window.AudioContext||window.webkitAudioContext)()); }catch(e){ return null; } };
 function beep(f,dur,vol,at){ const ac=AC(); if(!ac) return; try{ac.resume();}catch(e){} const t=ac.currentTime+(at||0), o=ac.createOscillator(), g=ac.createGain(), lp=ac.createBiquadFilter(); o.type='square'; o.frequency.value=f; lp.type='lowpass'; lp.frequency.value=2600;
@@ -95,7 +104,7 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
   const toHand=h=>{ const c=ctl(h||'left')||ctl('right'); if(!c) return; closePanel(); c.object3D.add(el.object3D); el.object3D.position.set(0.0,0.035,0.06); el.object3D.rotation.set(-1.25,0,0); el.object3D.scale.setScalar(1); inHand=h||'left'; N.where='hand'; beep(1200,0.03,0.008); };
   // Gürtel-Pose: Kopf-xz, 0,62 m unter Augenhöhe, links vorne; Körper-Gier folgt dem Blick erst ab 40° (kein Mitdrehen bei jedem Blick)
   const place=force=>{ if(N.where!=='inv'||panel) return; const y=headYaw(); if(bodyYaw===null||force) bodyYaw=y; let d=y-bodyYaw; d=Math.atan2(Math.sin(d),Math.cos(d)); if(Math.abs(d)>0.7) bodyYaw+=d-Math.sign(d)*0.7;
-   const fy=Math.max(0.35,hd.y-0.62), o=V(-0.2,0,-0.2).applyAxisAngle(V(0,1,0),bodyYaw); const sh=N.unread?Math.sin(performance.now()*0.09)*0.0025*(Math.sin(performance.now()*0.012)>0?1:0):0;
+   const fy=Math.max(0.35,hd.y-0.62), o=V(-0.2,0,-0.2).applyAxisAngle(V(0,1,0),bodyYaw); const sh=(N.unread||(N.call&&N.call.state==='ring'))?Math.sin(performance.now()*0.09)*0.0025*(Math.sin(performance.now()*0.012)>0?1:0):0;
    el.object3D.position.set(hd.x+o.x+sh,fy,hd.z+o.z); el.object3D.rotation.set(-1.05,bodyYaw+0.35,0,'YXZ'); };
   // Inventar-Brett: einmal vor dem Spieler aufgestellt, dann welt-fest; schließt, wenn man >1,3 m weggeht
   const mkPanel=()=>{ const g=new T.Group(), c=document.createElement('canvas'); c.width=512; c.height=256; const x=c.getContext('2d'); x.fillStyle='#14120f'; x.fillRect(0,0,512,256); x.strokeStyle='#3a342a'; x.lineWidth=4; x.strokeRect(6,6,500,244);
@@ -146,7 +155,7 @@ function setup(){ const sc=document.querySelector('a-scene'); if(!sc||N.ready) r
   const ex=!!(window.ZSX&&ZSX.cur&&ZSX.cur.obj===el.object3D); let near=false; if(cam&&el.object3D.parent){ cam.getWorldPosition(hp); el.object3D.getWorldPosition(pp); near=R.xr.isPresenting&&hp.distanceTo(pp)<0.36; }
   const look=ex||near; if(look&&!N.looking) open(); if(!look&&N.looking){ N.looking=false; if(N.mode==='snake') N.mode='menu'; }
   if(window.ZSX) ZSX.noRotate=ex&&N.mode==='snake';
-  const tgt=look?1:(N.unread?0.55+0.45*Math.max(0,Math.sin(now*0.006)):0.12); back+=(tgt-back)*Math.min(1,dt*6);
+  const ringing=!!(N.call&&N.call.state!=='talk'); const tgt=look?1:((N.unread||ringing)?0.55+0.45*Math.max(0,Math.sin(now*0.006)):0.12); back+=(tgt-back)*Math.min(1,dt*6);
   if(N.mode==='snake'&&N.looking){ acc+=dt; if(acc>0.16){ acc=0; if(!G.dead) gStep(); } }
   idleT+=dt; if(idleT>0.12){ idleT=0; redraw(); } };
  setInterval(tick,50); redraw(); }
@@ -155,7 +164,7 @@ function press(){ beep(1860,0.03,0.01); if(N.mode==='read'){ if(N.page<N.pages-1
  else if(N.mode==='menu'){ if(N.sel===0&&N.inbox.length){ N.mode='read'; N.idx=0; N.page=0; } else if(N.sel===0){ N.sel=1; } else gStart(); }
  else if(N.mode==='snake'){ if(G.dead) gStart(); } else N.mode=N.inbox.length?'read':'menu'; redraw(); }
 function back1(){ if(N.mode==='read'){ if(N.page>0) N.page--; else if(N.idx>0){ N.idx--; N.page=0; } } else if(N.mode==='menu'){ N.sel=(N.sel+1)%2; } redraw(); }
-function receive(m){ N.inbox.push(m); N.unread++; buzz(); setTimeout(ring,250); toast(); if(N.looking){ N.mode='read'; N.idx=N.inbox.length-1; N.page=0; N.unread=Math.max(0,N.unread-1); } redraw(); }
-N.receive=receive; N.press=press; N.back=back1; N.open=open; N.snake={start:gStart,turn:gTurn,state:G};
+function receive(m){ N.inbox.push(m); N.unread++; buzz(); setTimeout(ring,250); /* toast() aus: keine Tipp-Einblendung mehr (Pete) */ if(N.looking){ N.mode='read'; N.idx=N.inbox.length-1; N.page=0; N.unread=Math.max(0,N.unread-1); } redraw(); }
+N.receive=receive; N.ring=ring; N.buzz=buzz; N.redraw=redraw; N.press=press; N.back=back1; N.open=open; N.snake={start:gStart,turn:gTurn,state:G};
 document.addEventListener('DOMContentLoaded',()=>{ const sc=document.querySelector('a-scene'); if(!sc) return; const go=()=>setTimeout(setup,400); sc.hasLoaded?go():sc.addEventListener('loaded',go); });
 })();
