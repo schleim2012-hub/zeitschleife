@@ -118,6 +118,17 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
   const fr=new T.Mesh(new T.BoxGeometry(0.31,0.38,0.018),new T.MeshStandardMaterial({color:0x4a3220,roughness:0.6})); fr.position.set(-8.1,1.48,zS+0.009); fr.rotation.z=-0.015; fr.name='kue_stick_r'; IN.add(fr);
   const sm=new T.MeshStandardMaterial({color:0xe6e0d2,roughness:0.9}); tx('kue_stick.jpg',true,t=>{ t.wrapS=t.wrapT=T.ClampToEdgeWrapping; sm.map=t; sm.needsUpdate=true; });
   const st=new T.Mesh(new T.PlaneGeometry(0.27,0.338),sm); st.position.set(0,0,0.0095); st.name='kue_stick'; fr.add(st); }
+ // ---- 4d) Lichtinseln: 70er-Pendelleuchte (Emaille-Pilz, braun-orange) über dem Eckbanktisch + Unterbauleuchte (Soffitte) unter dem Oberschrank neben der Spüle.
+ //      Beide nur gebacken (tools/bake extraLights „pendel“/„unterbau“) + leuchtende Birne/Diffusor; keine zusätzlichen Echtzeit-Lichter.
+ { const PX=-10.95, PZ=0.12, PY=1.72;
+  const sh=new T.LatheGeometry([[0.012,0.2],[0.05,0.19],[0.11,0.13],[0.165,0.03],[0.175,0.0],[0.17,-0.005]].map(([r,y])=>new T.Vector2(r,y)),28);
+  const shade=new T.Mesh(sh,new T.MeshStandardMaterial({color:0x8a4a1c,roughness:0.35,metalness:0.05,side:T.DoubleSide})); shade.position.set(PX,PY,PZ); shade.name='kue_pendel'; IN.add(shade);
+  const cord=new T.Mesh(new T.CylinderGeometry(0.0035,0.0035,2.6-PY-0.2,6),new T.MeshStandardMaterial({color:0x2a2622,roughness:0.6})); cord.position.set(PX,(2.6+PY+0.2)/2,PZ); cord.name='kue_pendel_k'; IN.add(cord);
+  const bm=new T.MeshBasicMaterial({color:0xffd59a,toneMapped:false,fog:false}); const bl=new T.Mesh(new T.SphereGeometry(0.035,12,8),bm); bl.position.set(PX,PY+0.07,PZ); bl.scale.y=1.2; bl.name='kue_pendel_b'; IN.add(bl);
+  const ux0=-9.02, ux1=-8.48, uy=1.965, uz0=2.2, uz1=2.3;
+  const hous=new T.Mesh(new T.BoxGeometry(ux1-ux0,0.035,uz1-uz0),new T.MeshStandardMaterial({color:0xcfc6b2,roughness:0.5})); hous.position.set((ux0+ux1)/2,uy-0.0175,(uz0+uz1)/2); hous.name='kue_unterbau'; IN.add(hous);
+  const df=new T.Mesh(new T.PlaneGeometry(ux1-ux0-0.04,0.05),new T.MeshBasicMaterial({color:0xffe4b8,toneMapped:false,fog:false})); df.rotation.x=Math.PI/2; df.position.set((ux0+ux1)/2,uy-0.036,(uz0+uz1)/2); df.name='kue_unterbau_d'; IN.add(df);
+  info.pools=true; }
  // ---- 5) Licht: Hemi/Glühbirne heller (düster, aber lesbar), Mond bleibt ----
  const spot=added.find(x=>x.isSpotLight), hemi=o.hemi, L2=o.L2;
  if(hemi){ hemi.color.setHex(0x7a7890); hemi.groundColor.setHex(0x3a2e24); }
@@ -125,8 +136,8 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
  const ST=window.__mmk;
  const tick=(now,st,Kw)=>{ const kin=ST?ST.inside:1; if(kin<=0.001) return;
   const B=info.baked>0; // mit Lightmap: Licht kommt gebacken (Cycles), Echtzeit nur Glanz/Flackern; ohne (?nobake=1): Echtzeit heller
-  if(hemi) hemi.intensity=hemi.intensity+(B?0.08:0.42)*Kw*kin;
-  if(L2&&kin>0.5){ const bI=L2.intensity/Math.max(1e-4,0.32*Kw*kin); L2.intensity*=B?1.6:4.2; L2.distance=6.0; if(B&&info.lmMats) info.lmMats.forEach(m=>{ m.lightMapIntensity=m.userData.lm0*(0.9+0.1*Math.min(1.2,bI)); }); }
+  if(hemi) hemi.intensity=hemi.intensity+(B?0.025:0.42)*Kw*kin;
+  if(L2&&kin>0.5){ const bI=L2.intensity/Math.max(1e-4,0.32*Kw*kin); L2.intensity*=B?0.75:4.2; L2.distance=B?4.5:6.0; if(B&&info.lmMats) info.lmMats.forEach(m=>{ m.lightMapIntensity=m.userData.lm0*(0.9+0.1*Math.min(1.2,bI)); }); }
   if(spot) spot.intensity*=B?0.35:0.7; };
  // ---- 6) Sperrzonen (x0,x1,z0,z1): Küchenzeile, Westseite (Kühlschrank+Kiste+Eckbankgruppe), Treteimer ----
  const ZONES=[[-10.79,-7.0,1.675,2.5],[-11.5,-10.38,-0.92,2.5],[-7.47,-7.0,1.36,2.5]]; // Kühlschrank+Kiste und Eckbank zu einer Zone: die 14-cm-Lücke dazwischen ließ den Kopf beim Teleport zwischen zwei Zonen hängen
@@ -135,7 +146,7 @@ function upgrade(sc,o,KIT,added){ const T=THREE, S=sc.object3D, K=KIT.group, inf
  setTimeout(sol,0);
  // ---- 7) Lightmap/AO (tools/bake, Präfix kue) ----
  const fin=()=>{ if(info.pending>0||info.swapped.length<5){ setTimeout(fin,200); return; } if(!window.ZSBake){ console.warn('gfx_kue: bake_rt.js fehlt'); return; }
-  const op={room:'kue',base:'../assets/bake/wohnung_kueche/',texRoot:'../assets/tex/realism/',lmGain:(+(location.search.match(/lmg=([\d.]+)/)||[])[1]||0.7),aoInt:0.35,specGain:4,mats:{wa:pl&&pl.material,fl:fl&&fl.material},
+  const op={room:'kue',base:'../assets/bake/wohnung_kueche/',texRoot:'../assets/tex/realism/',lmGain:(+(location.search.match(/lmg=([\d.]+)/)||[])[1]||0.6),aoInt:0.6,specGain:4,mats:{wa:pl&&pl.material,fl:fl&&fl.material},
    onBaked:n=>{ const L=[]; K.traverse(x=>{ if(x.isMesh&&x.material&&x.material.lightMap&&!L.includes(x.material)){ L.push(x.material); x.material.userData.lm0=x.material.lightMapIntensity; } }); info.lmMats=L; info.baked=n; }};
   info.fx=ZSBake.realism(K,sc,op); info.ready=true; if(/[?&]zsbroom=kue/.test(location.search)) setTimeout(()=>{ window.__ZSB={G:K,sc,o:op}; },4000); };
  setTimeout(fin,100);
