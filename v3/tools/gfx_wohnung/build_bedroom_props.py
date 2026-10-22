@@ -4,7 +4,7 @@
 # Achsen: Blender x = Welt x, Blender y = −Welt z (Bett/Tisch ohne Drehung); Wagen im Rahmen von bedExtra; Kommode Front −Y (im Spiel +π/2 → Front +x).
 import bpy, sys, os, math, random
 argv=sys.argv[sys.argv.index('--')+1:]; TEX=int(argv[1]) if len(argv)>1 else 1024
-WHICH=(argv[2] if len(argv)>2 else 'bett,tisch,wagen,kommode').split(',')
+WHICH=(argv[2] if len(argv)>2 else 'bett,tisch,wagen,kommode,schrank,kram').split(',')
 random.seed(1988)
 HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 from props_lib import *
@@ -83,3 +83,96 @@ if 'kommode' in WHICH:
     for i in range(5): box(0.27,0.2,0.85+0.008+i*0.017,0.11,0.07,0.016,mat('mk%d'%i,[0x222222,0xc8c0b0,0x3355aa,0xaa3333,0xd8a020][i],var=0.1))
     box(0.27,0.1,0.85+0.1,0.07,0.012,0.11,mat('foto',0xc8b898,var=0.2),rot=(0.2,0,0.1))   # Bilderrahmen
     ob=finish('sz_kommode',TEX,rough=0.45,ao_k=0.85,ao_dist=0.1); export('sz_kommode',[ob])
+# ===== 5) Kleiderschrank Kiefer, 2-türig, 1,0 × 0,58 × 1,95; Ursprung Mitte Grundfläche; Front +Y (= Welt −z, zum Raum); Koffer + Schuhkarton oben =====
+if 'schrank' in WHICH:
+    reset(); MATS.clear(); OBJS.clear(); P=mat('pineS',0xb48a56,var=0.13,dirt=0x6a4a28,rough=0.5,wood=True); P2=mat('pineS2',0x9a7044,var=0.13,dirt=0x5a3a1e,rough=0.5,wood=True); BR=mat('messing',0xa88a48,var=0.2,rough=0.3); DK=mat('fuge',0x1a120a,var=0.05)
+    W,D,H=1.0,0.58,1.95; y0=-D/2
+    box(0,0,0.05,W-0.04,D-0.04,0.1,mat('sockel',0x3a2a1a,var=0.1))                     # Sockel
+    for s in (-1,1): box(s*(W/2-0.0125),0,H/2,0.025,D,H-0.02,P,bev=0.004)             # Seiten
+    box(0,y0+0.012,H/2,W-0.04,0.012,H-0.1,P2)                                             # Rückwand
+    box(0,0,H-0.02,W+0.05,D+0.04,0.04,P2,bev=0.012); box(0,0.0,H-0.055,W+0.02,D+0.015,0.03,P,bev=0.01)  # Kranz
+    box(0,D/2-0.012,H/2+0.05,0.01,0.004,H-0.24,DK)                                          # Fuge zwischen den Türen
+    for s in (-1,1):
+        cx=s*(W/4); dw=W/2-0.03; dh=H-0.2; cz=0.1+dh/2+0.02
+        box(cx,D/2-0.012,cz,dw,0.022,dh,P,bev=0.004)                                         # Türblatt
+        for (zz,hh) in ((cz+dh*0.22,dh*0.42),(cz-dh*0.26,dh*0.36)):                         # Kassetten (Rahmen + Füllung)
+            box(cx,D/2+0.001,zz+hh/2-0.02,dw-0.1,0.008,0.03,P2,bev=0.003); box(cx,D/2+0.001,zz-hh/2+0.02,dw-0.1,0.008,0.03,P2,bev=0.003)
+            box(cx-(dw/2-0.065),D/2+0.001,zz,0.03,0.008,hh-0.04,P2,bev=0.003); box(cx+(dw/2-0.065),D/2+0.001,zz,0.03,0.008,hh-0.04,P2,bev=0.003)
+        cyl(s*0.04,D/2+0.012,1.05,0.013,0.03,BR,axis='Y',v=14,bev=0.004)                    # Knauf
+    box(0.075,D/2+0.0,1.12,0.006,0.004,0.016,DK)                                            # Schlüsselloch
+    # Koffer + Schuhkarton
+    box(-0.12,0.02,H+0.11,0.62,0.4,0.18,mat('koffer',0x5a3a28,var=0.15,scale=80,rough=0.55),bev=0.03)
+    for xx in (-0.3,0.06): box(xx,0.02,H+0.11,0.03,0.405,0.185,mat('riemen',0x2a1a10,var=0.1),bev=0.006)
+    box(-0.12,0.222,H+0.21,0.14,0.02,0.02,mat('kgriff',0x1a1008,var=0.1),bev=0.006)
+    box(0.33,-0.05,H+0.07,0.3,0.19,0.11,mat('karton',0xa88a60,var=0.15,scale=40,rough=0.85),bev=0.004); box(0.33,-0.05,H+0.128,0.31,0.2,0.012,mat('deckel',0xc8b088,var=0.12),bev=0.003)
+    ob=finish('sz_schrank',1024,rough=0.55,ao_k=0.85,ao_dist=0.12); export('sz_schrank',[ob])
+# ===== 6) Kram (Set-Dressing, Welt-Koordinaten: Blender (x, −z, y)): Turnschuhe, Rucksack, Wäschehaufen, Comic-Stapel, Papierkorb =====
+def W2B(x,y,z): return (x,-z,y)
+def lumpy(o,amt,seed):
+    rnd=random.Random(seed)
+    for v in o.data.vertices: v.co.x+=rnd.uniform(-amt,amt); v.co.y+=rnd.uniform(-amt,amt); v.co.z+=rnd.uniform(-amt,amt)*0.6
+    for v in o.data.vertices: v.co.z=max(v.co.z,0.0)
+if 'kram' in WHICH:
+    reset(); MATS.clear(); OBJS.clear()
+    WS=mat('sohle',0xb8b0a0,var=0.1,rough=0.8,dirt=0x5a5040); UP=mat('obers',0x2c3450,var=0.14,scale=200,dirt=0x1a1e2a,rough=0.85); NV=mat('navy',0xc8c4b8,var=0.12,rough=0.8); RD=mat('rot',0xa83030,var=0.1)
+    def sneaker(x,z,ry):
+        bx,by,bz=W2B(x,0,z); c,s=math.cos(ry),math.sin(ry)
+        def P(dx,dy): return (bx+dx*c-dy*s, by+dx*s+dy*c)
+        px,py=P(0,0); o=box(px,py,0.015,0.1,0.28,0.03,WS,bev=0.012,rot=(0,0,ry))
+        px,py=P(0,-0.02); o=subbox(px,py,0.065,0.092,0.24,0.08,UP,lvl=2,rot=(0,0,ry))
+        for v in o.data.vertices:
+            ly=(v.co.x-px)*(-s)+(v.co.y-py)*c
+            if ly>0.06: v.co.z=0.03+(v.co.z-0.03)*max(0.35,1-(ly-0.06)*7)
+            if ly<-0.08: v.co.z=0.03+(v.co.z-0.03)*1.15
+        px,py=P(0,-0.07); cyl(px,py,0.112,0.032,0.02,mat('innen',0x2a2622,var=0.1),v=14)
+        px,py=P(0.047,-0.02); box(px,py,0.06,0.006,0.14,0.022,NV,rot=(0,0,ry+0.25))
+        px,py=P(-0.047,-0.02); box(px,py,0.06,0.006,0.14,0.022,NV,rot=(0,0,ry-0.25))
+        px,py=P(0,-0.125); box(px,py,0.06,0.07,0.012,0.04,RD,rot=(0,0,ry))
+    sneaker(-0.88,0.62,0.4); sneaker(-0.72,0.48,1.9)
+    # Rucksack an der rechten Wand (Welt x≈1,97, z≈0,75), leicht angelehnt
+    bx,by,_=W2B(1.93,0,0.78); CV=mat('canvas',0x4a5a3a,var=0.12,scale=180,dirt=0x2a301e,rough=0.9); LT=mat('leder',0x3a2618,var=0.1)
+    o=subbox(bx,by,0.22,0.17,0.32,0.42,CV,lvl=2,rot=(0,-0.18,0)); lumpy(o,0.006,3)
+    o=subbox(bx-0.09,by,0.16,0.06,0.24,0.18,CV,lvl=2,rot=(0,-0.18,0))
+    box(bx-0.12,by,0.27,0.012,0.2,0.012,LT,rot=(0,-0.18,0)); box(bx-0.035,by,0.41,0.1,0.24,0.03,LT,bev=0.01,rot=(0,-0.18,0))
+    for dy in (-0.09,0.09): box(bx-0.105,by+dy,0.17,0.012,0.03,0.012,mat('schnalle',0x9a9a9a,var=0.1,rough=0.3))
+    # Wäschehaufen unterm Fenster (Welt 0,85 / −1,72): Jeans, Pulli, T-Shirt, Socke
+    bx,by,_=W2B(0.85,0,-1.72)
+    for (dx,dy,sx,sy,sz,col,rz,sd) in [(0,0,0.42,0.3,0.06,0x3a5078,0.3,11),(0.05,0.03,0.34,0.28,0.07,0x8a2a2a,-0.4,12),(-0.06,-0.03,0.26,0.2,0.05,0xb8b4a8,0.9,13),(0.12,-0.1,0.1,0.06,0.03,0xd8d8d0,0.2,14)]:
+        zz=sz/2+(0.035 if col!=0x3a5078 else 0)+(0.03 if col==0xb8b4a8 else 0)
+        o=subbox(bx+dx,by+dy,zz,sx,sy,sz,mat('w%x'%col,col,var=0.15,scale=160,rough=0.95),lvl=2,rot=(0,0,rz)); lumpy(o,0.012,sd)
+    # Comic-/Heftstapel neben dem Bett (Welt −0,95 / −0,55)
+    bx,by,_=W2B(-0.95,0,-0.55); CC=[0xc83a2a,0x2a5aa8,0xe8c040,0x3a8a4a,0xe8e0d0,0x8a3a8a,0xd86a20]
+    for i in range(7): box(bx+random.uniform(-0.015,0.015),by+random.uniform(-0.015,0.015),0.004+i*0.0085,0.17,0.25,0.007,mat('h%d'%i,CC[i],var=0.25,scale=30,rough=0.7),rot=(0,0,random.uniform(-0.25,0.25)))
+    # Papierkorb (Welt 1,9 / −1,25) mit Papierknäueln
+    bx,by,_=W2B(1.88,0,-1.25); PK=mat('korb',0x3a4a48,var=0.1,rough=0.5)
+    lathe(bx,by,0,[(0.0,0.0),(0.1,0.0),(0.12,0.27),(0.125,0.28),(0.118,0.28),(0.098,0.012),(0.0,0.012)],PK,seg=20)
+    PP=mat('papier',0xe8e4d8,var=0.1,scale=50,rough=0.95)
+    for i,(dx,dy,dz) in enumerate([(0.02,0.01,0.25),(-0.04,0.03,0.24),(0.03,-0.04,0.235),(0.18,0.06,0.03)]):
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=0.04,location=(bx+dx,by+dy,dz)); o=bpy.context.object; add(o,PP); lumpy(o,0.012,30+i)
+        for v in o.data.vertices: v.co.z=max(v.co.z,0.0)
+    # Fensterbank (Oberkante 0,9025, Welt z −1,98): Kaktus im Tontopf, Zauberwürfel-Parodie
+    bx,by,bz=W2B(0.05,0.9025,-1.93); TT=mat('ton',0xa85a38,var=0.15,scale=60,rough=0.85)
+    lathe(bx,by,bz,[(0,0),(0.045,0),(0.058,0.09),(0.062,0.1),(0.0,0.1)],TT,seg=18); cyl(bx,by,bz+0.095,0.052,0.01,mat('erde',0x2a1e14,var=0.2),v=16)
+    KG=mat('kaktus',0x3a6a3a,var=0.2,scale=90,rough=0.7)
+    o=subbox(bx,by,bz+0.16,0.07,0.07,0.13,KG,lvl=2); o2=subbox(bx+0.035,by,bz+0.18,0.035,0.035,0.06,KG,lvl=2,rot=(0,0.5,0))
+    bx,by,bz=W2B(0.78,0.9025,-1.92); CB=mat('cube_k',0x151515,var=0.05)
+    box(bx,by,bz+0.028,0.056,0.056,0.056,CB,bev=0.004,rot=(0,0,0.35))
+    cols=[0xc82a20,0x2a6ac8,0xe8c020,0x2a9a3a,0xe86a10,0xe8e8e0]; ca,sa=math.cos(0.35),math.sin(0.35)
+    for i in range(3):
+        for j in range(3):
+            # Oberseite + zwei Seiten, durcheinander
+            ox=(i-1)*0.0185; oy=(j-1)*0.0185; box(bx+ox*ca-oy*sa,by+ox*sa+oy*ca,bz+0.0565,0.016,0.016,0.002,mat('cf%d'%((i*3+j*2)%6),cols[(i*3+j*2)%6],var=0.05,rough=0.3),rot=(0,0,0.35))
+            fx=bx+(i-1)*0.0185*ca-0.0285*sa*-1; 
+    for i in range(3):
+        for k in range(3):
+            ox=(i-1)*0.0185; px=bx+ox*ca-(-0.0285)*sa; py=by+ox*sa+(-0.0285)*ca
+            box(px,py,bz+0.0095+k*0.0185,0.016,0.002,0.016,mat('cf%d'%((i+k*4+1)%6),cols[(i+k*4+1)%6],var=0.05,rough=0.3),rot=(0,0,0.35))
+    # Schreibtisch (Oberkante 0,778): Kassettenspieler mit Kopfhörer, Heft
+    bx,by,bz=W2B(1.72,0.778,0.12); WK=mat('walk',0x9a2a2a,var=0.08,rough=0.35); SV2=mat('wsilber',0xa8a8ac,var=0.08,rough=0.3)
+    box(bx,by,bz+0.016,0.09,0.13,0.032,WK,bev=0.006,rot=(0,0,0.3)); box(bx,by,bz+0.033,0.07,0.075,0.003,mat('wfen',0x2a2a30,var=0.05,rough=0.1),rot=(0,0,0.3))
+    for i in range(4): box(bx-0.05*math.cos(0.3)+ (i-1.5)*0.016*math.sin(0.3)*-1, by-0.05*math.sin(0.3)+(i-1.5)*0.016*math.cos(0.3), bz+0.03, 0.006,0.012,0.006, SV2, rot=(0,0,0.3))
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.075,minor_radius=0.006,major_segments=24,minor_segments=6,location=(bx-0.1,by+0.08,bz+0.009),rotation=(0,0,0.8)); o=bpy.context.object; add(o,mat('kbuegel',0x1a1a1a,var=0.05,rough=0.4))
+    for t in (-1,1): cyl(bx-0.1+t*0.075*math.cos(0.8),by+0.08+t*0.075*math.sin(0.8),bz+0.012,0.024,0.018,mat('kpolster',0xc86a20,var=0.15,scale=200,rough=0.95),v=16)
+    curve_cable([(bx-0.1,by+0.005,bz+0.012),(bx-0.06,by-0.02,bz+0.003),(bx-0.02,by-0.02,bz+0.003),(bx-0.03,by+0.03,bz+0.012)],0.0018,mat('kkabel',0x111111,var=0.05))
+    bx,by,bz=W2B(1.62,0.778,-0.15); box(bx,by,bz+0.004,0.16,0.22,0.007,mat('heft',0x2a5a9a,var=0.1,rough=0.7),rot=(0,0,-0.15)); box(bx+0.01,by,bz+0.0085,0.145,0.205,0.002,mat('heftp',0xe8e4d8,var=0.06),rot=(0,0,-0.15))
+    ob=finish('sz_kram',1024,rough=0.85,ao_k=0.85,ao_dist=0.1); export('sz_kram',[ob])

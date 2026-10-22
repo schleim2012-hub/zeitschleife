@@ -1,0 +1,3 @@
+{"region":[-2.2,2.2,-2.1,2.1],"recvMin":1.0,"onlyRecv":["sz_fl","sz_ce","sz_wa"],"excl":["depthbg","sz_neon"],"emitGain":4,"emitMin":0.04,"lightGain":3,
+ "extraLights":[{"name":"lamp_spill","pos":[1.8,1.1,-0.5],"col":[1.0,0.76,0.48],"I":0.5,"soft":0.15},{"name":"moon_fill","pos":[0.45,1.6,-1.6],"col":[0.6,0.7,0.95],"I":0.12,"soft":0.4}],
+ "world":[0.09,0.085,0.08],"sky":false,"wait":22000}

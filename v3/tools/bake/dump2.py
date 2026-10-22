@@ -35,7 +35,7 @@ JS=r"""(cfg)=>{ const Z=window.__ZSB; const G=Z.G, S=Z.sc.object3D, T=THREE; S.u
 async def main():
   async with async_playwright() as p:
     br=await p.chromium.launch(channel='chrome',args=['--use-gl=swiftshader','--enable-unsafe-swiftshader'])
-    pg=await br.new_page(viewport={'width':480,'height':270}); await pg.goto(URL); await pg.wait_for_timeout(9000)
+    pg=await br.new_page(viewport={'width':480,'height':270}); await pg.goto(URL); await pg.wait_for_timeout(CFG.get('wait',9000))
     if PRE: await pg.click(PRE); await pg.wait_for_timeout(9000)
     d=await pg.evaluate(JS,CFG); log=d.pop('log'); d['sky']=CFG.get('sky',False); d['world']=CFG.get('world',[0.002,0.002,0.003]); json.dump(d,open(OUT,'w'))
     print('\n'.join(log)); print('recv',len(d['recv']),'occ',len(d['occ']),'emit',len(d['emit']),'lights',len(d['points'])); await br.close()
