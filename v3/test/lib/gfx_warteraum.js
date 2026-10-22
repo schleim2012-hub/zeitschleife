@@ -30,6 +30,15 @@ AFRAME.registerComponent('warteraum',{
    if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xd09050); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.62; M.wr_shade.side=T.DoubleSide; } // v4: Schirm ohne Lightmap (Hunyuan-Inseln), leuchtet gleichmäßig von innen, nicht ausgebrannt
    if(M.wr_noexit){ M.wr_noexit.emissive=new T.Color(0xb8d8a8); M.wr_noexit.emissiveMap=M.wr_noexit.map; M.wr_noexit.emissiveIntensity=0.5; }
    if(M.wr_vinyl){ M.wr_vinyl.roughness=0.72; } // Sofa/Sessel: mattes altes Kunstleder, keine Glanzstreifen
+   // Sofa (Hunyuan): die gebackene Lightmap hat auf der Rückenlehne einen zackigen dunklen Fleck (überlappende UV-Inseln) → Sofa-Dreiecke als eigener
+   // Draw (+1) ohne Lightmap, gleichmäßig warm von innen + Stehlampen-Licht. ?sofalm=1 = alter Zustand.
+   if(M.wr_vinyl&&!/[?&]sofalm=1/.test(Q)){ const todo=[]; root.traverse(o=>{ if(o.isMesh&&o.material===M.wr_vinyl&&o.geometry.index) todo.push(o); });
+    const sm=M.wr_vinyl.clone(); sm.lightMap=null; sm.emissive=new T.Color(0x4c3a28); sm.emissiveMap=sm.map; sm.emissiveIntensity=1; sm.roughness=0.75;
+    todo.forEach(o=>{ const g=o.geometry, P=g.attributes.position, I=g.index, keep=[], sofa=[];
+     for(let i=0;i<I.count;i+=3){ const a=I.getX(i), b=I.getX(i+1), c=I.getX(i+2); const x=(P.getX(a)+P.getX(b)+P.getX(c))/3, y=(P.getY(a)+P.getY(b)+P.getY(c))/3, z=(P.getZ(a)+P.getZ(b)+P.getZ(c))/3;
+      (x>1.95&&y<0.9&&z>-0.65&&z<1.42?sofa:keep).push(a,b,c); }
+     if(!sofa.length) return; g.setIndex(keep); const g2=new T.BufferGeometry(); Object.entries(g.attributes).forEach(([k,v])=>g2.setAttribute(k,v)); g2.setIndex(sofa); g2.computeBoundingSphere(); g2.computeBoundingBox();
+     const me=new T.Mesh(g2,sm); me.name='wr_sofa'; o.add(me); }); M.wr_sofa=sm; }
    if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.24; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
@@ -142,7 +151,8 @@ AFRAME.registerComponent('warteraum',{
   // Sicherheitsnetz: widersprechen sich zwei Zonen (enge Nische), bleibt der Kopf an der letzten freien Stelle statt in einem Modell
   if(!this.free(p)&&this.lastFree){ p.x=this.lastFree.x; p.z=this.lastFree.z; } else if(this.free(p)) this.lastFree={x:p.x,z:p.z};
   return p; },
- free(p){ for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); } if(ins||md<h.m*0.9) return false; } return true; },
+ free(p){ for(const [a0,a1,b0,b1] of this.cols||[]) if(p.x>a0+5e-4&&p.x<a1-5e-4&&p.z>b0+5e-4&&p.z<b1-5e-4) return false; // auch Möbel/Tür: Rückfallpunkt nie in einem Möbel
+ for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); } if(ins||md<h.m*0.9) return false; } return true; },
  clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
   const p=this.push({x:h.x,z:h.z});
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
