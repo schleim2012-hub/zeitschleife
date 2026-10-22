@@ -172,8 +172,8 @@
   "frl_head": {
    "pivot": [
     1.223,
-    1.371,
-    -2.9935
+    1.481,
+    -2.9736
    ],
    "axis": [
     0.0,
@@ -185,8 +185,8 @@
   "frl_arm": {
    "pivot": [
     1.0138,
-    1.0863,
-    -2.8476
+    1.1963,
+    -2.8276
    ],
    "axis": [
     -1.0,
@@ -272,8 +272,8 @@
   ],
   "frl": [
    1.15,
-   -0.029,
-   -2.919
+   -0.0276,
+   -2.899
   ]
  },
  "lamps": [
@@ -362,6 +362,18 @@
   1.5164,
   -2.3043
  ],
+ "vlScale": 3.5589241576194817,
+ "vl": [
+  "wr_fig_assi",
+  "wr_fig_brand",
+  "wr_fig_decke",
+  "wr_fig_frl",
+  "wr_fig_gruen",
+  "wr_fig_jaeger",
+  "wr_fig_oma",
+  "wr_fig_taucher",
+  "wr_sofa"
+ ],
  "shaft": [
   0.75,
   1.2,
@@ -380,7 +392,7 @@
   "gruen_head": 883,
   "jaeger_foot": 458,
   "jaeger_head": 1912,
-  "oma_head": 1345,
+  "oma_head": 8070,
   "oma_page": 4,
   "S_wr_ceil": 244,
   "S_wr_corr": 2098,
@@ -407,7 +419,8 @@
   "S_wr_redglass": 2880,
   "S_wr_shade": 3159,
   "S_wr_signs": 292,
-  "S_wr_vinyl": 7833,
+  "S_wr_sofa": 3263,
+  "S_wr_vinyl": 4570,
   "S_wr_wall": 650,
   "S_wr_wood": 3966,
   "taucher_foot": 430,
@@ -466,8 +479,8 @@
   [
    0.817,
    1.495,
-   -3.256,
-   -2.608
+   -3.236,
+   -2.588
   ],
   [
    -2.882,
@@ -572,5 +585,5 @@
    0.465
   ]
  ],
- "lmScale": 19.92317771911621
+ "lmScale": 20.68880271911621
 }
