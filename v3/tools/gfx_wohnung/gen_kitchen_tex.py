@@ -256,7 +256,7 @@ def regen(W=256,H=1024):
 # ---------- 8) Scheibengardine (Spitze/Voile, weiß, Blütenmuster) 1024×512 RGBA, kachelbar in x ----------
 def gardine(W=1024,H=512):
     r=np.random.default_rng(79); a=np.zeros((H,W)); yy,xx=np.mgrid[0:H,0:W]
-    a+=0.34+0.06*noise(H,W,30,2,80)                                                            # Voile-Grund
+    a+=0.46+0.06*noise(H,W,30,2,80)                                                            # Voile-Grund
     mesh=((xx%6<1.2)|(yy%6<1.2)).astype(float)*0.18; a+=mesh
     C=Image.new('L',(W,H),0); d=ImageDraw.Draw(C)
     for j in range(2):
@@ -268,7 +268,7 @@ def gardine(W=1024,H=512):
             d.arc([cx-60,cy-90,cx+60,cy+30],200,340,fill=230,width=4)
     for x0 in range(0,W,16): d.polygon([(x0,H-1),(x0+8,H-22),(x0+16,H-1)],outline=255)   # Bogenkante unten
     d.rectangle([0,0,W,14],fill=255)                                                         # Tunnelzug oben
-    a=np.clip(a+np.asarray(C,float)/255*0.6,0,1); a[H-22:]*=np.clip((np.asarray(C,float)[H-22:]/255)*1.2+0.0,0,1)*0+np.where(np.asarray(C,float)[H-22:]>0,1,0.0)
+    a=np.clip(a+np.asarray(C,float)/255*0.5,0,1); a[H-22:]*=np.clip((np.asarray(C,float)[H-22:]/255)*1.2+0.0,0,1)*0+np.where(np.asarray(C,float)[H-22:]>0,1,0.0)
     col=np.zeros((H,W,3))+np.array([232,228,214]); col*= (0.94+0.06*noise(H,W,60,2,81))[...,None]
     Image.fromarray(np.dstack([np.clip(col,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA').save(OUT+'kue_gardine.png',optimize=True)
 which=sys.argv[1].split(',') if len(sys.argv)>1 else ['fliesen','boden','raufaser','wachstuch','kalender','labels']
