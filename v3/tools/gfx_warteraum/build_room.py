@@ -37,7 +37,8 @@ MT=dict(
  paint=M('wr_paint','paintings.png',None,0.45), signs=M('wr_signs','signs.png',None,0.5), paper=M('wr_paper','paper.png',None,0.85),
  glass=M('wr_glass',None,None,0.08,0.0,alpha=0.15), redglass=M('wr_redglass',None,None,0.25), fig=M('wr_fig','fig_col.png',None,0.62),
  emit=M('wr_emit',None,None,1.0,emit=(0x9cff7a,6.0)), flip=M('wr_flip',None,None,0.6), noexit=M('wr_noexit','signs.png',None,0.5),
- pinup=M('wr_pinup','pinups.png',None,0.38))   # v4: Pin-ups (gen_beetle.py) – eigene, austauschbare Textur
+ pinup=M('wr_pinup','pinups.png',None,0.38),
+ sofa=M('wr_sofa','fig_col.png',None,0.7))   # v7: Sofa mit eigenem Material – Licht als Vertexfarbe gebacken (Hunyuan-UV-Inseln machten Flecken in der Lightmap)   # v4: Pin-ups (gen_beetle.py) – eigene, austauschbare Textur
 AX={}
 MOVERS=[]  # bewegliche Teile (eigene Objekte, Ursprung = Gelenk)
 # ------------------------------------------------------------------ Raumhülle (Caligari: schräge Wände, Boden flach y=0)
@@ -139,10 +140,10 @@ def corrugated(a0,a1,b0,b1,hole,per=0.076,amp=0.017):
 co=corrugated(2.75,5.35,0.0,2.58,WIN); smooth(co); vc_const(co,0xffffff); onwall(co,WN)
 # Fensterrahmen + Mittelsteg + 2 Schiebescheiben
 fr=[]
-for (a0,a1,b0,b1) in [(WIN[0]-0.05,WIN[1]+0.05,WIN[3],WIN[3]+0.06),(WIN[0]-0.05,WIN[0],WIN[2],WIN[3]),(WIN[1],WIN[1]+0.05,WIN[2],WIN[3]),(3.98,4.02,WIN[2],WIN[3])]:
+for (a0,a1,b0,b1) in [(WIN[0]-0.05,WIN[1]+0.05,WIN[3],WIN[3]+0.06),(WIN[0]-0.05,WIN[0],WIN[2],WIN[3]),(WIN[1],WIN[1]+0.05,WIN[2],WIN[3]),(4.43,4.47,WIN[2],WIN[3])]:   # v7: Mittelsteg nach rechts (stand vor dem Gesicht der Schönheitskönigin)
     fr.append(wbox(WN,a0,a1,b0,b1,-0.02,0.09,MT['metal']))
 o=join(fr,'win_frame'); vc_const(o,0x4a504a); onwall(o,WN)
-g1=wbox(WN,WIN[0],4.04,WIN[2],WIN[3],0.035,0.04,MT['glass']); g2=wbox(WN,3.96,WIN[1],WIN[2],WIN[3],0.06,0.065,MT['glass']); o=join([g1,g2],'win_glass'); vc_const(o,0xb8c8c0); onwall(o,WN)
+g1=wbox(WN,WIN[0],4.49,WIN[2],WIN[3],0.035,0.04,MT['glass']); g2=wbox(WN,4.41,WIN[1],WIN[2],WIN[3],0.06,0.065,MT['glass']); o=join([g1,g2],'win_glass'); vc_const(o,0xb8c8c0); onwall(o,WN)
 # Theke: Front Craquelé, Platte darüber
 t=wbox(WN,3.0,5.05,0.0,1.0,0.02,0.52,MT['crack']); box_uv(t,1.0); vc_const(t,0xffffff); onwall(t,WN)
 t=wbox(WN,2.95,5.1,1.0,1.05,-0.22,0.58,MT['crack'],bev=0.008); box_uv(t,1.0); vc_const(t,0xd0d0d0); onwall(t,WN)
@@ -402,7 +403,7 @@ def hy_lamp(x,y,name,base=0x3e6a48):
     return (x,y,0.84*H)
 def hy_sofa(x,y,yaw):
     v,t=hy_mesh('sofa',0.86)
-    o=hy_prop('sofa',v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.11),('body',MT['vinyl'],0xa89a7c,1.6,lambda c:c[:,2]>-1)],x,y,yaw)
+    o=hy_prop('sofa',v,t,[('legs',MT['wood'],0x1e140c,2.0,lambda c:c[:,2]<0.11),('body',MT['sofa'],0xae9c82,1.6,lambda c:c[:,2]>-1)],x,y,yaw)   # v7: wärmeres Beige wie Pete 06
     m=(_np.abs(v[:,0])<0.55)&(v[:,1]>0.0)&(v[:,1]<0.3)&(v[:,2]<0.65); seat=float(v[m,2].max())
     zb=(v[:,2]>seat+0.10)&(v[:,2]<seat+0.30)&(_np.abs(v[:,0])<0.6)&(v[:,1]<0.1); back=float(v[zb,1].max())
     print('Sofa Sitz',round(seat,3),'Lehne vorn',round(back,3)); return seat,back
@@ -618,6 +619,30 @@ def hy_figures():
                 AX[o.name]=((Matrix.Rotation(yaw,3,'Z')@V(o['axis'])).normalized(),o['kind']); MOVERS.append(o)
             else: o.data.transform(T)
             wr_lib.OBJS.append(o)
+    # v7: Mesh-Fixes. Assistentin: flache Dezimier-Facetten am Dekolleté glätten (Laplace, weich auslaufend);
+    # Oma: Kopf einmal unterteilen (1,3k -> ~8k Tris), damit das Gesicht rund statt facettiert ist.
+    def smooth_region(o,ctr,rad,it=12,fac=0.55):
+        vg=o.vertex_groups.new(name='sm')
+        for v in o.data.vertices:
+            d=((v.co.x-ctr[0])/rad[0])**2+((v.co.z-ctr[2])/rad[2])**2
+            if d<1 and v.co.y>ctr[1]: vg.add([v.index],float((1-d)**0.7),'REPLACE')
+        md=o.modifiers.new('sm','SMOOTH'); md.factor=fac; md.iterations=it; md.vertex_group='sm'; apply_mods(o); o.vertex_groups.clear()
+    # v7: Verdeckungs-Abdunklung aus fig_proc ist pro Fläche (0.6/1.0) → harte Dreiecks-Flecken (Oma-Gesicht, Dekolleté, Gesicht der Königin).
+    # Hier je Vertex mitteln (2x mit den Nachbarn glätten), dann ist die Abdunklung weich.
+    import numpy as _np2
+    for o in objs.values():
+        me=o.data
+        if o.type!='MESH' or 'Col' not in me.color_attributes: continue
+        ca=me.color_attributes['Col']; nl=len(me.loops); nv=len(me.vertices)
+        c=_np2.zeros(nl*4,_np2.float32); ca.data.foreach_get('color',c); c=c.reshape(nl,4); vi=_np2.zeros(nl,_np2.int32); me.loops.foreach_get('vertex_index',vi)
+        acc=_np2.zeros((nv,3),_np2.float32); cnt=_np2.zeros(nv,_np2.float32); _np2.add.at(acc,vi,c[:,:3]); _np2.add.at(cnt,vi,1); pv=acc/_np2.maximum(cnt,1)[:,None]
+        e=_np2.zeros(len(me.edges)*2,_np2.int32); me.edges.foreach_get('vertices',e); e=e.reshape(-1,2)
+        for _ in range(2):
+            a2=pv.copy(); n2=_np2.ones(nv,_np2.float32); _np2.add.at(a2,e[:,0],pv[e[:,1]]); _np2.add.at(a2,e[:,1],pv[e[:,0]]); _np2.add.at(n2,e[:,0],1); _np2.add.at(n2,e[:,1],1); pv=a2/n2[:,None]
+        c[:,:3]=pv[vi]; ca.data.foreach_set('color',c.ravel())
+    hp=objs['assi_head']['piv'] if 'piv' in objs['assi_head'] else (0.024,-0.205,1.019)
+    smooth_region(objs['assi_body'],(hp[0],hp[1]-0.02,hp[2]-0.09),(0.16,0,0.12))
+    oh=objs['oma_head']; md=oh.modifiers.new('ss','SUBSURF'); md.levels=1; md.render_levels=1; md.uv_smooth='PRESERVE_BOUNDARIES'; apply_mods(oh); smooth(oh)
     def depth(n): return max(abs(v.co.y) for v in objs[n+'_body'].data.vertices)
     for n,key in [('oma','k'),('gruen','c'),('brand','club'),('jaeger','h')]:
         a_={'k':0.80,'c':1.50,'club':2.30,'h':4.15}[key]; x,y=wpos(a_,depth(n)+0.05); CH[key]=(x,y); put(n,x,y,wyaw)
@@ -659,7 +684,7 @@ def hy_figures():
         return out
     cap('cap_legs',objs['assi_legs'],True); cap('cap_body',objs['assi_body'],False)
     # Fräulein hinter dem Schalter (auf hohem Hocker)
-    cp=WP(WN,4.0,0,-0.42); put('frl',cp.x,cp.y,math.pi,z=0.0)   # v4: steht mit eigenem Barhocker am Boden
+    cp=WP(WN,4.0,0,-0.40); put('frl',cp.x,cp.y,math.pi,z=0.11)   # v4: Barhocker; v7: 11 cm höher + näher ans Glas (Oberkörper füllt das Fenster wie Pete 02, Füße hinter der Theke)
     # v4: Mann in der blauen Steppdecke steht neben der NO-EXIT-Tür (Pete 06)
     put('decke',-0.42,-2.08,0.22)
     return cp
@@ -767,18 +792,21 @@ SCON=[(WN,1.75,1.62),(WW,2.10,1.74),(WS,3.2,1.9)]
 for i,(W,a,b) in enumerate(SCON): plight('scon%d'%i,WP(W,a,b,0.035),(1.0,0.55,0.25),32,0.02)   # v4: großer Stern = echte Lichtinsel (Pete 03/05)
 for i,p in enumerate(REDL): plight('red%d'%i,p,(1.0,0.36,0.2),3.2,0.03)
 plight('shaft',((xa+xb)/2,SY+0.12,1.3),GREEN,260,kind='AREA',size=(xb-xa-0.05,2.4),rot=(-math.pi/2,0,0))
-plight('office',(1.1,3.25,OZ-0.12),(0.62,1.0,0.6),80,kind='AREA',size=(1.8,0.9))
-plight('fill',(0,0,2.55),(0.70,0.62,0.52),16,kind='AREA',size=(5.0,4.0))   # v4: warm statt kalt
+plight('office',(1.1,3.25,OZ-0.12),(0.72,1.0,0.68),55,kind='AREA',size=(1.8,0.9))   # v7: weniger Grün über der Schönheitskönigin
+plight('counter',tuple(WP(WN,4.0,1.62,0.75)),(1.0,0.72,0.5),14,0.08)   # v7: warmes Licht von vorn auf ihr Gesicht (Pete 02)
+plight('fill',(0,0,2.55),(0.74,0.64,0.52),46,kind='AREA',size=(5.0,4.0))   # v4: warm statt kalt; v7: fast 3x (Film gleichmäßiger, Wände/Gesichter lesbar)
 plight('noexit_l',((xa+xb)/2,-2.25,2.12),(0.55,1.0,0.5),3.0,0.03)
 plight('radio',(RADIO[0]+0.13,RADIO[1]+0.25,RADIO[2]+0.17),(1.0,0.7,0.35),0.6,0.01)
-w=bpy.data.worlds.new('w'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.03,0.04,0.04,1); w.node_tree.nodes['Background'].inputs[1].default_value=0.18
+w=bpy.data.worlds.new('w'); sc.world=w; w.use_nodes=True; w.node_tree.nodes['Background'].inputs[0].default_value=(0.05,0.046,0.04,1); w.node_tree.nodes['Background'].inputs[1].default_value=0.30   # v7: wärmer, heller
 # Rauch-/Sound-Ankerpunkte
 def fpt(x,y,yaw,p): return tuple(Matrix.Translation((x,y,0))@Matrix.Rotation(yaw,4,'Z')@V(p))
 ANCH={'smoke':SMOKE or fpt(*CH['club'],wyaw,(0.22,0.25,0.95)),'radio':(RADIO[0],RADIO[1],RADIO[2]+0.15),'office':(1.1,3.2,1.3),'clock':(CX,CY,CZ),'flip':tuple(WP(WN,4.0,2.18,0.2)),'tube':(0.7,0.5,2.6),
       'oma':fpt(*CH['k'],wyaw,(0,0.3,0.8)),'gruen':fpt(*CH['c'],wyaw,(0,0.2,1.0)),'brand':fpt(*CH['club'],wyaw,(0,0.1,1.0)),'jaeger':fpt(*CH['h'],wyaw,(0,0.1,1.0)),'taucher':(DIVER[0],DIVER[1],1.0),'assi':(SOFA[0],SOFA[1],0.9),'frl':tuple(cp)}
 # ================================================================== Lightmap-UVs (UV1 'lm'), gemeinsamer Atlas
 NOLM={'win_glass','off_glow','sh_glow','tube','flip_face'}
-BAKE=[o for o in bpy.data.objects if o.type=='MESH' and o.name not in NOLM]
+def is_vl(o): return o.type=='MESH' and o.material_slots and o.material_slots[0].material and (o.material_slots[0].material.name.startswith('wr_fig_') or o.material_slots[0].material.name=='wr_sofa')
+VLOBJ=[o for o in bpy.data.objects if is_vl(o)]   # v7: Hunyuan-Figuren + Sofa: Licht als Vertexfarbe (Lightmap-Inseln auf dezimierten Meshes = Flecken/Facetten)
+BAKE=[o for o in bpy.data.objects if o.type=='MESH' and o.name not in NOLM and o not in VLOBJ]
 for o in BAKE:
     if 'lm' not in o.data.uv_layers: o.data.uv_layers.new(name='lm')
     o.data.uv_layers.active=o.data.uv_layers['lm']; o.data.uv_layers['UVMap'].active_render=True
@@ -814,6 +842,32 @@ if not NOBAKE:
     for o in bpy.data.objects: o.hide_render=True
     bpy.ops.render.render(write_still=True); sc.use_nodes=False; sc.render.engine='CYCLES'
     for o in bpy.data.objects: o.hide_render=False
+VLSCALE=1.0; VLMATS=sorted({o.material_slots[0].material.name for o in VLOBJ})
+if not NOBAKE and VLOBJ:   # v7: Vertex-Licht backen (Cycles, Ziel Vertexfarbe), glätten, mit der Tönung in 'Col' multiplizieren
+    import numpy as np, time; t0=time.time()
+    for o in VLOBJ:
+        ca=o.data.color_attributes.new('VL','FLOAT_COLOR','POINT'); o.data.color_attributes.active_color=ca
+    for o in bpy.context.selected_objects: o.select_set(False)
+    for o in VLOBJ: o.select_set(True)
+    bpy.context.view_layer.objects.active=VLOBJ[0]; sc.cycles.samples=max(SPP*6,512)
+    bpy.ops.object.bake(type='DIFFUSE',pass_filter={'DIRECT','INDIRECT'},target='VERTEX_COLORS',use_clear=True)
+    sc.cycles.samples=SPP; print('VL-Bake s',round(time.time()-t0))
+    allv=[]; VLD={}
+    for o in VLOBJ:
+        me=o.data; n=len(me.vertices); a=np.zeros(n*4,np.float32); me.color_attributes['VL'].data.foreach_get('color',a); a=a.reshape(n,4)[:,:3]
+        e=np.zeros(len(me.edges)*2,np.int32); me.edges.foreach_get('vertices',e); e=e.reshape(-1,2)
+        for _ in range(2):   # Rauschen glätten (Nachbarschaftsmittel)
+            acc=a.copy(); cnt=np.ones(n,np.float32); np.add.at(acc,e[:,0],a[e[:,1]]); np.add.at(acc,e[:,1],a[e[:,0]]); np.add.at(cnt,e[:,0],1); np.add.at(cnt,e[:,1],1); a=0.5*a+0.5*acc/cnt[:,None]
+        VLD[o.name]=a; allv.append(a.max(1))
+    VLSCALE=float(np.percentile(np.concatenate(allv),99.5))
+    for o in VLOBJ:
+        me=o.data; a=np.maximum(VLD[o.name]/VLSCALE,0.03); col=me.color_attributes['Col']; nl=len(me.loops)
+        c=np.zeros(nl*4,np.float32); col.data.foreach_get('color',c); c=c.reshape(nl,4); vi=np.zeros(nl,np.int32); me.loops.foreach_get('vertex_index',vi)
+        c[:,:3]=np.clip(c[:,:3]*a[vi],0,1); col.data.foreach_set('color',c.ravel())
+        me.color_attributes.remove(me.color_attributes['VL']); me.color_attributes.active_color=me.color_attributes['Col']
+        try: me.color_attributes.render_color_index=me.color_attributes.active_color_index
+        except Exception: pass
+    print('VL scale',round(VLSCALE,4),len(VLOBJ),'Objekte')
 for m in bpy.data.materials:
     for n in [n for n in m.node_tree.nodes if n.name=='LMBAKE' or n.bl_idname=='ShaderNodeUVMap']: m.node_tree.nodes.remove(n)
 # ================================================================== Export: statisch je Material zusammengefasst, bewegliche Teile einzeln
@@ -832,7 +886,7 @@ print('Export-Objekte',len(tris),'Tris gesamt',sum(tris.values()))
 bpy.ops.export_scene.gltf(filepath=AS+'/warteraum.glb',export_format='GLB',export_texcoords=True,export_normals=True,export_vertex_color='ACTIVE',export_image_format='WEBP',export_image_quality=88,
     export_materials='EXPORT',export_yup=True,export_apply=False,export_lights=False,export_cameras=False,use_selection=False,export_tangents=False)
 json.dump({'movers':MOV,'anchors':{k:to3(v) for k,v in ANCH.items()},'lamps':[to3(l) for l in LAMPS],'red':[to3(p) for p in REDL],'sconces':[to3(WP(W,a,b,0.035)) for W,a,b in SCON],
-   'window':to3(WP(WN,4.0,1.5,0.3)),'shaft':to3(((xa+xb)/2,-2.6,1.2)),'tris':tris,'lm':LM,'colliders':[c[:4] for c in COLL]},open(AS+'/scene.json','w'),indent=1)
+   'window':to3(WP(WN,4.0,1.5,0.3)),'vlScale':VLSCALE,'vl':VLMATS,'shaft':to3(((xa+xb)/2,-2.6,1.2)),'tris':tris,'lm':LM,'colliders':[c[:4] for c in COLL]},open(AS+'/scene.json','w'),indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=HERE+'/warteraum.blend',compress=True,relative_remap=True)
 bpy.ops.file.make_paths_relative(); bpy.ops.wm.save_mainfile(compress=True)
 print('FERTIG')

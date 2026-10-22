@@ -4,41 +4,50 @@
    Figuren-Hybrid: statische Körper (gebacken), bewegliche Teile (Kopf/Unterarm/Fuß/Buchseite) per Code um ihr Gelenk gedreht.
    Ton (WebAudio, positionsabhängig, startet nach der ersten Geste/VR-Start): Radio mit Fahrstuhlmusik (Kleinlautsprecher-Filter + Knistern),
    Leuchtstoff-Brummen, Uhr, Fallblatt-Klack + Ding, Husten/Blättern/Knarzen, dumpfe Stimmen/Schreibmaschine/Stempel aus dem Hinterbüro.
-   Debug: ?nolm=1 (ohne Lightmap) · ?lmg=1.2 (Lightmap-Gain) · ?mute=1 */
+   Debug: ?nolm=1 (ohne Lightmap) · ?lmg=1.2 (Lightmap-Gain) · ?lift=0.06 (Schatten-Anhebung) · ?vlg=1 (Vertex-Licht-Gain) · ?touchfix=0 · ?mute=1
+   v7 (1022w7): Figuren + Sofa tragen ihr Licht als gebackene Vertexfarbe (scene.json vl/vlScale) statt Lightmap → keine Flecken/Facetten mehr;
+   Lightmap angehoben (Film: gleichmäßiger, warm, Wände + Gesichter lesbar), Lampenschirme mit Verlauf + Falten, Handy-Tippen läuft bis an die Hülle. */
 (function(){
 const Q=location.search, num=(k,d)=>{ const m=Q.match(new RegExp('[?&]'+k+'=([\\d.]+)')); return m?+m[1]:d; };
 const BASE='../assets/warteraum/';
 AFRAME.registerComponent('warteraum',{
  init(){ const T=THREE, sc=this.el, self=this; this.t0=performance.now(); window.__wr={ready:false};
-  fetch(BASE+'scene.json?v=6b').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
+  fetch(BASE+'scene.json?v=7b').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
-  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=6b'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',0.95); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
-  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=6b'); sc.appendChild(el);
+  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7b'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.05), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=7b'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
-    if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
-     // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter)
-     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','lightMapTexel.rgb * lightMapIntensity * vec3(1.0,0.97,0.92)')); }; m.customProgramCacheKey=()=>'wrlm'; }
+    if(VLN.has(m.name)){ // v7: gebackenes Vertex-Licht (Col = Tönung × Licht/vlScale) → als Eigenleuchten, gleiche Skala wie die Lightmap
+     m.lightMap=null; m.vertexColors=true; m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * '+VLG.toFixed(4)+' * vec3(1.0,0.97,0.92);'); };
+     m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3); }
+    else if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
+     // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter); v7: Schatten sanft angehoben (lift), Lichtinseln bleiben
+     m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',T.ShaderChunk.lights_fragment_maps.replace('lightMapTexel.rgb * lightMapIntensity','( lightMapTexel.rgb + '+LIFT.toFixed(3)+' * (1.0 - lightMapTexel.rgb) ) * lightMapIntensity * vec3(1.0,0.97,0.92)')); }; m.customProgramCacheKey=()=>'wrlm'+LIFT.toFixed(3); }
     if(m.metalness>0.2) m.metalness=0.35; m.needsUpdate=true; });
    // Sonder-Materialien
    const swap=(name,mk)=>{ const old=M[name]; if(!old) return; const nm=mk(old); root.traverse(o=>{ if(o.isMesh&&o.material===old) o.material=nm; }); M[name]=nm; };
    swap('wr_emit',o=>new T.MeshBasicMaterial({color:new T.Color(0x6cd858).multiplyScalar(0.9),vertexColors:false,fog:false}));
-   swap('wr_glass',o=>new T.MeshStandardMaterial({color:0x9ab0a8,roughness:0.1,metalness:0,transparent:true,opacity:0.13,depthWrite:false}));
-   if(M.wr_shade){ M.wr_shade.emissive=new T.Color(0xd09050); M.wr_shade.emissiveMap=M.wr_shade.map; M.wr_shade.emissiveIntensity=0.62; M.wr_shade.side=T.DoubleSide; } // v4: Schirm ohne Lightmap (Hunyuan-Inseln), leuchtet gleichmäßig von innen, nicht ausgebrannt
+   swap('wr_glass',o=>new T.MeshStandardMaterial({color:0xa8b4ac,roughness:0.1,metalness:0,transparent:true,opacity:0.06,depthWrite:false})); // v7: Scheibe kaum sichtbar (Schönheitskönigin klar zu sehen)
+   if(M.wr_shade){ const sh_=M.wr_shade; sh_.emissive=new T.Color(0xc88a4c); sh_.emissiveMap=sh_.map; sh_.emissiveIntensity=0.6; sh_.side=T.DoubleSide; // v4: Schirm ohne Lightmap (Hunyuan-Inseln)
+    // v7: nicht mehr flach – heller zur Unterkante (Licht fällt nach unten raus), oben dunkler, senkrechte Stofffalten, innen etwas wärmer; Spitzen bleiben unter Weiß (kein Hotspot)
+    const LC=(S.lamps||[]).slice(0,3).map(p=>new T.Vector3(p[0],p[1],p[2])); while(LC.length<3) LC.push(new T.Vector3(99,0,99));
+    sh_.onBeforeCompile=sh=>{ sh.uniforms.lc={value:LC};
+     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWp;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
+     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWp; uniform vec3 lc[3];').replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+      vec3 c0=lc[0]; float dm=distance(vWp.xz,lc[0].xz); for(int i=1;i<3;i++){ float d=distance(vWp.xz,lc[i].xz); if(d<dm){ dm=d; c0=lc[i]; } }
+      float hh=clamp((vWp.y-(c0.y-0.17))/0.45,0.0,1.0); float ang=atan(vWp.z-c0.z,vWp.x-c0.x);
+      float pleat=0.80+0.20*pow(abs(sin(ang*13.0)),0.55); float weave=0.95+0.05*sin(ang*170.0)*sin(vWp.y*260.0); float grad=mix(1.22,0.42,smoothstep(0.0,1.0,hh));
+      float ndv=abs(dot(normalize(normal),normalize(vViewPosition))); float thru=mix(0.62,1.0,ndv);   // durchleuchteter Stoff: Mitte heller, Ränder dunkler
+      totalEmissiveRadiance*=grad*pleat*weave*thru*(gl_FrontFacing?1.0:1.15);`); };
+    sh_.customProgramCacheKey=()=>'wrshade7'; }
    if(M.wr_noexit){ M.wr_noexit.emissive=new T.Color(0xb8d8a8); M.wr_noexit.emissiveMap=M.wr_noexit.map; M.wr_noexit.emissiveIntensity=0.5; }
    if(M.wr_vinyl){ M.wr_vinyl.roughness=0.72; } // Sofa/Sessel: mattes altes Kunstleder, keine Glanzstreifen
-   // Sofa (Hunyuan): die gebackene Lightmap hat auf der Rückenlehne einen zackigen dunklen Fleck (überlappende UV-Inseln) → Sofa-Dreiecke als eigener
-   // Draw (+1) ohne Lightmap, gleichmäßig warm von innen + Stehlampen-Licht. ?sofalm=1 = alter Zustand.
-   if(M.wr_vinyl&&!/[?&]sofalm=1/.test(Q)){ const todo=[]; root.traverse(o=>{ if(o.isMesh&&o.material===M.wr_vinyl&&o.geometry.index) todo.push(o); });
-    const sm=M.wr_vinyl.clone(); sm.lightMap=null; sm.emissive=new T.Color(0x4c3a28); sm.emissiveMap=sm.map; sm.emissiveIntensity=1; sm.roughness=0.75;
-    todo.forEach(o=>{ const g=o.geometry, P=g.attributes.position, I=g.index, keep=[], sofa=[];
-     for(let i=0;i<I.count;i+=3){ const a=I.getX(i), b=I.getX(i+1), c=I.getX(i+2); const x=(P.getX(a)+P.getX(b)+P.getX(c))/3, y=(P.getY(a)+P.getY(b)+P.getY(c))/3, z=(P.getZ(a)+P.getZ(b)+P.getZ(c))/3;
-      (x>1.95&&y<0.9&&z>-0.65&&z<1.42?sofa:keep).push(a,b,c); }
-     if(!sofa.length) return; g.setIndex(keep); const g2=new T.BufferGeometry(); Object.entries(g.attributes).forEach(([k,v])=>g2.setAttribute(k,v)); g2.setIndex(sofa); g2.computeBoundingSphere(); g2.computeBoundingBox();
-     const me=new T.Mesh(g2,sm); me.name='wr_sofa'; o.add(me); }); M.wr_sofa=sm; }
+   // v7: Sofa = eigenes Material wr_sofa (Vertex-Licht mit Kontaktschatten, warmes Beige) – der v6-Sonderdraw ohne Licht entfällt
+   if(M.wr_sofa){ M.wr_sofa.roughness=0.72; }
    if(M.wr_redglass){ M.wr_redglass.emissive=new T.Color(0x4a1a12); M.wr_redglass.emissiveIntensity=0.24; M.wr_redglass.roughness=0.6; M.wr_redglass.side=T.DoubleSide; }
    // Fallblatt-Anzeige: Canvas (Text per Code)
    const cv=document.createElement('canvas'); cv.width=512; cv.height=148; const cx=cv.getContext('2d'); const ft=new T.CanvasTexture(cv); ft.colorSpace=T.SRGBColorSpace; ft.anisotropy=8; self.flip={cv,cx,tex:ft,n:4,anim:0};
@@ -48,8 +57,8 @@ AFRAME.registerComponent('warteraum',{
    // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
    if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
-   const hemi=new T.HemisphereLight(0x4a4236,0x0c0b09,0.30); sc.object3D.add(hemi);
-   const gw=S.window; const green=new T.PointLight(0x78ff60,0.55,4.0,2); green.position.set(gw[0],gw[1],gw[2]); sc.object3D.add(green);
+   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,0.42); // v7: wärmer, heller (Film) sc.object3D.add(hemi);
+   const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
    const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,i?1.0:1.3,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
    self.L={hemi,green,warm:warmL};
@@ -84,7 +93,7 @@ AFRAME.registerComponent('warteraum',{
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
-    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); break;
+    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; // v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); break;
     case 'arm': { const c=(u%11)/11; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.55:m.n==='frl_arm'?0:-0.18)*(lift*lift*(3-2*lift));
        if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
        if(m.n==='gruen_arm') a=-0.12*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
@@ -98,11 +107,11 @@ AFRAME.registerComponent('warteraum',{
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
   const D=this.motes; if(D){ for(let i=0;i<D.N;i++){ const k=i*3, u=s*0.05+i*1.7; D.P[k]=D.S0[k]+0.12*Math.sin(u*0.9+i); D.P[k+1]=D.S0[k+1]+0.10*Math.sin(u*0.6+i*0.3)-((s*0.012+i*0.37)%1)*0.08; D.P[k+2]=D.S0[k+2]+0.12*Math.cos(u*0.7+i*2.1); } D.g.attributes.position.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
-  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.55*f)-this.L.green.intensity)*0.3; }
+  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.32*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
-  this.clamp(); this.locoTick(d); this.audioTick(s); },
+  this.touchFix(); this.clamp(); this.locoTick(d); this.audioTick(s); },
  // ---------------- Bewegung (L-Stick gehen, R-Stick drehen; Desktop WASD) ----------------
  loco(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ const L=document.getElementById('hl'), Rr=document.getElementById('hr');
   L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });
@@ -151,6 +160,22 @@ AFRAME.registerComponent('warteraum',{
   // Sicherheitsnetz: widersprechen sich zwei Zonen (enge Nische), bleibt der Kopf an der letzten freien Stelle statt in einem Modell
   if(!this.free(p)&&this.lastFree){ p.x=this.lastFree.x; p.z=this.lastFree.z; } else if(this.free(p)) this.lastFree={x:p.x,z:p.z};
   return p; },
+ // v7: Handy-Tippen (touchctl) – Ziel in/an einer Sperrzone (Figur samt Stuhl, Möbel) → neues Ziel = nächste freie Stelle am Rand der Zone,
+ // 6 cm hineingeschoben: die Kollision hält den Kopf an der Kante (0,12 m Figur / 0,15 m Möbel), touchctl ist dann "angekommen" (≤8 cm).
+ // Vorher blieb das Gehen 0,2–0,6 m davor stehen (Tipp auf eine Figur = 0,45 m vor dem Treffpunkt, bzw. Hänger-Erkennung beim Anlaufen). ?touchfix=0 = alt.
+ touchFix(){ const Z=window.ZSTouch; if(!Z||!Z.active||!Z.dbg||!Z.walkTo||!this.cols||/[?&]touchfix=0/.test(Q)||this.el.renderer.xr.isPresenting) return;
+  const w=Z.dbg().walk; if(!w||!w.p||w.stop>0.6){ return; } const k=w.p.x.toFixed(3)+','+w.p.z.toFixed(3); if(k===this._tw) return; this._tw=k;
+  const g={x:w.p.x,z:w.p.z}; if(this.free(g)&&(w.stop<0.1||!this.nearZone(g,0.5))) return;   // freier Boden-Tipp / Wand: nichts tun
+  // nächste freie Stelle am Ziel (48 Richtungen, je erste freie Stelle nach außen), leicht zur Spielerseite gewichtet (nie hinter die Stühle)
+  const h=this.head(); let best=null;
+  for(let i=0;i<48;i++){ const a=i/48*2*Math.PI, ux=Math.cos(a), uz=Math.sin(a);
+   for(let r=0;r<=1.2;r+=0.01){ const p={x:g.x+ux*r,z:g.z+uz*r}; if(p.x<-2.6||p.x>2.5||p.z<-2.15||p.z>2.15) break; if(this.free(p)&&this.nearZone(p,0.135)!==2){ const c=r+0.25*Math.hypot(h.x-p.x,h.z-p.z); if(!best||c<best.c) best={c,x:p.x,z:p.z,ux,uz}; break; } } }
+  if(!best) return; const nx=best.x-best.ux*0.06, nz=best.z-best.uz*0.06;   // 6 cm in die Zone: die Kollision hält den Kopf an der Kante, touchctl gilt als angekommen
+  this._tw=nx.toFixed(3)+','+nz.toFixed(3); this._touchGoal={x:nx,z:nz,edge:[best.x,best.z],from:k}; Z.walkTo(nx,nz); },
+ // 0 = weit weg, 1 = innerhalb r an einer Zone, 2 = in einer Hülle bzw. näher als ihr Rand
+ nearZone(p,r){ let res=0; for(const [a0,a1,b0,b1] of this.cols||[]){ const dx=Math.max(a0-p.x,0,p.x-a1), dz=Math.max(b0-p.z,0,p.z-b1); if(Math.hypot(dx,dz)<r) res=1; }
+  for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); }
+   if(ins||md<h.m) return 2; if(md<r+h.m) res=1; } return res; },
  free(p){ for(const [a0,a1,b0,b1] of this.cols||[]) if(p.x>a0+5e-4&&p.x<a1-5e-4&&p.z>b0+5e-4&&p.z<b1-5e-4) return false; // auch Möbel/Tür: Rückfallpunkt nie in einem Möbel
  for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); } if(ins||md<h.m*0.9) return false; } return true; },
  clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
