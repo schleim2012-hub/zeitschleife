@@ -241,6 +241,9 @@ def painting(W,cell,a0,a1,b0,b1,frame=0x2a1c10):
 WW,WE=WALLS['W'],WALLS['E']
 painting(WN,1,0.25,1.30,1.02,1.72); painting(WW,0,0.65,1.55,1.30,1.95); painting(WW,2,2.60,3.30,1.30,1.95,0x3a2a16); painting(WE,1,2.05,3.55,1.22,1.90); painting(WS,3,3.90,4.95,1.15,1.82,0x302214)
 sign(WW,'formular',4.10,4.50,1.10,1.667,c=0.002,th=0.003,mat=MT['signs']); sign(WE,'handbuch',0.55,0.95,1.10,1.667,c=0.002,th=0.003); sign(WE,'seelen',4.0,4.9,1.85,2.05); sign(WE,'spuk',4.15,4.75,1.42,1.62,c=0.002,th=0.003)
+# Verblichene Amts-Plakate (gen_posters.py, Zellen im Schilder-Atlas)
+sign(WS,'p_a38',1.85,2.45,1.25,1.604,c=0.002,th=0.003); sign(WE,'p_laecheln',1.70,1.97,1.15,1.533,c=0.002,th=0.003)
+sign(WE,'p_geduld',4.22,4.49,0.98,1.363,c=0.002,th=0.003); sign(WW,'p_klopfen',2.58,3.32,2.08,2.311,c=0.002,th=0.003)
 def star(W,a,b,name):
     parts=[]; hub=sphere('hub',(a,0.09,b),0.045,MT['metal'],u=12,v=8); parts.append(hub)
     for i in range(14):
@@ -377,6 +380,17 @@ def epos(a,c): p=WP(WE,a,0,c); return p.x,p.y
 eyaw=math.pi/2+math.atan2(0.15,5.0)
 x,y=epos(2.8,0.5); sofa(x,y,eyaw); SOFA=(x,y)
 x,y=epos(1.35,0.3); LAMPS.append(floor_lamp(x,y,'shade_e',0x6a5a2a))
+def ashtray_stand(x,y):
+    RA=random.Random(9)
+    p=[cyl('ab',(x,y,0.012),0.14,0.024,MT['metal'],seg=20),cyl('ap',(x,y,0.33),0.014,0.62,MT['metal'],seg=10)]
+    b=lathe('abowl',[(0.0,0.62),(0.11,0.62),(0.135,0.64),(0.14,0.66),(0.12,0.665),(0.10,0.645),(0.0,0.645)],MT['metal'],seg=24,c=(x,y,0)); p.append(b)
+    m=join(p,'ashtray'); vc_const(m,0x7a7c76); smooth(m)
+    ash=cyl('ash',(x,y,0.648),0.098,0.004,MT['metal'],seg=20); vc_const(ash,0x3a3834)
+    bt=[]
+    for i in range(6):
+        a=RA.uniform(0,6.28); r=RA.uniform(0.02,0.08); c=cyl('butt',(0,0,0),0.0045,RA.uniform(0.022,0.034),MT['paper'],seg=6,rot=(math.pi/2,0,0)); xf(c,(x+r*math.cos(a),y+r*math.sin(a),0.654),(0,0,RA.uniform(0,6.28))); bt.append(c)
+    o=join(bt,'butts'); vc_const(o,0xd8ccb0); box_uv(o,8)
+x,y=epos(4.18,0.36); ashtray_stand(x,y)
 # Süd: Taucher im Ohrensessel, Lampe, Beistelltisch mit Radio
 DIVER=(-1.05,-1.86) if HY else (-1.05,-2.05)
 if not HY: wing_chair(-1.05,-2.05,-0.45)
@@ -411,11 +425,22 @@ fz=2.75-(0.5+2.5)*0.03
 o=box('fixture',(0.7,0.5,fz-0.05),(1.25,0.3,0.08),MT['metal']); vc_const(o,0x4a4a44)
 o=box('diffusor',(0.7,0.5,fz-0.092),(1.2,0.26,0.004),MT['vinyl']); vc_const(o,0x8a8a70)
 pt=lathe('pot',[(0.0,0),(0.12,0),(0.17,0.3),(0.18,0.32),(0.0,0.32)],MT['vinyl'],seg=16,c=(2.4,2.15,0)); vc_const(pt,0x6a3a22)
-lv=[]
+lv=[]; PTIPS=[]
 for i in range(9):
     c=cyl('st',(0,0,0),0.006,random.uniform(0.5,1.0),MT['wood'],seg=4,r2=0.002); L=c.data.vertices[0].co.z
-    xf(c,(0,0,0.4),(random.uniform(-0.5,0.5),random.uniform(-0.5,0.5),0)); xf(c,(2.4,2.15,0.3)); lv.append(c)
+    rx_,ry_=random.uniform(-0.5,0.5),random.uniform(-0.5,0.5)
+    xf(c,(0,0,0.4),(rx_,ry_,0)); xf(c,(2.4,2.15,0.3)); lv.append(c)
+    PTIPS.append((Matrix.Translation((2.4,2.15,0.7))@Matrix.Rotation(ry_,4,'Y')@Matrix.Rotation(rx_,4,'X'),L))
 o=join(lv,'plant'); vc_const(o,0x4a3a1c)
+# v3: welke Blätter (hängen an den Stängeln, ein paar liegen am Boden) – eigener Zufall, damit der Rest der Szene gleich bleibt
+RP=random.Random(5); lf=[]
+for Mt,L_ in PTIPS:
+    for k in range(2):
+        t=RP.uniform(0.55,1.0)*L_/2; base=Mt@V((0,0,t))
+        l=sphere('leaf',(0,0,0),1.0,MT['wood'],scl=(0.012,0.004,0.055),u=8,v=6); xf(l,(0,0,-0.05)); xf(l,(0,0,0),(RP.uniform(0.25,0.7)*(1 if k else -1),RP.uniform(-0.3,0.3),RP.uniform(0,6.28))); xf(l,tuple(base)); lf.append(l)
+for i in range(6):
+    a=RP.uniform(0,6.28); r=RP.uniform(0.2,0.42); l=sphere('leaf',(0,0,0),1.0,MT['wood'],scl=(0.014,0.05,0.003),u=8,v=6); xf(l,(2.4+r*math.cos(a),2.15+r*math.sin(a),0.004),(RP.uniform(-0.15,0.15),0,RP.uniform(0,6.28))); lf.append(l)
+o=join(lf,'leaves'); vc_const(o,0x5e4626); smooth(o)
 # ------------------------------------------------------------------ Figuren (Hybrid: statischer Körper + bewegliche Teile)
 SEG_COLS=['torso','torso','torso','torso','arm','fore','hand','torso','arm','fore','hand','thigh','thigh','shin','foot','thigh','thigh','shin','foot']
 def skel(over=None):
@@ -546,20 +571,54 @@ def hy_figures():
     for n,key in [('oma','k'),('gruen','c'),('brand','club'),('jaeger','h')]:
         a_={'k':0.80,'c':1.50,'club':2.30,'h':4.15}[key]; x,y=wpos(a_,depth(n)+0.05); CH[key]=(x,y); put(n,x,y,wyaw)
     put('taucher',DIVER[0],DIVER[1],-0.45)
-    # Zersägte Assistentin: Oberkörper (+Kopf) Nordende, Unterleib Südende des Sofas
+    # Zersägte Assistentin (v3): Oberkörper (+Kopf) sitzt auf dem Schnitt am Nordende, angelehnt; Unterleib sitzt am Südende auf der Polsterkante, Füße am Boden.
+    # Sofa: Kissen-Oberkante ~0.51 (Mitte 3 cm eingesunken), Sockel-Front lokal y=+0.43, Rückenkissen-Front ~-0.23.
     sx,sy=SOFA
     def sofapos(off): p=V((sx,sy,0))+V((math.cos(eyaw),math.sin(eyaw),0))*off; return p.x,p.y
+    SEAT=0.488   # Sitzfläche inkl. 1–2 cm Einsinken
+    # Unterleib: Gesäß-Unterseite (Hunyuan: schräg 0.475..0.56) flach auf SEAT ziehen, Unterschenkel leicht nach vorn (Füße vor dem Sockel)
+    L=objs['assi_legs']; ZB=[(-0.20,0.558),(-0.15,0.524),(-0.10,0.502),(-0.05,0.475),(0.0,0.475)]
+    def zbot(y):
+        if y<=ZB[0][0]: return ZB[0][1]
+        for (y0,z0),(y1,z1) in zip(ZB,ZB[1:]):
+            if y<=y1: return z0+(z1-z0)*(y-y0)/(y1-y0)
+        return ZB[-1][1]
+    for v in L.data.vertices:
+        x,y,z=v.co
+        if y<0.0 and z<0.6 and z>0.4:
+            zb=zbot(y); t=max(0.0,min(1.0,(0.6-z)/max(1e-3,0.6-zb))); z=z-t*(zb-SEAT)
+        if z<0.45: y+=(0.45-z)*0.42
+        v.co=V((x,y,z))
+    L.data.update()
     zc=min(v.co.z for v in objs['assi_body'].data.vertices)
-    x,y=sofapos(-0.55); put('assi',x,y,eyaw,z=0.57-zc,only={'assi_body','assi_head'},fwd=0.28)
-    x,y=sofapos(0.5); put('assi',x,y,eyaw,z=0.0,only={'assi_legs'},fwd=0.30)
-    # Schnittflächen (Zauberkasten-Optik)
-    for part,zz,(x,y),z0 in [('assi_body',zc,sofapos(-0.55),0.57-zc),('assi_legs',zc,sofapos(0.5),0.0)]:
-        o=objs[part]; ws=[o.matrix_world@v.co for v in o.data.vertices]
-        near=[w for w in ws if abs(w.z-(zz+z0))<0.03]
-        if not near: continue
-        cx=sum(w.x for w in near)/len(near); cy=sum(w.y for w in near)/len(near)
-        r=max(((w.x-cx)**2+(w.y-cy)**2)**0.5 for w in near)
-        c=cyl('cap_'+part,(cx,cy,zz+z0),r*0.92,0.012,MT['fig'],seg=18); vc_const(c,0xc8b07a)
+    x,y=sofapos(-0.55); put('assi',x,y,eyaw,z=SEAT-zc,only={'assi_body','assi_head'},fwd=0.03)
+    x,y=sofapos(0.5); put('assi',x,y,eyaw,z=0.0,only={'assi_legs'},fwd=0.37)
+    # Schnittflächen wie aus dem Zauberkasten: Messingrand + dunkelroter Samt, Form = konvexe Hülle des Querschnitts (keine runde "Platte")
+    def hull2(pts):
+        pts=sorted(set((round(p[0],4),round(p[1],4)) for p in pts))
+        if len(pts)<3: return pts
+        def cr(o,a,b): return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])
+        lo=[];up=[]
+        for p_ in pts:
+            while len(lo)>=2 and cr(lo[-2],lo[-1],p_)<=0: lo.pop()
+            lo.append(p_)
+        for p_ in reversed(pts):
+            while len(up)>=2 and cr(up[-2],up[-1],p_)<=0: up.pop()
+            up.append(p_)
+        return lo[:-1]+up[:-1]
+    def cap(name,o,top):
+        ws=[o.matrix_world@v.co for v in o.data.vertices]
+        zs=[w.z for w in ws]; ze=max(zs) if top else min(zs)
+        near=[w for w in ws if abs(w.z-ze)<0.035]
+        H=hull2([(w.x,w.y) for w in near]); cx=sum(h[0] for h in H)/len(H); cy=sum(h[1] for h in H)/len(H)
+        out=[]
+        for k,(sc_,dz,th,col) in enumerate([(0.97,0.0,0.014,0xa8823c),(0.88,0.009,0.006,0x4a1016)]):
+            P=[(cx+(h[0]-cx)*sc_,cy+(h[1]-cy)*sc_) for h in H]; z0=ze-0.012+dz if top else ze-0.004+dz
+            n=len(P); verts=[(px,py,z0) for px,py in P]+[(px,py,z0+th) for px,py in P]
+            faces=[tuple(range(n-1,-1,-1)),tuple(range(n,2*n))]+[(i,(i+1)%n,n+(i+1)%n,n+i) for i in range(n)]
+            c=mesh_obj(name+str(k),verts,faces,MT['fig']); vc_const(c,col); out.append(c)
+        return out
+    cap('cap_legs',objs['assi_legs'],True); cap('cap_body',objs['assi_body'],False)
     # Fräulein hinter dem Schalter (auf hohem Hocker)
     cp=WP(WN,4.0,0,-0.42); put('frl',cp.x,cp.y,math.pi,z=0.3)
     return cp

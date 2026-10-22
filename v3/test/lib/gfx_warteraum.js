@@ -10,12 +10,12 @@ const Q=location.search, num=(k,d)=>{ const m=Q.match(new RegExp('[?&]'+k+'=([\\
 const BASE='../assets/warteraum/';
 AFRAME.registerComponent('warteraum',{
  init(){ const T=THREE, sc=this.el, self=this; this.t0=performance.now(); window.__wr={ready:false};
-  fetch(BASE+'scene.json?v=1').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
+  fetch(BASE+'scene.json?v=4').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
-  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=1'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
+  const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=4'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
   const LMI=Math.PI*(S.lmScale||1)*num('lmg',0.68); // 0.68: düsterer, Neonröhren übernehmen die Lichtinseln
-  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=1'); sc.appendChild(el);
+  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=4'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
@@ -67,7 +67,9 @@ AFRAME.registerComponent('warteraum',{
    const pts=new T.Points(g,pm); pts.frustumCulled=false; sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
    // bewegliche Teile
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
-   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S};
+   self.buildCols(S,root);
+   self.dust(T,sc,FX,ch);
+   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols};
   });
  },
  drawFlip(a,b,k){ const {cx}=this.flip, W=512, H=148; cx.fillStyle='#16181a'; cx.fillRect(0,0,W,H); cx.fillStyle='#8a8e86'; cx.font='600 26px "Barlow Condensed",Arial Narrow,sans-serif'; cx.textAlign='center'; cx.fillText('JETZT BEDIENT',W/2,30);
@@ -98,6 +100,7 @@ AFRAME.registerComponent('warteraum',{
    qa.setFromAxisAngle(m.ax,a); m.o.quaternion.copy(m.q0).multiply(qa); });
   // Rauch
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
+  const D=this.motes; if(D){ for(let i=0;i<D.N;i++){ const k=i*3, u=s*0.05+i*1.7; D.P[k]=D.S0[k]+0.12*Math.sin(u*0.9+i); D.P[k+1]=D.S0[k+1]+0.10*Math.sin(u*0.6+i*0.3)-((s*0.012+i*0.37)%1)*0.08; D.P[k+2]=D.S0[k+2]+0.12*Math.cos(u*0.7+i*2.1); } D.g.attributes.position.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
   if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.7*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
@@ -112,12 +115,36 @@ AFRAME.registerComponent('warteraum',{
  locoTick(d){ const [x,y]=this.ax; if(Math.abs(x)<0.15&&Math.abs(y)<0.15) return; const r=this.el.renderer, c=this.el.camera, q=new THREE.Quaternion(); c.getWorldQuaternion(q);
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const rt=new THREE.Vector3(-f.z,0,f.x); const rig=document.getElementById('rig').object3D; const sp=1.4*d;
   rig.position.addScaledVector(f,-y*sp).addScaledVector(rt,x*sp); },
- clamp(){ const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D; const R0=0.22; let p={x:h.x,z:h.z};
-  const B=[[-2.65,2.55,-2.2,2.2]]; // Raum (innen)
-  p.x=Math.min(B[0][1],Math.max(B[0][0],p.x)); p.z=Math.min(B[0][3],Math.max(B[0][2],p.z));
-  const box=(this.S&&this.S.colliders)||[[-3,-2.05,-2.1,2.1],[-2.05,-1.15,-0.75,0.65],[1.9,3,-0.75,1.35],[-1.55,-0.55,1.55,2.5],[2.1,3,1.85,2.5],[1.25,1.85,1.9,2.5],[0,2.4,-2.6,-1.95],[-0.7,-0.2,-2.45,-1.95],[2.2,2.8,-1.95,-1.25],[2.1,2.7,-2.6,-1.9]];
-  box.forEach(([a0,a1,b0,b1])=>{ if(p.x>a0-R0&&p.x<a1+R0&&p.z>b0-R0&&p.z<b1+R0){ const c=[[p.x-(a0-R0),'x',a0-R0],[(a1+R0)-p.x,'x',a1+R0],[p.z-(b0-R0),'z',b0-R0],[(b1+R0)-p.z,'z',b1+R0]].sort((u,v)=>u[0]-v[0])[0]; p[c[1]]=c[2]; } });
+ // ---------------- Kollision ----------------
+ // Sperrzonen (xz, schon inkl. Spieler-Radius): Raum-Kollider aus scene.json (+0.22) · große Möbel (Sofa, Theke, Nierentisch …) +0.15 extra ·
+ // jede Figur samt Stuhl (aus dem echten Mesh) +0.23 extra → man bleibt ~0.45 m vor den Hunyuan-Figuren stehen. Gilt für VR-Stick, PC-WASD und Handy-Tippen
+ // (touchctl gleitet zum Ziel, die Szene schiebt zurück → das Gehen bleibt an der Sperrkante stehen). ?cols=1 zeigt die Zonen.
+ buildCols(S,root){ const T=THREE, R0=0.22, cols=[];
+  const src=(S&&S.colliders)||[];
+  src.forEach(([a0,a1,b0,b1])=>{ const door=b0>2.3&&a0>0&&a1<1.5; const big=!door&&(a1-a0)*(b1-b0)>0.2; const m=R0+(big?0.15:0); cols.push([a0-m,a1+m,b0-m,b1+m,big?'moebel':'klein']); });
+  const fig={}; const bx=new T.Box3();
+  root.updateMatrixWorld(true);
+  root.traverse(o=>{ if(!o.isMesh||!o.material) return; const m=/^wr_fig_(\w+)$/.exec(o.material.name||''); if(!m) return; bx.setFromObject(o); (fig[m[1]]=fig[m[1]]||new T.Box3()).union(bx); });
+  Object.entries(fig).forEach(([n,b])=>{ if(n==='frl') return; // Fräulein steht hinter der Theke (Theke sperrt schon)
+   const m=R0+0.23; cols.push([b.min.x-m,b.max.x+m,b.min.z-m,b.max.z+m,'fig_'+n]); });
+  this.cols=cols;
+  if(/[?&]cols=1/.test(Q)){ const g=new T.Group(); cols.forEach(([a0,a1,b0,b1,n])=>{ const me=new T.Mesh(new T.BoxGeometry(a1-a0,0.04,b1-b0),new T.MeshBasicMaterial({color:/^fig/.test(n)?0xff3030:n==='moebel'?0xffa020:0x30a0ff,transparent:true,opacity:0.35,depthWrite:false})); me.position.set((a0+a1)/2,0.03,(b0+b1)/2); g.add(me); }); this.el.object3D.add(g); } },
+ push(p){ const cols=this.cols||[]; const B=[-2.65,2.55,-2.2,2.2];
+  for(let it=0;it<4;it++){ let hit=false;
+   p.x=Math.min(B[1],Math.max(B[0],p.x)); p.z=Math.min(B[3],Math.max(B[2],p.z));
+   for(const [a0,a1,b0,b1] of cols){ if(p.x>a0&&p.x<a1&&p.z>b0&&p.z<b1){ hit=true; const c=[[p.x-a0,'x',a0],[a1-p.x,'x',a1],[p.z-b0,'z',b0],[b1-p.z,'z',b1]].sort((u,v)=>u[0]-v[0])[0]; p[c[1]]=c[2]+(c[2]===a0||c[2]===b0?-1e-3:1e-3); } }
+   if(!hit) break; }
+  return p; },
+ clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
+  const p=this.push({x:h.x,z:h.z});
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
+ // Staubkörnchen im Neonlicht (1 Draw, Points, additiv sehr schwach, keine Lichtpunkte)
+ dust(T,sc,FX,ch){ const N=260, g=new T.BufferGeometry(), P=new Float32Array(N*3), S0=new Float32Array(N*3);
+  for(let i=0;i<N;i++){ const f=FX[i%2]; const r=Math.sqrt(Math.random())*1.1, a=Math.random()*6.283; S0[i*3]=f[0]+Math.cos(a)*r*1.1; S0[i*3+1]=0.5+Math.random()*1.9; S0[i*3+2]=f[1]+Math.sin(a)*r*0.8; }
+  P.set(S0); g.setAttribute('position',new T.BufferAttribute(P,3));
+  const c=document.createElement('canvas'); c.width=c.height=32; const x=c.getContext('2d'), gr=x.createRadialGradient(16,16,0,16,16,15); gr.addColorStop(0,'rgba(220,240,226,0.9)'); gr.addColorStop(0.5,'rgba(220,240,226,0.25)'); gr.addColorStop(1,'rgba(220,240,226,0)'); x.fillStyle=gr; x.fillRect(0,0,32,32);
+  const m=new T.PointsMaterial({map:new T.CanvasTexture(c),size:0.011,sizeAttenuation:true,transparent:true,opacity:0.32,depthWrite:false,blending:T.AdditiveBlending,color:0xbfd8c8,fog:true});
+  const pts=new T.Points(g,m); pts.frustumCulled=false; sc.object3D.add(pts); this.motes={g,P,S0,N}; },
  // ---------------- Ton ----------------
  audioArm(){ if(/[?&]mute=1/.test(Q)) return; const go=()=>{ if(this.ac) { if(this.ac.state!=='running') this.ac.resume(); return; } this.audioStart(); };
   ['click','keydown','touchstart','pointerdown'].forEach(e=>window.addEventListener(e,go,{passive:true})); this.el.addEventListener('enter-vr',go);
