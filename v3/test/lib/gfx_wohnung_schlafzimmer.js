@@ -43,7 +43,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
  const TL=new T.TextureLoader(), tx=(f,cb)=>TL.load('../'+SB+f,t=>{ t.colorSpace=T.SRGBColorSpace; t.anisotropy=8; if(cb) cb(t); });
  if(shell[2]) tx('sz_tapete.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; shell[2].material.map=t; shell[2].material.needsUpdate=true; }); // Tapete: Streifen mit Rautenblüte, Papierfaser (gen_bedroom_tex.py) statt fleckiger Kachel
  G.children.forEach(o=>{ if(!o.isMesh) return; const g=o.geometry, pr=g.parameters||{};
-  if(o.material&&o.material.map&&o.material.map.image&&/curtain_c/.test(o.material.map.image.src||'')){ const m=o.material; tx('sz_vorhang.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(2,1); m.map=t; m.color.setHex(0xffffff); m.needsUpdate=true; }); o.name='sz_vorhang'; return; }
+  if(g.type==='PlaneGeometry'&&Math.abs((pr.height||0)-2.12)<1e-3&&pr.widthSegments===24&&o.material&&o.material.side===T.DoubleSide){ const m=o.material; tx('sz_vorhang.jpg',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(2,1); m.map=t; m.color.setHex(0xffffff); m.needsUpdate=true; }); o.name='sz_vorhang'; return; }
   if(g.type==='PlaneGeometry'&&pr.widthSegments===24&&pr.heightSegments===40){ // Bettdecke: Matratze darf nicht durchstoßen, Fußende hängt über
    const P=g.attributes.position, hw=pr.width/2; for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), ax=Math.abs(x); let lim=ax<0.4?-0.012:-0.012-Math.pow((ax-0.4)/(hw-0.4),2)*0.17; let z=Math.max(P.getZ(i),lim);
     if(y<-pr.height/2+0.12) z-=Math.pow((-pr.height/2+0.12-y)/0.12,2)*0.12; P.setZ(i,z); } g.computeVertexNormals(); o.name='sz_decke'; }
@@ -54,7 +54,7 @@ function upgrade(sc,G,added){ const T=THREE, S=sc.object3D, info=window.__gfxSZ=
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.75)<1e-3&&Math.abs(pr.height-0.28)<1e-3&&o.material.blending===T.AdditiveBlending){ o.material.color.setHex(0x6a6a6a); o.name='sz_neon'; }
   else if(g.type==='PlaneGeometry'&&Math.abs(pr.width-0.5)<1e-3&&Math.abs(pr.height-0.72)<1e-3&&o.position.z>1.9){ o.position.set(-0.25,1.33,1.385); o.scale.set(0.8,0.8,1); o.rotation.z=-0.01; o.name='sz_poster_schrank'; }
  });
- added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.2; o.distance=3.0; o.position.x=1.3; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } }); // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
+ added.forEach(o=>{ if(o.isPointLight&&o.color.getHex()===0xff3fae){ o.intensity=0.2; o.distance=3.0; o.position.x=1.3; } if(o.isPointLight&&o.color.getHex()===0xffb070){ o.intensity=1.7; } if(o.isPointLight&&o.color.getHex()===0x7090d0){ o.intensity=0.65; o.position.set(0.45,1.85,-1.45); } }); // Mond: kein blauer Fleck auf der Fensterbank // Neon nur noch Akzent; Schreibtischlampe: Rest kommt aus der Lightmap (sonst doppelt)
  { const m=new T.Mesh(new T.BoxGeometry(0.8,0.55,0.022),new T.MeshStandardMaterial({color:0xb0a898,roughness:0.85})); tx('sz_pinboard.jpg',t=>{ m.material.map=t; m.material.needsUpdate=true; });
    m.position.set(2.1-0.012,1.36,-0.22); m.rotation.y=-Math.PI/2; m.name='sz_pinnwand'; G.add(m);
    const k=new T.Mesh(new T.PlaneGeometry(0.3,0.45),new T.MeshStandardMaterial({color:0xb8b0a4,roughness:0.8})); tx('sz_kalender.jpg',t=>{ k.material.map=t; k.material.needsUpdate=true; });

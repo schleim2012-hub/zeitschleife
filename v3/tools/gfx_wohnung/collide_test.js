@@ -3,7 +3,7 @@
 // 2) Laufen: pro Tick 7 cm Richtung Möbel (= Stick 1,4 m/s bei 50 ms; derselbe Weg wie WASD/Handy-Tippen, alle laufen über A.tick → hardClamp), 45 Ticks; minimaler Abstand.
 // 3) Handy: ZSTouch.walkTo (mit ?touch=1). node collide_test.js URL
 const puppeteer=require('puppeteer-core'); const URL=process.argv[2];
-(async()=>{ const br=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--window-size=200,112']});
+(async()=>{ const br=await puppeteer.launch({protocolTimeout:3600000,executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--window-size=200,112']});
  const pg=await br.newPage(); await pg.setViewport({width:200,height:112}); await pg.evaluateOnNewDocument(()=>{ try{ localStorage.setItem('zs_help_seen_v1','1'); }catch(e){} });
  await pg.goto(URL,{waitUntil:'load',timeout:90000}); await pg.waitForFunction(()=>window.__apt&&__apt.ready&&window.__gfxSZ&&__gfxSZ.zones===true,{timeout:120000});
  const out=await pg.evaluate(async()=>{ const Z=__gfxSZ.zoneRects, cam=document.getElementById('cam').object3D, rig=document.getElementById('rig').object3D; let n=0, step=null;
