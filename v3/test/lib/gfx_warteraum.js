@@ -69,7 +69,7 @@ AFRAME.registerComponent('warteraum',{
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
    self.buildCols(S,root);
    self.dust(T,sc,FX,ch);
-   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols};
+   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls};
   });
  },
  drawFlip(a,b,k){ const {cx}=this.flip, W=512, H=148; cx.fillStyle='#16181a'; cx.fillRect(0,0,W,H); cx.fillStyle='#8a8e86'; cx.font='600 26px "Barlow Condensed",Arial Narrow,sans-serif'; cx.textAlign='center'; cx.fillText('JETZT BEDIENT',W/2,30);
@@ -116,25 +116,46 @@ AFRAME.registerComponent('warteraum',{
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const rt=new THREE.Vector3(-f.z,0,f.x); const rig=document.getElementById('rig').object3D; const sp=1.4*d;
   rig.position.addScaledVector(f,-y*sp).addScaledVector(rt,x*sp); },
  // ---------------- Kollision ----------------
- // Sperrzonen (xz, schon inkl. Spieler-Radius): Raum-Kollider aus scene.json (+0.22) · große Möbel (Sofa, Theke, Nierentisch …) +0.15 extra ·
- // jede Figur samt Stuhl (aus dem echten Mesh) +0.23 extra → man bleibt ~0.45 m vor den Hunyuan-Figuren stehen. Gilt für VR-Stick, PC-WASD und Handy-Tippen
- // (touchctl gleitet zum Ziel, die Szene schiebt zurück → das Gehen bleibt an der Sperrkante stehen). ?cols=1 zeigt die Zonen.
- buildCols(S,root){ const T=THREE, R0=0.22, cols=[];
-  const src=(S&&S.colliders)||[];
-  src.forEach(([a0,a1,b0,b1])=>{ const door=b0>2.3&&a0>0&&a1<1.5; const big=!door&&(a1-a0)*(b1-b0)>0.2; const m=R0+(big?0.15:0); cols.push([a0-m,a1+m,b0-m,b1+m,big?'moebel':'klein']); });
-  const fig={}; const bx=new T.Box3();
-  root.updateMatrixWorld(true);
-  root.traverse(o=>{ if(!o.isMesh||!o.material) return; const m=/^wr_fig_(\w+)$/.exec(o.material.name||''); if(!m) return; bx.setFromObject(o); (fig[m[1]]=fig[m[1]]||new T.Box3()).union(bx); });
-  Object.entries(fig).forEach(([n,b])=>{ if(n==='frl') return; // Fräulein steht hinter der Theke (Theke sperrt schon)
-   const m=R0+0.23; cols.push([b.min.x-m,b.max.x+m,b.min.z-m,b.max.z+m,'fig_'+n]); });
-  this.cols=cols;
-  if(/[?&]cols=1/.test(Q)){ const g=new T.Group(); cols.forEach(([a0,a1,b0,b1,n])=>{ const me=new T.Mesh(new T.BoxGeometry(a1-a0,0.04,b1-b0),new T.MeshBasicMaterial({color:/^fig/.test(n)?0xff3030:n==='moebel'?0xffa020:0x30a0ff,transparent:true,opacity:0.35,depthWrite:false})); me.position.set((a0+a1)/2,0.03,(b0+b1)/2); g.add(me); }); this.el.object3D.add(g); } },
- push(p){ const cols=this.cols||[]; const B=[-2.65,2.55,-2.2,2.2];
-  for(let it=0;it<4;it++){ let hit=false;
+ // Pete: ganz nah ran, aber nie hindurch. Sperrzonen gelten für die KOPF-Position (Kamera-Weltposition; in VR wird das Rig verschoben, am PC/Handy die Kamera):
+ // · jede Figur samt Stuhl: konvexe Hülle des echten Modells im Grundriss + 0.12 m · große/kleine Möbel (scene.json-Boxen, 3 cm eingerückt): +0.18 → ~0.15 m
+ // · NO-EXIT-Tür/Schacht unverändert (+0.22) · Figuren-Boxen aus scene.json werden durch die Hüllen ersetzt.
+ // touchctl (Handy-Tippen) gleitet zum Ziel, die Szene schiebt zurück → das Gehen bleibt an der Kante stehen. ?cols=1 zeigt die Zonen.
+ buildCols(S,root){ const T=THREE, cols=[], hulls=[]; const FIG_M=0.12, FURN_M=0.18, DOOR_M=0.22;
+  root.updateMatrixWorld(true); const pts={}, v=new T.Vector3();
+  root.traverse(o=>{ if(!o.isMesh||!o.material) return; const m=/^wr_fig_(\w+)$/.exec(o.material.name||''); if(!m||m[1]==='frl') return; // Fräulein steht hinter der Theke
+   const P=o.geometry.attributes.position, A=(pts[m[1]]=pts[m[1]]||[]); for(let i=0;i<P.count;i+=2){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); if(v.y<1.9) A.push([v.x,v.z]); } });
+  const hull=P=>{ P=P.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]); const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]); const lo=[],up=[];
+   for(const p of P){ while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0) lo.pop(); lo.push(p); }
+   for(let i=P.length-1;i>=0;i--){ const p=P[i]; while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0) up.pop(); up.push(p); }
+   return lo.slice(0,-1).concat(up.slice(0,-1)); }; // CCW (x,z)
+  // Getrennte Teile (z. B. zersägte Frau: Oberkörper und Beine an den Sofa-Enden) → eigene Hüllen, sonst sperrt die Hülle die Lücke davor
+  const split=A=>{ for(const k of [0,1]){ const S=A.slice().sort((a,b)=>a[k]-b[k]); for(let i=1;i<S.length;i++) if(S[i][k]-S[i-1][k]>0.15) return [...split(S.slice(0,i)),...split(S.slice(i))]; } return [A]; };
+  const fb={}; Object.entries(pts).forEach(([n,A])=>{ const parts=split(A); let bb=[9,-9,9,-9]; parts.forEach(P=>{ if(P.length<3) return; const H=hull(P); hulls.push({n,H,m:FIG_M}); H.forEach(h=>{ bb=[Math.min(bb[0],h[0]),Math.max(bb[1],h[0]),Math.min(bb[2],h[1]),Math.max(bb[3],h[1])]; }); }); fb[n]=bb; });
+  ((S&&S.colliders)||[]).forEach(([a0,a1,b0,b1])=>{ const door=b0>2.3&&a0>0&&a1<1.5; const ar=(a1-a0)*(b1-b0);
+   if(!door&&Object.values(fb).some(f=>{ const ox=Math.max(0,Math.min(a1,f[1])-Math.max(a0,f[0])), oz=Math.max(0,Math.min(b1,f[3])-Math.max(b0,f[2])); return ox*oz>0.6*ar; })) return; // Figurenkörper → Hülle
+   const m=door?DOOR_M:FURN_M; cols.push([a0-m,a1+m,b0-m,b1+m,door?'tuer':'moebel']); });
+  this.cols=cols; this.hulls=hulls;
+  if(/[?&]cols=1/.test(Q)){ const g=new T.Group(); cols.forEach(([a0,a1,b0,b1,n])=>{ const me=new T.Mesh(new T.BoxGeometry(a1-a0,0.04,b1-b0),new T.MeshBasicMaterial({color:n==='tuer'?0x30a0ff:0xffa020,transparent:true,opacity:0.35,depthWrite:false})); me.position.set((a0+a1)/2,0.03,(b0+b1)/2); g.add(me); });
+   hulls.forEach(({H})=>{ const sh=new T.Shape(H.map(h=>new T.Vector2(h[0],-h[1]))); const me=new T.Mesh(new T.ShapeGeometry(sh),new T.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:0.45,depthWrite:false,side:T.DoubleSide})); me.rotation.x=-Math.PI/2; me.position.y=0.035; g.add(me); }); this.el.object3D.add(g); } },
+ // Punkt aus konvexem Polygon (CCW) + Rand m schieben
+ pushHull(p,H,m){ let inside=true; const n=H.length, cand=[]; const B=[-2.65,2.55,-2.2,2.2];
+  for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1], L=Math.hypot(ex,ez); if(L<1e-6) continue; const ox=ez/L, oz=-ex/L; // Außennormale (CCW in x,z)
+   const d=(p.x-a[0])*ox+(p.z-a[1])*oz; if(d>0){ inside=false; break; } cand.push([-d,ox,oz]); }
+  if(inside){ // kürzester Weg hinaus, der im Raum bleibt (nie Richtung Wand hinter den Stühlen)
+   cand.sort((u,v)=>u[0]-v[0]); for(const [d,ox,oz] of cand){ const x=p.x+ox*(d+m+1e-3), z=p.z+oz*(d+m+1e-3); if(x>B[0]&&x<B[1]&&z>B[2]&&z<B[3]){ p.x=x; p.z=z; return true; } }
+   const [d,ox,oz]=cand[0]; p.x+=ox*(d+m+1e-3); p.z+=oz*(d+m+1e-3); return true; }
+  let qd=1e9, qx=0, qz=0; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/(ex*ex+ez*ez||1e-9))); const x=a[0]+ex*t, z=a[1]+ez*t, d=Math.hypot(p.x-x,p.z-z); if(d<qd){ qd=d; qx=x; qz=z; } }
+  if(qd<m){ const k=(m+1e-3)/(qd||1e-6); p.x=qx+(p.x-qx)*k; p.z=qz+(p.z-qz)*k; return true; } return false; },
+ push(p){ const cols=this.cols||[], hulls=this.hulls||[]; const B=[-2.65,2.55,-2.2,2.2];
+  for(let it=0;it<6;it++){ let hit=false;
    p.x=Math.min(B[1],Math.max(B[0],p.x)); p.z=Math.min(B[3],Math.max(B[2],p.z));
+   for(const h of hulls) if(this.pushHull(p,h.H,h.m)) hit=true;
    for(const [a0,a1,b0,b1] of cols){ if(p.x>a0&&p.x<a1&&p.z>b0&&p.z<b1){ hit=true; const c=[[p.x-a0,'x',a0],[a1-p.x,'x',a1],[p.z-b0,'z',b0],[b1-p.z,'z',b1]].sort((u,v)=>u[0]-v[0])[0]; p[c[1]]=c[2]+(c[2]===a0||c[2]===b0?-1e-3:1e-3); } }
    if(!hit) break; }
+  // Sicherheitsnetz: widersprechen sich zwei Zonen (enge Nische), bleibt der Kopf an der letzten freien Stelle statt in einem Modell
+  if(!this.free(p)&&this.lastFree){ p.x=this.lastFree.x; p.z=this.lastFree.z; } else if(this.free(p)) this.lastFree={x:p.x,z:p.z};
   return p; },
+ free(p){ for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); } if(ins||md<h.m*0.9) return false; } return true; },
  clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
   const p=this.push({x:h.x,z:h.z});
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
