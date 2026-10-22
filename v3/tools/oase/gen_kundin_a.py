@@ -21,7 +21,7 @@ def rotz(t): c,s=np.cos(t),np.sin(t); return np.array([[c,-s,0],[s,c,0],[0,0,1]]
 def roty(t): c,s=np.cos(t),np.sin(t); return np.array([[c,0,s],[0,1,0],[-s,0,c]])
 def sst(e0,e1,x): t=np.clip((x-e0)/(e1-e0),0,1); return t*t*(3-2*t)
 # ---------------- Gesicht: Referenz-Kopfausschnitt (r1, 190..450 x 270..530, x4 hochskaliert), gespiegelt -> Blick zum Spieler (+z)
-HC=np.asarray(Image.open(B+'headcrop_x4.png').convert('RGB')).astype(np.float32)/255   # 1040x1040
+HC=np.asarray(Image.open(B+'headcrop_x4_closed.png').convert('RGB')).astype(np.float32)/255   # 1040x1040
 DEP=np.load(B+'dep_r1_Depth-Anything-V2-Large-hf.npy')[270:530,190:450].astype(np.float32)
 NOSE=(326.7-190,390-270)        # Nasenspitze im Ausschnitt (px, orig)
 SX,SZ=0.00135,0.00105            # m/px: Bildhöhe -> Welt x, Bildbreite -> Welt z
@@ -33,9 +33,9 @@ def face_w(x,z): return np.clip(1-np.sqrt(((x-(-0.795))/0.098)**2+((z-0.008)/0.0
 def relief(x,z):
   i,j=crop_uv(x,z); r=map_coordinates(dhp,[j,i],order=1,mode='nearest'); return 0.011*np.clip(r,-1.2,1.2)*np.clip(face_w(x,z)*3,0,1)
 # ---------------- Pose
-PIV=np.array([0.0,0.075,0.0]); TH_UP=np.radians(-52)
+PIV=np.array([0.0,0.075,0.0]); TH_UP=np.radians(-30)
 def bendw(x): return sst(0.02,-0.20,x)
-HP=np.array([-0.655,0.092,0.0]); HAX,HAZ=0.42,-0.62     # Kopf in Pose 'up': zum Spieler (+z) gedreht, Kinn Richtung Brust
+HP=np.array([-0.655,0.092,0.0]); HAX,HAZ=0.55,-0.42     # Kopf in Pose 'up': zum Spieler (+z) gedreht, Kinn Richtung Brust
 def hw(x): return sst(-0.61,-0.71,x)
 def headrot(r,w,inv=False):
   d=r-HP; ax=HAX*w*(-1 if inv else 1); az=HAZ*w*(-1 if inv else 1)
@@ -75,7 +75,7 @@ def torso(p):  # Ruhelage, ohne Arme
   d=smax(d,-cap(p,[-0.55,0.196,0],[-0.38,0.192,0],0.004),0.012)      # Brustbein-Rinne
   # Hals + Kopf
   d=smin(d,cap(p,[-0.62,0.088,0],[-0.705,0.098,0.004],0.051,0.047),0.035)
-  hd=smin(ell(p,[-0.842,0.100,0.0],[0.092,0.088,0.077]),ell(p,[-0.752,0.112,0.003],[0.058,0.066,0.058]),0.03)
+  hd=smin(ell(p,[-0.842,0.100,0.0],[0.094,0.090,0.081]),ell(p,[-0.752,0.112,0.003],[0.058,0.066,0.058]),0.03)
   hd=smin(hd,ell(p,[-0.822,0.135,0.003],[0.05,0.06,0.07]),0.03)     # Stirn/Wangen-Basis
   rel=relief(p[:,0],p[:,2])*sst(0.10,0.16,p[:,1]); hd=hd-rel
   d=smin(d,hd,0.025)
@@ -91,15 +91,29 @@ def torso(p):  # Ruhelage, ohne Arme
     tz=sz*0.095; d=smin(d,cap(p,an+[0.01,0.01,0],[0.925,0.19,tz],0.029,0.022),0.02)   # Fuß (zeigt nach oben, leicht auswärts)
     d=smin(d,ell(p,[0.917,0.175,tz*0.96],[0.016,0.03,0.035]),0.012)
   return d
+def hand(p,W,hd,up_n,sz,curl=0.25):
+  # Handfläche + 4 Finger + Daumen (statt Fäustling). hd: Richtung Finger, up_n: Handrücken-Normale
+  hd=nrm(hd); n=nrm(up_n-hd*(up_n@hd)); sv=np.cross(n,hd)*sz
+  d=ell(p,W+hd*0.042,[0.044,0.013,0.036],np.stack([hd,n,np.cross(hd,n)],1))
+  for k,(o,L) in enumerate([(-0.026,0.062),(-0.009,0.072),(0.009,0.068),(0.025,0.055)]):
+    b=W+hd*0.078+sv*o; dirf=nrm(hd+sv*o*1.6-n*curl); t=b+dirf*L
+    d=smin(d,cap(p,b,t,0.0088,0.0072),0.006)
+  tb=W+hd*0.02-sv*0.03; tt=tb+nrm(hd*0.7-sv*0.55-n*0.2)*0.055
+  d=smin(d,cap(p,tb,tt,0.011,0.0085),0.01)
+  return d
 def arms(p,up):
   d=np.full(len(p),9.0)
   for sz in (1,-1):
-    if not up: S=np.array([-0.575,0.088,sz*0.19]); E=np.array([-0.31,0.055,sz*0.228]); W=np.array([-0.075,0.038,sz*0.232]); hd=nrm([1,-0.12,0.05*sz])
-    else:
-      S=bend(np.array([[-0.575,0.088,sz*0.19]]))[0]; W=np.array([-0.50,0.035,sz*0.245]); E=(S+W)/2+np.array([0.02,0,sz*0.02]); hd=nrm([-1,-0.05,0.2*sz])
-    d=smin(d,cap(p,S,E,0.05,0.036),0.03); d=smin(d,cap(p,E,W,0.035,0.025),0.02)
-    Rh=np.stack([hd,nrm(np.cross([0,0,1],hd)) if True else 0,np.cross(hd,nrm(np.cross([0,0,1],hd)))],1)
-    d=smin(d,ell(p,W+hd*0.065+np.array([0,-0.012,0]),[0.062,0.016,0.038],Rh),0.016)   # Hand flach
+    if not up:
+      S=np.array([-0.575,0.088,sz*0.19])
+      if sz<0:   # spielerferner Arm: Hand hinter dem Kopf (wie Referenz r1)
+        E=np.array([-0.82,0.075,-0.265]); W=np.array([-0.93,0.055,-0.085]); hd=nrm([-0.2,-0.1,1]); un=np.array([-1.0,0.3,0])
+      else:
+        E=np.array([-0.31,0.055,0.228]); W=np.array([-0.075,0.038,0.232]); hd=nrm([1,-0.12,0.05]); un=np.array([0,1.0,0.25])
+    else:      # auf die Ellbogen gestützt: Oberarm schräg nach unten-hinten, Unterarm flach auf der Liege
+      S=bend(np.array([[-0.575,0.088,sz*0.19]]))[0]; E=np.array([S[0]-0.035,0.05,sz*0.225]); W=np.array([E[0]+0.24,0.032,sz*0.21]); hd=nrm([1,-0.05,-0.08*sz]); un=np.array([0,1.0,0.15*sz])
+    d=smin(d,cap(p,S,E,0.047,0.036),0.03); d=smin(d,cap(p,E,W,0.035,0.024),0.02)
+    d=smin(d,hand(p,W-hd*0.01,hd,un,sz),0.008)
   return d
 def body(p,up):
   r=unbend(p) if up else p
@@ -109,14 +123,16 @@ def body(p,up):
 def hair(p,up):
   r=unbend(p) if up else p
   x,y,z=r[:,0],r[:,1],r[:,2]
-  d=ell(r,[-0.848,0.098,0.0],[0.106,0.102,0.090])                     # Haarkappe um den Schädel
+  d=ell(r,[-0.852,0.098,0.0],[0.112,0.106,0.098])                     # Haarkappe um den Schädel (voller)
+  for sz in (1,-1): d=smin(d,ell(r,[-0.80,0.085,sz*0.085],[0.085,0.06,0.03]),0.03)   # weiche Seitenpartien neben dem Gesicht
   if not up:
-    d=smin(d,ell(r,[-0.93,0.045,0.0],[0.11,0.05,0.165]),0.05)           # aufgefächert über die Liege
+    d=smin(d,ell(r,[-0.95,0.05,0.0],[0.13,0.058,0.18]),0.06)            # aufgefächert über die Liege (fülliger)
     for sz in (1,-1): d=smin(d,ell(r,[-0.70,0.035,sz*0.115],[0.12,0.032,0.06]),0.04)   # Strähnen neben Hals/Schultern
   else:
-    d=smin(d,ell(r,[-0.90,0.075,0.0],[0.085,0.075,0.10]),0.04)          # Hinterkopf-Volumen, fällt im Sitzen nach hinten
+    d=smin(d,ell(r,[-0.90,0.075,0.0],[0.095,0.085,0.11]),0.04)          # Hinterkopf-Volumen
+    for sz in (1,-1): d=smin(d,ell(r,[-0.70,0.13,sz*0.10],[0.10,0.05,0.04]),0.04)   # Strähnen fallen auf die Schultern
   w=np.sin(x*23+np.sin(z*31)*1.7)*np.sin(z*29+np.sin(y*37)*1.9)*np.sin(y*27+np.sin(x*33)*1.5)
-  d=d+0.004*(w+0.5*np.sin(z*140+np.sin(x*40)*2.0))
+  d=d+0.0022*(w+0.35*np.sin(z*90+np.sin(x*30)*2.0))
   d=smax(d,(face_w(x,z)-0.30)*0.10*sst(0.06,0.10,y),0.01)           # Gesicht frei
   d=smax(d,-(torso(r)-0.0015),0.004)
   return smax(d,-(p[:,1]+0.002),0.01)
@@ -149,12 +165,12 @@ def grid_mesh(XX,YY,ZZ):
   return m
 def towel(fb):
   # kleines Handtuch, nur leicht über dem Schritt: Rechteck auf der Körperoberfläche, sanft gespannt, Ränder fallen weich ab
-  x0,x1,z0,z1=-0.075,0.20,-0.19,0.19; xs,zs,top=topmap(fb,x0,x1,z0,z1,0.004,0.3)
-  XX,ZZ=np.meshgrid(xs,zs,indexing='ij'); H=np.maximum(top+0.006,0.004); Hs=gaussian_filter(H,3.0); H=np.maximum(Hs,H*0.94)
-  H+=0.0025*np.sin(XX*31+np.sin(ZZ*13)*2)+0.0015*np.sin(ZZ*47+XX*9)
+  x0,x1,z0,z1=-0.08,0.205,-0.168,0.168; xs,zs,top=topmap(fb,x0,x1,z0,z1,0.004,0.3)
+  XX,ZZ=np.meshgrid(xs,zs,indexing='ij'); H=np.maximum(top+0.011,0.004); Hs=gaussian_filter(H,4.0); H=np.maximum(Hs,top+0.011)
+  H+=0.0035*np.sin(XX*26+ZZ*14+np.sin(ZZ*9)*2)**2+0.002*np.sin(ZZ*38-XX*11)+0.0012*np.sin(XX*70+ZZ*30)
   ex=np.minimum(XX-x0,x1-XX); ez=np.minimum(ZZ-z0,z1-ZZ); e=np.minimum(ex,ez)
   H=H-np.clip(0.02-e,0,None)*0.9                       # Saum hängt etwas
-  H=np.maximum(gaussian_filter(np.maximum(H,top+0.005),0.8),top+0.005)
+  H=np.maximum(gaussian_filter(np.maximum(H,top+0.009),0.8),top+0.009)
   return grid_mesh(XX,H,ZZ)
 # ---------------- Texturen
 rng=np.random.default_rng(7)
@@ -181,7 +197,7 @@ def skin_tex():
     blob(0.92,0.095*sz,0.03,0.04,[0.80,0.55,0.48],0.35,1.2)        # Zehen
   blob(-0.19,0.0,0.006,0.006,[0.45,0.28,0.22],0.6,0.8)              # Nabel
   # Gesicht aus der Referenz (gespiegelt), Teil-Entlichtung, Farbabgleich, weicher Rand
-  i,j=crop_uv(X,Z); w=face_w(X,Z); w=np.clip(w*2.6-0.15,0,1); sel=w>0
+  i,j=crop_uv(X,Z); w=face_w(X,Z); w=np.clip(w*2.4-0.30,0,1); sel=w>0   # Fotogesicht nur vorn, seitlich Haut
   hc=HC.copy(); L=hc.mean(2); Lb=gaussian_filter(L,45); hc=hc/np.clip(Lb,0.05,None)[...,None]**0.55
   core=(face_w(X,Z)>0.55); fc=np.stack([map_coordinates(hc[...,c],[j[core]*4,i[core]*4],order=1,mode='nearest') for c in range(3)],1)
   gain=(T[core].mean(0)/fc.mean(0))
@@ -242,11 +258,11 @@ def build(up,img):
   Bm=mesh(fb,lo,hi,h,90000); rest=unbend(Bm.vertices) if up else Bm.vertices
   Hm=mesh(fh,[-0.80,0.12,-0.26] if up else [-1.0,-0.01,-0.24],[-0.02,0.95,0.26] if up else [-0.55,0.24,0.24],0.0035,22000)
   nodes={'body':(Bm,vattr(Bm,rest,fall,'body'),True)}
-  ha=ao(Hm,fall); hc=np.stack([np.minimum(1,ha*1.25),np.minimum(1,ha*1.08),ha*0.74,0*ha],1); nodes['hair']=(Hm,{'COLOR_0':((hc*255).astype(np.uint8),'VEC4')},False)
+  ha=ao(Hm,fall); ha=0.55+0.45*ha; hc=np.stack([np.minimum(1,ha*1.0),np.minimum(1,ha*0.9),ha*0.66,0*ha],1); nodes['hair']=(Hm,{'COLOR_0':((hc*255).astype(np.uint8),'VEC4')},False)
   Tw=towel(lambda q:torso(q)) ; 
   if up: Tw=trimesh.Trimesh(bend(Tw.vertices),Tw.faces,process=False)
-  ta=np.clip(ao(Tw,fb)*0.5+0.5,0,1); nodes['towel']=(Tw,{'COLOR_0':((np.stack([ta,ta,ta,0*ta],1)*255).astype(np.uint8),'VEC4')},False)
-  if up:
+  ta=np.clip(ao(Tw,fb)*0.35+0.65,0,1); nodes['towel']=(Tw,{'COLOR_0':((np.stack([ta,ta,ta,0*ta],1)*255).astype(np.uint8),'VEC4')},False)
+  if False:
     def chest(q):
       d=fb(q)-0.012; L=unbend(q); box=np.maximum.reduce([-0.545-L[:,0],L[:,0]+0.335,L[:,1]-0.27,0.125-L[:,1]]); return smax(d,box,0.012)
     ct=mesh(chest,lo,hi,h,6000); ca=ao(ct,fb); nodes['chest']=(ct,{'COLOR_0':((np.stack([ca,ca,ca,0*ca],1)*255).astype(np.uint8),'VEC4')},False)

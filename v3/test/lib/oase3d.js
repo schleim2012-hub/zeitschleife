@@ -107,8 +107,8 @@ function buildTable(std){ // Massageliege: Kunstleder-Polster (bordeaux), Chromg
  // Handtuchrolle unter den Füßen
  const roll=new T.Mesh(new T.CylinderGeometry(0.05,0.05,0.4,16),std({map:terryTex('#efe6da','#d98aa0'),roughness:1})); roll.rotation.x=Math.PI/2; roll.position.set(0.86,TB.top+0.02,0); g.add(roll); }
 let _hair=null; function hairTex(){ if(_hair) return _hair; // Föhnwelle: feine Strähnen längs der Körperachse (u), leicht gewellt; Farbe hell/dunkel moduliert, Bump aus derselben Zeichnung
- const draw=(x,w,h,bump)=>{ x.fillStyle=bump?'#808080':'#b89070'; x.fillRect(0,0,w,h); for(let i=0;i<2600;i++){ const y=rnd()*h, a=rnd()*8, L=60+rnd()*260, x0=rnd()*w; const v=rnd();
-   x.strokeStyle=bump?(v<0.5?`rgba(0,0,0,${0.25+rnd()*0.3})`:`rgba(255,255,255,${0.25+rnd()*0.3})`):(v<0.45?`rgba(70,40,20,${0.18+rnd()*0.25})`:`rgba(255,225,170,${0.15+rnd()*0.25})`); x.lineWidth=0.6+rnd()*1.4;
+ const draw=(x,w,h,bump)=>{ x.fillStyle=bump?'#808080':'#d2aa6e'; x.fillRect(0,0,w,h); for(let i=0;i<2600;i++){ const y=rnd()*h, a=rnd()*8, L=60+rnd()*260, x0=rnd()*w; const v=rnd();
+   x.strokeStyle=bump?(v<0.5?`rgba(0,0,0,${0.25+rnd()*0.3})`:`rgba(255,255,255,${0.25+rnd()*0.3})`):(v<0.45?`rgba(120,80,40,${0.12+rnd()*0.18})`:`rgba(255,232,180,${0.15+rnd()*0.25})`); x.lineWidth=0.6+rnd()*1.4;
    x.beginPath(); x.moveTo(x0,y); for(let k=1;k<=8;k++){ const xx=x0+L*k/8; x.lineTo(xx,y+Math.sin(xx*0.035+a)*6); } x.stroke(); } };
  const mk=b=>{ const c=document.createElement('canvas'); c.width=512; c.height=256; draw(c.getContext('2d'),512,256,b); const t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.anisotropy=8; if(!b) t.colorSpace=T.SRGBColorSpace; return t; };
  _hair={c:mk(false),b:mk(true)}; return _hair; }
@@ -179,7 +179,7 @@ function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht. skin.tx = Figur mit eigener Hauttextur (COLOR_0 = AO + ölbar), skin.soft = Attribut _SOFT (Weichheit, Brust-Gewicht)
- const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.tx?0xffffff:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
+ const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.tx?0xc9a48c:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:skin.tx?0.12:0.25,sheenRoughness:0.6,sheenColor:new T.Color(skin.tx?0xc07850:0xffb090)});
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
   sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
@@ -209,8 +209,8 @@ function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[whic
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
   parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; o.material=oilMat(o.material,{vc,tx,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
-  const hT=hairTex(); parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:1.2,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xd08040),sheenRoughness:0.35}));
-  [...parts.towel,...parts.chest].forEach(o=>o.material=terry('#f4ece0','#d98aa0')); parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
+  const hT=hairTex(); parts.hair.forEach(o=>o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:0.6,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xe0b070),sheenRoughness:0.4}));
+  [...parts.towel,...parts.chest].forEach(o=>{ o.material=terry('#f4ece0','#d98aa0'); if(ADULT()){ const t=terryTex('#e2d6c4','#c4868e'); o.material=new T.MeshStandardMaterial({map:t,bumpMap:t,bumpScale:0.8,vertexColors:true,roughness:1,color:0xe8dccc}); } });   // ab 18: gedämpfteres, weiches Frottee (nicht leuchtend weiß) parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
   [...parts.strap,...parts.top].forEach(o=>o.material=new T.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:0.45}));
   r.traverse(o=>{ if(o.isMesh&&!o.userData.keepUV){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
   r.position.set(FIG.x,FIG.y,FIG.z); cb({root:r,parts,named}); },undefined,e=>{ console.warn('[oase] Figur fehlt',url); cb(null); }); }
