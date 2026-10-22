@@ -238,7 +238,7 @@ let radio=null, hum=null; function startAmb(){ if(radio) return; radio=new Audio
 const LINES={a0:'Na endlich, der Neue. Das Öl steht auf dem Wagen. Und nicht so rumstehen.',a1:'Mmh … nicht so schüchtern, Süßer. Das Öl beißt nicht.',a2:'Etwas tiefer. Nein – nicht SO tief. Frecher Kerl.',a3:'Wenn du so weitermachst, muss ich dir Trinkgeld geben.',
  h0:'Bist du die Aushilfe? Das Öl steht auf dem Wagen.',h1:'Ah, die Schultern. Da sitzt der ganze Einkaufsstress.',h2:'Schön gleichmäßig verteilen, sonst werd ich gestreift wie ein Zebra.',h3:'Du hast ja goldene Hände. Wie mein Friseur.',oel:'Erst das Öl, Schätzchen. Sonst quietscht’s.',slap:'Hey! Finger weg, Freundchen. Das hier ist kein Streichelzoo!',punch:'Danke, Kleiner.'};
 let subEl=null, subM=null;
-function say(k,who){ const a=aud('vo_'+k+'.mp3'); st.spoke=performance.now(); const t=(who||'Kundin')+': „'+LINES[k]+'“';
+function say(k,who){ if(st.over||(st.done&&!st.endOk)) return null; st.endOk=false; if(k==='punch') st.over=true; const a=aud('vo_'+k+'.mp3'); st.spoke=performance.now(); const t=(who||'Kundin')+': „'+LINES[k]+'“';
  if(!subEl) subEl=document.getElementById('sub'); if(subEl){ subEl.textContent=t; subEl.style.display='block'; clearTimeout(subEl._t); subEl._t=setTimeout(()=>subEl.style.display='none',4200); }
  if(R.xr.isPresenting){ // Untertitel in der Welt (über der Liege, zum Spieler gedreht, bleibt stehen)
   if(subM){ S.remove(subM); subM=null; } const c=document.createElement('canvas'); c.width=1024; c.height=80; const x=c.getContext('2d'); x.font='500 30px sans-serif'; const w=Math.min(1010,x.measureText(t).width+40); x.fillStyle='rgba(0,0,0,0.5)'; x.fillRect(512-w/2,8,w,62); x.fillStyle='#e8d6b0'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,512,40);
@@ -258,12 +258,14 @@ function rub(lx,lz,len){ if(st.done) return; if(inChest(lx,lz)) return; uPress.v
 function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; oilAmt.value=c; const ad=ADULT(), p=ad?'a':'h'; const now=performance.now();
  [[0.12,1],[0.42,2],[0.68,3]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
  if(c>=0.9&&now-st.spoke>3600) punch(); }
-function punch(){ st.done=true; const ad=ADULT();
- // Radio: Knacken, Musik bricht ab · Lampe flackert kurz (darin wechselt die Pose) · dann tiefe Stimme
- if(radio){ const r=radio; radio=null; r.pause(); aud('../../sfx/radio_static.mp3',0.25); }
- const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
- const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ say('punch','Kundin'); reward(); },650); } };
- setTimeout(fl,500); }
+function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
+ // Ende: 1) glänzt überall · 2) zufriedener Seufzer/Zeile (Frauenstimme) · 3) Pose: stützt sich auf, schaut zum Spieler · 4) ~1 s Stille · 5) „Danke, Kleiner.“ als allerletzte Zeile
+ st.endOk=true; const a=say(ad?'a3':'h3'); let go=false; const next=()=>{ if(go) return; go=true; setTimeout(sit,600); };
+ if(a){ a.addEventListener('ended',next); a.addEventListener('error',next); } setTimeout(next,4500);
+ function sit(){ if(radio){ const r=radio; radio=null; r.pause(); aud('../../sfx/radio_static.mp3',0.25); }
+  const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
+  const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); },1000); } };
+  setTimeout(fl,300); } }
 function swapPose(){ if(!fig.up) return; fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; }
 function reward(){ setTimeout(()=>{ if(!window.zsaNote) return; const n=zsaNote('Gutschein: Einmal Ölmassage gratis. Für den Kleinen. – Gerd',0.16,0.1); n.position.set(CART.x+0.02,0.795,CART.z+0.12); n.rotation.x=-Math.PI/2; n.rotation.z=0.3; G.add(n); try{ localStorage.setItem('zs_oase_done','1'); }catch(e){} },2500); }
 // ---------------------------------------------------------------- Eingabe: Maus/Touch (Pointer) + VR-Controller
@@ -308,7 +310,7 @@ function slipTex(){ return cv(512,256,(x,w,h)=>{ x.fillStyle='#eee3c8'; x.fillRe
   x.fillStyle='#3a3226'; x.font='600 20px "DejaVu Sans Mono",monospace'; x.fillText('SONNEN-OASE · KUNDENKARTEI',22,34); x.fillRect(22,42,468,2); x.font='18px "DejaVu Sans Mono",monospace'; x.fillText('Vorfall: Aushilfe, Hände am falschen Ort',22,72);
   x.save(); x.translate(256,160); x.rotate(-0.12); x.strokeStyle='rgba(176,30,36,0.88)'; x.lineWidth=6; x.strokeRect(-218,-46,436,92); x.fillStyle='rgba(176,30,36,0.9)'; x.font='700 40px "DejaVu Sans Condensed",sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText('Das kommt in Ihre Akte!',0,2);
   x.globalCompositeOperation='destination-out'; for(let i=0;i<600;i++){ x.fillStyle=`rgba(0,0,0,${0.3+rnd()*0.6})`; x.fillRect(-230+rnd()*460,-55+rnd()*110,1+rnd()*3,1+rnd()*2); } x.restore(); }); }
-function slapGag(){ gag.n++; gag.t=0; gag.need=15+Math.random()*5; drag=null; lastPaint=null; ctl.forEach(c=>{ c.zone=false; c.last=null; });
+function slapGag(){ if(st.done) return; gag.n++; gag.t=0; gag.need=15+Math.random()*5; drag=null; lastPaint=null; ctl.forEach(c=>{ c.zone=false; c.last=null; });
  try{ document.getElementById('cam').setAttribute('look-controls','enabled',true); }catch(e){}
  sfxSlap(); redFlash(); const ses=R.xr.isPresenting&&R.xr.getSession&&R.xr.getSession(); if(ses) [...ses.inputSources].forEach(s=>{ const ha=s.gamepad&&s.gamepad.hapticActuators&&s.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(1.0,220); });
  setTimeout(()=>say('slap'),350);
