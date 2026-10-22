@@ -2,14 +2,14 @@
 const puppeteer=require('puppeteer-core'); const fs=require('fs'); const path=require('path');
 const URL=process.argv[2]||'http://127.0.0.1:8790/v3/test/era_wohnung.html'; const OUT=process.argv[3]||'/workspace/rewind_gfx/wohnung/buero_before';
 // Kamerapositionen: Tür (Spawn) + Raummitte, je 4 Blickrichtungen (yaw 0 = -Z/Süd)
-const ROOM=process.env.ROOM||'office'; const PP={office:{door:[38.8,1.6,1.45],mid:[40.3,1.6,0.6],desk:[40.6,1.35,-1.35]},living:{door:[19.0,1.6,-1.6],mid:[20.6,1.6,0.6],win:[22.6,1.6,0.9]}}; const P=PP[ROOM]; const POS=(process.env.POS||Object.keys(P).join(',')).split(',');
+const ROOM=process.env.ROOM||'office'; const PP={office:{door:[38.8,1.6,1.45],mid:[40.3,1.6,0.6],desk:[40.6,1.35,-1.35]},living:{door:[19.0,1.6,-1.6],mid:[20.6,1.6,0.6],win:[22.6,1.6,0.9]},bedroom:{door:[1.3,1.6,1.4],mid:[0.0,1.6,0.3],win:[0.3,1.6,-1.2]}}; const P=PP[ROOM]; const POS=(process.env.POS||Object.keys(P).join(',')).split(',');
 const YAWS=[0,90,180,270]; const W=1280,H=720, WAIT=+process.env.WAIT||16000;
 fs.mkdirSync(OUT,{recursive:true});
 (async()=>{ const br=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required',`--window-size=${W},${H}`]});
- const pg=await br.newPage(); await pg.setViewport({width:W,height:H}); const errs=[];
+ const pg=await br.newPage(); await pg.setViewport({width:W,height:H}); await pg.evaluateOnNewDocument(()=>{ try{ localStorage.setItem('zs_help_seen_v1','1'); }catch(e){} }); const errs=[];
  pg.on('pageerror',e=>errs.push(String(e.message).slice(0,200))); pg.on('console',m=>{ if(m.type()==='error'||/gfx/.test(m.text())) errs.push(m.text().slice(0,200)); });
  await pg.goto(URL,{waitUntil:'load',timeout:90000});
- await pg.addStyleTag({content:'#hud,#sub,.a-enter-vr,.a-enter-ar,.a-orientation-modal,.a-loader-title{display:none!important}'});
+ await pg.addStyleTag({content:'#hud,#sub,#zsh,#zsh-btn,#tc-ui,.a-enter-vr,.a-enter-ar,.a-orientation-modal,.a-loader-title{display:none!important}'});
  await pg.waitForFunction(()=>window.__apt&&window.__apt.go&&document.querySelector('a-scene').renderer,{timeout:60000});
  await pg.evaluate((ROOMID)=>{ const s=document.querySelector('a-scene'), r=s.renderer; window.__dc=[]; const o=r.render.bind(r); r.render=function(a,b){ o(a,b); window.__dc.push(r.info.render.calls+'|'+r.info.render.triangles); if(window.__dc.length>60) window.__dc.shift(); };
   __apt.go(ROOMID); const c=document.getElementById('cam'); c.setAttribute('look-controls','enabled:false'); c.removeAttribute('wasd-controls'); },ROOM);
