@@ -9,7 +9,7 @@
 import numpy as np, cv2, json, os, math
 from PIL import Image
 V3=os.path.abspath(os.path.join(os.path.dirname(__file__),'../..')); OUT=V3+'/assets/apartment/bedroom/hof/'; os.makedirs(OUT,exist_ok=True)
-RW='/workspace/rewind_gfx/wohnung/'; PH=RW+'perchance_hof/'; PU=RW+'perchance_up/'; CUT=RW+'fenster2/'; DBG=RW+'fenster2/'
+RW='/workspace/rewind_gfx/wohnung/'; HS=os.path.dirname(os.path.abspath(__file__))+'/hof_src/'; PH=HS; PU=HS; CUT=HS; DBG=RW+'fenster2/'; os.makedirs(DBG,exist_ok=True)   # hof_src: Perchance-Originale, B_01 x4 (Real-ESRGAN), BiRefNet-Ausschnitte
 rng=np.random.default_rng(1989)
 ld=lambda p: np.asarray(Image.open(p).convert('RGB')).astype(np.float32)/255
 # ---------- Welt (Zimmer-Koordinaten, Boden Zimmer y=0, Fensterglas z=-2.12, Fenstermitte x=0.45) ----------
@@ -34,7 +34,7 @@ def match(src,ref,ms=None,mr=None,k=1.0):  # Farbtransfer (Lab mean/std)
 FW,FH=1024,1360; ppm=FW/(XR-XL)
 xs=XL+(np.arange(FW)+0.5)/ppm; ys=YTOP-(np.arange(FH)+0.5)/ppm; X,Y=np.meshgrid(xs,ys)
 pix,ok=proj(np.dstack([X,Y0+(Y-Y0)/EGS,np.full_like(X,ZB)])); eg=remap(C2,pix)
-B1=ld(PU+'B_01_x4.png'); B1=cv2.resize(B1,(FW,FW),interpolation=cv2.INTER_AREA)   # 11 m breit, unten bei y=0
+B1=ld(PU+'B_01_x4.jpg'); B1=cv2.resize(B1,(FW,FW),interpolation=cv2.INTER_AREA)   # 11 m breit, unten bei y=0
 FH=int(round((YTOP-Y0)*ppm)); ys=YTOP-(np.arange(FH)+0.5)/ppm; X,Y=np.meshgrid(xs,ys)
 pix,ok=proj(np.dstack([X,Y0+(Y-Y0)/EGS,np.full_like(X,ZB)])); eg=remap(C2,pix)
 up=np.zeros((FH,FW,3),np.float32); yB=int(round((YTOP-YB1)*ppm)); up[yB-FW:yB]=B1
