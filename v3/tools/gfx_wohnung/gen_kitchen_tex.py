@@ -220,5 +220,56 @@ def labels():
     im=Image.new('RGB',(300,200)); a=np.zeros((200,300,3)); yy=np.arange(200)[:,None]/200; a[...,0]=60+120*yy; a[...,1]=120+60*yy; a[...,2]=200-40*yy; a[120:]=[[[214,190,140]]]
     im=Image.fromarray(a.astype(np.uint8)); d=ImageDraw.Draw(im); d.ellipse([200,20,250,70],fill=(250,220,120)); d.text((14,130),'Gruß aus Rimini',font=F('pac',30),fill=(220,40,60)); grain(im,0.06,seed=30).save(LB+'postkarte.png')
     print('labels ok')
+
+# ---------- 7) Fensterglas Küche: Fettfilm (gelblich), unten beschlagen (Kochdunst), Kalkränder, Tropfen; Regenrinnsale außen ----------
+def glas(N=1024):
+    H=W=N; y,x=np.mgrid[0:H,0:W]/N; r=np.random.default_rng(77)
+    n1=noise(H,W,160,4,71); n2=noise(H,W,36,3,72); n3=noise(H,W,8,2,73)
+    edge=np.minimum.reduce([x,1-x,y,1-y]); rim=np.clip(1-edge/0.06,0,1)**1.5
+    fog=np.clip((y-0.55)/0.35,0,1)**1.4*(0.75+0.25*n2)                        # Beschlag unten
+    a=0.09+0.07*n1+0.26*rim*(0.6+0.4*n2)+0.22*fog+0.04*(n3>0.72)
+    c=np.zeros((H,W,3))+np.array([36,38,44]); grease=np.array([110,96,64]); mist=np.array([150,150,146])
+    k=np.clip(0.3*n1+0.5*rim,0,1)[...,None]; c=c*(1-k)+grease*k; c=c*(1-fog[...,None])+mist*fog[...,None]
+    for _ in range(220):
+        px,py,rr=r.random()*W,r.random()*H,2+r.random()*6; yy,xx=np.ogrid[0:H,0:W]
+        x0,x1,y0,y1=int(max(0,px-rr-2)),int(min(W,px+rr+2)),int(max(0,py-rr-2)),int(min(H,py+rr+2)); d=np.sqrt((xx[:,x0:x1]-px)**2+(yy[y0:y1]-py)**2)
+        ring=np.abs(d-rr)<1.0; a[y0:y1,x0:x1][ring]=np.maximum(a[y0:y1,x0:x1][ring],0.07); c[y0:y1,x0:x1][ring]=np.array([124,118,100])
+    # Tropfen im Beschlag: abgelaufene, klare Spuren (weniger Alpha)
+    for _ in range(26):
+        px=r.random()*W; py0=int((0.55+0.2*r.random())*H); L=int(H*(0.1+0.25*r.random())); w=1.5+2*r.random()
+        for i in range(L):
+            yy_=min(H-1,py0+i); xx_=px+2*math.sin(i/23.0)
+            for dx in range(-4,5):
+                xi=int(xx_)+dx
+                if 0<=xi<W: v=max(0,1-abs(xi-xx_)/w); a[yy_,xi]*=1-0.8*v
+    im=Image.fromarray(np.dstack([np.clip(c,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA'); im.save(OUT+'kue_glas.png',optimize=True)
+def regen(W=256,H=1024):
+    r=np.random.default_rng(78); c=np.zeros((H,W,3))+np.array([98,102,110]); a=np.zeros((H,W))
+    for _ in range(12):
+        x0=r.random()*W; ph=r.random()*6.28; amp=2+r.random()*5; wdt=0.8+r.random()*1.2; L=int(H*(0.3+r.random()*0.5)); ys=int(r.random()*H)
+        for i in range(L):
+            yy=(ys+i)%H; xx=x0+amp*math.sin(ph+i/41.0)+1.5*math.sin(i/6.1); t=i/L
+            for dx in range(-3,4):
+                xi=int(xx)+dx
+                if 0<=xi<W: v=max(0,1-abs(xi-xx)/(wdt+0.5)); a[yy,xi]=max(a[yy,xi],v*(0.2+0.3*t))
+    im=Image.fromarray(np.dstack([np.clip(c,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA'); im.save(OUT+'kue_regen.png',optimize=True)
+# ---------- 8) Scheibengardine (Spitze/Voile, weiß, Blütenmuster) 1024×512 RGBA, kachelbar in x ----------
+def gardine(W=1024,H=512):
+    r=np.random.default_rng(79); a=np.zeros((H,W)); yy,xx=np.mgrid[0:H,0:W]
+    a+=0.34+0.06*noise(H,W,30,2,80)                                                            # Voile-Grund
+    mesh=((xx%6<1.2)|(yy%6<1.2)).astype(float)*0.18; a+=mesh
+    C=Image.new('L',(W,H),0); d=ImageDraw.Draw(C)
+    for j in range(2):
+        for i in range(8):
+            cx,cy=i*128+64+(j%2)*64,j*256+150
+            for k in range(6):
+                t=k*math.pi/3; d.ellipse([cx+math.cos(t)*26-16,cy+math.sin(t)*26-16,cx+math.cos(t)*26+16,cy+math.sin(t)*26+16],outline=255,width=5)
+            d.ellipse([cx-10,cy-10,cx+10,cy+10],fill=255)
+            d.arc([cx-60,cy-90,cx+60,cy+30],200,340,fill=230,width=4)
+    for x0 in range(0,W,16): d.polygon([(x0,H-1),(x0+8,H-22),(x0+16,H-1)],outline=255)   # Bogenkante unten
+    d.rectangle([0,0,W,14],fill=255)                                                         # Tunnelzug oben
+    a=np.clip(a+np.asarray(C,float)/255*0.6,0,1); a[H-22:]*=np.clip((np.asarray(C,float)[H-22:]/255)*1.2+0.0,0,1)*0+np.where(np.asarray(C,float)[H-22:]>0,1,0.0)
+    col=np.zeros((H,W,3))+np.array([232,228,214]); col*= (0.94+0.06*noise(H,W,60,2,81))[...,None]
+    Image.fromarray(np.dstack([np.clip(col,0,255),np.clip(a*255,0,255)]).astype(np.uint8),'RGBA').save(OUT+'kue_gardine.png',optimize=True)
 which=sys.argv[1].split(',') if len(sys.argv)>1 else ['fliesen','boden','raufaser','wachstuch','kalender','labels']
 for w in which: globals()[w]()

@@ -4,3 +4,4 @@ game.js.bak-*
 v1/audio/old/
 v2/
 DESIGN_V2.md
+__pycache__/
