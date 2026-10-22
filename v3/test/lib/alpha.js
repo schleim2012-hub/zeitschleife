@@ -3,7 +3,7 @@
 // Zustand: localStorage 'zs_alpha_v1' {step} + URL ?alpha=1&step=n (URL hat Vorrang).
 (function(){
 // Erwachsenen-Modus (lib/adult.js): setzt window.ZS_ADULT synchron, bevor die Räume ihre Inhalte wählen; Standard jugendfrei
-{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSAdult&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'adult.js?v=1022o1')+'"><\/script>'); }
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSAdult&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'adult.js?v=1022o2')+'"><\/script>'); }
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z5')+'"><\/script>'); }
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z3')+'"><\/script>'); }

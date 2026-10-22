@@ -49,13 +49,14 @@ function bind(list){ root.querySelectorAll('button[data-i]').forEach(b=>b.onclic
 function show(h,list){ ui(h+btns(list)); bind(list); }
 const locked=()=>{ const t=+LS.get('zs_adult_lock')||0; return Date.now()<t?Math.ceil((t-Date.now())/60000):0; };
 function setOn(v,reload){ if(v){ LS.set('zs_adult','1'); LS.set('zs_adult_ok',OK); } else { LS.del('zs_adult'); LS.del('zs_adult_ok'); } LS.set('zs_adult_asked','1'); window.ZS_ADULT=on();
- try{ window.dispatchEvent(new CustomEvent('zs-adult',{detail:window.ZS_ADULT})); }catch(e){} if(reload&&document.querySelector('a-scene')&&!document.getElementById('start')) setTimeout(()=>location.reload(),400); }
+ try{ window.dispatchEvent(new CustomEvent('zs-adult',{detail:window.ZS_ADULT})); }catch(e){} if(reload) inRoomReload(); }
+function inRoomReload(){ if(document.querySelector('a-scene')&&!document.getElementById('start')) setTimeout(()=>location.reload(),300); }   // im Raum: neu laden, damit er seine Inhalte neu wählt
 function quiz(after){ const m=locked(); if(m){ show(`<h3>ALTERSKONTROLLE</h3><h2>Noch gesperrt</h2><p>Nach einem verpatzten Quiz darfst du erst in ${m} Minute${m>1?'n':''} wieder ran. Bis dahin: jugendfrei.</p>`,[['Okay',()=>{ close(); after&&after(false); }]]); return; }
  const qs=shuf(Q).slice(0,5); let n=0, right=0;
  const step=()=>{ const [q,a]=qs[n], opts=shuf(a.map((t,i)=>[t,i===0]));
   show(`<h3>ALTERSKONTROLLE · FRAGE ${n+1} VON 5</h3><div class="dots">${qs.map((_,i)=>`<i class="${i<=n?'on':''}"></i>`).join('')}</div><h2>${q}</h2>`,
    opts.map(o=>[o[0],()=>{ if(o[1]) right++; n++; n<qs.length?step():done(); }]).concat([['Abbrechen – jugendfrei weiterspielen',()=>{ setOn(false); close(); after&&after(false); },'sec']])); };
- const done=()=>{ if(right===qs.length){ setOn(true,true); show(`<h3>ALTERSKONTROLLE</h3><span class="st">BESTANDEN</span><h2>Glückwunsch. Du bist offiziell alt.</h2><p>Erwachsenen-Modus ist an: frechere Sprüche, Pin-ups an der Wand und in der Sonnen-Oase fällt der Bademantel. Ausschalten kannst du ihn jederzeit im Menü unter ☰ › Optionen.</p>`,[['Weiter',()=>{ close(); after&&after(true); }]]); }
+ const done=()=>{ if(right===qs.length){ setOn(true); show(`<h3>ALTERSKONTROLLE</h3><span class="st">BESTANDEN</span><h2>Glückwunsch. Du bist offiziell alt.</h2><p>Erwachsenen-Modus ist an: frechere Sprüche, Pin-ups an der Wand und in der Sonnen-Oase fällt der Bademantel. Ausschalten kannst du ihn jederzeit im Menü unter ☰ › Optionen.</p>`,[['Weiter',()=>{ close(); if(after) after(true); else inRoomReload(); }]]); }
   else { LS.set('zs_adult_lock',String(Date.now()+10*60000)); setOn(false); show(`<h3>ALTERSKONTROLLE</h3><span class="st">DURCHGEFALLEN</span><h2>Das war nix.</h2><p>Kein Drama – du spielst jugendfrei. Frag mal deine Eltern, die wissen das alles noch. Neuer Versuch in 10 Minuten über ☰ › Optionen.</p>`,[['Jugendfrei weiterspielen',()=>{ close(); after&&after(false); }]]); } };
  show(`<h3>ALTERSKONTROLLE</h3><h2>Bist du alt genug für dieses Spiel?</h2><p>Ein paar Räume haben eine Fassung ab 18: frechere Sprüche, Pin-ups, ein bisschen nackte Haut. Beweis uns, dass du die 80er bewusst erlebt hast: fünf Fragen, alle müssen stimmen. Googeln ist Schummeln.</p>`,
   [['▶ Quiz starten',step],['Nein danke – jugendfrei spielen',()=>{ setOn(false); close(); after&&after(false); },'sec']]); }
