@@ -2,7 +2,7 @@
 const puppeteer=require('puppeteer-core'); const fs=require('fs'); const path=require('path');
 const URL=process.argv[2]||'http://127.0.0.1:8790/v3/test/era_wohnung.html'; const OUT=process.argv[3]||'/workspace/rewind_gfx/wohnung/buero_before';
 // Kamerapositionen: Tür (Spawn) + Raummitte, je 4 Blickrichtungen (yaw 0 = -Z/Süd)
-const ROOM=process.env.ROOM||'office'; const PP={office:{door:[38.8,1.6,1.45],mid:[40.3,1.6,0.6],desk:[40.6,1.35,-1.35]},living:{door:[19.0,1.6,-1.6],mid:[20.6,1.6,0.6],win:[22.6,1.6,0.9]},bedroom:{door:[1.3,1.6,1.4],mid:[0.0,1.6,0.3],win:[0.3,1.6,-1.2]}}; const P=PP[ROOM]; const POS=(process.env.POS||Object.keys(P).join(',')).split(',');
+const ROOM=process.env.ROOM||'office'; const PP={office:{door:[38.8,1.6,1.45],mid:[40.3,1.6,0.6],desk:[40.6,1.35,-1.35]},living:{door:[19.0,1.6,-1.6],mid:[20.6,1.6,0.6],win:[22.6,1.6,0.9]},bedroom:{door:[1.3,1.6,1.4],mid:[0.0,1.6,0.3],win:[0.3,1.6,-1.2]},kitchen:{door:[-10.0,1.6,-0.4],mid:[-9.0,1.6,0.6],win:[-9.75,1.6,1.3]}}; const P=PP[ROOM]; const POS=(process.env.POS||Object.keys(P).join(',')).split(',');
 const YAWS=[0,90,180,270]; const W=1280,H=720, WAIT=+process.env.WAIT||16000;
 fs.mkdirSync(OUT,{recursive:true});
 (async()=>{ const br=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:'new',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required',`--window-size=${W},${H}`]});

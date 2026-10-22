@@ -1,0 +1,4 @@
+{"region": [-11.7, -6.8, -1.1, 2.7], "recvMin": 0.2, "onlyRecv": ["kue_fl", "kue_wa", "kue_fliesen", "kue_zeile", "kue_kuehl", "kue_ecke", "kue_kram"], "excl": ["depthbg"], "emitGain": 3, "emitMin": 0.04, "lightGain": 3, "lights": false, "extraLights": [
+  {"name": "bulb", "pos": [-9.35, 2.22, 0.55], "col": [1.0, 0.78, 0.52], "I": 1.8, "soft": 0.04}, 
+  {"name": "moon", "pos": [-9.75, 2.75, 3.25], "col": [0.62, 0.7, 0.88], "I": 3.0, "soft": 0.15, "spot": {"angle": 0.5, "pen": 0.75, "tgt": [-9.55, 0, 0.55]}}, 
+  {"name": "sky_fill", "pos": [-9.75, 1.75, 2.2], "col": [0.55, 0.64, 0.9], "I": 0.12, "soft": 0.4}], "world": [0.09, 0.085, 0.08], "sky": false, "wait": 30000}
