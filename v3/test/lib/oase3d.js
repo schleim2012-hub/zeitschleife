@@ -60,7 +60,7 @@ function buildRoom(){
    add(new T.CylinderGeometry(0.004,0.004,RW.h-1.95,4),std({color:0x111111}),TB.x,(RW.h+1.95)/2,TB.z); window.__oaseShade=sh.material; }
  // Lichter: warm (Lampe), UV-Blau (Sonnenbank), rosa (Neon), Grundlicht
  S.add(new T.HemisphereLight(0x5a4038,0x1a0f0a,0.55));
- const Lw=new T.PointLight(0xff9a50,5.5,5.5,1.6); Lw.position.set(TB.x,1.62,TB.z); S.add(Lw); window.__oaseLw=Lw;
+ const Lw=new T.PointLight(0xffa460,4.6,5.5,1.6); Lw.position.set(TB.x,1.62,TB.z); S.add(Lw); window.__oaseLw=Lw;
  const Lb=new T.PointLight(0x6a78ff,3.2,4.2,1.7); Lb.position.set(1.0,0.9,-1.5); S.add(Lb); window.__oaseLb=Lb;
  const Lp=new T.PointLight(0xff4a90,0.9,3.2,1.8); Lp.position.set(RW.x0+0.35,2.0,-0.6); S.add(Lp);
  const Lf=new T.PointLight(0xffc8a0,0.6,3.5,1.8); Lf.position.set(0.9,1.9,1.4); S.add(Lf);
@@ -173,7 +173,7 @@ function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht
- const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.vc?0xffffff:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
+ const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:0.25,sheenRoughness:0.6,sheenColor:new T.Color(0xffb090)});
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec3 vOP; uniform sampler2D oilMap; uniform float oilGlint; float oilK=0.0;

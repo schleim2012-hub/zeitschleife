@@ -129,7 +129,7 @@ function goStep(i){ i=Math.max(0,Math.min(STEPS.length-1,i)); save({step:i}); co
 const side=P.get('side'), SD=SIDES[side]||null;
 function goSide(id){ const d=SIDES[id]; if(!d) return; save({step,side:id}); const go=()=>fadeOut(()=>{ location.href=ROOT+d.page+'?alpha=1&step='+step+'&side='+id; }); const c=CUTS[id+'_entry'];
  if(c&&!P.has('nocut')&&!window.__zsCutOn){ window.__zsCutOn=true; playCut(c).then(go); } else go(); }
-function backFromSide(){ save({step,side:null}); fadeOut(()=>{ location.href=url(step).replace('#','&from='+side+'#'); }); }
+function backFromSide(){ save({step,side:null}); fadeOut(()=>{ const u=url(step); location.href=u.indexOf('#')>=0?u.replace('#','&from='+side+'#'):u+'&from='+side; }); }
 window.ZSA={on,STEPS,SIDES,side,goSide,backFromSide,get step(){return step;},cur:()=>STEPS[step],goStep,next:()=>goStep(step+1),reset:()=>{ save({step:0}); try{ localStorage.removeItem('zs_alpha_nokio'); }catch(e){} /* neue Schleife: Handy liegt wieder im Kinderzimmer */ },url,CUTS,playCut};
 if(!on) return;
 save({step});
