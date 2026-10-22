@@ -57,7 +57,7 @@ AFRAME.registerComponent('warteraum',{
    // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
    if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
-   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,0.42); // v7: wärmer, heller (Film) sc.object3D.add(hemi);
+   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,0.30); sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
    const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
    const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,i?1.0:1.3,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
@@ -93,7 +93,7 @@ AFRAME.registerComponent('warteraum',{
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
-    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; // v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); break;
+    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); break;
     case 'arm': { const c=(u%11)/11; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.55:m.n==='frl_arm'?0:-0.18)*(lift*lift*(3-2*lift));
        if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
        if(m.n==='gruen_arm') a=-0.12*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
