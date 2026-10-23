@@ -75,3 +75,8 @@
 
 - Sonnen-Oase-Kundin: MakeHuman/MPFB-Basismesh, Haut, Haar `ponytail01`, Augen, Brauen – CC0 (makehuman_system_assets).
 - Hautdetail, Brustwarzen-/Rötungs-/Kontakt-Shader, Öl-Barometer: eigene prozedurale Arbeit (keine Fremdtexturen).
+
+## Physik (Testseite Sonnen-Oase)
+
+- Rapier 3D (`@dimforge/rapier3d-compat` 0.21.0, Dimforge / Sébastien Crozet), Lizenz **Apache-2.0** (https://github.com/dimforge/rapier) – selbst gehostet als `v3/test/lib/rapier3d-compat-0.21.0.mjs` (WASM inline), Lizenztext `v3/test/lib/rapier3d-compat-LICENSE.txt`. Unverändert.
+- Ragdoll-Aufbau (Kapseln für Arme/Unterschenkel an Schulter/Knie, Tonus-Motor, Feder-Griff) und die Feder-Regionen für Brust/Bauch/Oberschenkel: eigene Arbeit.
