@@ -5,6 +5,7 @@ import bpy, sys, os, math, json
 from mathutils import Vector, Matrix, Quaternion
 argv=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 OUT=argv[0] if argv else '/workspace/hyb/out'; POSE=argv[1] if len(argv)>1 else 'lie'
+KIDS=len(argv)>2 and argv[2]=='kids'   # jugendfrei: Badeanzug (Körper darunter entfernt) + Bademantel-Decke, Datei *_k8.glb
 from bl_ext.user_default.mpfb.services.humanservice import HumanService
 from bl_ext.user_default.mpfb.services.targetservice import TargetService
 from bl_ext.user_default.mpfb.services.locationservice import LocationService
@@ -64,7 +65,7 @@ if POSE=='up':
 else: rig.location+=Vector((-0.95-xmin,0,-zmin-0.004))
 bpy.context.view_layer.update()
 print('BOUNDS', xmin, zmin)
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT,'kundin_'+POSE+'.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT,'kundin_'+POSE+('_k8' if KIDS else '')+'.blend'))
 # ---------------- Export (glTF, statisch gebacken): body / hair / deco_* / towel + COLOR_0 (AO, a=ölbar) + _SOFT
 import numpy as np
 from mathutils.bvhtree import BVHTree
@@ -97,6 +98,22 @@ def bake(o,name):
 objs={o.name:o for o in bpy.data.objects if o.type=='MESH'}
 HO=[o for o in objs.values() if 'long01' in o.name][0]
 B=bake(body,'body'); Hh=bake(HO,'hair')
+SUIT=None
+if KIDS:   # Badeanzug aus den Rumpf-Gewichten (pelvis/spine) – Haut darunter wird gelöscht, die Datei enthält nichts Nacktes
+  import bmesh as _bm, numpy as _np
+  for g in body.vertex_groups: B.vertex_groups.new(name=g.name)
+  gi={g.name:g.index for g in B.vertex_groups}; T_=[gi[n] for n in ('pelvis','spine_01','spine_02','spine_03','nipple','nippleTip','genitals') if n in gi]
+  Sw=_np.array([sum(e.weight for e in v.groups if e.group in T_) for v in B.data.vertices])
+  N_=[gi[k] for k in ('neck_01','head') if k in gi]; C_=[gi[k] for k in ('clavicle_l','clavicle_r','upperarm_l','upperarm_r') if k in gi]
+  Sw=Sw-_np.array([sum(2.0*e.weight for e in v.groups if e.group in N_)+sum(0.9*e.weight for e in v.groups if e.group in C_) for v in B.data.vertices])   # Ausschnitt: Hals/Schultern frei (Tanksuit)
+  bm=_bm.new(); bm.from_mesh(B.data); bm.verts.ensure_lookup_table()
+  _bm.ops.delete(bm,geom=[f for f in bm.faces if not any(Sw[v.index]>0.45 for v in f.verts)],context='FACES')
+  for v in bm.verts: v.co+=v.normal*0.005
+  sm=bpy.data.meshes.new('top'); bm.to_mesh(sm); bm.free(); SUIT=bpy.data.objects.new('top',sm); col.objects.link(SUIT)
+  bm=_bm.new(); bm.from_mesh(B.data); bm.verts.ensure_lookup_table()
+  _bm.ops.delete(bm,geom=[f for f in bm.faces if all(Sw[v.index]>0.62 for v in f.verts)],context='FACES')
+  _bm.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS'); bm.to_mesh(B.data); bm.free(); B.vertex_groups.clear()
+  SUIT.data.materials.append(bpy.data.materials.new('suit_k8'))
 DEC=[bake(o,'deco_'+k.replace('-','')) for k in ('eyebrow','eyelash','high-poly') for o in objs.values() if k in o.name and not (k=='eyelash' and EB>0.5)]   # Wimpern-Proxy folgt dem Lidschluss nicht -> bei geschlossenen Augen weglassen
 skin=tex_proc(first_img(body),os.path.join(OUT,'skin_h8.jpg'),'skin',1024); hairI=tex_proc(first_img(HO),os.path.join(OUT,'hair_h8.png'),'hair',1024)
 B.data.materials.clear(); B.data.materials.append(simple_mat('skin_h8',skin,rough=0.55))
@@ -104,7 +121,7 @@ Hh.data.materials.clear(); Hh.data.materials.append(simple_mat('hair_h8',hairI,a
 dg=bpy.context.evaluated_depsgraph_get()
 # Handtuch: Raster über der Hüfte, von oben auf den Körper projiziert (+1,2 cm), Ränder hängen zur Liege
 bvb=BVHTree.FromObject(B,dg)
-hx=PEL.x+(0.07 if POSE=='lie' else 0.25); nx,ny=36,64; TL,TWD=0.34,0.62; vs=[]
+hx=PEL.x+(0.07 if POSE=='lie' else 0.25)+(0.10 if KIDS else 0); nx,ny=36,64; TL,TWD=(0.50 if KIDS else 0.34),0.62; vs=[]
 for i in range(nx):
   for j in range(ny):
     x=hx-TL/2+TL*i/(nx-1); y=-TWD/2+TWD*j/(ny-1); h=bvb.ray_cast(Vector((x,y,0.32 if POSE=='up' else 0.6)),Vector((0,0,-1)))
@@ -120,14 +137,14 @@ for it in range(24):   # weich, nur nach oben (bleibt über der Haut)
 V[...,2]=Z
 fs=[(i*ny+j,(i+1)*ny+j,(i+1)*ny+j+1,i*ny+j+1) for i in range(nx-1) for j in range(ny-1)]
 tm=bpy.data.meshes.new('towel'); tm.from_pydata([tuple(v) for v in V.reshape(-1,3)],[],fs); tm.update()
-TW=bpy.data.objects.new('towel',tm); col.objects.link(TW)
+TW=bpy.data.objects.new('robe' if KIDS else 'towel',tm); col.objects.link(TW)
 # UV nach Bogenlänge (Streifen nicht gedehnt)
 AL=np.zeros((nx,ny)); AL[:,1:]=np.cumsum(np.sqrt(dy**2+np.diff(Z,axis=1)**2),axis=1); AL/=AL[:,-1:].max()
 uvl=tm.uv_layers.new(name='UVMap')
 for poly in tm.polygons:
   for li in poly.loop_indices: k=tm.loops[li].vertex_index; i,j=divmod(k,ny); uvl.data[li].uv=(0.5*i/(nx-1),AL[i,j])
 dg=bpy.context.evaluated_depsgraph_get()
-occ=[B,Hh,TW]; bvh=[BVHTree.FromObject(o,dg) for o in occ]
+occ=[B,Hh,TW]+([SUIT] if SUIT else []); bvh=[BVHTree.FromObject(o,dg) for o in occ]
 import random; random.seed(3); dirs=[]
 while len(dirs)<20:
   d=Vector((random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)))
@@ -159,10 +176,12 @@ def put_color(o,ao,a):
 put_color(B,ao_of(B),oil)
 sa=B.data.attributes.new('_SOFT','FLOAT2','POINT'); sa.data.foreach_set('vector',np.stack([soft,br],1).astype(np.float32).ravel())
 ha=ao_of(Hh); put_color(Hh,0.6+0.4*ha,1+0*ha); ta=ao_of(TW); put_color(TW,np.clip(ta*0.35+0.65,0,1),0*ta)
+if SUIT:
+  sa_=ao_of(SUIT); me=SUIT.data; ca=me.color_attributes.new('Col','FLOAT_COLOR','POINT'); C=np.stack([0.10*sa_,0.55*sa_,0.62*sa_,0*sa_],1).astype(np.float32); ca.data.foreach_set('color',C.ravel()); me.color_attributes.active_color=ca   # 80er-Türkis
 cx=float(np.mean([c[0] for c in BRc])); cy=float(np.max([abs(c[1]) for c in BRc]))
-json.dump({'chestAdult':{'x0':round(cx-0.08,3),'x1':round(cx+0.08,3),'zIn':0.012,'zOut':round(cy+0.09,3)},'brc':[list(map(float,c)) for c in BRc],'neck':list(NECK),'pelvis':list(PEL)},open(os.path.join(OUT,'kundin_'+POSE+'_info.json'),'w'),indent=1)
+json.dump({'chestAdult':{'x0':round(cx-0.08,3),'x1':round(cx+0.08,3),'zIn':0.012,'zOut':round(cy+0.09,3)},'brc':[list(map(float,c)) for c in BRc],'neck':list(NECK),'pelvis':list(PEL)},open(os.path.join(OUT,'kundin_'+POSE+('_k8' if KIDS else '')+'_info.json'),'w'),indent=1)
 bpy.ops.object.select_all(action='DESELECT')
 for o in col.objects: o.select_set(True)
-bpy.ops.export_scene.gltf(filepath=os.path.join(OUT,'kundin_'+POSE+'_h8.glb'),export_format='GLB',use_selection=True,export_yup=True,export_apply=False,export_attributes=True,
+bpy.ops.export_scene.gltf(filepath=os.path.join(OUT,'kundin_'+POSE+('_k8' if KIDS else '_h8')+'.glb'),export_format='GLB',use_selection=True,export_yup=True,export_apply=False,export_attributes=True,
   export_vertex_color='ACTIVE',export_skins=False,export_morph=False,export_animations=False,export_materials='EXPORT',export_image_format='AUTO')
-print('EXPORTED',os.path.getsize(os.path.join(OUT,'kundin_'+POSE+'_h8.glb'))//1024,'KB')
+print('EXPORTED',os.path.getsize(os.path.join(OUT,'kundin_'+POSE+('_k8' if KIDS else '_h8')+'.glb'))//1024,'KB')
