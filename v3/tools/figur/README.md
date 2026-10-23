@@ -95,3 +95,13 @@ Was am Quest sichtbar geholfen hat (Pete: 25 % → 50 %):
 **Haut:** Rauheit je Region (Nase/Lippen/Stirn glänzender), Durchscheinen (Streurand) an Lippen, Ohren, Fingern stärker, Poren-Detail mit zweiter gedrehter Abtastung gemischt (keine Kachelung).
 **Handtuch:** Vertex-Heber `uTw[4]` (2 Controller, 2 Hand-Enden der Arm-Kapseln) – Handtuch wölbt sich über Hand/Glied.
 **Haptik (Quest):** Höhenkarte (2 cm Raster) von Haut + Handtuch → Erstkontakt-Puls (Haut weich 14 ms, Handtuch kurz 8 ms), Streichen proportional zum Handtempo (Handtuch = feines schnelles Rattern), kräftiger Tick (0,6/28 ms) wenn ein gegriffenes Glied an den Anschlag kommt.
+
+## o19: Torso-/Gesichts-Atlas (`f6_torso.py`, Config `torso_o19.json`)
+- Zusätzliche Textur nur für Brust, Warzenhöfe, Bauch, Hals und Gesicht: 2048×1024 webp (`kundin_t10.webp`, ≈ 2,7 px/mm statt 0,8 px/mm in der MakeHuman-UV), Draufsicht-UV der Liegepose als Vertex-Attribut `_TUV` (u, v, Gewicht) in `kundin_{lie,up}_h10.glb`. Die Sitzpose bekommt dieselben Werte pro Vertex, der Atlas wandert also mit.
+- Shader (`oase3d.js`, `skin.tz`): mischt den Atlas nach `map_fragment` mit Gewicht `_tuv.z` ein und blendet dort den gemalten Warzenhof aus. Ohne `fig.torsoAdult` bleibt alles wie o18.
+- Inhalt: Basis = alte Hauttextur (nahtlos), + feine Fotodetails (`body_photo`, PnP über 6 Punkte, Öl-Glanz per Inpaint entfernt, nur Hochpass σ 3 px) + Foto-Warzenhof (`areola`, in der Tangentialebene um die Warzen-Mitte, rund auf der Haut).
+- Neues Referenzfoto: `python3 f6_torso.py grid foto.jpg` → Punkte (Warzen, Nabel, Halsgrube, Schultern) ablesen, in die Config eintragen, `python3 f6_torso.py torso_o19.json` (≈ 6 s). Ändert sich nur das Foto, muss nur die webp neu.
+
+### o19b: r3-Foto (ohne Öl) + Mikrodetail
+- body_photo/areola jetzt aus r3_2 (stehend frontal, gleichmäßiges Licht); sigma 10, `edge` unterdrückt Kontur-/Schattenlinien.
+- `micro`: synthetische Poren, Korn, Farbfleckigkeit auf dem Torso; im Warzenhof Falten, Montgomery-Knötchen, Farbvariation, Warzen-Textur. Geometrie/Größe/Lage unverändert. webp q95 (~260 KB).

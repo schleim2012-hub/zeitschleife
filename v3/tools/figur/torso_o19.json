@@ -1,0 +1,101 @@
+{
+ "_info": "o19 Torso-/Gesichts-Atlas (Draufsicht-UV _TUV). Fotos liegen NICHT im Repo. Neues Foto: image + pts2d anpassen, f6_torso.py neu laufen lassen (nur die .webp ändert sich).",
+ "glb": {
+  "lie": [
+   "v3/assets/oase/kundin_lie_h9.glb",
+   "v3/assets/oase/kundin_lie_h10.glb"
+  ],
+  "up": [
+   "v3/assets/oase/kundin_up_h9.glb",
+   "v3/assets/oase/kundin_up_h10.glb"
+  ]
+ },
+ "atlas": "v3/assets/oase/kundin_t10.webp",
+ "box": [
+  -0.95,
+  -0.2,
+  -0.2,
+  0.2
+ ],
+ "size": [
+  2048,
+  1024
+ ],
+ "body_photo": {
+  "image": "/workspace/oase_b/ref2/r3_2.jpg",
+  "pts": {
+   "nipR": [
+    408,
+    865
+   ],
+   "nipL": [
+    740,
+    905
+   ],
+   "navel": [
+    540,
+    1200
+   ],
+   "jug": [
+    612,
+    585
+   ],
+   "shR": [
+    400,
+    615
+   ],
+   "shL": [
+    940,
+    580
+   ]
+  },
+  "sigma": 10.0,
+  "clipL": [
+   -6,
+   5
+  ],
+  "clipAB": [
+   -5,
+   5
+  ],
+  "region_x": [
+   -0.655,
+   -0.62,
+   -0.285,
+   -0.255
+  ],
+  "edge": [
+   0.8,
+   2.0
+  ]
+ },
+ "areola": {
+  "image": "/workspace/oase_b/ref2/r3_2.jpg",
+  "center": [
+   740,
+   905
+  ],
+  "radius_px": 37,
+  "radius_m": 0.02,
+  "gain": 1.0
+ },
+ "tan_shift_ab": [
+  -3.0,
+  0.5
+ ],
+ "quality": 95,
+ "micro": {
+  "seed": 7,
+  "pore_density": 0.02,
+  "pore_L": 8.0,
+  "grain_L": 2.0,
+  "mottle_L": 1.5,
+  "mottle_a": 1.2,
+  "mottle_b": 1.5,
+  "areola_wrinkle_L": 5.0,
+  "nip_wrinkle_L": 8.0,
+  "bump_L": 14.0,
+  "areola_col_a": 2.5,
+  "areola_col_b": 2.0
+ }
+}
