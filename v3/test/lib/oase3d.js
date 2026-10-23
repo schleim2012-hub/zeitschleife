@@ -365,7 +365,8 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   const go=()=>{ cam=document.getElementById('cam').object3D; rig=document.getElementById('rig').object3D; if(!window.zsSnapTurn) window.zsSnapTurn=(rigO,s)=>{ const a=new T.Vector3(),b=new T.Vector3(); cam.getWorldPosition(a); rigO.rotation.y-=s*Math.PI/6; rigO.updateMatrixWorld(true); cam.getWorldPosition(b); rigO.position.x+=a.x-b.x; rigO.position.z+=a.z-b.z; };
    makeMask(); makeBrush(); buildRoom(); setupPointer(); setupXR();
    if(window.worldDust) try{ window.__oaseDust=worldDust(this.el,{count:70,color:0xffd0a0,color2:0x9aa8ff,rMin:0.4,rMax:2.6,yMax:2.4}); }catch(e){}
-   let n=0; const fin=()=>{ if(++n<2) return; if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } window.__oase.ready=true; };
+   try{ R.xr.setFramebufferScaleFactor(1.3); }catch(e){} /* o11: schärferes Bild auf Quest (statt PS1-Look) */
+   let n=0; const fin=()=>{ if(++n<2) return; { const an=R.capabilities.getMaxAnisotropy(); [fig.lie,fig.up].forEach(f=>f&&f.root.traverse(o=>{ if(o.isMesh) [].concat(o.material).forEach(m=>['map','normalMap','roughnessMap'].forEach(k=>{ if(m&&m[k]){ m[k].anisotropy=an; m[k].needsUpdate=true; } })); })); } if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } window.__oase.ready=true; };
    loadFig('lie',f=>{ fig.lie=f; fin(); }); loadFig('up',f=>{ fig.up=f; fin(); });
    const L=document.getElementById('hl'), Rr=document.getElementById('hr'); this.ax=[0,0]; this.snap=0;
    L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });
