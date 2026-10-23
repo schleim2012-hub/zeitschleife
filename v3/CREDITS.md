@@ -65,3 +65,8 @@
 ## Wohnung – Akte-X-Büro (Grafik)
 - 90er-PC (CRT, Mini-Tower, Tastatur, Maus), Aktenschrank-Reihe und kassettierte Holztür: eigene Modelle, Blender-Skript `v3/tools/gfx_wohnung/build_office_props.py` (prozedurale Materialien, eigene Erzeugung, keine Fremdlizenz).
 - Lightmap/AO: eigene Blender-Cycles-Bake (`v3/tools/bake`). Schreibtisch, Stuhl, Lampe weiter von Poly Haven (CC0), siehe oben.
+
+## Sonnen-Oase – Kundin (Hybrid-Figur o8)
+- Basismodell, Rig (game_engine), Augen, Augenbrauen, Wimpern, Haar long01, Haut young_caucasian_female, Gesichts-Expressions (faceunits01): MakeHuman / MPFB System-Assets, Lizenz **CC0** (https://static.makehumancommunity.org/assets/license.html).
+- Werkzeug: MPFB 2 (MakeHuman Plugin for Blender), GPL-3.0 – nur als Generator benutzt, kein Code im Spiel. Blender 4.2 (GPL).
+- Generator: `v3/tools/oase/gen_kundin_hybrid.py`. Pose, Handtuch, AO, Öl-Maske und Hautton-Anpassung selbst erstellt.
