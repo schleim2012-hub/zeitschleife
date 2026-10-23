@@ -105,3 +105,8 @@ Was am Quest sichtbar geholfen hat (Pete: 25 % → 50 %):
 ### o19b: r3-Foto (ohne Öl) + Mikrodetail
 - body_photo/areola jetzt aus r3_2 (stehend frontal, gleichmäßiges Licht); sigma 10, `edge` unterdrückt Kontur-/Schattenlinien.
 - `micro`: synthetische Poren, Korn, Farbfleckigkeit auf dem Torso; im Warzenhof Falten, Montgomery-Knötchen, Farbvariation, Warzen-Textur. Geometrie/Größe/Lage unverändert. webp q95 (~260 KB).
+
+## o20 Rig – WIP (Stand 23.10. 19:50, NICHT live)
+- Fertig: `f7_rig.py` → `kundin_lie_h11.glb` (_BJ/_BW, 18 Knochen inkl. Kiefer) + `kundin_rig_h11.json`; `oase3d.js`: subdiv mischt Skin-Gewichte, GPU-Skinning (rigPatch, uBQ/uBT), Rapier-Rig (rigInit/rigStep/rigGrab/rigPush/rigHand/rigFrame-Reset 20 s/rigRest), Becken fixed, Mundhöhle/Zähne/Zunge, Handtuch-Lift; html lädt h11 + rigAdult.
+- Problem: Rig explodiert beim Einsinken (Ruhepose-Überschneidungen: viele Kontaktpaare nicht-verbundener Körper, v. a. Rumpf-Boxen (chest/spine) vs. Arme/Beine/Kopf).
+- Nächster Schritt: Rumpf-Boxen schmaler (hz/hy aus Median wie Kapseln) bzw. Kontakte zwischen in Ruhe überlappenden Paaren per Kollisionsgruppen/Hooks aus; dann `/workspace/oase_b/vr/o20.py t2` (Test: Kontaktliste muss leer sein außer Liege), Kiefer/Kopf/Arm/Beine-Shots prüfen, dann `?v=1023o20` veröffentlichen.
