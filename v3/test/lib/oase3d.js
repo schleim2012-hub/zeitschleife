@@ -179,7 +179,8 @@ function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht. skin.tx = Figur mit eigener Hauttextur (COLOR_0 = AO + ölbar), skin.soft = Attribut _SOFT (Weichheit, Brust-Gewicht)
- const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.h8?0xf0dccb:skin.tx?0xc9a48c:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:skin.tx?0.12:0.25,sheenRoughness:0.6,sheenColor:new T.Color(skin.tx?0xc07850:0xffb090)});
+ const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.o9?0xffffff:skin.h8?0xf0dccb:skin.tx?0xc9a48c:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:skin.o9?0.35:skin.tx?0.12:0.25,sheenRoughness:skin.o9?0.85:0.6,sheenColor:new T.Color(skin.o9?0xd0603a:skin.tx?0xc07850:0xffb090)});
+ if(skin.o9){ m.roughness=0.62; if(m.normalMap) m.normalScale=new T.Vector2(0.18,0.18); }   // o9: Foto-Haut, Poren-Normalmap, warmer Streurand (Sheen) statt Plastik-Glanz
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
   sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
@@ -196,19 +197,19 @@ float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
   { vec2 ou=vec2((vOP.x-(${X0.toFixed(3)}))/${(X1-X0).toFixed(3)}, (vOP.z-(${Z0.toFixed(3)}))/${(Z1-Z0).toFixed(3)});
     float o=texture2D(oilMap,ou).r; ${skin.vc?'o*=vColor.a; diffuseColor.a=1.0;':''} oilK=smoothstep(0.08,0.75,o);
     diffuseColor.rgb=mix(diffuseColor.rgb,pow(diffuseColor.rgb,vec3(1.18))*1.05,oilK); }`)  // nasse Haut: satter, etwas dunkler
-  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,0.16,oilK);')
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,'+(skin.o9?'0.34':'0.16')+',oilK);')
   .replace('#include <clearcoat_normal_fragment_begin>','#include <clearcoat_normal_fragment_begin>')
   .replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
   #ifdef USE_CLEARCOAT
-   material.clearcoat=oilK*0.9; material.clearcoatRoughness=mix(0.12,0.05,oilK);
+   material.clearcoat=oilK*${skin.o9?'0.45':'0.9'}; material.clearcoatRoughness=mix(${skin.o9?'0.35,0.22':'0.12,0.05'},oilK);
   #endif
 `);
- }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0)+(skin.tx?'t':'')+(skin.soft?'s':''); return m; }
+ }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0)+(skin.tx?'t':'')+(skin.soft?'s':'')+(skin.o9?'9':''); return m; }
 function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[which+'Adult']:C.fig[which]; // Ab-18-Datei nur bei ZS_ADULT === true
  new T.GLTFLoader().load(url,gl=>{ const r=gl.scene, parts={body:[],hair:[],towel:[],robe:[],strap:[],chest:[],top:[],glasses:[],deco:[]}; let named=false;
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
-  if(parts.body.some(o=>/^skin_h8/.test((o.material&&o.material.name)||''))) { parts.towel.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; }); parts.robe.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; o.userData.k8=true; }); }   // o8: Handtuch/Bademantel-Decke mit eigener Bogenlängen-UV
-  parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h8/.test(o.material.name||'')); o.material=oilMat(o.material,{vc,tx,h8,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
+  if(parts.body.some(o=>/^skin_h[89]/.test((o.material&&o.material.name)||''))) { parts.towel.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; }); parts.robe.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; o.userData.k8=true; }); }   // o8: Handtuch/Bademantel-Decke mit eigener Bogenlängen-UV
+  parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h[89]/.test(o.material.name||'')), o9=!!(o.material&&/^skin_h9/.test(o.material.name||'')); o.material=oilMat(o.material,{vc,tx,h8,o9,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
   const hT=hairTex(); parts.hair.forEach(o=>{ const hm=o.material&&o.material.map; if(hm&&o.geometry.attributes.uv){ o.userData.keepUV=true; o.material=new T.MeshPhysicalMaterial({vertexColors:!!o.geometry.attributes.color,map:hm,alphaTest:0.42,side:T.DoubleSide,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xf0c880),sheenRoughness:0.35}); }   // o8: Haar-Karten mit eigener Textur (MakeHuman long01, blondiert)
    else o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:0.6,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xe0b070),sheenRoughness:0.4}); });

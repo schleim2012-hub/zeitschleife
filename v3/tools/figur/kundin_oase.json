@@ -1,0 +1,15 @@
+{
+ "_info": "Sonnen-Oase-Kundin o9 (Prototyp). Referenzfoto liegt NICHT im Repo (Pfad lokal).",
+ "generator": "oase/gen_kundin_hybrid.py",
+ "blender": "/workspace/blender/blender-4.2.3-linux-x64/blender",
+ "python": "/workspace/mpv/bin/python",
+ "lm_model": "/workspace/hyb/face_landmarker.task",
+ "base_skin": "~/.config/blender/4.2/extensions/.user/user_default/mpfb/data/skins/young_caucasian_female/young_lightskinned_female_diffuse.png",
+ "ref": {"image": "/workspace/oase_b/ref_tensorhub/r1_front.png", "crop": [104,194,504,594]},
+ "hair": "ponytail01",
+ "tag": "h9",
+ "tex": 2048,
+ "skin": {"chroma": 0.55, "pores": 0.15},
+ "poses": ["lie", "up"],
+ "variants": ["adult", "kids"]
+}
