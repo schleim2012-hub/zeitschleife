@@ -246,7 +246,16 @@ function paintAt(lx,lz,str){ const u=(lx-X0)/(X1-X0), v=(lz-Z0)/(Z1-Z0); if(u<0|
 // ---------------------------------------------------------------- Ablauf
 const st={oiled:false,phase:'idle',said:{},spoke:0,cov:0,done:false,lastNoOil:0,dist:0,greet:false};
 function aud(f,vol){ const a=new Audio(C.base+f); a.volume=MUTE?0:(vol==null?0.95:vol); a.play().catch(()=>{}); return a; }
-let radio=null, hum=null; function startAmb(){ if(radio) return; radio=new Audio(C.base+'radio_panfloete.mp3'); radio.loop=true; radio.volume=MUTE?0:0.32; hum=new Audio(C.base+'sonnenbank_brumm.mp3'); hum.loop=true; hum.volume=MUTE?0:0.16; radio.play().catch(()=>{ radio=null; }); hum.play().catch(()=>{}); }
+// o10 Musik: Petes eigener Song (oase_song_pete.mp3, mono 96 kbit/s) als Raum-Ton aus dem Kofferradio auf dem Wagen (PositionalAudio, nicht kopffest); Ende: leiser, beim Aufsetzen aus, nach „Danke, Kleiner.“ leise wieder
+let radio=null, hum=null, musG=null, musOff=false, musV=0.5; const MUSV=0.5;
+function musVol(v){ musV=v; const x=MUTE?0:v; if(musG) musG.setVolume(x); else if(radio) radio.volume=Math.min(1,x*0.6); }
+function musFade(to,ms,done){ const f=musV, t0=performance.now(); const st_=()=>{ const k=Math.min(1,(performance.now()-t0)/ms); musVol(f+(to-f)*k); if(k<1) setTimeout(st_,40); else done&&done(); }; st_(); }
+function startAmb(){ if(radio||musOff) return; radio=new Audio(C.base+'oase_song_pete.mp3?v=1'); radio.loop=true; radio.preload='auto';
+ try{ const sc=document.querySelector('a-scene'), camO=(sc&&sc.camera)||cam; let L=window.__oaseL; if(!L){ L=window.__oaseL=new T.AudioListener(); camO.add(L); } if(L.context.state!=='running') L.context.resume().catch(()=>{});
+  const pa=new T.PositionalAudio(L); pa.setMediaElementSource(radio); pa.setDistanceModel('inverse'); pa.setRefDistance(1.0); pa.setRolloffFactor(1.1); pa.setMaxDistance(12); try{ pa.panner.panningModel='HRTF'; }catch(e){}
+  const rg=window.__oaseRadio; (rg||G).add(pa); if(!rg) pa.position.set(CART.x,0.9,CART.z); musG=pa; }catch(e){ musG=null; }
+ musVol(MUSV); radio.play().catch(()=>{ radio=null; if(musG){ try{ musG.parent&&musG.parent.remove(musG); musG.disconnect(); }catch(e){} musG=null; } });
+ hum=new Audio(C.base+'sonnenbank_brumm.mp3'); hum.loop=true; hum.volume=MUTE?0:0.16; hum.play().catch(()=>{}); }
 const LINES={a0:'Na endlich, der Neue. Das Öl steht auf dem Wagen. Und nicht so rumstehen.',a1:'Mmh … nicht so schüchtern, Süßer. Das Öl beißt nicht.',a2:'Etwas tiefer. Nein – nicht SO tief. Frecher Kerl.',a3:'Wenn du so weitermachst, muss ich dir Trinkgeld geben.',
  h0:'Bist du die Aushilfe? Das Öl steht auf dem Wagen.',h1:'Ah, die Schultern. Da sitzt der ganze Einkaufsstress.',h2:'Schön gleichmäßig verteilen, sonst werd ich gestreift wie ein Zebra.',h3:'Du hast ja goldene Hände. Wie mein Friseur.',oel:'Erst das Öl, Schätzchen. Sonst quietscht’s.',slap:'Hey! Finger weg, Freundchen. Das hier ist kein Streichelzoo!',punch:'Danke, Kleiner.'};
 let subEl=null, subM=null;
@@ -282,11 +291,11 @@ function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; 
  if(c>=0.9&&now-st.spoke>3600) punch(); }
 function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
  // Ende: 1) glänzt überall · 2) zufriedener Seufzer/Zeile (Frauenstimme) · 3) Pose: stützt sich auf, schaut zum Spieler · 4) ~1 s Stille · 5) „Danke, Kleiner.“ als allerletzte Zeile
- st.endOk=true; const a=say(ad?'a3':'h3'); let go=false; const next=()=>{ if(go) return; go=true; setTimeout(sit,600); };
+ st.endOk=true; if(radio) musFade(MUSV*0.35,800); const a=say(ad?'a3':'h3'); let go=false; const next=()=>{ if(go) return; go=true; setTimeout(sit,600); };
  if(a){ a.addEventListener('ended',next); a.addEventListener('error',next); } setTimeout(next,4500);
- function sit(){ if(radio){ const r=radio; radio=null; r.pause(); aud('../../sfx/radio_static.mp3',0.25); }
+ function sit(){ musOff=true; if(radio){ const r=radio; musFade(0,250,()=>r.pause()); aud('../../sfx/radio_static.mp3',0.25); }
   const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
-  const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); },1000); } };
+  const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); setTimeout(()=>{ if(radio){ radio.play().catch(()=>{}); musFade(MUSV*0.4,2500); } },4500); },1000); } };
   setTimeout(fl,300); } }
 function swapPose(){ if(!fig.up) return; fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; jig.bv+=0.09; jig.sv+=0.05; }
 function reward(){ setTimeout(()=>{ if(!window.zsaNote) return; const n=zsaNote('Gutschein: Einmal Ölmassage gratis. Für den Kleinen. – Gerd',0.16,0.1); n.position.set(CART.x+0.02,0.795,CART.z+0.12); n.rotation.x=-Math.PI/2; n.rotation.z=0.3; G.add(n); try{ localStorage.setItem('zs_oase_done','1'); }catch(e){} },2500); }
@@ -307,14 +316,22 @@ function setupPointer(){ const cv=S.el?S.el.canvas:document.querySelector('a-sce
  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
  // Klick-Pfad für Handy-Tipp (touchctl → Maus-Klick) auf die Flasche
  cv.addEventListener('click',e=>{ if(R.xr.isPresenting) return; if(hitBottle(ray(e))) takeOil(); }); }
-const ctl=[{held:false,last:null},{held:false,last:null}];
-function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=()=>{ ctl[i].held=true; startAmb(); const p=ctrlPos(c,tmpV); if(p.distanceTo(bottleHome)<0.22||(!st.oiled&&hitBottle(ctrlRay(c)))) takeOil(); }, upf=()=>{ ctl[i].held=false; ctl[i].zone=false; ctl[i].last=null; lastPaint=null; };
-  c.addEventListener('selectstart',dn); c.addEventListener('squeezestart',dn); c.addEventListener('selectend',upf); c.addEventListener('squeezeend',upf); }); }
-function xrTick(){ if(!R.xr.isPresenting) return; const sc=document.querySelector('a-scene'); const ses=R.xr.getSession&&R.xr.getSession();
- [0,1].forEach(i=>{ if(!ctl[i].held) return; const c=R.xr.getController(i); const p=ctrlPos(c,tmpV).clone();
-  // Strahl von knapp über dem Controller senkrecht nach unten: trifft die Haut innerhalb von 7 cm → einreiben
-  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.12,0)),new T.Vector3(0,-1,0))); if(!h||h.cover||Math.abs(h.p.y-p.y)>0.07){ ctl[i].last=null; ctl[i].zone=false; return; } ctl[i].zone=inChest(h.lx,h.lz);
-  const len=ctl[i].last?h.p.distanceTo(ctl[i].last):0; ctl[i].last=h.p.clone(); if(len>0.003){ rub(h.lx,h.lz,len); if(st.oiled&&ses){ const src=[...ses.inputSources].find(s=>s.handedness===(i?'right':'left'))||ses.inputSources[i]; const ha=src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(0.18,18); } } }); }
+// o10 VR: zwei Wege für Controller – A-Frame-Entities #hl/#hr (triggerdown/gripdown, Griff-Pose = wo die Hand ist) und three-XR-Controller (selectstart/squeezestart) als Ersatz.
+// Sobald ein Entity-Ereignis kam, reiben nur noch die Entities (kein doppeltes Einreiben). Toleranz: Hand bis 12 cm über bzw. 18 cm in der Haut zählt.
+const ctl=[{held:false,last:null,hand:'left'},{held:false,last:null,hand:'right'},{held:false,last:null,hand:'left',ent:'hl'},{held:false,last:null,hand:'right',ent:'hr'}]; let useEnt=false;
+function ctlPos(i,out){ const k=ctl[i]; if(k.ent){ const el=document.getElementById(k.ent); el.object3D.getWorldPosition(out); return out; } return ctrlPos(R.xr.getController(i),out); }
+function ctlRay(i){ const k=ctl[i]; if(k.ent){ const o=document.getElementById(k.ent).object3D, q=new T.Quaternion(), p=new T.Vector3(); o.getWorldPosition(p); o.getWorldQuaternion(q); return new T.Ray(p,new T.Vector3(0,0,-1).applyQuaternion(q)); } return ctrlRay(R.xr.getController(i)); }
+function nearBottle(p){ const b=new T.Vector3(); bottle.getWorldPosition(b); b.y+=0.1; return p.distanceTo(b)<0.3||p.distanceTo(bottleHome)<0.3; }
+function ctlDown(i){ const k=ctl[i]; if(k.ent) useEnt=true; k.held=true; k.last=null; startAmb(); const p=ctlPos(i,new T.Vector3()); if(nearBottle(p)||(!st.oiled&&hitBottle(ctlRay(i)))) takeOil(); }
+function ctlUp(i){ const k=ctl[i]; k.held=false; k.zone=false; k.last=null; lastPaint=null; }
+function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=()=>ctlDown(i), upf=()=>ctlUp(i);
+  c.addEventListener('selectstart',dn); c.addEventListener('squeezestart',dn); c.addEventListener('selectend',upf); c.addEventListener('squeezeend',upf); });
+ [2,3].forEach(i=>{ const el=document.getElementById(ctl[i].ent); if(!el) return; ['triggerdown','gripdown'].forEach(ev=>el.addEventListener(ev,()=>ctlDown(i))); ['triggerup','gripup'].forEach(ev=>el.addEventListener(ev,()=>ctlUp(i))); }); }
+function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession();
+ ctl.forEach((k,i)=>{ if(!k.held) return; if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone();
+  // Strahl von 25 cm über der Hand senkrecht nach unten: Haut zwischen 12 cm unter und 18 cm über der Hand → einreiben
+  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.25,0)),new T.Vector3(0,-1,0))); const dy=h&&h.p?h.p.y-p.y:0; if(!h||h.cover||dy<-0.12||dy>0.18){ k.last=null; k.zone=false; return; } k.zone=inChest(h.lx,h.lz);
+  const len=k.last?h.p.distanceTo(k.last):0; k.last=h.p.clone(); if(len>0.003){ rub(h.lx,h.lz,Math.min(len,0.08)); if(st.oiled&&ses){ const src=[...ses.inputSources].find(s=>s.handedness===k.hand); const ha=src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(0.18,18); } } }); }
 // ---------------------------------------------------------------- Ohrfeigen-Gag (nur ab 18): Hand verweilt 15–20 s (zufällig) in der Brust-Zone → Klatsch, roter Rand, Zeile, Stempel „Das kommt in Ihre Akte!“ auf einem Zettel am Wagen
 const gag={t:0,need:15+Math.random()*5,n:0,slip:null};
 function sfxSlap(){ if(MUTE) return; const a=new (window.AudioContext||window.webkitAudioContext)(), n=a.sampleRate*0.25|0, b=a.createBuffer(1,n,a.sampleRate), d=b.getChannelData(0);
