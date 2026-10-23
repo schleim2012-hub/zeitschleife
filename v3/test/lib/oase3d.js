@@ -290,7 +290,7 @@ function takeOil(){ if(st.oiled||st.done) return; st.oiled=true; startAmb(); try
  drip(); }
 function drip(){ const a=new (window.AudioContext||window.webkitAudioContext)(); if(MUTE) return; [0.9,1.25,1.6].forEach(d=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(900,a.currentTime+d); o.frequency.exponentialRampToValueAtTime(260,a.currentTime+d+0.09); g.gain.setValueAtTime(0.0001,a.currentTime+d); g.gain.linearRampToValueAtTime(0.12,a.currentTime+d+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d+0.14); o.connect(g); g.connect(a.destination); o.start(a.currentTime+d); o.stop(a.currentTime+d+0.2); }); }
 function rub(lx,lz,len){ if(st.done) return;  uPress.value.x=lx; uPress.value.y=lz; pressGoal=window.__oaseSoft?0.0085:0.006; pressAt=performance.now(); jigKick(lx,lz,len); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; } // o12: Brust + Bauch einölbar (Ohrfeigen-Gag ab 18 bleibt)
- startAmb(); paintAt(lx,lz,0.175+Math.min(0.25,len*3)); st.dist+=len; }   // o14: halbe Öl-Menge pro Strich → etwa doppelt so lange einreiben bis 90 %
+ startAmb(); paintAt(lx,lz,(0.175+Math.min(0.25,len*3))*(R.xr.isPresenting?1.3:1));   /* o13: in VR +30 % (gründliches Einreiben ≈ 50 s, normal 1,5–2 min) */ st.dist+=len; }   // o14: halbe Öl-Menge pro Strich → etwa doppelt so lange einreiben bis 90 %
 function jigKick(lx,lz,len){ if(!window.__oaseSoft) return; const v=Math.min(len||0.01,0.05);   // Streichen in Brustnähe/über weichem Gewebe bringt sie leicht ins Schwingen
  const db=Math.hypot(Math.max(0,Math.abs(lx+0.447)-0.08),Math.max(0,Math.abs(Math.abs(lz)-0.104)-0.09)); const nb=Math.max(0,1-db/0.12);
  jig.bv+=(Math.random()<0.5?-1:1)*v*0.9*(0.25+nb); jig.bzv+=(Math.random()-0.5)*v*0.6*(0.2+nb); jig.sv+=(Math.random()<0.5?-1:1)*v*0.7; }
@@ -302,7 +302,7 @@ function jigTick(d){ if(!window.__oaseSoft) return; const sp=(k,c,x,v,ext)=>{ v+
  // Delle: gedämpfte Feder (leichtes Überschwingen beim Loslassen = Haut federt zurück)
  pressV+=((pressGoal-uPress.value.w)*320-pressV*20)*d; uPress.value.w=Math.max(-0.0015,uPress.value.w+pressV*d); }
 function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; oilAmt.value=c; const ad=ADULT(), p=ad?'a':'h'; const now=performance.now();
- [[0.12,1],[0.42,2],[0.68,3]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
+ [[0.12,1],[0.42,2]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
  if(c>=0.9&&now-st.spoke>3600) punch(); }
 function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
  // Ende: 1) glänzt überall · 2) zufriedener Seufzer/Zeile (Frauenstimme) · 3) Pose: stützt sich auf, schaut zum Spieler · 4) ~1 s Stille · 5) „Danke, Kleiner.“ als allerletzte Zeile
@@ -369,10 +369,25 @@ function ctlUp(i){ const k=ctl[i]; k.held=false; k.zone=false; k.last=null; last
 function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=()=>ctlDown(i), upf=()=>ctlUp(i);
   c.addEventListener('selectstart',dn); c.addEventListener('squeezestart',dn); c.addEventListener('selectend',upf); c.addEventListener('squeezeend',upf); });
  [2,3].forEach(i=>{ const el=document.getElementById(ctl[i].ent); if(!el) return; ['triggerdown','gripdown'].forEach(ev=>el.addEventListener(ev,()=>ctlDown(i))); ['triggerup','gripup'].forEach(ev=>el.addEventListener(ev,()=>ctlUp(i))); }); }
-function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession();
+// (Zeile 3 = zufriedener Satz kommt nur noch beim Ende, nicht doppelt bei 68 %)
+// o13 Debug-Karte (Test-Build): kleine Tafel am Wagen (Welt-Raum, nicht kopffest). An: ?debug=1 oder beide Griff-Tasten 2 s halten
+const DBG={on:/[?&]debug=1/.test(location.search),hit:'-',path:'-',wMax:0,mesh:null,cv:null,t:0,g0:0};
+function dbgGrip(ses){ if(!ses) return; let n=0; for(const s_ of ses.inputSources){ const b=s_.gamepad&&s_.gamepad.buttons; if(b&&b[1]&&b[1].pressed) n++; }
+ const now=performance.now(); if(n>=2){ if(!DBG.g0) DBG.g0=now; else if(now-DBG.g0>2000&&DBG.g0>0){ DBG.on=!DBG.on; DBG.g0=-1; } } else DBG.g0=0; }
+function dbgTick(){ DBG.wMax=Math.max(DBG.wMax*0.995,uPress.value.w); if(!DBG.on){ if(DBG.mesh) DBG.mesh.visible=false; return; } const now=performance.now(); if(now-DBG.t<400) return; DBG.t=now;
+ if(!DBG.mesh){ const cv=document.createElement('canvas'); cv.width=512; cv.height=340; const tx=new T.CanvasTexture(cv); tx.colorSpace=T.SRGBColorSpace;
+  DBG.mesh=new T.Mesh(new T.PlaneGeometry(0.26,0.1727),new T.MeshBasicMaterial({map:tx,toneMapped:false})); DBG.mesh.position.set(CART.x-0.02,1.02,CART.z+0.22); DBG.mesh.rotation.set(-0.35,0.25,0); G.add(DBG.mesh); DBG.cv=cv; }
+ DBG.mesh.visible=true; const x=DBG.cv.getContext('2d'), L_=k=>{ try{ return localStorage.getItem(k); }catch(e){ return 'n/a'; } };
+ const rows=[['Modus',ADULT()?'AB 18':'jugendfrei'],['Flag',(window.ZS_OASE_REQUIRE_QUIZ===false?'Quiz AUS (Test) · ':'')+"zs_adult="+L_('zs_adult')+" ok="+L_('zs_adult_ok')+(/[?&]kids=1/.test(location.search)?' kids=1':'')],
+  ['Öl',(st.oiled?'genommen':'NICHT genommen')+' · '+(100*(st.cov||0)).toFixed(0)+' % / 90 %'],['Ende',st.done?('läuft · Pose '+pose):(st.endOk?'ok':'nein')],
+  ['Eingabe',(R.xr.isPresenting?'VR ':'2D ')+DBG.path],['Hand',DBG.hit+' · '+ctl.map(k=>k.held?'■':'□').join('')],
+  ['Delle',(window.__oaseSoft?'Soft-Shader an':'einfach')+' · '+(DBG.wMax*1000).toFixed(1)+' mm'],['Build','1023o13']];
+ x.fillStyle='rgba(18,14,10,0.92)'; x.fillRect(0,0,512,340); x.strokeStyle='#8a6e44'; x.lineWidth=3; x.strokeRect(2,2,508,336); x.font='600 25px "DejaVu Sans Condensed",sans-serif';
+ rows.forEach((r,i)=>{ x.fillStyle='#b89a62'; x.fillText(r[0],14,38+i*40); x.fillStyle='#f0e2c2'; x.fillText(String(r[1]).slice(0,34),128,38+i*40); }); DBG.mesh.material.map.needsUpdate=true; }
+function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession(); dbgGrip(ses);
  ctl.forEach((k,i)=>{ if(!k.held) return; if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone();
   // Strahl von 25 cm über der Hand senkrecht nach unten: Haut zwischen 12 cm unter und 18 cm über der Hand → einreiben
-  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.25,0)),new T.Vector3(0,-1,0))); const dy=h&&h.p?h.p.y-p.y:0; if(!h||h.cover||dy<-0.12||dy>0.18){ k.last=null; k.zone=false; return; } k.zone=inChest(h.lx,h.lz);
+  const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.25,0)),new T.Vector3(0,-1,0))); const dy=h&&h.p?h.p.y-p.y:0; DBG.hit=!h?'kein Treffer':h.cover?'Decke/Tuch':(dy<-0.12||dy>0.18)?'Abstand '+(dy*100).toFixed(0)+' cm':'Haut '+(dy*100).toFixed(0)+' cm'; DBG.path=useEnt?'A-Frame laser-controls (#hl/#hr)':'three XR-Controller'; if(!h||h.cover||dy<-0.12||dy>0.18){ k.last=null; k.zone=false; return; } k.zone=inChest(h.lx,h.lz);
   const len=k.last?h.p.distanceTo(k.last):0; k.last=h.p.clone(); if(len>0.003){ rub(h.lx,h.lz,Math.min(len,0.08)); if(st.oiled&&ses){ const src=[...ses.inputSources].find(s=>s.handedness===k.hand); const ha=src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(0.18,18); } } }); }
 // ---------------------------------------------------------------- Ohrfeigen-Gag (nur ab 18): Hand verweilt 15–20 s (zufällig) in der Brust-Zone → Klatsch, roter Rand, Zeile, Stempel „Das kommt in Ihre Akte!“ auf einem Zettel am Wagen
 const gag={t:0,need:15+Math.random()*5,n:0,slip:null};
@@ -417,7 +432,7 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   this.el.hasLoaded?go():this.el.addEventListener('loaded',go); },
  tick(t,dt){ if(!this.mov) return; const d=Math.min(dt||16,50)/1000; const [x,y]=this.ax;
   if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new T.Quaternion(); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new T.Vector3(-f.z,0,f.x); rig.position.addScaledVector(f,-y*d*1.6).addScaledVector(r,x*d*1.6); }
-  collide(); xrTick(); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; if(window.__oaseSoft){ const n=Math.max(1,Math.ceil(d/0.008)); for(let i=0;i<n;i++) jigTick(d/n); } else uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
+  collide(); xrTick(); dbgTick(); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; if(window.__oaseSoft){ const n=Math.max(1,Math.ceil(d/0.008)); for(let i=0;i<n;i++) jigTick(d/n); } else uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
   // Begrüßung, wenn man nah genug ist (einmal) – gesprochene Zeile, kein Tipp-Fenster
   if(!st.greet&&window.__oase.ready){ const h=new T.Vector3(); cam.getWorldPosition(h); if(Math.hypot(h.x-TB.x,h.z-TB.z)<1.5&&t>2500){ st.greet=true; startAmb(); say(ADULT()?'a0':'h0'); } }
   // Perlenvorhang schwingt, wenn der Kopf durchgeht; Rauch, Röhrenflimmern, Glanz-Glitzern
@@ -426,5 +441,5 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   if(window.__oaseSmoke){ window.__oaseSmoke.material.opacity=0.42+0.14*Math.sin(t*0.0013); window.__oaseSmoke.rotation.y=Math.sin(t*0.0005)*0.6; }
   if(window.__oaseTubes) window.__oaseTubes.emissiveIntensity=1.05+0.04*Math.sin(t*0.31)+(Math.random()<0.004?-0.4:0);
   if(window.__oaseNeon) window.__oaseNeon.color.setHex(Math.random()<0.003?0x704050:0xd07090); }});
-window.__oaseSnap=()=>swapPose(); window.__oasePose=()=>pose; window.__oase={jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
+window.__oaseSnap=()=>swapPose(); window.__oaseXrTick=xrTick; window.__oaseDBG=DBG; window.__oasePose=()=>pose; window.__oase={jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
 })();
