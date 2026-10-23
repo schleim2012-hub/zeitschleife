@@ -74,3 +74,24 @@ Was am Quest sichtbar geholfen hat (Pete: 25 % → 50 %):
 9. **Leben, ganz leicht**: Atmung 1,1 rad/s (Brust 3 mm, Bauch 2 mm mit Phasenversatz), Feder-Wackeln bei Berührung (max. 6 mm), alle 7–13 s eine winzige Gewichtsverlagerung.
 10. **VR-Regeln**: Kamera `near:0.01`; Kopf darf nie die Welt verschieben (Kollision nur bei Stick-Bewegung); Eingaben nur von Händen (Controller näher als 12 cm am Kopf ignorieren); Animationen nie über `window.requestAnimationFrame` (steht in der immersiven Sitzung still) – immer über den A-Frame-Tick (`raf()`/`snapTick()`).
 11. **Prüfen**: Nahaufnahmen 15 / 40 cm (Brust, Gesicht, Hände) mit `closeshot.py` vorher/nachher; Endlauf mit `xrend.py`.
+
+## Ragdoll + Leben (o16/o17, Sonnen-Oase) – wiederverwendbar für Mara & Co.
+
+**Ist-Stand (Hybrid, ohne Skelett):** Die Kundin-GLBs (`kundin_lie_h9`/`kundin_up_h9`) sind *nicht geriggt* (0 Skins). Deshalb:
+1. `regPrep` gibt jedem Vertex ein Attribut `_reg=(Region-ID, Gewicht)`: 1/2 Brust, 3 Bauch, 4/5 Innenschenkel (weich), 6/7 Arme, 8/9 Unterschenkel (Glieder). Gewichte weich (smoothstep) → wirken wie Skinning-Gewichte.
+2. Weiche Regionen: gedämpfte Feder je Region auf der CPU (10 Vektoren), Versatz `uOff[i]` im Vertex-Shader. Keine Vertex-Physik auf der CPU.
+3. Glieder: Rapier (`lib/rapier3d-compat-0.21.0.mjs`, selbst gehostet) – je Glied eine Kapsel, Achse aus der echten Gliedlage (Mittel der Punkte nahe Gelenk/Ende), Kugelgelenk am kinematischen Rumpf, Liege = Quader-Kollider bei y=0 (Figur-Ursprung = Liegefläche). Tonus = schwacher PD-Drehimpuls zur Ruhepose (ω≈5,5/s), weiche Grenze (steif ab 35° Arm / 26° Bein). Griff = `JointData.spring(0, m·420, m·26)` zu einem kinematischen Hand-Körper → Gewicht + Nachziehen; Loslassen = fällt schlaff. Die Kapsel-Drehung (relativ zur Startpose) dreht die Region im Shader um den Gelenkpunkt (`uRot`/`uPiv`), Normalen mit.
+4. Sit-up: Ragdoll friert ein, `uRot` blendet in 0,15 s auf Identität, Körper werden zurückgesetzt.
+5. Kosten: Rapier-Schritt 0,05–0,1 ms (6× CPU-Drossel: ~0,3 ms) bei 4 Kapseln.
+
+**Soll (echtes Rig, noch NICHT umgesetzt – nächster Schritt):**
+1. Figur in Blender 4.2 + MPFB 2 neu erzeugen (gleiche Makros/Haut wie h9) **mit Rig „game_engine“**, Gewichte von MPFB; Unterteilung (Subdivision) *vor* dem Export anwenden, Gewichte werden mit interpoliert.
+2. Liegen und Aufsitzen = zwei **Posen/Aktionen desselben** SkinnedMesh (Export: eine GLB, `export_animations`, zwei Clips `lie`, `up`) – der Sit-up wird ein Pose-Blend statt Mesh-Tausch. Pose `lie` als Ruhepose exportieren, damit Bind-Pose ≈ Liegen.
+3. Rapier je Knochen: Kopf, Hals (Gelenkgrenzen ~70° Gieren, 40° Nicken), Oberarm, Unterarm, Hand, Oberschenkel, Schienbein, Fuß. Ellbogen/Knie = `revolute` mit Grenzen, Schulter/Hüfte = `spherical` + Twist-Grenze per PD. Rumpf + Becken kinematisch auf der Liege. Kollisions-Kapseln getrennt vom sichtbaren Mesh, Kollisionsgruppen: Glieder ↔ Liege + Glieder untereinander, nicht ↔ Rumpf.
+4. Sync: jeden Frame Rapier-Körper → Knochen-Quaternion (Weltrotation × inverse Bind-Rotation), danach `skeleton.update()`. Schwache Halte-Motoren (aktiver Ragdoll) zur aktuellen Animationspose, Feder-Griff wie oben.
+5. Kopf nie von der Spieler-Kopfposition bewegen (12 cm Ausschluss bleibt), nur Hände.
+
+**Leben (o17, positionsbasiert im Vertex-Shader, nur Pose „lie“):** Augäpfel wandern unter den geschlossenen Lidern (Sakkaden 0,6–3,2 s), Lidflattern alle 2–6 s (manchmal doppelt), Schlucken alle 25–55 s (Kehlkopf), winzige Fingerbewegungen, Atmen. Landmarken der h9-Kundin (lie, lokal, m): Augen (−0.838, 0.234, ±0.032), Nasenspitze (−0.815, 0.272, 0), Lippen (−0.778, 0.262, 0), Kehle (−0.70, 0.18, 0), Ohr (−0.831, 0.143, ±0.088). Andere Figuren: Landmarken neu messen (Profil-Skript: max y je x-Scheibe bei |z|<6 mm).
+**Haut:** Rauheit je Region (Nase/Lippen/Stirn glänzender), Durchscheinen (Streurand) an Lippen, Ohren, Fingern stärker, Poren-Detail mit zweiter gedrehter Abtastung gemischt (keine Kachelung).
+**Handtuch:** Vertex-Heber `uTw[4]` (2 Controller, 2 Hand-Enden der Arm-Kapseln) – Handtuch wölbt sich über Hand/Glied.
+**Haptik (Quest):** Höhenkarte (2 cm Raster) von Haut + Handtuch → Erstkontakt-Puls (Haut weich 14 ms, Handtuch kurz 8 ms), Streichen proportional zum Handtempo (Handtuch = feines schnelles Rattern), kräftiger Tick (0,6/28 ms) wenn ein gegriffenes Glied an den Anschlag kommt.
