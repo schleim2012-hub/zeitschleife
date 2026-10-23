@@ -68,7 +68,7 @@ function buildRoom(){
  const Lb=new T.PointLight(0x6a78ff,3.2,4.2,1.7); Lb.position.set(1.0,0.9,-1.5); S.add(Lb); window.__oaseLb=Lb;
  const Lp=new T.PointLight(0xff4a90,0.9,3.2,1.8); Lp.position.set(RW.x0+0.35,2.0,-0.6); S.add(Lp);
  const Lf=new T.PointLight(0xffc8a0,0.6,3.5,1.8); Lf.position.set(0.9,1.9,1.4); S.add(Lf);
- buildBed(std); buildTable(std); buildCart(std); buildDeco(std); buildCurtain();
+ buildBed(std); buildTable(std); buildCart(std); buildDeco(std); buildGauge(std); buildCurtain();
  // o14: weiches VR-Licht – Umgebung dunkler (versteckt schwache Stellen), dafür breites warmes Weichlicht nur über ihr (kein harter Spot, kein Schwarz)
  const Ls=new T.PointLight(0xffb48a,0,1.9,1.2); Ls.position.set(FIG.x+0.15,FIG.y+0.95,FIG.z+0.35); S.add(Ls);
  const softVR=on=>{ Lh.intensity=on?0.40:0.55; Lp.intensity=on?0.65:0.9; Lf.intensity=on?0.42:0.6; Lb.intensity=on?2.7:3.2; Ls.intensity=on?0.85:0; R.toneMappingExposure=on?1.0:1.05; };
@@ -183,10 +183,10 @@ function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
 // o14: Hautdetail wie im Gesicht – kachelbare Poren-/Feinfalten-Normalmap (prozedural, RG=Normale, B=Rauheit), einmal erzeugt
-let DET=null; function skinDetail(){ if(DET) return DET; const N=256, hgt=new Float32Array(N*N), rnd=(a)=>{ let x=Math.sin(a*12.9898)*43758.5453; return x-Math.floor(x); };
+let DET=null; function skinDetail(){ if(DET) return DET; const N=512, hgt=new Float32Array(N*N), rnd=(a)=>{ let x=Math.sin(a*12.9898)*43758.5453; return x-Math.floor(x); };
  for(let o=0;o<4;o++){ const f=4<<o, amp=0.5/(o+1); for(let y=0;y<N;y++) for(let x=0;x<N;x++){ const u=x*f/N, v=y*f/N, i=Math.floor(u), j=Math.floor(v), fu=u-i, fv=v-j, sx=fu*fu*(3-2*fu), sy=fv*fv*(3-2*fv), H=(a,b)=>rnd(((a%f)+f)%f*157+(((b%f)+f)%f)*311+o*71);
    hgt[y*N+x]+=amp*((H(i,j)*(1-sx)+H(i+1,j)*sx)*(1-sy)+(H(i,j+1)*(1-sx)+H(i+1,j+1)*sx)*sy); } }
- for(let k=0;k<900;k++){ const cx=rnd(k+0.5)*N, cy=rnd(k+7.3)*N, r=0.8+rnd(k+3.1)*1.4, d=0.9+rnd(k+9.7)*0.8;   // Poren: kleine Mulden
+ for(let k=0;k<3600;k++){ const cx=rnd(k+0.5)*N, cy=rnd(k+7.3)*N, r=0.8+rnd(k+3.1)*1.4, d=0.9+rnd(k+9.7)*0.8;   // Poren: kleine Mulden
    for(let y=-3;y<=3;y++) for(let x=-3;x<=3;x++){ const q=(x*x+y*y)/(r*r); if(q<4){ const X=((Math.floor(cx)+x)%N+N)%N, Y=((Math.floor(cy)+y)%N+N)%N; hgt[Y*N+X]-=d*Math.exp(-q*1.6); } } }
  const c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d'), im=x.createImageData(N,N), at=(X,Y)=>hgt[((Y+N)%N)*N+((X+N)%N)];
  for(let y=0;y<N;y++) for(let X=0;X<N;X++){ const dx=(at(X+1,y)-at(X-1,y))*1.6, dy=(at(X,y+1)-at(X,y-1))*1.6, l=Math.hypot(dx,dy,1), i=(y*N+X)*4;
@@ -209,12 +209,13 @@ function subdiv(g){ if(!g.index||g.userData.sub) return g; const ix=g.index.arra
  ng.setIndex(new T.BufferAttribute(ni,1)); ng.userData.sub=1; ng.computeBoundingBox(); ng.computeBoundingSphere(); return ng; }
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht. skin.tx = Figur mit eigener Hauttextur (COLOR_0 = AO + ölbar), skin.soft = Attribut _SOFT (Weichheit, Brust-Gewicht)
  const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.o9?0xffffff:skin.h8?0xf0dccb:skin.tx?0xc9a48c:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:skin.o9?0.35:skin.tx?0.12:0.25,sheenRoughness:skin.o9?0.85:0.6,sheenColor:new T.Color(skin.o9?0xd0603a:skin.tx?0xc07850:0xffb090)});
- if(skin.o9){ m.roughness=0.62; if(m.normalMap) m.normalScale=new T.Vector2(0.18,0.18); }   // o9: Foto-Haut, Poren-Normalmap, warmer Streurand (Sheen) statt Plastik-Glanz
+ if(skin.o9){ m.roughness=0.62; m.sheen=0.45; m.sheenRoughness=0.8; if(m.normalMap) m.normalScale=new T.Vector2(0.18,0.18); }   // o9: Foto-Haut, Poren-Normalmap, warmer Streurand (Sheen) statt Plastik-Glanz
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
   sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig; if(skin.o9) sh.uniforms.uDet={value:skinDetail()};
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
-  vOP=position;
-  { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)); transformed+=objectNormal*(0.0032*wb*(0.5+0.5*sin(uT*1.35)));   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')+(skin.o9?'\nattribute vec4 _nip; varying vec4 vNip;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
+  vOP=position;${skin.o9?`
+  vNip=_nip; { float r=length(_nip.xy), zg=exp(-_nip.z*_nip.z/0.0004); transformed+=objectNormal*zg*(0.0024*exp(-r*r/(0.0055*0.0055))+0.0009*exp(-r*r/(0.016*0.016))); }   // o15: Brustwarze + leicht gewölbter Warzenhof (Geometrie)`:''}
+  { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)), wbb=smoothstep(-0.30,-0.16,position.x)*(1.0-smoothstep(0.02,0.12,position.x)); transformed+=objectNormal*(0.0030*wb*(0.5+0.5*sin(uT*1.1))+0.0020*wbb*max(objectNormal.y,0.0)*(0.5+0.5*sin(uT*1.1-0.7)));   // o15: langsamer (≈10/min), Bauch hebt sich kurz nach der Brust   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
     float dp=distance(position.xz,uPress.xy); ${skin.soft?`
     float sf=_soft.x, r=max(uPress.z*(0.8+0.5*sf),1e-3), g=exp(-dp*dp/(r*r)), rq=(dp-1.35*r)/(0.45*r), rim=exp(-rq*rq);   // o12: kein pow() mit negativer Basis (auf Quest/Adreno NaN → Haut an Brust/Bauch verschwand)
     transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(g-0.22*rim)*(0.35+1.1*sf);   // weiche Delle + Gewebe-Wulst am Rand, federt zurück
@@ -222,24 +223,35 @@ function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Ob
     transformed.z+=_soft.y*uJig.y*sign(position.z);`:`transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp));`} }   // Haut gibt unter der Hand nach`);
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec3 vOP; uniform sampler2D oilMap; uniform float oilGlint; float oilK=0.0;
 float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`+(skin.o9?`
-uniform sampler2D uDet; float vn3(vec3 q){ vec3 i=floor(q), f=fract(q); f=f*f*(3.0-2.0*f); float a=mix(mix(h21(i.xy+i.z*17.0),h21(i.xy+vec2(1,0)+i.z*17.0),f.x),mix(h21(i.xy+vec2(0,1)+i.z*17.0),h21(i.xy+vec2(1,1)+i.z*17.0),f.x),f.y); float b=mix(mix(h21(i.xy+(i.z+1.0)*17.0),h21(i.xy+vec2(1,0)+(i.z+1.0)*17.0),f.x),mix(h21(i.xy+vec2(0,1)+(i.z+1.0)*17.0),h21(i.xy+vec2(1,1)+(i.z+1.0)*17.0),f.x),f.y); return mix(a,b,f.z); }`:''))
+uniform sampler2D uDet; varying vec4 vNip;
+vec3 bumpN(vec3 n,float h){ vec3 p=-vViewPosition, dx=dFdx(p), dy=dFdy(p), r1=cross(dy,n), r2=cross(n,dx); float det=dot(dx,r1); vec3 g=sign(det)*(dFdx(h)*r1+dFdy(h)*r2); return normalize(abs(det)*n-g); }
+float nipH(vec4 q){ float r=length(q.xy), a=atan(q.y,q.x), zg=exp(-q.z*q.z/0.0004); float nip=0.0010*(1.0-smoothstep(0.0028,0.0068,r));
+ float c=floor((a+3.14159)/6.28318*12.0), ca=(c+0.5)/12.0*6.28318-3.14159+(h21(vec2(c,3.0))-0.5)*0.4, cr=0.0105+0.0065*h21(vec2(c,7.0)); float gd=length(q.xy-cr*vec2(cos(ca),sin(ca))); float gl=0.0005*exp(-gd*gd/(0.0012*0.0012));
+ float are=0.0006*(1.0-smoothstep(0.012,0.021,r)), wr=0.0; return (nip+gl+are+wr)*zg; }
+float vn3(vec3 q){ vec3 i=floor(q), f=fract(q); f=f*f*(3.0-2.0*f); float a=mix(mix(h21(i.xy+i.z*17.0),h21(i.xy+vec2(1,0)+i.z*17.0),f.x),mix(h21(i.xy+vec2(0,1)+i.z*17.0),h21(i.xy+vec2(1,1)+i.z*17.0),f.x),f.y); float b=mix(mix(h21(i.xy+(i.z+1.0)*17.0),h21(i.xy+vec2(1,0)+(i.z+1.0)*17.0),f.x),mix(h21(i.xy+vec2(0,1)+(i.z+1.0)*17.0),h21(i.xy+vec2(1,1)+(i.z+1.0)*17.0),f.x),f.y); return mix(a,b,f.z); }`:''))
   .replace('#include <color_fragment>',`#include <color_fragment>
   { vec2 ou=vec2((vOP.x-(${X0.toFixed(3)}))/${(X1-X0).toFixed(3)}, (vOP.z-(${Z0.toFixed(3)}))/${(Z1-Z0).toFixed(3)});
     float o=texture2D(oilMap,ou).r; ${skin.vc?'o*=vColor.a; diffuseColor.a=1.0;':''} oilK=smoothstep(0.08,0.75,o);
     diffuseColor.rgb=mix(diffuseColor.rgb,pow(diffuseColor.rgb,vec3(1.18))*1.05,oilK); }`+(skin.o9?`
-  { float m1=vn3(vOP*22.0)-0.5, m2=vn3(vOP*61.0+3.1)-0.5; diffuseColor.rgb*=1.0+0.07*m1+0.035*m2; diffuseColor.r*=1.0+0.03*m1; }   // o14: leichte Farbunruhe (Äderchen/Rötung)`:''))  // nasse Haut: satter, etwas dunkler
-  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>'+(skin.o9?'\nroughnessFactor*=0.86+0.32*texture2D(uDet,vNormalMapUv*48.0).b;':'')+'\nroughnessFactor=mix(roughnessFactor,'+(skin.o9?'0.34':'0.16')+',oilK);')
+  { float m1=vn3(vOP*22.0)-0.5, m2=vn3(vOP*61.0+3.1)-0.5; diffuseColor.rgb*=1.0+0.07*m1+0.035*m2; diffuseColor.r*=1.0+0.03*m1; }
+  { float r=length(vNip.xy), zg=exp(-vNip.z*vNip.z/0.0004), ed=0.0025*(vn3(vec3(vNip.xy*500.0,2.0))-0.5); float ma=(1.0-smoothstep(0.015,0.022,r+ed))*zg, mn=(1.0-smoothstep(0.0032,0.0062,r))*zg;
+    diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.88,0.72,0.67),ma*0.4); diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.9,0.74,0.7),mn*0.25);   // o15: Warzenhof weich in die Haut auslaufend (kein Farbkreis), Warze etwas dunkler/röter
+    float rd=vNip.w*(0.75+0.5*vn3(vOP*90.0)); diffuseColor.rgb*=mix(vec3(1.0),vec3(1.05,0.89,0.87),clamp(rd,0.0,1.0)*0.7);   // Knie, Ellbogen, Hände, Füße leicht gerötet
+    ${skin.vc?'diffuseColor.rgb*=mix(vec3(1.0),vec3(1.03,0.93,0.92),(1.0-vColor.r)*0.7);':''}   // Falten/Gelenke: etwas durchbluteter
+    float cao=smoothstep(-0.004,0.045,vOP.y); diffuseColor.rgb*=mix(0.5,1.0,cao); }   // Kontakt-AO: wo sie auf der Liege aufliegt   // o14: leichte Farbunruhe (Äderchen/Rötung)`:''))  // nasse Haut: satter, etwas dunkler
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>'+(skin.o9?'\nroughnessFactor*=(0.86+0.32*texture2D(uDet,vNormalMapUv*48.0).b)*(0.92+0.16*texture2D(uDet,vNormalMapUv*290.0+0.3).b);':'')+'\nroughnessFactor=mix(roughnessFactor,'+(skin.o9?'0.34':'0.16')+',oilK);')
   .replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>'+(skin.o9?`
   #ifdef USE_NORMALMAP_TANGENTSPACE
   { vec2 du=vNormalMapUv*48.0; vec3 d1=texture2D(uDet,du).xyz*2.0-1.0, d2=texture2D(uDet,du*2.7+0.37).xyz*2.0-1.0; float ds=0.32*(1.0-0.7*oilK);
-    normal=normalize(normal+(tbn[0]*(d1.x+0.5*d2.x)+tbn[1]*(d1.y+0.5*d2.y))*ds); }   // o14: Poren + Feinfalten (Detail-Normalmap, unter Öl glatter)
-  #endif`:''))
+    vec3 d3=texture2D(uDet,du*6.1+0.71).xyz*2.0-1.0; normal=normalize(normal+(tbn[0]*(d1.x+0.5*d2.x+0.35*d3.x)+tbn[1]*(d1.y+0.5*d2.y+0.35*d3.y))*ds); }   // o14: Poren + Feinfalten (Detail-Normalmap, unter Öl glatter)
+  #endif
+  normal=bumpN(normal,nipH(vNip));   // o15: Warze, Montgomery-Drüsen, feine Fältchen (Bump)`:''))
   .replace('#include <clearcoat_normal_fragment_begin>','#include <clearcoat_normal_fragment_begin>')
   .replace('#include <opaque_fragment>',(skin.o9?`{ float fr=1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0); outgoingLight+=diffuseColor.rgb*vec3(1.0,0.42,0.26)*(0.05+0.10*fr*fr)*(0.6+0.4*clamp(length(totalDiffuse)*3.0,0.0,1.0)); }   // o14: warmes Durchscheinen (Subsurface-Ersatz): rötlicher Streurand, Haut wirkt durchblutet statt Plastik
 `:'')+'#include <opaque_fragment>')
   .replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
   #ifdef USE_CLEARCOAT
-   material.clearcoat=oilK*${skin.o9?'0.45':'0.9'}; material.clearcoatRoughness=mix(${skin.o9?'0.35,0.22':'0.12,0.05'},oilK);
+   material.clearcoat=oilK*${skin.o9?'0.6':'0.9'}; material.clearcoatRoughness=mix(${skin.o9?'0.32,0.15':'0.12,0.05'},oilK)${skin.o9?'*(0.75+0.5*texture2D(uDet,vNormalMapUv*21.0).b)':''};   // o15: Ölfilm glänzt in Schlieren statt Lack
   #endif
 `);
  }; m.customProgramCacheKey=()=>'oase-oil-'+(skin.vc?1:0)+(skin.tx?'t':'')+(skin.soft?'s':'')+(skin.o9?'9':''); return m; }
@@ -248,9 +260,9 @@ function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[whic
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
   if(parts.body.some(o=>/^skin_h[89]/.test((o.material&&o.material.name)||''))) { parts.towel.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; }); parts.robe.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; o.userData.k8=true; }); }   // o8: Handtuch/Bademantel-Decke mit eigener Bogenlängen-UV
   parts.body.forEach(o=>{ if(window.__oaseSubdiv!==false) o.geometry=subdiv(o.geometry);   // o14: dichteres Netz (Liege + Sitzpose identisch)
-  const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h[89]/.test(o.material.name||'')), o9=!!(o.material&&/^skin_h9/.test(o.material.name||'')); o.material=oilMat(o.material,{vc,tx,h8,o9,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
+  const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h[89]/.test(o.material.name||'')), o9=!!(o.material&&/^skin_h9/.test(o.material.name||'')); if(o9){ const a=new Float32Array(g.attributes.position.count*4); for(let i=0;i<a.length;i+=4){ a[i]=a[i+1]=a[i+2]=1; } g.setAttribute('_nip',new T.BufferAttribute(a,4)); o.userData.o9=true; } o.material=oilMat(o.material,{vc,tx,h8,o9,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
-  const hT=hairTex(); parts.hair.forEach(o=>{ const hm=o.material&&o.material.map; if(hm&&o.geometry.attributes.uv){ o.userData.keepUV=true; o.material=new T.MeshPhysicalMaterial({vertexColors:!!o.geometry.attributes.color,map:hm,alphaTest:0.42,side:T.DoubleSide,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xf0c880),sheenRoughness:0.35}); }   // o8: Haar-Karten mit eigener Textur (MakeHuman long01, blondiert)
+  const hT=hairTex(); parts.hair.forEach(o=>{ const hm=o.material&&o.material.map; if(hm&&o.geometry.attributes.uv){ o.userData.keepUV=true; o.material=new T.MeshPhysicalMaterial({vertexColors:!!o.geometry.attributes.color,map:hm,alphaTest:0.36,alphaToCoverage:true,side:T.DoubleSide,roughness:0.56,sheen:0.55,sheenColor:new T.Color(0xf0c880),sheenRoughness:0.35}); }   // o8: Haar-Karten mit eigener Textur (MakeHuman long01, blondiert)
    else o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:0.6,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xe0b070),sheenRoughness:0.4}); });
   parts.deco.forEach(o=>{ o.userData.keepUV=true; const m=o.material; if(m){ m.transparent=false; m.alphaTest=0.4; m.depthWrite=true; m.side=T.DoubleSide; } o.raycast=()=>{}; });   // o8: Augen, Brauen, Wimpern – eigenes Material, nicht ölbar
   [...parts.towel,...parts.chest].forEach(o=>{ o.material=terry('#f4ece0','#d98aa0'); if(ADULT()){ const t=terryTex('#e2d6c4','#c4868e'); o.material=new T.MeshStandardMaterial({map:t,bumpMap:t,bumpScale:0.8,vertexColors:true,roughness:1,color:0xe8dccc}); } });   // ab 18: gedämpfteres, weiches Frottee (nicht leuchtend weiß) parts.robe.forEach(o=>o.material=terry('#f2b8c8',null));
@@ -325,16 +337,16 @@ function takeOil(){ if(st.oiled||st.done) return; st.oiled=true; startAmb(); try
  const t0=performance.now(), from=bottleHome.clone(), to=new T.Vector3(FIG.x-0.3,FIG.y+0.42,FIG.z); const par=bottle.parent; S.attach(bottle);
  const anim=()=>{ const k=Math.min(1,(performance.now()-t0)/2600); const a=k<0.3?k/0.3:k>0.75?(1-k)/0.25:1; const e=a*a*(3-2*a);
   bottle.position.lerpVectors(from,to,e); bottle.rotation.z=e*2.3; if(k>0.35&&k<0.7&&Math.random()<0.25){ const lx=-0.42+Math.random()*0.35, lz=(Math.random()-0.5)*0.12; paintAt(lx,lz,1.0); try{ zsaSND&&zsaSND.click&&0; }catch(e){} }
-  if(k<1) requestAnimationFrame(anim); else { par.attach(bottle); bottle.position.copy(par.worldToLocal(bottleHome.clone())); bottle.rotation.set(0,0,0); } }; anim();
+  if(k<1) raf(anim); else { par.attach(bottle); bottle.position.copy(par.worldToLocal(bottleHome.clone())); bottle.rotation.set(0,0,0); } }; anim();
  drip(); }
 function drip(){ const a=new (window.AudioContext||window.webkitAudioContext)(); if(MUTE) return; [0.9,1.25,1.6].forEach(d=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(900,a.currentTime+d); o.frequency.exponentialRampToValueAtTime(260,a.currentTime+d+0.09); g.gain.setValueAtTime(0.0001,a.currentTime+d); g.gain.linearRampToValueAtTime(0.12,a.currentTime+d+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d+0.14); o.connect(g); g.connect(a.destination); o.start(a.currentTime+d); o.stop(a.currentTime+d+0.2); }); }
 function rub(lx,lz,len){ if(st.done) return;  uPress.value.x=lx; uPress.value.y=lz; pressGoal=window.__oaseSoft?0.0085:0.006; pressAt=performance.now(); jigKick(lx,lz,len); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; } // o12: Brust + Bauch einölbar (Ohrfeigen-Gag ab 18 bleibt)
- startAmb(); paintAt(lx,lz,(0.175+Math.min(0.25,len*3))*(R.xr.isPresenting?1.3:1));   /* o13: in VR +30 % (gründliches Einreiben ≈ 50 s, normal 1,5–2 min) */ st.dist+=len; }   // o14: halbe Öl-Menge pro Strich → etwa doppelt so lange einreiben bis 90 %
+ { const n=performance.now(); st.rubT=(st.rubT||0)+Math.min(0.25,(n-(st.lastRub||n))/1000); st.lastRub=n; } startAmb(); paintAt(lx,lz,(0.175+Math.min(0.25,len*3))*(R.xr.isPresenting?1.3:1));   /* o13: in VR +30 % (gründliches Einreiben ≈ 50 s, normal 1,5–2 min) */ st.dist+=len; }   // o14: halbe Öl-Menge pro Strich → etwa doppelt so lange einreiben bis 90 %
 function jigKick(lx,lz,len){ if(!window.__oaseSoft) return; const v=Math.min(len||0.01,0.05);   // Streichen in Brustnähe/über weichem Gewebe bringt sie leicht ins Schwingen
  const db=Math.hypot(Math.max(0,Math.abs(lx+0.447)-0.08),Math.max(0,Math.abs(Math.abs(lz)-0.104)-0.09)); const nb=Math.max(0,1-db/0.12);
  jig.bv+=(Math.random()<0.5?-1:1)*v*0.9*(0.25+nb); jig.bzv+=(Math.random()-0.5)*v*0.6*(0.2+nb); jig.sv+=(Math.random()<0.5?-1:1)*v*0.7; }
 function jigTick(d){ if(!window.__oaseSoft) return; const sp=(k,c,x,v,ext)=>{ v+=(-k*x-c*v+ext)*d; return [x+v*d,v]; };
- const br=-Math.cos(uT.value*1.35)*1.35*1.35*0.0011;   // Atmen schiebt mit
+ const br=-Math.cos(uT.value*1.1)*1.1*1.1*0.0011;   // Atmen schiebt mit
  [jig.b,jig.bv]=sp(150,5.5,jig.b,jig.bv,br); [jig.bz,jig.bzv]=sp(120,5.0,jig.bz,jig.bzv,0); [jig.s,jig.sv]=sp(220,9,jig.s,jig.sv,0);
  const cl=(x,m)=>Math.max(-m,Math.min(m,x)); jig.b=cl(jig.b,0.006); jig.bz=cl(jig.bz,0.004); jig.s=cl(jig.s,0.004);
  uJig.value.set(jig.b,jig.bz,jig.s,0);
@@ -342,7 +354,7 @@ function jigTick(d){ if(!window.__oaseSoft) return; const sp=(k,c,x,v,ext)=>{ v+
  pressV+=((pressGoal-uPress.value.w)*320-pressV*20)*d; uPress.value.w=Math.max(-0.0015,uPress.value.w+pressV*d); }
 function progress(){ if(st.done||!target) return; const c=coverage(); st.cov=c; oilAmt.value=c; const ad=ADULT(), p=ad?'a':'h'; const now=performance.now();
  [[0.12,1],[0.42,2]].forEach(([th,i])=>{ if(c>=th&&!st.said[i]&&now-st.spoke>4800){ st.said[i]=1; say(p+i); } });
- if(c>=0.9&&now-st.spoke>3600) punch(); }
+ if((c>=0.9||(st.oiled&&(st.rubT||0)>=120))&&now-st.spoke>3600) punch(); }   // o15: Ende garantiert – nach ~120 s aktivem Einreiben auch unter 90 %
 function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
  // Ende: 1) glänzt überall · 2) zufriedener Seufzer/Zeile (Frauenstimme) · 3) Pose: stützt sich auf, schaut zum Spieler · 4) ~1 s Stille · 5) „Danke, Kleiner.“ als allerletzte Zeile
  st.endOk=true; if(radio) musFade(MUSV*0.35,800); const a=say(ad?'a3':'h3'); let go=false; const next=()=>{ if(go) return; go=true; setTimeout(sit,600); };
@@ -351,21 +363,21 @@ function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
   const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
   const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); setTimeout(()=>{ if(radio){ radio.play().catch(()=>{}); musFade(MUSV*0.4,2500); } },4500); },6000); } };   // o14: 6 s Stille nach dem Schreck, dann „Danke, Kleiner.“ als letzter Satz
   setTimeout(fl,300); } }
-function swapPose(){ if(!fig.up) return; if(!snapUp()) swapHard(); }
+function swapPose(){ if(!fig.up){ jig.bv+=0.12; jig.sv+=0.08; console.warn('[oase] Sitz-Pose fehlt'); return; } if(!snapUp()) swapHard(); }
 function swapHard(){ fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; jig.bv+=0.09; jig.sv+=0.05; }
 // o14: Schreck-Aufsetzen – schnell (0,42 s) aber durch Zwischenposen: Kopf reißt zuerst hoch, Rumpf folgt im Bogen um die Hüfte (keine Teleportation, kein Schrumpfen)
 function snapUp(){ try{ const L=fig.lie, U=fig.up; L.root.updateMatrixWorld(true); U.root.updateMatrixWorld(true);
  const pairs=[], free=[], M=new T.Matrix4(), N3=new T.Matrix3(), v=new T.Vector3();
- L.root.traverse(o=>{ if(!o.isMesh||!o.visible) return; let u=null; U.root.traverse(q=>{ if(!u&&q.isMesh&&q.name===o.name) u=q; });
+ L.root.traverse(o=>{ if(o.name==='contactAO'){ o.visible=false; return; } if(!o.isMesh||!o.visible) return; let u=null; U.root.traverse(q=>{ if(!u&&q.isMesh&&q.name===o.name) u=q; });
   const A=o.geometry.attributes.position; if(u&&u.geometry.attributes.position.count===A.count){ M.copy(o.matrixWorld).invert().multiply(u.matrixWorld); N3.getNormalMatrix(M);
    const B=u.geometry.attributes.position, n=A.count, a=new Float32Array(A.array.length), b=new Float32Array(n*3); a.set(A.array);
    for(let i=0;i<n;i++){ v.fromBufferAttribute(B,i).applyMatrix4(M); b[i*3]=v.x; b[i*3+1]=v.y; b[i*3+2]=v.z; }
    const NA=o.geometry.attributes.normal, NB=u.geometry.attributes.normal; let na=null,nb=null; if(NA&&NB){ na=new Float32Array(NA.array); nb=new Float32Array(n*3); for(let i=0;i<n;i++){ v.fromBufferAttribute(NB,i).applyMatrix3(N3).normalize(); nb[i*3]=v.x; nb[i*3+1]=v.y; nb[i*3+2]=v.z; } }
    pairs.push({o,a,b,na,nb}); } else free.push(o); });
  const body=pairs.find(p=>L.parts.body.indexOf(p.o)>=0); if(!body) return false;
- free.forEach(o=>{ const A=o.geometry.attributes.position, n=A.count, nn=new Int32Array(n), a=new Float32Array(A.array), ba=body.a, m=ba.length/3; // Handtuch/Decke: folgt dem nächsten Körperpunkt
+ free.forEach(o=>{ if(o.userData.follow){ pairs.push({o,a:new Float32Array(o.geometry.attributes.position.array),follow:o.userData.follow}); return; } const A=o.geometry.attributes.position, n=A.count, nn=new Int32Array(n), a=new Float32Array(A.array), ba=body.a, m=ba.length/3; // Handtuch/Decke: folgt dem nächsten Körperpunkt
   for(let i=0;i<n;i++){ let bd=1e9,bk=0; for(let k=0;k<m;k+=6){ const dx=a[i*3]-ba[k*3], dy=a[i*3+1]-ba[k*3+1], dz=a[i*3+2]-ba[k*3+2], d=dx*dx+dy*dy+dz*dz; if(d<bd){ bd=d; bk=k; } } nn[i]=bk; }
-  pairs.push({o,a,follow:nn}); });
+  o.userData.follow=nn; pairs.push({o,a,follow:nn}); });
  const PX=-0.45, PY=0.09, DUR=420, t0=performance.now(), cur=body.a.slice(0);
  const step=()=>{ const t=Math.min(1,(performance.now()-t0)/DUR);
   for(const p of pairs){ if(p.follow) continue; const A=p.o.geometry.attributes.position.array, a=p.a, b=p.b, n=a.length/3;
@@ -376,8 +388,11 @@ function snapUp(){ try{ const L=fig.lie, U=fig.up; L.root.updateMatrixWorld(true
     if(p.na){ const NN=p.o.geometry.attributes.normal.array; let x=p.na[j]+(p.nb[j]-p.na[j])*w, y=p.na[j+1]+(p.nb[j+1]-p.na[j+1])*w, z=p.na[j+2]+(p.nb[j+2]-p.na[j+2])*w; const l=Math.hypot(x,y,z)||1; NN[j]=x/l; NN[j+1]=y/l; NN[j+2]=z/l; } }
    p.o.geometry.attributes.position.needsUpdate=true; if(p.na) p.o.geometry.attributes.normal.needsUpdate=true; if(p===body) cur.set(A); }
   for(const p of pairs){ if(!p.follow) continue; const A=p.o.geometry.attributes.position.array, a=p.a, ba=body.a, n=a.length/3; for(let i=0;i<n;i++){ const j=i*3, k=p.follow[i]*3; A[j]=a[j]+cur[k]-ba[k]; A[j+1]=a[j+1]+cur[k+1]-ba[k+1]; A[j+2]=a[j+2]+cur[k+2]-ba[k+2]; } p.o.geometry.attributes.position.needsUpdate=true; }
-  if(t<1) requestAnimationFrame(step); else { swapHard(); pairs.forEach(p=>{ p.o.geometry.attributes.position.array.set(p.a); p.o.geometry.attributes.position.needsUpdate=true; if(p.na){ p.o.geometry.attributes.normal.array.set(p.na); p.o.geometry.attributes.normal.needsUpdate=true; } }); } };
- pose='rise'; jig.bv+=0.05; step(); return true; }catch(e){ console.warn('snapUp',e); return false; } }
+  if(t<1) SNAP=step; else { SNAP=null; swapHard(); pairs.forEach(p=>{ p.o.geometry.attributes.position.array.set(p.a); p.o.geometry.attributes.position.needsUpdate=true; if(p.na){ p.o.geometry.attributes.normal.array.set(p.na); p.o.geometry.attributes.normal.needsUpdate=true; } }); } };
+ pose='rise'; jig.bv+=0.05; SNAP=step; step(); setTimeout(()=>{ if(pose==='rise'){ SNAP=null; pairs.forEach(p=>{ p.o.geometry.attributes.position.array.set(p.a); p.o.geometry.attributes.position.needsUpdate=true; if(p.na){ p.o.geometry.attributes.normal.array.set(p.na); p.o.geometry.attributes.normal.needsUpdate=true; } }); swapHard(); } },1500); return true; }catch(e){ console.warn('snapUp',e); return false; } }
+// o15: Aufsetzen läuft im A-Frame-Tick (= XR-Frame). window.requestAnimationFrame steht in der immersiven Quest-Sitzung still → vorher blieb sie bei t≈0 hängen (Pose 2 kam nie). Sicherheitsnetz: nach 1,5 s harter Wechsel.
+let SNAP=null; function snapTick(){ if(SNAP) SNAP(); if(RAFQ.length){ const q=RAFQ; RAFQ=[]; q.forEach(f=>f()); } }
+let RAFQ=[]; function raf(f){ RAFQ.push(f); }   // o15: eigene Frame-Schleife über den A-Frame-Tick (läuft auch in VR); Flasche + roter Rand blieben in VR sonst hängen
 function reward(){ setTimeout(()=>{ if(!window.zsaNote) return; const n=zsaNote('Gutschein: Einmal Ölmassage gratis. Für den Kleinen. – Gerd',0.16,0.1); n.position.set(CART.x+0.02,0.795,CART.z+0.12); n.rotation.x=-Math.PI/2; n.rotation.z=0.3; G.add(n); try{ localStorage.setItem('zs_oase_done','1'); }catch(e){} },2500); }
 // ---------------------------------------------------------------- Eingabe: Maus/Touch (Pointer) + VR-Controller
 const rc=new T.Raycaster(), tmpV=new T.Vector3(), tmpV2=new T.Vector3();
@@ -410,8 +425,8 @@ function setupXR(){ [0,1].forEach(i=>{ const c=R.xr.getController(i); const dn=(
  [2,3].forEach(i=>{ const el=document.getElementById(ctl[i].ent); if(!el) return; ['triggerdown','gripdown'].forEach(ev=>el.addEventListener(ev,()=>ctlDown(i))); ['triggerup','gripup'].forEach(ev=>el.addEventListener(ev,()=>ctlUp(i))); }); }
 // (Zeile 3 = zufriedener Satz kommt nur noch beim Ende, nicht doppelt bei 68 %)
 // o13 Debug-Karte (Test-Build): kleine Tafel am Wagen (Welt-Raum, nicht kopffest). An: ?debug=1 oder beide Griff-Tasten 2 s halten
-const DBG={on:/[?&]debug=1/.test(location.search),hit:'-',path:'-',wMax:0,mesh:null,cv:null,t:0,g0:0};
-function dbgGrip(ses){ if(!ses) return; let n=0; for(const s_ of ses.inputSources){ const b=s_.gamepad&&s_.gamepad.buttons; if(b&&b[1]&&b[1].pressed) n++; }
+const DBG={allow:/[?&]debug=1/.test(location.search),on:/[?&]debug=1/.test(location.search),hit:'-',path:'-',wMax:0,mesh:null,cv:null,t:0,g0:0};
+function dbgGrip(ses){ if(!ses||!DBG.allow) return; let n=0; for(const s_ of ses.inputSources){ const b=s_.gamepad&&s_.gamepad.buttons; if(b&&b[1]&&b[1].pressed) n++; }
  const now=performance.now(); if(n>=2){ if(!DBG.g0) DBG.g0=now; else if(now-DBG.g0>2000&&DBG.g0>0){ DBG.on=!DBG.on; DBG.g0=-1; } } else DBG.g0=0; }
 function dbgTick(){ DBG.wMax=Math.max(DBG.wMax*0.995,uPress.value.w); if(!DBG.on){ if(DBG.mesh) DBG.mesh.visible=false; return; } const now=performance.now(); if(now-DBG.t<400) return; DBG.t=now;
  if(!DBG.mesh){ const cv=document.createElement('canvas'); cv.width=512; cv.height=340; const tx=new T.CanvasTexture(cv); tx.colorSpace=T.SRGBColorSpace;
@@ -420,14 +435,76 @@ function dbgTick(){ DBG.wMax=Math.max(DBG.wMax*0.995,uPress.value.w); if(!DBG.on
  const rows=[['Modus',ADULT()?'AB 18':'jugendfrei'],['Flag',(window.ZS_OASE_REQUIRE_QUIZ===false?'Quiz AUS (Test) · ':'')+"zs_adult="+L_('zs_adult')+" ok="+L_('zs_adult_ok')+(/[?&]kids=1/.test(location.search)?' kids=1':'')],
   ['Öl',(st.oiled?'genommen':'NICHT genommen')+' · '+(100*(st.cov||0)).toFixed(0)+' % / 90 %'],['Ende',st.done?('läuft · Pose '+pose):(st.endOk?'ok':'nein')],
   ['Eingabe',(R.xr.isPresenting?'VR ':'2D ')+DBG.path],['Hand',DBG.hit+' · '+ctl.map(k=>k.held?'■':'□').join('')],
-  ['Delle',(window.__oaseSoft?'Soft-Shader an':'einfach')+' · '+(DBG.wMax*1000).toFixed(1)+' mm'],['Build','1023o14']];
+  ['Delle',(window.__oaseSoft?'Soft-Shader an':'einfach')+' · '+(DBG.wMax*1000).toFixed(1)+' mm'],['Build','1023o15']];
  x.fillStyle='rgba(18,14,10,0.92)'; x.fillRect(0,0,512,340); x.strokeStyle='#8a6e44'; x.lineWidth=3; x.strokeRect(2,2,508,336); x.font='600 25px "DejaVu Sans Condensed",sans-serif';
  rows.forEach((r,i)=>{ x.fillStyle='#b89a62'; x.fillText(r[0],14,38+i*40); x.fillStyle='#f0e2c2'; x.fillText(String(r[1]).slice(0,34),128,38+i*40); }); DBG.mesh.material.map.needsUpdate=true; }
 function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession(); dbgGrip(ses);
- ctl.forEach((k,i)=>{ if(!k.held) return; if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone();
+ const hp=new T.Vector3(); cam.getWorldPosition(hp); ctl.forEach((k,i)=>{ if(!k.held) return; if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone(); if(p.distanceTo(hp)<0.12||p.lengthSq()<1e-6){ k.last=null; return; }   // o15: Eingabe nur von der Hand – nie vom Kopf (Controller ohne Tracking/ am Kopf = ignorieren)
   // Strahl von 25 cm über der Hand senkrecht nach unten: Haut zwischen 12 cm unter und 18 cm über der Hand → einreiben
   const h=hitBody(new T.Ray(p.clone().add(new T.Vector3(0,0.25,0)),new T.Vector3(0,-1,0))); const dy=h&&h.p?h.p.y-p.y:0; DBG.hit=!h?'kein Treffer':h.cover?'Decke/Tuch':(dy<-0.12||dy>0.18)?'Abstand '+(dy*100).toFixed(0)+' cm':'Haut '+(dy*100).toFixed(0)+' cm'; DBG.path=useEnt?'A-Frame laser-controls (#hl/#hr)':'three XR-Controller'; if(!h||h.cover||dy<-0.12||dy>0.18){ k.last=null; k.zone=false; return; } k.zone=inChest(h.lx,h.lz);
   const len=k.last?h.p.distanceTo(k.last):0; k.last=h.p.clone(); if(len>0.003){ rub(h.lx,h.lz,Math.min(len,0.08)); if(st.oiled&&ses){ const src=[...ses.inputSources].find(s=>s.handedness===k.hand); const ha=src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]; ha&&ha.pulse&&ha.pulse(0.18,18); } } }); }
+
+// ---------------------------------------------------------------- o15 Realismus: Brustwarzen-Rahmen, Rötungen, Kontaktschatten
+function figBody(f){ let b=null; f&&f.root.traverse(o=>{ if(o.isMesh&&o.userData.o9&&(!b||o.geometry.attributes.position.count>b.geometry.attributes.position.count)) b=o; }); return b; }
+function nipPrep(){ try{ const bl=figBody(fig.lie); if(!bl) return; const P=bl.geometry.attributes.position, UV=bl.geometry.attributes.uv, n=P.count;
+ // Hautfarbe aus der Textur lesen: dunkelster Fleck nahe dem Brust-Scheitel = Mitte des gemalten Warzenhofs
+ let lum=null; const im=bl.material.map&&bl.material.map.image; if(im&&UV){ try{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(im,0,0,512,512); const d=x.getImageData(0,0,512,512).data; const fy=bl.material.map.flipY; lum=i=>{ const u=UV.getX(i), v=UV.getY(i); const px=Math.min(511,Math.max(0,(u*512)|0)), py=Math.min(511,Math.max(0,((fy?1-v:v)*512)|0)), k=(py*512+px)*4; return 0.3*d[k]+0.59*d[k+1]+0.11*d[k+2]; }; }catch(e){ lum=null; } }
+ const ctr=[];
+ [1,-1].forEach(sg=>{ let ai=-1, ay=-1e9; for(let i=0;i<n;i++){ const x=P.getX(i), z=P.getZ(i)*sg; if(x<-0.75||x>-0.25||z<0.03||z>0.2) continue; const y=P.getY(i); if(y>ay){ ay=y; ai=i; } } if(ai<0) return;
+  const A=new T.Vector3().fromBufferAttribute(P,ai); let ci=ai;
+  if(lum){ const c=[]; for(let i=0;i<n;i++){ const dx=P.getX(i)-A.x, dy=P.getY(i)-A.y, dz=P.getZ(i)-A.z; if(dx*dx+dy*dy+dz*dz<0.035*0.035) c.push([i,lum(i)]); } c.sort((a,b)=>a[1]-b[1]); const top=c.slice(0,Math.max(3,c.length*0.12|0)); if(c.length>20&&c[c.length-1][1]-c[0][1]>14){ const m=new T.Vector3(); top.forEach(([i])=>m.add(new T.Vector3().fromBufferAttribute(P,i))); m.divideScalar(top.length); let bd=1e9; for(const [i] of c){ const dd=new T.Vector3().fromBufferAttribute(P,i).distanceToSquared(m); if(dd<bd){ bd=dd; ci=i; } } } }
+  ctr.push(ci); });
+ window.__oaseNip=ctr.slice();
+ // Rötung (Knie, Ellbogen, Hände, Füße) aus der Liege-Pose, per Index auf die Sitzpose übertragen
+ const red=new Float32Array(n), g_=(v,c,w)=>Math.exp(-(((v-c)/w)**2));
+ for(let i=0;i<n;i++){ const x=P.getX(i), y=P.getY(i), z=Math.abs(P.getZ(i)); let r=0;
+  r=Math.max(r,g_(x,0.33,0.05)*g_(z,0.10,0.05)*(y>0.05?1:0.3));            // Knie (Oberseite)
+  r=Math.max(r,g_(x,-0.36,0.05)*(z>0.2?1:0)*0.8);                         // Ellbogen
+  r=Math.max(r,(x>-0.12&&x<0.12&&z>0.2?1:0)*0.75*g_(x,0.02,0.09));      // Hände
+  r=Math.max(r,x>0.66?0.55*Math.min(1,(x-0.66)/0.06):0);                   // Füße/Zehen
+  red[i]=r; }
+ [fig.lie,fig.up].forEach(f=>{ const b=figBody(f); if(!b||b.geometry.attributes.position.count!==n) return; const Q=b.geometry.attributes.position, N_=b.geometry.attributes.normal, A=b.geometry.attributes._nip; const fr=ctr.map(ci=>{ const c=new T.Vector3().fromBufferAttribute(Q,ci), nn=new T.Vector3().fromBufferAttribute(N_,ci).normalize(); const u=new T.Vector3(1,0,0).addScaledVector(nn,-nn.x).normalize(), v=new T.Vector3().crossVectors(nn,u); return {c,nn,u,v}; });
+  const o=new T.Vector3(); for(let i=0;i<n;i++){ let best=null, bd=1e9; for(const F of fr){ o.fromBufferAttribute(Q,i).sub(F.c); const d=o.lengthSq(); if(d<bd){ bd=d; best=F; } } if(best&&bd<0.06*0.06){ o.fromBufferAttribute(Q,i).sub(best.c); A.setXYZW(i,o.dot(best.u),o.dot(best.v),o.dot(best.nn),red[i]); } else A.setXYZW(i,1,1,1,red[i]); } A.needsUpdate=true; }); }catch(e){ console.warn('nipPrep',e); } }
+function contactShadow(){ try{ [fig.lie,fig.up].forEach(f=>{ const b=figBody(f); if(!b) return; const W=256,H=128, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,W,H);
+  const P=b.geometry.attributes.position, X0=-0.98, X1=0.88, Z0=-0.36, Z1=0.36; b.updateWorldMatrix(true,false); x.fillStyle='rgba(255,255,255,0.16)';
+  for(let i=0;i<P.count;i+=3){ const y=P.getY(i); if(y>0.05) continue; const k=1-Math.max(0,y)/0.05; const px=(P.getX(i)-X0)/(X1-X0)*W, pz=(P.getZ(i)-Z0)/(Z1-Z0)*H; x.globalAlpha=k*k; x.beginPath(); x.arc(px,pz,2.2,0,6.283); x.fill(); }
+  const c2=document.createElement('canvas'); c2.width=W; c2.height=H; const x2=c2.getContext('2d'); x2.filter='blur(5px)'; x2.drawImage(c,0,0); const t=new T.CanvasTexture(c2);
+  const m=new T.Mesh(new T.PlaneGeometry(X1-X0,Z1-Z0),new T.MeshBasicMaterial({color:0x1a0c06,alphaMap:t,transparent:true,opacity:0.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  m.rotation.x=-Math.PI/2; m.position.set((X0+X1)/2,-0.0005,(Z0+Z1)/2); m.renderOrder=1; m.name='contactAO'; b.parent.add(m); m.position.applyMatrix4(new T.Matrix4().copy(b.matrix)); }); }catch(e){ console.warn('contactShadow',e); } }
+function prepFollow(){ try{ if(!fig.lie||!fig.up) return; const bl=figBody(fig.lie); if(!bl) return; const ba=bl.geometry.attributes.position.array, m=ba.length/3;   // o15: Folge-Zuordnung (Tuch/Haar) schon beim Laden – kein Ruckler im Moment des Aufsetzens
+ fig.lie.root.traverse(o=>{ if(!o.isMesh||o===bl||o.userData.follow||o.name==='contactAO') return; let u=null; fig.up.root.traverse(q=>{ if(!u&&q.isMesh&&q.name===o.name) u=q; }); if(u&&u.geometry.attributes.position.count===o.geometry.attributes.position.count) return;
+  const a=o.geometry.attributes.position.array, n=a.length/3, nn=new Int32Array(n); for(let i=0;i<n;i++){ let bd=1e9,bk=0; for(let k=0;k<m;k+=6){ const dx=a[i*3]-ba[k*3], dy=a[i*3+1]-ba[k*3+1], dz=a[i*3+2]-ba[k*3+2], d=dx*dx+dy*dy+dz*dz; if(d<bd){ bd=d; bk=k; } } nn[i]=bk; } o.userData.follow=nn; }); }catch(e){ console.warn('prepFollow',e); } }
+
+// ---------------------------------------------------------------- o15: „Öl-Barometer“ an der linken Wand (statt Debug-Karte) – altes Messing-Zeigerinstrument, kein Leuchten
+let GAUGE=null;
+function buildGauge(std){ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d'), C=256;
+ const gr=x.createRadialGradient(C,C,40,C,C,256); gr.addColorStop(0,'#efe3c4'); gr.addColorStop(0.85,'#e2d1a8'); gr.addColorStop(1,'#c9b383'); x.fillStyle=gr; x.fillRect(0,0,512,512);
+ for(let i=0;i<2600;i++){ x.fillStyle='rgba(120,90,40,'+(Math.random()*0.05)+')'; x.fillRect(Math.random()*512,Math.random()*512,1+Math.random()*2,1+Math.random()*2); }   // vergilbtes Papier
+ x.save(); x.globalAlpha=0.10; x.fillStyle='#7a5a20'; x.beginPath(); x.ellipse(150,380,60,30,0.4,0,6.283); x.fill(); x.restore();           // Wasserfleck
+ const A0=-225*Math.PI/180, A1=45*Math.PI/180, ang=k=>A0+(A1-A0)*k; x.strokeStyle='#2a1e14'; x.fillStyle='#2a1e14';
+ x.lineWidth=3; x.beginPath(); x.arc(C,C,196,A0,A1); x.stroke(); x.lineWidth=1.5; x.beginPath(); x.arc(C,C,186,A0,A1); x.stroke();
+ for(let i=0;i<=50;i++){ const a=ang(i/50), r0=i%5?186:176; x.lineWidth=i%5?1.5:3; x.beginPath(); x.moveTo(C+Math.cos(a)*r0,C+Math.sin(a)*r0); x.lineTo(C+Math.cos(a)*196,C+Math.sin(a)*196); x.stroke(); }
+ x.font='600 22px Georgia,serif'; x.textAlign='center'; x.textBaseline='middle'; for(let i=0;i<=10;i++){ const a=ang(i/10); x.fillText(String(i*10),C+Math.cos(a)*156,C+Math.sin(a)*156); }
+ x.save(); x.globalAlpha=0.55; x.strokeStyle='#8a2a18'; x.lineWidth=9; x.beginPath(); x.arc(C,C,206,ang(0.9),ang(1)); x.stroke(); x.restore();   // rotes Feld ab 90 %
+ x.font='italic 600 26px Georgia,serif'; [['TROCKEN',0.05],['MATT',0.3],['SEIDIG',0.55],['GEÖLT',0.86]].forEach(([t,k])=>{ const a=ang(k); x.save(); x.translate(C+Math.cos(a)*112,C+Math.sin(a)*112); x.rotate(a+Math.PI/2); x.fillText(t,0,0); x.restore(); });
+ x.font='700 26px Georgia,serif'; x.fillText('ÖL-BAROMETER',C,C+150); x.font='italic 15px Georgia,serif'; x.fillText('Sonnen-Oase · Feinmechanik seit 1979',C,C+176); x.font='12px Georgia,serif'; x.fillText('Nr. 0815 · geeicht',C,C+196);
+ const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; t.anisotropy=8;
+ const grp=new T.Group(); grp.position.set(RW.x0+0.012,1.46,TB.z); grp.rotation.y=Math.PI/2; S.add(grp);
+ const wood=new T.MeshStandardMaterial({color:0x4a2a16,roughness:0.55,metalness:0}), brass=new T.MeshStandardMaterial({color:0xb08a4a,roughness:0.38,metalness:0.85}), dark=new T.MeshStandardMaterial({color:0x15100c,roughness:0.5,metalness:0.3});
+ const back=new T.Mesh(new T.CylinderGeometry(0.175,0.18,0.03,48),wood); back.rotation.x=Math.PI/2; back.position.z=0.015; grp.add(back);
+ const ring=new T.Mesh(new T.TorusGeometry(0.142,0.011,14,64),brass); ring.position.z=0.034; grp.add(ring);
+ const face=new T.Mesh(new T.CircleGeometry(0.138,64),new T.MeshStandardMaterial({map:t,roughness:0.75,emissive:0xffffff,emissiveMap:t,emissiveIntensity:0.16})); face.position.z=0.031; grp.add(face);   // leicht angehoben, damit im Halbdunkel lesbar – kein Leuchten
+ const hub=new T.Mesh(new T.CylinderGeometry(0.009,0.009,0.006,20),brass); hub.rotation.x=Math.PI/2; hub.position.z=0.037; grp.add(hub);
+ const mkN=(len,w,mat,z)=>{ const p=new T.Group(); const sh=new T.Shape(); sh.moveTo(-w,-0.02); sh.lineTo(w,-0.02); sh.lineTo(w*0.25,len); sh.lineTo(-w*0.25,len); sh.closePath(); const m=new T.Mesh(new T.ShapeGeometry(sh),mat); p.add(m); p.position.z=z; grp.add(p); return p; };
+ const ref=mkN(0.112,0.0035,brass,0.0335); ref.rotation.z=-(ang(0.9)+Math.PI/2);   // Messing-Merkzeiger auf 90 %
+ const nd=mkN(0.122,0.0028,dark,0.0355);
+ const plate=new T.Mesh(new T.BoxGeometry(0.11,0.026,0.004),brass); plate.position.set(0,-0.205,0.006); grp.add(plate);
+ const hook=new T.Mesh(new T.CylinderGeometry(0.003,0.003,0.02,8),brass); hook.rotation.x=Math.PI/2; hook.position.set(0,0.185,0.01); grp.add(hook);
+ GAUGE={nd,ang,k:0,v:0}; nd.rotation.z=-(ang(0)+Math.PI/2); }
+function gaugeTick(d){ if(!GAUGE) return; const g=GAUGE, tgt=Math.min(1,st.cov||0); g.v+=((tgt-g.k)*30-g.v*7)*d; g.k+=g.v*d; g.k=Math.max(-0.01,Math.min(1.02,g.k)); g.nd.rotation.z=-(g.ang(g.k+0.004*Math.sin(uT.value*7.3))+Math.PI/2); }   // gedämpft, leichtes Zittern wie ein echtes Instrument
+// o15: kaum merkliches Leben – alle 7–13 s eine winzige Gewichtsverlagerung (Federn, mm-Bereich)
+const idle={t:6};
+function idleTick(d){ if(!window.__oaseSoft||st.done) return; idle.t-=d; if(idle.t>0) return; idle.t=7+Math.random()*6; jig.bv+=(Math.random()-0.4)*0.012; jig.bzv+=(Math.random()-0.5)*0.008; jig.sv+=(Math.random()-0.5)*0.008; }
 // ---------------------------------------------------------------- Ohrfeigen-Gag (nur ab 18): Hand verweilt 15–20 s (zufällig) in der Brust-Zone → Klatsch, roter Rand, Zeile, Stempel „Das kommt in Ihre Akte!“ auf einem Zettel am Wagen
 const gag={t:0,need:15+Math.random()*5,n:0,slip:null};
 function sfxSlap(){ if(MUTE) return; const a=new (window.AudioContext||window.webkitAudioContext)(), n=a.sampleRate*0.25|0, b=a.createBuffer(1,n,a.sampleRate), d=b.getChannelData(0);
@@ -438,7 +515,7 @@ function sfxStamp(){ if(MUTE) return; const a=new (window.AudioContext||window.w
  const s=a.createBufferSource(), g=a.createGain(); g.gain.value=0.9; s.buffer=b; s.connect(g); g.connect(a.destination); s.start(); }
 function redFlash(){ // Bildschirm: kurzer roter Rand (DOM). VR: rote Hohlkugel, die an der Kopfposition in der WELT steht (folgt dem Kopf nicht) und in 0,45 s verblasst
  if(R.xr.isPresenting){ const h=new T.Vector3(); cam.getWorldPosition(h); const m=new T.Mesh(new T.SphereGeometry(0.6,24,16),new T.MeshBasicMaterial({color:0xb01010,side:T.BackSide,transparent:true,opacity:0.32,depthTest:false,depthWrite:false,fog:false,toneMapped:false})); m.renderOrder=999; m.position.copy(h); S.add(m);
-  const t0=performance.now(), f=()=>{ const k=(performance.now()-t0)/450; if(k>=1){ S.remove(m); m.geometry.dispose(); return; } m.material.opacity=0.32*(1-k); requestAnimationFrame(f); }; f(); return; }
+  const t0=performance.now(), f=()=>{ const k=(performance.now()-t0)/450; if(k>=1){ S.remove(m); m.geometry.dispose(); return; } m.material.opacity=0.32*(1-k); raf(f); }; f(); return; }
  const d=document.createElement('div'); d.style.cssText='position:fixed;inset:0;z-index:7;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(160,0,0,0) 45%,rgba(170,10,10,.75) 100%);opacity:1;transition:opacity .45s ease-out'; document.body.appendChild(d);
  requestAnimationFrame(()=>requestAnimationFrame(()=>{ d.style.opacity='0'; })); setTimeout(()=>d.remove(),600); }
 function slipTex(){ return cv(512,256,(x,w,h)=>{ x.fillStyle='#eee3c8'; x.fillRect(0,0,w,h); for(let i=0;i<2500;i++){ x.fillStyle=`rgba(90,70,40,${rnd()*0.06})`; x.fillRect(rnd()*w,rnd()*h,2,2); }
@@ -453,7 +530,8 @@ function slapGag(){ if(st.done) return; gag.n++; gag.t=0; gag.need=15+Math.rando
 function gagTick(d){ if(!ADULT()||st.done){ gag.t=0; return; } const z=(drag&&drag.zone)||ctl.some(c=>c.held&&c.zone); if(z) gag.t+=d; else gag.t=Math.max(0,gag.t-d*2); if(gag.t>=gag.need) slapGag(); }
 // ---------------------------------------------------------------- Bewegung + Kollision (Kopf ≥ 0,15 m von Möbeln, ≥ 0,12 m von der Figur; Boden y=0)
 const BOX=[[-1.36,0.64,TB.z-TB.w/2-0.02,TB.z+TB.w/2+0.02,0.15],[0.02,1.98,-2.17,-1.15,0.15],[CART.x-0.3,CART.x+0.3,CART.z-0.2,CART.z+0.2,0.15],[RW.x0,RW.x0+0.62,RW.z0,RW.z0+0.62,0.1],[1.48,1.82,0.78,1.12,0.12]];
-function collide(){ const h=new T.Vector3(); cam.getWorldPosition(h); const o={x:h.x,z:h.z};
+function collide(moved){ if(window.__oaseFreeCam) return; if(R.xr.isPresenting&&!moved) return;   // o15: in VR nur Stick-Bewegung begrenzen – echtes Vorbeugen mit dem Kopf (Haut aus 10–15 cm ansehen) verschiebt NIE die Welt (vorher: Kopf in der Liegen-Box → Rig wurde weggeschoben → „sie weicht zurück“)
+ const h=new T.Vector3(); cam.getWorldPosition(h); const o={x:h.x,z:h.z};
  o.x=Math.max(RW.x0+0.2,Math.min(RW.x1-0.2,o.x)); const inDoor=o.x>0.48&&o.x<1.32; o.z=Math.max(RW.z0+0.2,Math.min(inDoor?RW.z1+0.4:RW.z1-0.2,o.z));
  BOX.forEach(([a,b,c,d,m])=>{ const A=a-m,B=b+m,Cc=c-m,D=d+m; if(o.x>A&&o.x<B&&o.z>Cc&&o.z<D){ const dx=[o.x-A,B-o.x], dz=[o.z-Cc,D-o.z], mn=Math.min(...dx,...dz); if(mn===dx[0]) o.x=A; else if(mn===dx[1]) o.x=B; else if(mn===dz[0]) o.z=Cc; else o.z=D; } });
  rig.position.x+=o.x-h.x; rig.position.z+=o.z-h.z; rig.position.y=0; }
@@ -462,7 +540,7 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
    makeMask(); makeBrush(); buildRoom(); setupPointer(); setupXR();
    if(window.worldDust) try{ window.__oaseDust=worldDust(this.el,{count:70,color:0xffd0a0,color2:0x9aa8ff,rMin:0.4,rMax:2.6,yMax:2.4}); }catch(e){}
    try{ R.xr.setFramebufferScaleFactor(1.3); }catch(e){} /* o11: schärferes Bild auf Quest (statt PS1-Look) */
-   let n=0; const fin=()=>{ if(++n<2) return; if(fig.lie) settle(fig.lie); { const an=R.capabilities.getMaxAnisotropy(); [fig.lie,fig.up].forEach(f=>f&&f.root.traverse(o=>{ if(o.isMesh) [].concat(o.material).forEach(m=>['map','normalMap','roughnessMap'].forEach(k=>{ if(m&&m[k]){ m[k].anisotropy=an; m[k].needsUpdate=true; } })); })); } if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } window.__oase.ready=true; };
+   let n=0; const fin=()=>{ if(++n<2) return; if(fig.lie) settle(fig.lie); { const an=R.capabilities.getMaxAnisotropy(); [fig.lie,fig.up].forEach(f=>f&&f.root.traverse(o=>{ if(o.isMesh) [].concat(o.material).forEach(m=>['map','normalMap','roughnessMap'].forEach(k=>{ if(m&&m[k]){ m[k].anisotropy=an; m[k].needsUpdate=true; } })); })); } if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } nipPrep(); contactShadow(); setTimeout(prepFollow,400); window.__oase.ready=true; };
    loadFig('lie',f=>{ fig.lie=f; fin(); }); loadFig('up',f=>{ fig.up=f; fin(); });
    const L=document.getElementById('hl'), Rr=document.getElementById('hr'); this.ax=[0,0]; this.snap=0;
    L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });
@@ -470,8 +548,8 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
    document.addEventListener('keydown',startAmb,{once:true}); this.mov=true; };
   this.el.hasLoaded?go():this.el.addEventListener('loaded',go); },
  tick(t,dt){ if(!this.mov) return; const d=Math.min(dt||16,50)/1000; const [x,y]=this.ax;
-  if(Math.abs(x)>0.15||Math.abs(y)>0.15){ const q=new T.Quaternion(); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new T.Vector3(-f.z,0,f.x); rig.position.addScaledVector(f,-y*d*1.6).addScaledVector(r,x*d*1.6); }
-  collide(); xrTick(); dbgTick(); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; if(window.__oaseSoft){ const n=Math.max(1,Math.ceil(d/0.008)); for(let i=0;i<n;i++) jigTick(d/n); } else uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
+  const mv=Math.abs(x)>0.15||Math.abs(y)>0.15; if(mv){ const q=new T.Quaternion(); cam.getWorldQuaternion(q); const f=new T.Vector3(0,0,-1).applyQuaternion(q); f.y=0; f.normalize(); const r=new T.Vector3(-f.z,0,f.x); rig.position.addScaledVector(f,-y*d*1.6).addScaledVector(r,x*d*1.6); }
+  collide(mv); xrTick(); dbgTick(); snapTick(); gaugeTick(d); idleTick(d); { const n=performance.now(); gagTick(Math.min(1,(n-(this.gT||n))/1000)); this.gT=n; } /* Gag-Uhr in echter Zeit (auch bei wenig FPS 15–20 s) */ uT.value=t/1000; if(performance.now()-pressAt>160) pressGoal=0; if(window.__oaseSoft){ const n=Math.max(1,Math.ceil(d/0.008)); for(let i=0;i<n;i++) jigTick(d/n); } else uPress.value.w+=(pressGoal-uPress.value.w)*Math.min(1,d*14); { const n=performance.now(); if(n-(this.pT||0)>180||st.cov>0.85){ this.pT=n; progress(); } }   // Fortschritt in echter Zeit prüfen (nicht an Frame-Zeitstempel gebunden)
   // Begrüßung, wenn man nah genug ist (einmal) – gesprochene Zeile, kein Tipp-Fenster
   if(!st.greet&&window.__oase.ready){ const h=new T.Vector3(); cam.getWorldPosition(h); if(Math.hypot(h.x-TB.x,h.z-TB.z)<1.5&&t>2500){ st.greet=true; startAmb(); say(ADULT()?'a0':'h0'); } }
   // Perlenvorhang schwingt, wenn der Kopf durchgeht; Rauch, Röhrenflimmern, Glanz-Glitzern

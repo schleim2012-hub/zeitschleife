@@ -70,3 +70,8 @@
 - Basismodell, Rig (game_engine), Augen, Augenbrauen, Wimpern, Haar long01, Haut young_caucasian_female, Gesichts-Expressions (faceunits01): MakeHuman / MPFB System-Assets, Lizenz **CC0** (https://static.makehumancommunity.org/assets/license.html).
 - Werkzeug: MPFB 2 (MakeHuman Plugin for Blender), GPL-3.0 – nur als Generator benutzt, kein Code im Spiel. Blender 4.2 (GPL).
 - Generator: `v3/tools/oase/gen_kundin_hybrid.py`. Pose, Handtuch, AO, Öl-Maske und Hautton-Anpassung selbst erstellt.
+
+## Figuren (Testseite Sonnen-Oase)
+
+- Sonnen-Oase-Kundin: MakeHuman/MPFB-Basismesh, Haut, Haar `ponytail01`, Augen, Brauen – CC0 (makehuman_system_assets).
+- Hautdetail, Brustwarzen-/Rötungs-/Kontakt-Shader, Öl-Barometer: eigene prozedurale Arbeit (keine Fremdtexturen).

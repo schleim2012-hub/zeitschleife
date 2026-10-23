@@ -58,3 +58,19 @@ python3 figur.py kundin_oase.json /pfad/arbeitsordner skin glb   # nur einzelne 
 - Das Gesicht wird in der Liegepose mit geschlossenen Augen gebacken. In der Aufsitz-Pose (Augen halb offen) liegt die Lid-Textur leicht daneben.
 - Die Kinder-/Jugendfrei-Variante entfernt die Geometrie unter dem Badeanzug. Die Hauttextur ist dieselbe Datei.
 - `build_data.py` und `tools/build3.py` gehören nicht zu diesem Werkzeug und dürfen nicht laufen.
+
+## Realismus-Rezept (Stand o15, Sonnen-Oase-Kundin) – für Mara, Warteraum-Figuren usw.
+
+Was am Quest sichtbar geholfen hat (Pete: 25 % → 50 %):
+
+1. **Dichteres Netz**: `subdiv()` in `v3/test/lib/oase3d.js` (Phong-Unterteilung, Kanten-Dedupe) auf Liege- *und* Sitzpose gleich anwenden → Topologie bleibt gepaart (Pose-Morph möglich).
+2. **Foto-Haut + Detailnormal**: Basis-Map/Normalmap 2048, `normalScale 0.18`; prozedurale 512²-Detailtextur (`skinDetail()`: Poren, Feinfalten in RG, Rauheit in B) in drei Skalen (×48, ×290, ×6.1) → bei 15 cm keine „Orangenhaut“, keine Plastikfläche.
+3. **Rauheit statt Glanz**: Roughness 0.62 × Detail-B (zwei Skalen) = Glanzbrechung; Sheen 0.45 / 0.8 als „Pfirsichflaum“-Streurand; warmer SSS-Rand vor `opaque_fragment`.
+4. **Farbunruhe**: `vn3`-Rauschen leicht ins Rot; Gelenke/Falten über Vertex-AO (`vColor.r`) minimal röter; Regionen-Rötung (Knie, Ellbogen, Hände, Füße) als Attribut `_nip.w` aus der Liege-Pose, per Index auf die Sitzpose kopiert.
+5. **Brustwarzen**: Mitte aus der Textur suchen (dunkelster Fleck ≤3,5 cm um den Scheitel), lokaler Rahmen pro Pose (`_nip.xyz`); Geometrie-Wölbung im Vertexshader (Warze σ 5,5 mm, Hof σ 16 mm), Montgomery-Drüsen als Bump (`bumpN`/`nipH`), Farbe weich auslaufend mit Rauschkante. Hohe Frequenzen (sin·3000) vermeiden – flimmern.
+6. **Kontakt**: AO wo `vOP.y < 4,5 cm` + weichgezeichnete Schatten-Decal (Canvas-Blur) aus der Auflagefläche, je Pose eigene.
+7. **Ölfilm**: Clearcoat 0.6 × Ölmaske, Clearcoat-Rauheit mit Detail-Breakup (Schlieren statt Lack).
+8. **Haare**: Karten mit `alphaToCoverage` + alphaTest 0.36, Sheen 0.55 (weichere Strähnenkanten in VR-MSAA).
+9. **Leben, ganz leicht**: Atmung 1,1 rad/s (Brust 3 mm, Bauch 2 mm mit Phasenversatz), Feder-Wackeln bei Berührung (max. 6 mm), alle 7–13 s eine winzige Gewichtsverlagerung.
+10. **VR-Regeln**: Kamera `near:0.01`; Kopf darf nie die Welt verschieben (Kollision nur bei Stick-Bewegung); Eingaben nur von Händen (Controller näher als 12 cm am Kopf ignorieren); Animationen nie über `window.requestAnimationFrame` (steht in der immersiven Sitzung still) – immer über den A-Frame-Tick (`raf()`/`snapTick()`).
+11. **Prüfen**: Nahaufnahmen 15 / 40 cm (Brust, Gesicht, Hände) mit `closeshot.py` vorher/nachher; Endlauf mit `xrend.py`.
