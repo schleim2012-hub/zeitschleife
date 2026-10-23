@@ -63,12 +63,16 @@ function buildRoom(){
    const bulb=new T.Mesh(new T.SphereGeometry(0.045,12,8),new T.MeshBasicMaterial({color:0xffc890,toneMapped:false})); bulb.position.set(TB.x,1.74,TB.z); G.add(bulb);
    add(new T.CylinderGeometry(0.004,0.004,RW.h-1.95,4),std({color:0x111111}),TB.x,(RW.h+1.95)/2,TB.z); window.__oaseShade=sh.material; }
  // Lichter: warm (Lampe), UV-Blau (Sonnenbank), rosa (Neon), Grundlicht
- S.add(new T.HemisphereLight(0x5a4038,0x1a0f0a,0.55));
+ const Lh=new T.HemisphereLight(0x5a4038,0x1a0f0a,0.55); S.add(Lh);
  const Lw=new T.PointLight(0xffa460,4.6,5.5,1.6); Lw.position.set(TB.x,1.62,TB.z); S.add(Lw); window.__oaseLw=Lw;
  const Lb=new T.PointLight(0x6a78ff,3.2,4.2,1.7); Lb.position.set(1.0,0.9,-1.5); S.add(Lb); window.__oaseLb=Lb;
  const Lp=new T.PointLight(0xff4a90,0.9,3.2,1.8); Lp.position.set(RW.x0+0.35,2.0,-0.6); S.add(Lp);
  const Lf=new T.PointLight(0xffc8a0,0.6,3.5,1.8); Lf.position.set(0.9,1.9,1.4); S.add(Lf);
  buildBed(std); buildTable(std); buildCart(std); buildDeco(std); buildCurtain();
+ // o14: weiches VR-Licht – Umgebung dunkler (versteckt schwache Stellen), dafür breites warmes Weichlicht nur über ihr (kein harter Spot, kein Schwarz)
+ const Ls=new T.PointLight(0xffb48a,0,1.9,1.2); Ls.position.set(FIG.x+0.15,FIG.y+0.95,FIG.z+0.35); S.add(Ls);
+ const softVR=on=>{ Lh.intensity=on?0.40:0.55; Lp.intensity=on?0.65:0.9; Lf.intensity=on?0.42:0.6; Lb.intensity=on?2.7:3.2; Ls.intensity=on?0.85:0; R.toneMappingExposure=on?1.0:1.05; };
+ window.__oaseSoftVR=softVR; R.xr.addEventListener('sessionstart',()=>softVR(true)); R.xr.addEventListener('sessionend',()=>softVR(false));
  // Kontaktschatten (gemalt) unter Möbeln
  const sh=cv(128,128,(x,w,h)=>{ const g=x.createRadialGradient(64,64,4,64,64,64); g.addColorStop(0,'rgba(0,0,0,0.75)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,w,h); });
  [[TB.x,TB.z,2.1,0.95],[1.0,-1.75,2.1,1.1],[CART.x,CART.z,0.75,0.55]].forEach(([x,z,w,d])=>{ const g=new T.PlaneGeometry(w,d); g.rotateX(-Math.PI/2); const m=new T.Mesh(g,new T.MeshBasicMaterial({map:sh,transparent:true,depthWrite:false,opacity:0.8})); m.position.set(x,0.004,z); G.add(m); });
@@ -178,11 +182,36 @@ const GX=128, GZ=48; let target=null, got=null, nTarget=1;
 function makeMask(){ mask=document.createElement('canvas'); mask.width=MW; mask.height=MH; const x=mask.getContext('2d'); x.fillStyle='#000'; x.fillRect(0,0,MW,MH); maskTex=new T.CanvasTexture(mask); maskTex.flipY=false; maskTex.colorSpace=T.NoColorSpace; maskTex.minFilter=T.LinearFilter; maskTex.generateMipmaps=false; oilU.value=maskTex; }
 let brush=null; function makeBrush(){ brush=document.createElement('canvas'); brush.width=brush.height=64; const x=brush.getContext('2d'); const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,0.55)'); g.addColorStop(0.6,'rgba(255,255,255,0.28)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
  x.globalCompositeOperation='destination-out'; for(let i=0;i<14;i++){ x.fillStyle=`rgba(0,0,0,${0.15+rnd()*0.25})`; x.fillRect(0,4+i*4.3+rnd()*2,64,1.2); } } // Streifen = Fingerspuren
+// o14: Hautdetail wie im Gesicht – kachelbare Poren-/Feinfalten-Normalmap (prozedural, RG=Normale, B=Rauheit), einmal erzeugt
+let DET=null; function skinDetail(){ if(DET) return DET; const N=256, hgt=new Float32Array(N*N), rnd=(a)=>{ let x=Math.sin(a*12.9898)*43758.5453; return x-Math.floor(x); };
+ for(let o=0;o<4;o++){ const f=4<<o, amp=0.5/(o+1); for(let y=0;y<N;y++) for(let x=0;x<N;x++){ const u=x*f/N, v=y*f/N, i=Math.floor(u), j=Math.floor(v), fu=u-i, fv=v-j, sx=fu*fu*(3-2*fu), sy=fv*fv*(3-2*fv), H=(a,b)=>rnd(((a%f)+f)%f*157+(((b%f)+f)%f)*311+o*71);
+   hgt[y*N+x]+=amp*((H(i,j)*(1-sx)+H(i+1,j)*sx)*(1-sy)+(H(i,j+1)*(1-sx)+H(i+1,j+1)*sx)*sy); } }
+ for(let k=0;k<900;k++){ const cx=rnd(k+0.5)*N, cy=rnd(k+7.3)*N, r=0.8+rnd(k+3.1)*1.4, d=0.9+rnd(k+9.7)*0.8;   // Poren: kleine Mulden
+   for(let y=-3;y<=3;y++) for(let x=-3;x<=3;x++){ const q=(x*x+y*y)/(r*r); if(q<4){ const X=((Math.floor(cx)+x)%N+N)%N, Y=((Math.floor(cy)+y)%N+N)%N; hgt[Y*N+X]-=d*Math.exp(-q*1.6); } } }
+ const c=document.createElement('canvas'); c.width=c.height=N; const x=c.getContext('2d'), im=x.createImageData(N,N), at=(X,Y)=>hgt[((Y+N)%N)*N+((X+N)%N)];
+ for(let y=0;y<N;y++) for(let X=0;X<N;X++){ const dx=(at(X+1,y)-at(X-1,y))*1.6, dy=(at(X,y+1)-at(X,y-1))*1.6, l=Math.hypot(dx,dy,1), i=(y*N+X)*4;
+   im.data[i]=(0.5-0.5*dx/l)*255; im.data[i+1]=(0.5-0.5*dy/l)*255; im.data[i+2]=Math.max(0,Math.min(255,128+at(X,y)*90)); im.data[i+3]=255; }
+ x.putImageData(im,0,0); DET=new T.CanvasTexture(c); DET.wrapS=DET.wrapT=T.RepeatWrapping; DET.generateMipmaps=true; DET.minFilter=T.LinearMipmapLinearFilter; DET.anisotropy=4; DET.colorSpace=T.NoColorSpace; return DET; }
+// o14: dichteres Körpernetz – 1× Unterteilung (jedes Dreieck → 4) mit Phong-Tessellation (runde Silhouette statt Kanten). Deterministisch über Kanten-Indexpaare → Liege- und Sitzpose (gleiche Topologie) bleiben Vertex-für-Vertex gepaart (snapUp)
+function subdiv(g){ if(!g.index||g.userData.sub) return g; const ix=g.index.array, P=g.attributes.position, Nn=g.attributes.normal; if(!Nn||ix.length>400000) return g;
+ const nv=P.count, map=new Map(), extra=[]; const mid=(a,b)=>{ const k=a<b?a*nv+b:b*nv+a; let m=map.get(k); if(m===undefined){ m=nv+extra.length/2; extra.push(a<b?a:b,a<b?b:a); map.set(k,m); } return m; };
+ const ni=new (nv+ix.length>65535?Uint32Array:Uint16Array)(ix.length*4); let w=0;
+ for(let t=0;t<ix.length;t+=3){ const a=ix[t],b=ix[t+1],c=ix[t+2], ab=mid(a,b), bc=mid(b,c), ca=mid(c,a); ni.set([a,ab,ca, ab,b,bc, ca,bc,c, ab,bc,ca],w); w+=12; }
+ const ng=new T.BufferGeometry(), tot=nv+extra.length/2;
+ for(const name in g.attributes){ const A=g.attributes[name], is=A.itemSize, src=A.array, out=new (src.constructor)(tot*is); out.set(src.subarray(0,nv*is));
+  for(let e=0;e<extra.length;e+=2){ const a=extra[e], b=extra[e+1], o=(nv+e/2)*is; for(let k=0;k<is;k++) out[o+k]=(src[a*is+k]+src[b*is+k])*0.5; }
+  ng.setAttribute(name,new T.BufferAttribute(out,is,A.normalized)); }
+ const p=ng.attributes.position.array, n=ng.attributes.normal.array;
+ for(let e=0;e<extra.length;e+=2){ const a=extra[e]*3, b=extra[e+1]*3, o=(nv+e/2)*3; let qx=0,qy=0,qz=0;
+  for(const v of [a,b]){ const d=(p[o]-p[v])*n[v]+(p[o+1]-p[v+1])*n[v+1]+(p[o+2]-p[v+2])*n[v+2]; qx+=p[o]-d*n[v]; qy+=p[o+1]-d*n[v+1]; qz+=p[o+2]-d*n[v+2]; }
+  const al=0.7; p[o]+=al*(qx/2-p[o]); p[o+1]+=al*(qy/2-p[o+1]); p[o+2]+=al*(qz/2-p[o+2]);
+  const l=Math.hypot(n[o],n[o+1],n[o+2])||1; n[o]/=l; n[o+1]/=l; n[o+2]/=l; }
+ ng.setIndex(new T.BufferAttribute(ni,1)); ng.userData.sub=1; ng.computeBoundingBox(); ng.computeBoundingSphere(); return ng; }
 function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Objekt-Draufsicht. skin.tx = Figur mit eigener Hauttextur (COLOR_0 = AO + ölbar), skin.soft = Attribut _SOFT (Weichheit, Brust-Gewicht)
  const m=new T.MeshPhysicalMaterial({vertexColors:!!skin.vc,color:skin.o9?0xffffff:skin.h8?0xf0dccb:skin.tx?0xc9a48c:skin.vc?0xe2b89c:(src&&src.color?src.color.getHex():0xd8a088),map:src&&src.map||null,normalMap:src&&src.normalMap||null,roughness:0.58,metalness:0,clearcoat:1,clearcoatRoughness:0.07,sheen:skin.o9?0.35:skin.tx?0.12:0.25,sheenRoughness:skin.o9?0.85:0.6,sheenColor:new T.Color(skin.o9?0xd0603a:skin.tx?0xc07850:0xffb090)});
  if(skin.o9){ m.roughness=0.62; if(m.normalMap) m.normalScale=new T.Vector2(0.18,0.18); }   // o9: Foto-Haut, Poren-Normalmap, warmer Streurand (Sheen) statt Plastik-Glanz
  m.onBeforeCompile=sh=>{ sh.uniforms.oilMap=oilU; sh.uniforms.oilGlint=glint;
-  sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig;
+  sh.uniforms.uT=uT; sh.uniforms.uPress=uPress; sh.uniforms.uJig=uJig; if(skin.o9) sh.uniforms.uDet={value:skinDetail()};
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP; uniform float uT; uniform vec4 uPress; uniform vec4 uJig;'+(skin.soft?'\nattribute vec2 _soft;':'')).replace('#include <begin_vertex>',`#include <begin_vertex>
   vOP=position;
   { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)); transformed+=objectNormal*(0.0032*wb*(0.5+0.5*sin(uT*1.35)));   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
@@ -192,13 +221,22 @@ function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Ob
     transformed.y+=_soft.y*uJig.x*(0.6+0.4*smoothstep(0.0,0.05,position.y-0.12)) + sf*(1.0-_soft.y)*uJig.z*0.35;   // Nachwippen (Brust / Bauch, Schenkel)
     transformed.z+=_soft.y*uJig.y*sign(position.z);`:`transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp));`} }   // Haut gibt unter der Hand nach`);
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>\nvarying vec3 vOP; uniform sampler2D oilMap; uniform float oilGlint; float oilK=0.0;
-float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`)
+float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }`+(skin.o9?`
+uniform sampler2D uDet; float vn3(vec3 q){ vec3 i=floor(q), f=fract(q); f=f*f*(3.0-2.0*f); float a=mix(mix(h21(i.xy+i.z*17.0),h21(i.xy+vec2(1,0)+i.z*17.0),f.x),mix(h21(i.xy+vec2(0,1)+i.z*17.0),h21(i.xy+vec2(1,1)+i.z*17.0),f.x),f.y); float b=mix(mix(h21(i.xy+(i.z+1.0)*17.0),h21(i.xy+vec2(1,0)+(i.z+1.0)*17.0),f.x),mix(h21(i.xy+vec2(0,1)+(i.z+1.0)*17.0),h21(i.xy+vec2(1,1)+(i.z+1.0)*17.0),f.x),f.y); return mix(a,b,f.z); }`:''))
   .replace('#include <color_fragment>',`#include <color_fragment>
   { vec2 ou=vec2((vOP.x-(${X0.toFixed(3)}))/${(X1-X0).toFixed(3)}, (vOP.z-(${Z0.toFixed(3)}))/${(Z1-Z0).toFixed(3)});
     float o=texture2D(oilMap,ou).r; ${skin.vc?'o*=vColor.a; diffuseColor.a=1.0;':''} oilK=smoothstep(0.08,0.75,o);
-    diffuseColor.rgb=mix(diffuseColor.rgb,pow(diffuseColor.rgb,vec3(1.18))*1.05,oilK); }`)  // nasse Haut: satter, etwas dunkler
-  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,'+(skin.o9?'0.34':'0.16')+',oilK);')
+    diffuseColor.rgb=mix(diffuseColor.rgb,pow(diffuseColor.rgb,vec3(1.18))*1.05,oilK); }`+(skin.o9?`
+  { float m1=vn3(vOP*22.0)-0.5, m2=vn3(vOP*61.0+3.1)-0.5; diffuseColor.rgb*=1.0+0.07*m1+0.035*m2; diffuseColor.r*=1.0+0.03*m1; }   // o14: leichte Farbunruhe (Äderchen/Rötung)`:''))  // nasse Haut: satter, etwas dunkler
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>'+(skin.o9?'\nroughnessFactor*=0.86+0.32*texture2D(uDet,vNormalMapUv*48.0).b;':'')+'\nroughnessFactor=mix(roughnessFactor,'+(skin.o9?'0.34':'0.16')+',oilK);')
+  .replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>'+(skin.o9?`
+  #ifdef USE_NORMALMAP_TANGENTSPACE
+  { vec2 du=vNormalMapUv*48.0; vec3 d1=texture2D(uDet,du).xyz*2.0-1.0, d2=texture2D(uDet,du*2.7+0.37).xyz*2.0-1.0; float ds=0.32*(1.0-0.7*oilK);
+    normal=normalize(normal+(tbn[0]*(d1.x+0.5*d2.x)+tbn[1]*(d1.y+0.5*d2.y))*ds); }   // o14: Poren + Feinfalten (Detail-Normalmap, unter Öl glatter)
+  #endif`:''))
   .replace('#include <clearcoat_normal_fragment_begin>','#include <clearcoat_normal_fragment_begin>')
+  .replace('#include <opaque_fragment>',(skin.o9?`{ float fr=1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0); outgoingLight+=diffuseColor.rgb*vec3(1.0,0.42,0.26)*(0.05+0.10*fr*fr)*(0.6+0.4*clamp(length(totalDiffuse)*3.0,0.0,1.0)); }   // o14: warmes Durchscheinen (Subsurface-Ersatz): rötlicher Streurand, Haut wirkt durchblutet statt Plastik
+`:'')+'#include <opaque_fragment>')
   .replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
   #ifdef USE_CLEARCOAT
    material.clearcoat=oilK*${skin.o9?'0.45':'0.9'}; material.clearcoatRoughness=mix(${skin.o9?'0.35,0.22':'0.12,0.05'},oilK);
@@ -209,7 +247,8 @@ function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[whic
  new T.GLTFLoader().load(url,gl=>{ const r=gl.scene, parts={body:[],hair:[],towel:[],robe:[],strap:[],chest:[],top:[],glasses:[],deco:[]}; let named=false;
   r.traverse(o=>{ if(!o.isMesh) return; const n=(o.name||'').toLowerCase().replace(/_\d+$/,''); const k=Object.keys(parts).find(k=>n===k||n.startsWith(k)); if(k){ named=true; parts[k].push(o); } else parts.body.push(o); });
   if(parts.body.some(o=>/^skin_h[89]/.test((o.material&&o.material.name)||''))) { parts.towel.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; }); parts.robe.forEach(o=>{ if(o.geometry.attributes.uv) o.userData.keepUV=true; o.userData.k8=true; }); }   // o8: Handtuch/Bademantel-Decke mit eigener Bogenlängen-UV
-  parts.body.forEach(o=>{ const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h[89]/.test(o.material.name||'')), o9=!!(o.material&&/^skin_h9/.test(o.material.name||'')); o.material=oilMat(o.material,{vc,tx,h8,o9,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
+  parts.body.forEach(o=>{ if(window.__oaseSubdiv!==false) o.geometry=subdiv(o.geometry);   // o14: dichteres Netz (Liege + Sitzpose identisch)
+  const g=o.geometry, vc=!!g.attributes.color, tx=!!(o.material&&o.material.map&&g.attributes.uv); o.userData.keepUV=tx; const h8=!!(o.material&&/^skin_h[89]/.test(o.material.name||'')), o9=!!(o.material&&/^skin_h9/.test(o.material.name||'')); o.material=oilMat(o.material,{vc,tx,h8,o9,soft:!!g.attributes._soft}); if(g.attributes._soft) window.__oaseSoft=true; });
   const terry=(b,s)=>new T.MeshStandardMaterial({map:terryTex(b,s),vertexColors:true,roughness:1});
   const hT=hairTex(); parts.hair.forEach(o=>{ const hm=o.material&&o.material.map; if(hm&&o.geometry.attributes.uv){ o.userData.keepUV=true; o.material=new T.MeshPhysicalMaterial({vertexColors:!!o.geometry.attributes.color,map:hm,alphaTest:0.42,side:T.DoubleSide,roughness:0.5,sheen:0.7,sheenColor:new T.Color(0xf0c880),sheenRoughness:0.35}); }   // o8: Haar-Karten mit eigener Textur (MakeHuman long01, blondiert)
    else o.material=new T.MeshPhysicalMaterial({vertexColors:true,map:hT.c,bumpMap:hT.b,bumpScale:0.6,roughness:0.55,sheen:0.6,sheenColor:new T.Color(0xe0b070),sheenRoughness:0.4}); });
@@ -381,7 +420,7 @@ function dbgTick(){ DBG.wMax=Math.max(DBG.wMax*0.995,uPress.value.w); if(!DBG.on
  const rows=[['Modus',ADULT()?'AB 18':'jugendfrei'],['Flag',(window.ZS_OASE_REQUIRE_QUIZ===false?'Quiz AUS (Test) · ':'')+"zs_adult="+L_('zs_adult')+" ok="+L_('zs_adult_ok')+(/[?&]kids=1/.test(location.search)?' kids=1':'')],
   ['Öl',(st.oiled?'genommen':'NICHT genommen')+' · '+(100*(st.cov||0)).toFixed(0)+' % / 90 %'],['Ende',st.done?('läuft · Pose '+pose):(st.endOk?'ok':'nein')],
   ['Eingabe',(R.xr.isPresenting?'VR ':'2D ')+DBG.path],['Hand',DBG.hit+' · '+ctl.map(k=>k.held?'■':'□').join('')],
-  ['Delle',(window.__oaseSoft?'Soft-Shader an':'einfach')+' · '+(DBG.wMax*1000).toFixed(1)+' mm'],['Build','1023o13']];
+  ['Delle',(window.__oaseSoft?'Soft-Shader an':'einfach')+' · '+(DBG.wMax*1000).toFixed(1)+' mm'],['Build','1023o14']];
  x.fillStyle='rgba(18,14,10,0.92)'; x.fillRect(0,0,512,340); x.strokeStyle='#8a6e44'; x.lineWidth=3; x.strokeRect(2,2,508,336); x.font='600 25px "DejaVu Sans Condensed",sans-serif';
  rows.forEach((r,i)=>{ x.fillStyle='#b89a62'; x.fillText(r[0],14,38+i*40); x.fillStyle='#f0e2c2'; x.fillText(String(r[1]).slice(0,34),128,38+i*40); }); DBG.mesh.material.map.needsUpdate=true; }
 function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession(); dbgGrip(ses);
