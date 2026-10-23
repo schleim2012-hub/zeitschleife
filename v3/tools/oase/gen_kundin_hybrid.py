@@ -47,11 +47,11 @@ if POSE in ('lie','anim'):
     for f in ['index','middle','ring','pinky']:
       for i in '123': rot(f'{f}_0{i}_{s}','X',6)
 if POSE=='up':   # aufgesetzt, Oberkörper leicht zurückgelehnt, auf die Hände gestützt (hinter der Hüfte), Beine liegen
-  for b,d in [('spine_01',(0,0.62,1)),('spine_02',(0,0.58,1)),('spine_03',(0,0.50,1)),('neck_01',(0,0.15,1)),('head',(0,0.0,1))]: aim(b,d)
+  for b,d in [('spine_01',(0,1.05,1)),('spine_02',(0,0.95,1)),('spine_03',(0,0.80,1)),('neck_01',(0,0.30,1)),('head',(0,0.05,1))]: aim(b,d)
   aim('thigh_l',( 0.07,-1,0.02)); aim('thigh_r',(-0.07,-1,0.02)); aim('calf_l',(0.02,-1,0.0)); aim('calf_r',(-0.02,-1,0.0))
   aim('foot_l',(0.25,-0.35,1)); aim('foot_r',(-0.25,-0.35,1))
-  aim('upperarm_l',( 0.30, 0.55,-0.78)); aim('lowerarm_l',( 0.22, 0.50,-0.84)); aim('hand_l',( 0.10,-0.95,-0.2))
-  aim('upperarm_r',(-0.30, 0.55,-0.78)); aim('lowerarm_r',(-0.22, 0.50,-0.84)); aim('hand_r',(-0.10,-0.95,-0.2))
+  aim('upperarm_l',( 0.28, 0.62,-0.73)); aim('lowerarm_l',( 0.18, 0.30,-0.94)); aim('hand_l',( 0.10,-0.95,-0.2))
+  aim('upperarm_r',(-0.28, 0.62,-0.73)); aim('lowerarm_r',(-0.18, 0.30,-0.94)); aim('hand_r',(-0.10,-0.95,-0.2))
 bpy.ops.object.mode_set(mode='OBJECT')
 # hinlegen: Kopf -> -X, Gesicht -> +Z (Blender), Rücken auf z=0
 R=Matrix(((0,0,-1),(1,0,0),(0,-1,0))) if POSE!='up' else Matrix(((0,-1,0),(1,0,0),(0,0,1)))
@@ -104,25 +104,28 @@ Hh.data.materials.clear(); Hh.data.materials.append(simple_mat('hair_h8',hairI,a
 dg=bpy.context.evaluated_depsgraph_get()
 # Handtuch: Raster über der Hüfte, von oben auf den Körper projiziert (+1,2 cm), Ränder hängen zur Liege
 bvb=BVHTree.FromObject(B,dg)
-hx=PEL.x+(0.07 if POSE=='lie' else 0.22); nx,ny=36,44; TL,TWD=0.34,0.40; vs=[];fs=[]
+hx=PEL.x+(0.07 if POSE=='lie' else 0.25); nx,ny=36,64; TL,TWD=0.34,0.62; vs=[]
 for i in range(nx):
   for j in range(ny):
     x=hx-TL/2+TL*i/(nx-1); y=-TWD/2+TWD*j/(ny-1); h=bvb.ray_cast(Vector((x,y,0.32 if POSE=='up' else 0.6)),Vector((0,0,-1)))
-    ok=bool(h[0]) and (POSE!='up' or h[0].z<0.24)
-    vs.append((x,y,(h[0].z if ok else -1.0)+0.012))
-ZZ=np.array([v[2] for v in vs]).reshape(nx,ny)
-for i in range(nx-1):
-  for j in range(ny-1):
-    q=ZZ[i:i+2,j:j+2]
-    if q.min()>-0.5 and q.max()-q.min()<0.035: a=i*ny+j; fs.append((a,a+ny,a+ny+1,a+1))   # nur auf dem Körper, keine senkrechten Wände
-V=np.array(vs).reshape(nx,ny,3)
-for it in range(10):
-  Z=V[...,2].copy(); Z[1:-1,1:-1]=np.where(Z[1:-1,1:-1]<-0.5,Z[1:-1,1:-1],np.maximum(Z[1:-1,1:-1],np.minimum(Z[1:-1,1:-1]+0.01,0.25*(Z[2:,1:-1]+Z[:-2,1:-1]+Z[1:-1,2:]+Z[1:-1,:-2])))); V[...,2]=Z
+    vs.append((x,y,min(h[0].z,0.26 if POSE=='up' else 0.4) if h[0] else -1.0))
+V=np.array(vs).reshape(nx,ny,3); HIT=V[...,2]>-0.5; Z0=np.where(HIT,V[...,2]+0.012,0.0)
+# Fall zur Liege: von der Körperkontur mit begrenzter Steigung abwärts (kein senkrechter Kasten), Unterkante >= 3 mm
+dy=TWD/(ny-1); Z=Z0.copy()
+for it in range(80):
+  nb=np.maximum.reduce([np.roll(Z,1,1),np.roll(Z,-1,1),np.roll(Z,1,0),np.roll(Z,-1,0)])-dy*1.25
+  Z=np.maximum(Z0,np.maximum(nb,0.003))
+for it in range(24):   # weich, nur nach oben (bleibt über der Haut)
+  S=Z.copy(); S[1:-1,1:-1]=0.25*(Z[2:,1:-1]+Z[:-2,1:-1]+Z[1:-1,2:]+Z[1:-1,:-2]); Z=np.maximum(Z0,np.where(HIT,np.maximum(Z,S),S))
+V[...,2]=Z
+fs=[(i*ny+j,(i+1)*ny+j,(i+1)*ny+j+1,i*ny+j+1) for i in range(nx-1) for j in range(ny-1)]
 tm=bpy.data.meshes.new('towel'); tm.from_pydata([tuple(v) for v in V.reshape(-1,3)],[],fs); tm.update()
-import bmesh; bm=bmesh.new(); bm.from_mesh(tm); bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS'); bm.to_mesh(tm); bm.free(); TW=bpy.data.objects.new('towel',tm); col.objects.link(TW)
+TW=bpy.data.objects.new('towel',tm); col.objects.link(TW)
+# UV nach Bogenlänge (Streifen nicht gedehnt)
+AL=np.zeros((nx,ny)); AL[:,1:]=np.cumsum(np.sqrt(dy**2+np.diff(Z,axis=1)**2),axis=1); AL/=AL[:,-1:].max()
 uvl=tm.uv_layers.new(name='UVMap')
 for poly in tm.polygons:
-  for li in poly.loop_indices: v=tm.vertices[tm.loops[li].vertex_index].co; uvl.data[li].uv=((v.x-hx+TL/2)/TL,(v.y+TWD/2)/TWD)
+  for li in poly.loop_indices: k=tm.loops[li].vertex_index; i,j=divmod(k,ny); uvl.data[li].uv=(0.5*i/(nx-1),AL[i,j])
 dg=bpy.context.evaluated_depsgraph_get()
 occ=[B,Hh,TW]; bvh=[BVHTree.FromObject(o,dg) for o in occ]
 import random; random.seed(3); dirs=[]
