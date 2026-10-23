@@ -187,7 +187,7 @@ function oilMat(src,skin){ // Haut-Material: Physical + Klarlack, Maske über Ob
   vOP=position;
   { float wb=smoothstep(-0.66,-0.52,position.x)*(1.0-smoothstep(-0.18,-0.04,position.x)); transformed+=objectNormal*(0.0032*wb*(0.5+0.5*sin(uT*1.35)));   // Atmen (Brustkorb hebt/senkt sich, ~13/min)
     float dp=distance(position.xz,uPress.xy); ${skin.soft?`
-    float sf=_soft.x, r=uPress.z*(0.8+0.5*sf), g=exp(-dp*dp/(r*r)), rim=exp(-pow((dp-1.35*r)/(0.45*r),2.0));
+    float sf=_soft.x, r=max(uPress.z*(0.8+0.5*sf),1e-3), g=exp(-dp*dp/(r*r)), rq=(dp-1.35*r)/(0.45*r), rim=exp(-rq*rq);   // o12: kein pow() mit negativer Basis (auf Quest/Adreno NaN → Haut an Brust/Bauch verschwand)
     transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(g-0.22*rim)*(0.35+1.1*sf);   // weiche Delle + Gewebe-Wulst am Rand, federt zurück
     transformed.y+=_soft.y*uJig.x*(0.6+0.4*smoothstep(0.0,0.05,position.y-0.12)) + sf*(1.0-_soft.y)*uJig.z*0.35;   // Nachwippen (Brust / Bauch, Schenkel)
     transformed.z+=_soft.y*uJig.y*sign(position.z);`:`transformed-=objectNormal*uPress.w*max(objectNormal.y,0.0)*(1.0-smoothstep(0.0,uPress.z,dp));`} }   // Haut gibt unter der Hand nach`);
@@ -220,6 +220,16 @@ function loadFig(which,cb){ const url=(ADULT()&&C.fig[which+'Adult'])?C.fig[whic
   [...parts.strap,...parts.top].forEach(o=>o.material=new T.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:0.45}));
   r.traverse(o=>{ if(o.isMesh&&!o.userData.keepUV){ const p=o.geometry.attributes.position, uv=new Float32Array(p.count*2); for(let i=0;i<p.count;i++){ uv[2*i]=(p.getX(i)-X0)/(X1-X0)*3; uv[2*i+1]=(p.getZ(i)-Z0)/(Z1-Z0)*1.2; } o.geometry.setAttribute('uv',new T.BufferAttribute(uv,2)); } });
   r.position.set(FIG.x,FIG.y,FIG.z); cb({root:r,parts,named}); },undefined,e=>{ console.warn('[oase] Figur fehlt',url); cb(null); }); }
+function settle(f){ // o13: liegt auf (statt zu schweben) – pro Körper-Abschnitt (entlang x) so weit absenken, dass die Unterseite die Liege berührt, 2 mm eingesunken
+ const b=f.parts.body[0]; if(!b) return; const P=b.geometry.attributes.position, X0s=-0.72, DX=0.04, N=Math.ceil((0.84-X0s)/DX), mn=new Array(N).fill(1);
+ for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i); const k=Math.min(N-1,Math.max(0,Math.floor((x-X0s)/DX))); if(y<mn[k]) mn[k]=y; }
+ for(let k=0;k<N;k++) if(mn[k]>0.5) mn[k]=k?mn[k-1]:0;
+ const KF=Math.floor((0.68-X0s)/DX); for(let k=KF+1;k<N;k++) mn[k]=mn[KF];   // Füße: wie die Waden (Zehen zeigen nach oben)
+ const env=mn.map((v,k)=>{ let m=1; for(let q=Math.max(0,k-3);q<=Math.min(N-1,k+3);q++) m=Math.min(m,mn[q]); return m; });   // Auflagepunkte (Schulterblätter, Po, Waden) – Hohlkreuz/Kniekehle bleiben frei
+ const dy=env.map((v,k)=>{ const a=env[Math.max(0,k-1)], c=env[Math.min(N-1,k+1)]; return -Math.min(0.035,Math.max(-0.003,(a+v+c)/3+0.002)); });
+ const f_=x=>{ const u=(x-X0s)/DX-0.5; if(u<=0) return dy[0]; if(u>=N-1) return dy[N-1]; const k=Math.floor(u), t=u-k; return dy[k]*(1-t)+dy[k+1]*t; };
+ f.root.traverse(o=>{ if(!o.isMesh) return; const A=o.geometry.attributes.position; for(let i=0;i<A.count;i++) A.setY(i,A.getY(i)+f_(A.getX(i))); A.needsUpdate=true; o.geometry.computeBoundingBox(); o.geometry.computeBoundingSphere(); });
+ window.__oaseSettle=dy; }
 function applyMode(f){ if(!f) return; const ad=ADULT(), P=f.parts;
  // jugendfrei: Bademantel + Bikini-Träger/-Oberteil IMMER sichtbar, Handtuch-only-Variante nie. Ab 18: Handtuch über der Hüfte, Rücken frei.
  P.robe.forEach(o=>o.visible=!ad); P.strap.forEach(o=>o.visible=!ad); P.top.forEach(o=>o.visible=!ad);
@@ -255,7 +265,12 @@ function startAmb(){ if(radio||musOff) return; radio=new Audio(C.base+'oase_song
   const pa=new T.PositionalAudio(L); pa.setMediaElementSource(radio); pa.setDistanceModel('inverse'); pa.setRefDistance(1.0); pa.setRolloffFactor(1.1); pa.setMaxDistance(12); try{ pa.panner.panningModel='HRTF'; }catch(e){}
   const rg=window.__oaseRadio; (rg||G).add(pa); if(!rg) pa.position.set(CART.x,0.9,CART.z); musG=pa; }catch(e){ musG=null; }
  musVol(MUSV); radio.play().catch(()=>{ radio=null; if(musG){ try{ musG.parent&&musG.parent.remove(musG); musG.disconnect(); }catch(e){} musG=null; } });
- hum=new Audio(C.base+'sonnenbank_brumm.mp3'); hum.loop=true; hum.volume=MUTE?0:0.16; hum.play().catch(()=>{}); }
+ // o13: Brummen leiser (≈ −14 dB am Hörplatz), als Raum-Ton an der Sonnenbank, Bässe weg (Hochpass 220 Hz) – kein „Kühlschrank“ mehr
+ hum=new Audio(C.base+'sonnenbank_brumm.mp3'); hum.loop=true; let hp=false;
+ try{ const L=window.__oaseL; if(L){ const pb=new T.PositionalAudio(L); pb.setMediaElementSource(hum); pb.setDistanceModel('inverse'); pb.setRefDistance(0.7); pb.setRolloffFactor(1.2); pb.setMaxDistance(10);
+  const hf=L.context.createBiquadFilter(); hf.type='highpass'; hf.frequency.value=220; hf.Q.value=0.6; const ls=L.context.createBiquadFilter(); ls.type='lowshelf'; ls.frequency.value=400; ls.gain.value=-6; pb.setFilters([hf,ls]);
+  pb.setVolume(MUTE?0:0.15); pb.position.set(1.0,0.45,-1.75); G.add(pb); hp=true; } }catch(e){ hp=false; }
+ if(!hp) hum.volume=MUTE?0:0.035; hum.play().catch(()=>{}); }
 const LINES={a0:'Na endlich, der Neue. Das Öl steht auf dem Wagen. Und nicht so rumstehen.',a1:'Mmh … nicht so schüchtern, Süßer. Das Öl beißt nicht.',a2:'Etwas tiefer. Nein – nicht SO tief. Frecher Kerl.',a3:'Wenn du so weitermachst, muss ich dir Trinkgeld geben.',
  h0:'Bist du die Aushilfe? Das Öl steht auf dem Wagen.',h1:'Ah, die Schultern. Da sitzt der ganze Einkaufsstress.',h2:'Schön gleichmäßig verteilen, sonst werd ich gestreift wie ein Zebra.',h3:'Du hast ja goldene Hände. Wie mein Friseur.',oel:'Erst das Öl, Schätzchen. Sonst quietscht’s.',slap:'Hey! Finger weg, Freundchen. Das hier ist kein Streichelzoo!',punch:'Danke, Kleiner.'};
 let subEl=null, subM=null;
@@ -274,8 +289,8 @@ function takeOil(){ if(st.oiled||st.done) return; st.oiled=true; startAmb(); try
   if(k<1) requestAnimationFrame(anim); else { par.attach(bottle); bottle.position.copy(par.worldToLocal(bottleHome.clone())); bottle.rotation.set(0,0,0); } }; anim();
  drip(); }
 function drip(){ const a=new (window.AudioContext||window.webkitAudioContext)(); if(MUTE) return; [0.9,1.25,1.6].forEach(d=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(900,a.currentTime+d); o.frequency.exponentialRampToValueAtTime(260,a.currentTime+d+0.09); g.gain.setValueAtTime(0.0001,a.currentTime+d); g.gain.linearRampToValueAtTime(0.12,a.currentTime+d+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d+0.14); o.connect(g); g.connect(a.destination); o.start(a.currentTime+d); o.stop(a.currentTime+d+0.2); }); }
-function rub(lx,lz,len){ if(st.done) return; if(inChest(lx,lz)) return; uPress.value.x=lx; uPress.value.y=lz; pressGoal=window.__oaseSoft?0.0085:0.006; pressAt=performance.now(); jigKick(lx,lz,len); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; }
- startAmb(); paintAt(lx,lz,0.35+Math.min(0.5,len*6)); st.dist+=len; }
+function rub(lx,lz,len){ if(st.done) return;  uPress.value.x=lx; uPress.value.y=lz; pressGoal=window.__oaseSoft?0.0085:0.006; pressAt=performance.now(); jigKick(lx,lz,len); if(!st.oiled){ const n=performance.now(); if(n-st.lastNoOil>9000&&n-st.spoke>4500){ st.lastNoOil=n; say('oel'); } return; } // o12: Brust + Bauch einölbar (Ohrfeigen-Gag ab 18 bleibt)
+ startAmb(); paintAt(lx,lz,0.175+Math.min(0.25,len*3)); st.dist+=len; }   // o14: halbe Öl-Menge pro Strich → etwa doppelt so lange einreiben bis 90 %
 function jigKick(lx,lz,len){ if(!window.__oaseSoft) return; const v=Math.min(len||0.01,0.05);   // Streichen in Brustnähe/über weichem Gewebe bringt sie leicht ins Schwingen
  const db=Math.hypot(Math.max(0,Math.abs(lx+0.447)-0.08),Math.max(0,Math.abs(Math.abs(lz)-0.104)-0.09)); const nb=Math.max(0,1-db/0.12);
  jig.bv+=(Math.random()<0.5?-1:1)*v*0.9*(0.25+nb); jig.bzv+=(Math.random()-0.5)*v*0.6*(0.2+nb); jig.sv+=(Math.random()<0.5?-1:1)*v*0.7; }
@@ -295,17 +310,44 @@ function punch(){ if(st.done) return; st.done=true; gag.t=0; const ad=ADULT();
  if(a){ a.addEventListener('ended',next); a.addEventListener('error',next); } setTimeout(next,4500);
  function sit(){ musOff=true; if(radio){ const r=radio; musFade(0,250,()=>r.pause()); aud('../../sfx/radio_static.mp3',0.25); }
   const Lw=window.__oaseLw, i0=Lw.intensity, sh=window.__oaseShade; let n=0;
-  const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); setTimeout(()=>{ if(radio){ radio.play().catch(()=>{}); musFade(MUSV*0.4,2500); } },4500); },1000); } };
+  const fl=()=>{ n++; Lw.intensity=n%2?0.15:i0*0.7; if(sh) sh.emissiveIntensity=n%2?0.05:0.4; if(n===3) swapPose(); if(n<5) setTimeout(fl,70+Math.random()*90); else { Lw.intensity=i0; if(sh) sh.emissiveIntensity=0.55; setTimeout(()=>{ st.endOk=true; say('punch','Kundin'); reward(); setTimeout(()=>{ if(radio){ radio.play().catch(()=>{}); musFade(MUSV*0.4,2500); } },4500); },6000); } };   // o14: 6 s Stille nach dem Schreck, dann „Danke, Kleiner.“ als letzter Satz
   setTimeout(fl,300); } }
-function swapPose(){ if(!fig.up) return; fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; jig.bv+=0.09; jig.sv+=0.05; }
+function swapPose(){ if(!fig.up) return; if(!snapUp()) swapHard(); }
+function swapHard(){ fig.lie.root.visible=false; fig.up.root.visible=true; applyMode(fig.up); pose='up'; jig.bv+=0.09; jig.sv+=0.05; }
+// o14: Schreck-Aufsetzen – schnell (0,42 s) aber durch Zwischenposen: Kopf reißt zuerst hoch, Rumpf folgt im Bogen um die Hüfte (keine Teleportation, kein Schrumpfen)
+function snapUp(){ try{ const L=fig.lie, U=fig.up; L.root.updateMatrixWorld(true); U.root.updateMatrixWorld(true);
+ const pairs=[], free=[], M=new T.Matrix4(), N3=new T.Matrix3(), v=new T.Vector3();
+ L.root.traverse(o=>{ if(!o.isMesh||!o.visible) return; let u=null; U.root.traverse(q=>{ if(!u&&q.isMesh&&q.name===o.name) u=q; });
+  const A=o.geometry.attributes.position; if(u&&u.geometry.attributes.position.count===A.count){ M.copy(o.matrixWorld).invert().multiply(u.matrixWorld); N3.getNormalMatrix(M);
+   const B=u.geometry.attributes.position, n=A.count, a=new Float32Array(A.array.length), b=new Float32Array(n*3); a.set(A.array);
+   for(let i=0;i<n;i++){ v.fromBufferAttribute(B,i).applyMatrix4(M); b[i*3]=v.x; b[i*3+1]=v.y; b[i*3+2]=v.z; }
+   const NA=o.geometry.attributes.normal, NB=u.geometry.attributes.normal; let na=null,nb=null; if(NA&&NB){ na=new Float32Array(NA.array); nb=new Float32Array(n*3); for(let i=0;i<n;i++){ v.fromBufferAttribute(NB,i).applyMatrix3(N3).normalize(); nb[i*3]=v.x; nb[i*3+1]=v.y; nb[i*3+2]=v.z; } }
+   pairs.push({o,a,b,na,nb}); } else free.push(o); });
+ const body=pairs.find(p=>L.parts.body.indexOf(p.o)>=0); if(!body) return false;
+ free.forEach(o=>{ const A=o.geometry.attributes.position, n=A.count, nn=new Int32Array(n), a=new Float32Array(A.array), ba=body.a, m=ba.length/3; // Handtuch/Decke: folgt dem nächsten Körperpunkt
+  for(let i=0;i<n;i++){ let bd=1e9,bk=0; for(let k=0;k<m;k+=6){ const dx=a[i*3]-ba[k*3], dy=a[i*3+1]-ba[k*3+1], dz=a[i*3+2]-ba[k*3+2], d=dx*dx+dy*dy+dz*dz; if(d<bd){ bd=d; bk=k; } } nn[i]=bk; }
+  pairs.push({o,a,follow:nn}); });
+ const PX=-0.45, PY=0.09, DUR=420, t0=performance.now(), cur=body.a.slice(0);
+ const step=()=>{ const t=Math.min(1,(performance.now()-t0)/DUR);
+  for(const p of pairs){ if(p.follow) continue; const A=p.o.geometry.attributes.position.array, a=p.a, b=p.b, n=a.length/3;
+   for(let i=0;i<n;i++){ const j=i*3, xl=a[j]; const dl=0.32*Math.min(1,Math.max(0,(xl+0.9)/0.9)); let w=Math.min(1,Math.max(0,(t-dl)/(1-dl))); w=w*w*(3-2*w); w=1-Math.pow(1-w,1.6);
+    const ax=a[j]-PX, ay=a[j+1]-PY, bx=b[j]-PX, by=b[j+1]-PY, ra=Math.hypot(ax,ay), rb=Math.hypot(bx,by); let ta=Math.atan2(ay,ax), tb=Math.atan2(by,bx), dt=tb-ta; if(dt>Math.PI) dt-=2*Math.PI; if(dt<-Math.PI) dt+=2*Math.PI;
+    const r=ra+(rb-ra)*w, th=ta+dt*w, k=Math.min(1,Math.max(0,(Math.min(ra,rb)-0.08)/0.15));
+    A[j]=(a[j]+(b[j]-a[j])*w)*(1-k)+(PX+r*Math.cos(th))*k; A[j+1]=(a[j+1]+(b[j+1]-a[j+1])*w)*(1-k)+(PY+r*Math.sin(th))*k; A[j+2]=a[j+2]+(b[j+2]-a[j+2])*w;
+    if(p.na){ const NN=p.o.geometry.attributes.normal.array; let x=p.na[j]+(p.nb[j]-p.na[j])*w, y=p.na[j+1]+(p.nb[j+1]-p.na[j+1])*w, z=p.na[j+2]+(p.nb[j+2]-p.na[j+2])*w; const l=Math.hypot(x,y,z)||1; NN[j]=x/l; NN[j+1]=y/l; NN[j+2]=z/l; } }
+   p.o.geometry.attributes.position.needsUpdate=true; if(p.na) p.o.geometry.attributes.normal.needsUpdate=true; if(p===body) cur.set(A); }
+  for(const p of pairs){ if(!p.follow) continue; const A=p.o.geometry.attributes.position.array, a=p.a, ba=body.a, n=a.length/3; for(let i=0;i<n;i++){ const j=i*3, k=p.follow[i]*3; A[j]=a[j]+cur[k]-ba[k]; A[j+1]=a[j+1]+cur[k+1]-ba[k+1]; A[j+2]=a[j+2]+cur[k+2]-ba[k+2]; } p.o.geometry.attributes.position.needsUpdate=true; }
+  if(t<1) requestAnimationFrame(step); else { swapHard(); pairs.forEach(p=>{ p.o.geometry.attributes.position.array.set(p.a); p.o.geometry.attributes.position.needsUpdate=true; if(p.na){ p.o.geometry.attributes.normal.array.set(p.na); p.o.geometry.attributes.normal.needsUpdate=true; } }); } };
+ pose='rise'; jig.bv+=0.05; step(); return true; }catch(e){ console.warn('snapUp',e); return false; } }
 function reward(){ setTimeout(()=>{ if(!window.zsaNote) return; const n=zsaNote('Gutschein: Einmal Ölmassage gratis. Für den Kleinen. – Gerd',0.16,0.1); n.position.set(CART.x+0.02,0.795,CART.z+0.12); n.rotation.x=-Math.PI/2; n.rotation.z=0.3; G.add(n); try{ localStorage.setItem('zs_oase_done','1'); }catch(e){} },2500); }
 // ---------------------------------------------------------------- Eingabe: Maus/Touch (Pointer) + VR-Controller
 const rc=new T.Raycaster(), tmpV=new T.Vector3(), tmpV2=new T.Vector3();
 // Controller-Pose in Weltkoordinaten (wie zsaCtrlPos in alpha.js – hier eigenständig, Seite läuft auch ohne Spiel-Ablauf)
 function ctrlPos(c,out){ if(!c.parent||c.parent===S){ out.copy(c.position); if(rig) rig.localToWorld(out); } else c.getWorldPosition(out); return out; }
 function ctrlRay(c){ const o=ctrlPos(c,new T.Vector3()), q=new T.Quaternion(); if(!c.parent||c.parent===S){ q.copy(c.quaternion); if(rig){ const rq=new T.Quaternion(); rig.getWorldQuaternion(rq); q.premultiply(rq); } } else c.getWorldQuaternion(q); return new T.Ray(o,new T.Vector3(0,0,-1).applyQuaternion(q)); }
-function bodyMeshes(){ const f=pose==='up'?fig.up:fig.lie; if(!f) return []; return f.parts.body.concat(f.parts.hair,f.parts.towel.filter(o=>o.visible),f.parts.robe.filter(o=>o.visible)); }
-function hitBody(ray){ rc.ray.copy(ray); rc.far=3; const h=rc.intersectObjects(bodyMeshes(),false)[0]; if(!h) return null; const f=pose==='up'?fig.up:fig.lie; if(f.parts.body.indexOf(h.object)<0) return {cover:true}; const l=h.object.worldToLocal(h.point.clone()); return {lx:l.x,lz:l.z,p:h.point}; }
+function bodyMeshes(){ const f=pose==='up'?fig.up:fig.lie; if(!f) return []; return f.parts.body.concat(f.parts.top.filter(o=>o.visible),f.parts.hair,f.parts.towel.filter(o=>o.visible),f.parts.robe.filter(o=>o.visible)); }
+function hitBody(ray){ rc.ray.copy(ray); rc.far=3; const h=rc.intersectObjects(bodyMeshes(),false)[0]; if(!h) return null; const f=pose==='up'?fig.up:fig.lie; const onTop=f.parts.top.indexOf(h.object)>=0&&h.object.visible; if(f.parts.body.indexOf(h.object)<0&&!onTop) return {cover:true}; const l=f.parts.body[0].worldToLocal(h.point.clone());   // o12 jugendfrei: Badeanzug zählt mit (Öl an den Rändern)
+  return {lx:l.x,lz:l.z,p:h.point}; }
 function hitBottle(ray){ rc.ray.copy(ray); rc.far=4; return rc.intersectObject(bottle,true).length>0; }
 let drag=null;
 function setupPointer(){ const cv=S.el?S.el.canvas:document.querySelector('a-scene').canvas; cv.style.touchAction='none'; const camEl=document.getElementById('cam');
@@ -366,7 +408,7 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
    makeMask(); makeBrush(); buildRoom(); setupPointer(); setupXR();
    if(window.worldDust) try{ window.__oaseDust=worldDust(this.el,{count:70,color:0xffd0a0,color2:0x9aa8ff,rMin:0.4,rMax:2.6,yMax:2.4}); }catch(e){}
    try{ R.xr.setFramebufferScaleFactor(1.3); }catch(e){} /* o11: schärferes Bild auf Quest (statt PS1-Look) */
-   let n=0; const fin=()=>{ if(++n<2) return; { const an=R.capabilities.getMaxAnisotropy(); [fig.lie,fig.up].forEach(f=>f&&f.root.traverse(o=>{ if(o.isMesh) [].concat(o.material).forEach(m=>['map','normalMap','roughnessMap'].forEach(k=>{ if(m&&m[k]){ m[k].anisotropy=an; m[k].needsUpdate=true; } })); })); } if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } window.__oase.ready=true; };
+   let n=0; const fin=()=>{ if(++n<2) return; if(fig.lie) settle(fig.lie); { const an=R.capabilities.getMaxAnisotropy(); [fig.lie,fig.up].forEach(f=>f&&f.root.traverse(o=>{ if(o.isMesh) [].concat(o.material).forEach(m=>['map','normalMap','roughnessMap'].forEach(k=>{ if(m&&m[k]){ m[k].anisotropy=an; m[k].needsUpdate=true; } })); })); } if(fig.lie){ applyMode(fig.lie); buildTarget(fig.lie); G.add(fig.lie.root); } if(fig.up){ fig.up.root.visible=false; applyMode(fig.up); G.add(fig.up.root); } window.__oase.ready=true; };
    loadFig('lie',f=>{ fig.lie=f; fin(); }); loadFig('up',f=>{ fig.up=f; fin(); });
    const L=document.getElementById('hl'), Rr=document.getElementById('hr'); this.ax=[0,0]; this.snap=0;
    L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });
@@ -384,5 +426,5 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   if(window.__oaseSmoke){ window.__oaseSmoke.material.opacity=0.42+0.14*Math.sin(t*0.0013); window.__oaseSmoke.rotation.y=Math.sin(t*0.0005)*0.6; }
   if(window.__oaseTubes) window.__oaseTubes.emissiveIntensity=1.05+0.04*Math.sin(t*0.31)+(Math.random()<0.004?-0.4:0);
   if(window.__oaseNeon) window.__oaseNeon.color.setHex(Math.random()<0.003?0x704050:0xd07090); }});
-window.__oase={jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
+window.__oaseSnap=()=>swapPose(); window.__oasePose=()=>pose; window.__oase={jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
 })();
