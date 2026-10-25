@@ -601,7 +601,7 @@ async function rigInit(RA,W){ const b=figBody(fig.lie), g=b&&b.geometry; if(!g||
  B.forEach(o=>{ if(!o.p) return; let I=o.m*o.len*o.len/12; const add=k=>{ I+=k.m*k.c0.distanceToSquared(o.a); k.kids.forEach(add); }; add(o); o.kids.forEach(()=>{}); o.I=I; o.r0=new T.Quaternion(); });
  RIG.B=B; RIG.W=W; RIG.RA=RA; RIG.on=true;
  fig.lie.root.traverse(m=>{ if(!m.isMesh) return; const gg=m.geometry; gg.computeBoundingBox(); const bb=gg.boundingBox; if(m!==b&&!fig.lie.parts.towel.includes(m)&&(bb.min.x+bb.max.x)/2<-0.6){ rigAttr(gg,4); RIG.hair=(RIG.hair||0)+1; } else if(!gg.attributes._bj) return; /*Haar/Brauen/Augen: 100 % Kopf (GLB-Hals/Kiefer-Gewichte überschrieben)*/  [].concat(m.material).forEach(rigPatch); });   // Haar, Brauen, Augen: starr am Kopf
- rigScalp(b,B); rigMouth(b,sy);
+ rigClean(b,B); rigScalp(b,B); rigMouth(b,sy);
  try{ W.numSolverIterations=8; }catch(e){} B.forEach(o=>{ if(o.p) rigDyn(o,false); });   // o20f (Bonelab-Prinzip): in Ruhe keine Physik – alles kinematisch in gespeicherter Pose   // o20e: kein Einsinken mehr – Autorenpose = Ruhepose, alles schläft bis zur ersten Berührung
  B.forEach(o=>{ if(!o.p) return; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); o.r0.set(qp.x,qp.y,qp.z,qp.w).invert().multiply(_qa.set(qc.x,qc.y,qc.z,qc.w)); const t=o.bd.translation(); o.rest={t:{x:t.x,y:t.y,z:t.z},q:{x:qc.x,y:qc.y,z:qc.z,w:qc.w}}; });
  rigPose(1); return true; }
@@ -615,11 +615,16 @@ function rigMouth(b,sy){ const H=4, JW=5, y0=sy(-0.78), add=(geo,mat,wf)=>{ cons
  RIG.tu=teeth(-0.7835,-0.7775,0.2475,false); RIG.tl=teeth(-0.7745,-0.7690,0.2440,true);   // Zahnreihen nur angedeutet (gedämpft, liegen hinter den Lippen)
  { const g=new T.SphereGeometry(1,20,12); g.scale(0.017,0.006,0.019); g.translate(-0.7735,0.2325+y0,0); RIG.tg=add(g,new T.MeshStandardMaterial({color:0x6a3030,roughness:0.5}),()=>1); } }   // Zunge (auf dem Unterkiefer)
 function rigScalp(b,B){ const g=b.geometry, P=g.attributes.position, J=g.attributes._bj, Wt=g.attributes._bw; if(!J) return; const hd=B[4], jw=B[5], nk=B[3]; let n=0;   // o20e: Kopfhaut/Haaransatz 100 % Kopf (kein Spalt zur starren Haarkappe), Kiefer nur am Unterkiefer
- for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i); const top=x<jw.a.x-0.005||y<jw.a.y-0.025, up=x<hd.a.x-0.025; let hw=0, ch=false; for(let k=0;k<4;k++){ const j=Math.round(J.getComponent(i,k)), w=Wt.getComponent(i,k); if(w<=0) continue; if((j===5&&top)||((j===3||j===2)&&up)){ hw+=w; Wt.setComponent(i,k,0); ch=true; } else if(j===4){ hw+=w; Wt.setComponent(i,k,0); } }
+ for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i); const jd=jw.b.clone().sub(jw.a), ju=((x-jw.a.x)*jd.x+(y-jw.a.y)*jd.y)/Math.max(1e-6,jd.x*jd.x+jd.y*jd.y), top=ju<0.5||y<jw.a.y-0.025, up=x<hd.a.x-0.025; let hw=0, ch=false; for(let k=0;k<4;k++){ const j=Math.round(J.getComponent(i,k)), w=Wt.getComponent(i,k); if(w<=0) continue; if((j===5&&top)||((j===3||j===2)&&up)){ hw+=w; Wt.setComponent(i,k,0); ch=true; } else if(j===4){ hw+=w; Wt.setComponent(i,k,0); } }
   if(hw>0){ let put=false; for(let k=0;k<4&&!put;k++) if(Wt.getComponent(i,k)<=0){ J.setComponent(i,k,4); Wt.setComponent(i,k,hw); put=true; } } if(ch) n++; }
  J.needsUpdate=true; Wt.needsUpdate=true; RIG.scalp=n; }
 function rigDyn(o,on){ const RA=RIG.RA; o.bd.setBodyType(on?RA.RigidBodyType.Dynamic:RA.RigidBodyType.KinematicPositionBased,true); if(!on){ const t=o.bd.translation(); if(t.y<0.012) o.bd.setTranslation({x:t.x,y:0.012,z:t.z},true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); } }
 function rigChain(o){ if(o.typ==='jaw') return [o]; let r=o; while(r.p&&!/^(pelvis|spine|chest)$/.test(r.p.typ)) r=r.p; const out=[]; const add=k=>{ out.push(k); k.kids.forEach(add); }; add(r); return out; }   // nur die gegriffene Kette wird dynamisch (Hand→Schulter, Fuß→Hüfte, Kopf/Hals, Kiefer)
+function rigClean(b,B){ const g=b.geometry, J=g.attributes._bj, Wt=g.attributes._bw; if(!J) return; let n=0;   // o20g: Ursache der Spitzen – Arm-/Bein-Vertices hatten Gewichte fremder Ketten (Hand liegt an der Hüfte, Oberschenkel aneinander) → nur Dominant-Knochen + direkte Nachbarn behalten, normieren
+ for(let i=0;i<J.count;i++){ let d=-1, dw=-1; for(let k=0;k<4;k++){ const w=Wt.getComponent(i,k); if(w>dw){ dw=w; d=Math.round(J.getComponent(i,k)); } } const o=B[d]; if(!o) continue; let sum=0, ch=false;
+  for(let k=0;k<4;k++){ const j=Math.round(J.getComponent(i,k)), w=Wt.getComponent(i,k); if(w<=0) continue; const q=B[j]; const ok=q&&(j===d||q.p===o||o.p===q); if(!ok){ Wt.setComponent(i,k,0); ch=true; } else sum+=w; }
+  if(sum>0) for(let k=0;k<4;k++) Wt.setComponent(i,k,Wt.getComponent(i,k)/sum); if(ch) n++; }
+ Wt.needsUpdate=true; RIG.clean=n; }
 function rigIb(bd){ const v=bd.principalInertia(); return Math.max(1e-6,Math.min(v.x,v.y,v.z)); }
 function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0; for(const o of B){ if(o.p&&!o.held&&o.bd.isDynamic()){ o.st=(o.st==null?1.2:o.st)-h; if(o.st<=0) rigDyn(o,false); } } /*nach dem Loslassen 1,2 s nachsacken, dann einfrieren → Pose bleibt*/  RIG.t=(RIG.t||0)+h; const ramp=Math.min(1,RIG.t/0.5);   // o20c: Kräfte über 0,5 s einblenden
  for(const o of B){ if(!o.p) continue; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); _qa.set(qp.x,qp.y,qp.z,qp.w); _qb.set(qc.x,qc.y,qc.z,qc.w);
