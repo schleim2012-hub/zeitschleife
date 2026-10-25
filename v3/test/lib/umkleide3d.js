@@ -55,8 +55,30 @@ AFRAME.registerComponent('umkleide',{ init(){
   const side=new THREE.PointLight('#f0d8c8',0.8,4,1.4); side.position.set(-1.0,1.7,-0.6); sc.add(side);
   sc.add(new THREE.HemisphereLight('#e6d4c0','#3a2a20',0.75));
   const blob=new THREE.Mesh(new THREE.CircleGeometry(0.42,32),new THREE.MeshBasicMaterial({map:cvTex(128,128,(x,w,h)=>{const g=x.createRadialGradient(64,64,4,64,64,64);g.addColorStop(0,'rgba(0,0,0,0.55)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}),transparent:true,depthWrite:false}));
-  blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,-0.55); G.add(blob);   // weicher Kontaktschatten unter den Füßen
-  // Figur
+  blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,-0.50); G.add(blob);   // weicher Kontaktschatten unter den Füßen
+  // u4: Foto-Tiefenrelief (2.5D) statt MakeHuman. Outfits = Liste aus {img, depth}; Bügel/Preisschild anklicken (VR-Laser/Maus) oder Taste O = nächstes Outfit
+  const OUT=(window.UMK&&UMK.outfits)||[{name:'Bikini',img:'../assets/umkleide/relief_front_bikini.webp?v=2',depth:'../assets/umkleide/relief_front_bikini_depth.png?v=2'}];
+  const RX=120, RY=180, IMW=1024, IMH=1536, TOP=16, BOT=1521, CX=529, HM=1.66, ZMAX=0.15;   // Bild-Px der Figur (Kopf inkl. Dutt .. Fußsohle), Höhe in m, max. Relief
+  const S=HM/(BOT-TOP), PW=IMW*S, PH=IMH*S;
+  const relGeo=new THREE.PlaneGeometry(PW,PH,RX,RY); relGeo.translate((IMW/2-CX)*S, PH/2-(IMH-BOT)*S, 0);
+  const relMat=new THREE.MeshBasicMaterial({color:'#f2e4d6',alphaTest:0.5,transparent:false,side:THREE.FrontSide});
+  const relief=new THREE.Mesh(relGeo,relMat); relief.position.set(0,0,-0.55); relief.frustumCulled=false; G.add(relief);
+  const tl=new THREE.TextureLoader(); let cur=-1;
+  function loadDepth(url,cb){ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>{ const c=document.createElement('canvas'); c.width=RX+1; c.height=RY+1; const x=c.getContext('2d');
+      x.drawImage(im,0,0,RX+1,RY+1); cb(x.getImageData(0,0,RX+1,RY+1).data); }; im.src=url; }
+  function showOutfit(i){ i=(i+OUT.length)%OUT.length; if(i===cur&&relMat.map) return; cur=i; const o=OUT[i];
+    tl.load(o.img,(t)=>{ t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; if(relMat.map) relMat.map.dispose(); relMat.map=t; relMat.needsUpdate=true; });
+    loadDepth(o.depth,(d)=>{ const P=relGeo.attributes.position; for(let k=0;k<P.count;k++) P.setZ(k,d[k*4]/255*ZMAX); P.needsUpdate=true; relGeo.computeBoundingSphere();
+      window.__umk={ready:true,fig:relief,outfit:i}; }); }
+  showOutfit(0);
+  const scEl=this.el;
+  clothes.forEach((_,i)=>{ const e=document.createElement('a-entity'); e.setAttribute('class','umk-swap'); e.setAttribute('geometry','primitive:box; width:0.32; height:0.95; depth:0.45');
+    e.setAttribute('material','opacity:0; transparent:true; depthWrite:false'); e.setAttribute('position',`${W/2-0.12} 1.2 ${-0.75+i*0.45}`);
+    e.addEventListener('click',()=>showOutfit(cur+1)); scEl.appendChild(e); });
+  window.addEventListener('keydown',(ev)=>{ if(ev.key==='o'||ev.key==='O') showOutfit(cur+1); });
+  window.UMK_next=()=>showOutfit(cur+1);
+  // Figur (alt, MakeHuman-GLB) – nur noch mit UMK.mode==='mh'
+  if(window.UMK&&UMK.mode==='mh'){
   const loader=new THREE.GLTFLoader(), url=(window.UMK&&UMK.fig)||'../assets/umkleide/figur_stand_u3.glb?v=1';
   loader.load(url,(gl)=>{ const f=gl.scene; f.position.set(0,0,-0.55); f.rotation.y=0;
     f.traverse(o=>{ if(!o.isMesh) return; o.frustumCulled=false; const m0=o.material, nm=(m0.name||'');
@@ -69,5 +91,6 @@ AFRAME.registerComponent('umkleide',{ init(){
     G.add(f);
     window.__umk={ready:true,fig:f};
   },undefined,(e)=>{ console.error('Figur-GLB fehlt',e); });
+  }
 }});
 })();
