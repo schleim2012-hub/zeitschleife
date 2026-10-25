@@ -62,8 +62,8 @@ AFRAME.registerComponent('umkleide',{ init(){
     f.traverse(o=>{ if(!o.isMesh) return; o.frustumCulled=false; const m0=o.material, nm=(m0.name||'');
       if(/^skin_/.test(nm)||o.name==='body'){ o.material=new THREE.MeshPhysicalMaterial({map:m0.map,normalMap:m0.normalMap,normalScale:new THREE.Vector2(0.18,0.18),color:'#ffffff',roughness:0.6,
           sheen:0.45,sheenColor:new THREE.Color('#ffd9c8'),sheenRoughness:0.8,vertexColors:!!o.geometry.attributes.color}); }
-      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0,alphaToCoverage:false,transparent:false,side:THREE.DoubleSide,roughness:0.5});   /* u2: Haar deckend (Alpha-Strähnen verschwanden aus der Nähe) */
-        { const P=o.geometry.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i),y=P.getY(i),z=P.getZ(i); if(z>0.06&&y<1.63&&Math.abs(x)<0.075){ P.setY(i,1.63+(y-1.63)*0.12); P.setZ(i,z-0.01); } } P.needsUpdate=true; o.geometry.computeVertexNormals(); }   /* Pony aus den Augen */ if(o.geometry.attributes.color) m0.vertexColors=true; }
+      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0,alphaToCoverage:false,transparent:false,depthWrite:true,side:THREE.DoubleSide,roughness:0.5});   /* depthWrite: GLTFLoader setzt bei BLEND false -> Körper übermalte das Haar */   /* u2: Haar deckend (Alpha-Strähnen verschwanden aus der Nähe) */
+        { const P=o.geometry.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i),y=P.getY(i),z=P.getZ(i); if(false&&z>0.06&&y<1.63&&Math.abs(x)<0.075){ P.setY(i,1.63+(y-1.63)*0.12); P.setZ(i,z-0.01); } } P.needsUpdate=true; o.geometry.computeVertexNormals(); }   /* Pony aus den Augen */ if(o.geometry.attributes.color) m0.vertexColors=true; }
       else if(/eyelash|eyebrow/.test(o.name)){ Object.assign(m0,{alphaTest:0.4,transparent:false,side:THREE.DoubleSide}); }
       m0.needsUpdate=true; });
     G.add(f);

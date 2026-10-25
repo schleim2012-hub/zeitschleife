@@ -13,7 +13,7 @@ from bl_ext.user_default.mpfb.services.locationservice import LocationService
 D=LocationService.get_user_data(); SD=LocationService.get_mpfb_data('targets') if hasattr(LocationService,'get_mpfb_data') else None
 for o in list(bpy.data.objects): bpy.data.objects.remove(o,do_unlink=True)
 info=HumanService._create_default_human_info_dict()
-info['phenotype'].update({'gender':0.0,'age':0.52,'muscle':0.42,'weight':0.40,'proportions':0.85,'height':0.55,'cupsize':0.62,'firmness':0.6,
+info['phenotype'].update({'gender':0.0,'age':0.52,'muscle':0.38,'weight':0.36,'proportions':0.92,'height':0.47,'cupsize':0.74,'firmness':0.72,   # u2: zierlich-schlank wie Petes Front/Seite/Rücken-Refs
   'race':{'caucasian':0.95,'asian':0.03,'african':0.02}})
 info['rig']='game_engine'
 info['eyes']='high-poly/high-poly.mhclo'; info['eyebrows']='eyebrow010/eyebrow010.mhclo'; info['eyelashes']='eyelashes02/eyelashes02.mhclo'
@@ -24,10 +24,13 @@ body=HumanService.deserialize_from_dict(info,st)
 # Gesicht: erwachsener (Kiefer/Wangenknochen definierter, weniger Babyspeck), entspannt, Augen offen
 SYS=os.path.expanduser('~/.config/blender/4.2/extensions/user_default/mpfb/data/targets')
 for t,w in [('head/head-age-incr',0.45),('cheek/l-cheek-bones-incr',0.55),('cheek/r-cheek-bones-incr',0.55),('chin/chin-bones-incr',0.45),
-            ('chin/chin-prominent-incr',0.25),('head/head-fat-decr',0.35),('head/head-oval',0.3),('chin/chin-width-incr',0.15)]:
+            ('chin/chin-prominent-incr',0.25),('torso/measure-waist-circ-decr',0.55),('torso/measure-shoulder-dist-decr',0.30),('hip/hip-scale-horiz-incr',0.20),
+            ('buttocks/buttocks-volume-incr',0.30),('stomach/stomach-pregnant-decr',0.35),('torso/measure-hips-circ-incr',0.15),('head/head-fat-decr',0.35),('head/head-oval',0.3),('chin/chin-width-incr',0.15)]:
   p=os.path.join(SYS,t+'.target.gz')
   if os.path.exists(p): TargetService.load_target(body,p,weight=w); print('TGT',t,w)
   else: print('MISSING',p)
+try: HumanService.refit(body); print('REFIT ok')   # Haar/Augen/Brauen an den veränderten Kopf anpassen (u1/u2: Kopfhaut stach durchs Haar)
+except Exception as e: print('REFIT fail',e)
 FU=os.path.join(D,'targets','faceunits')
 for t,w in [('mouthSmileLeft',0.12),('mouthSmileRight',0.12),('browInnerUp',0.05)]:
   p=os.path.join(FU,t+'.target')
@@ -86,8 +89,18 @@ HEADP=rig.matrix_world@rig.pose.bones['head'].head
 EYEZ=HEADP.z+0.075
 for v in Hh.data.vertices:
   c=v.co
-  if c.y<HEADP.y-0.06 and c.z<EYEZ+0.03 and abs(c.x-HEADP.x)<0.055:
-    k=min(1,(EYEZ+0.03-c.z)/0.04); c.z+=0.035*k; c.y+=0.01*k
+  TOPZ=EYEZ+0.025
+  if c.y<HEADP.y-0.04 and c.z<TOPZ and abs(c.x-HEADP.x)<0.068:   # Seitenscheitel-Strähne über dem Auge -> über die Brauen hochfalten
+    c.z=TOPZ+(c.z-TOPZ)*0.12; c.y-=0.006
+# Haar sicher außerhalb der Kopfhaut (Rest-Durchstoßen nach dem Refit): Vertex hinter/nahe der Haut -> 7 mm nach außen
+bvB=BVHTree.FromObject(B,bpy.context.evaluated_depsgraph_get()); npush=0
+HC=sum((v.co for v in Hh.data.vertices),Vector())/len(Hh.data.vertices); HC.z-=0.03
+for v in Hh.data.vertices:
+  loc,nrm,_,_=bvB.find_nearest(v.co)
+  if loc is None: continue
+  if nrm.dot(loc-HC)<0: nrm=-nrm          # Normale nach außen (vom Kopfmittelpunkt weg) orientieren
+  if (v.co-loc).dot(nrm)<0.006: v.co=loc+nrm*0.007; npush+=1
+print('HAIRPUSH',npush,len(Hh.data.vertices))
 skin=bpy.data.images.load(SKIN); skin.scale(2048,2048); skin.filepath_raw=os.path.join(OUT,'skin_'+TAG+'.jpg'); skin.file_format='JPEG'; skin.save()
 hairI=tex_hair(first_img(HO),os.path.join(OUT,'hair_'+TAG+'.png'),1024)
 B.data.materials.clear(); sm_=simple_mat('skin_'+TAG,skin,rough=0.55); B.data.materials.append(sm_)
