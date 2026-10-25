@@ -6,7 +6,7 @@
  "lm_model": "/workspace/hyb/face_landmarker.task",
  "base_skin": "~/.config/blender/4.2/extensions/.user/user_default/mpfb/data/skins/young_caucasian_female/young_lightskinned_female_diffuse.png",
  "ref": {"image": "/workspace/figur_pete/work/face_id_clean.png", "crop": [223,50,463,290]},
- "hair": "bob01", "tag": "u2", "tex": 2048,
+ "hair": "bob01", "tag": "u3", "tex": 2048,
  "skin": {"chroma": 0.45, "pores": 0.15},
  "poses": ["stand"], "variants": ["adult"]
 }

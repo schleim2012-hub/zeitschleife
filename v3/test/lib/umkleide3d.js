@@ -57,12 +57,12 @@ AFRAME.registerComponent('umkleide',{ init(){
   const blob=new THREE.Mesh(new THREE.CircleGeometry(0.42,32),new THREE.MeshBasicMaterial({map:cvTex(128,128,(x,w,h)=>{const g=x.createRadialGradient(64,64,4,64,64,64);g.addColorStop(0,'rgba(0,0,0,0.55)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}),transparent:true,depthWrite:false}));
   blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,-0.55); G.add(blob);   // weicher Kontaktschatten unter den Füßen
   // Figur
-  const loader=new THREE.GLTFLoader(), url=(window.UMK&&UMK.fig)||'../assets/umkleide/figur_stand_u2.glb?v=1';
+  const loader=new THREE.GLTFLoader(), url=(window.UMK&&UMK.fig)||'../assets/umkleide/figur_stand_u3.glb?v=1';
   loader.load(url,(gl)=>{ const f=gl.scene; f.position.set(0,0,-0.55); f.rotation.y=0;
     f.traverse(o=>{ if(!o.isMesh) return; o.frustumCulled=false; const m0=o.material, nm=(m0.name||'');
       if(/^skin_/.test(nm)||o.name==='body'){ o.material=new THREE.MeshPhysicalMaterial({map:m0.map,normalMap:m0.normalMap,normalScale:new THREE.Vector2(0.18,0.18),color:'#ffffff',roughness:0.6,
           sheen:0.45,sheenColor:new THREE.Color('#ffd9c8'),sheenRoughness:0.8,vertexColors:!!o.geometry.attributes.color}); }
-      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0,alphaToCoverage:false,transparent:false,depthWrite:true,side:THREE.DoubleSide,roughness:0.5});   /* depthWrite: GLTFLoader setzt bei BLEND false -> Körper übermalte das Haar */   /* u2: Haar deckend (Alpha-Strähnen verschwanden aus der Nähe) */
+      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0.45,alphaToCoverage:false,transparent:false,depthWrite:true,side:THREE.DoubleSide,roughness:0.5});   /* depthWrite: GLTFLoader setzt bei BLEND false -> Körper übermalte das Haar */   /* u2: Haar deckend (Alpha-Strähnen verschwanden aus der Nähe) */
         { const P=o.geometry.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i),y=P.getY(i),z=P.getZ(i); if(false&&z>0.06&&y<1.63&&Math.abs(x)<0.075){ P.setY(i,1.63+(y-1.63)*0.12); P.setZ(i,z-0.01); } } P.needsUpdate=true; o.geometry.computeVertexNormals(); }   /* Pony aus den Augen */ if(o.geometry.attributes.color) m0.vertexColors=true; }
       else if(/eyelash|eyebrow/.test(o.name)){ Object.assign(m0,{alphaTest:0.4,transparent:false,side:THREE.DoubleSide}); }
       m0.needsUpdate=true; });
