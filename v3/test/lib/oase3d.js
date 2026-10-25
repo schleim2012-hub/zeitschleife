@@ -200,13 +200,9 @@ function subdiv(g){ if(!g.index||g.userData.sub) return g; const ix=g.index.arra
  const ni=new (nv+ix.length>65535?Uint32Array:Uint16Array)(ix.length*4); let w=0;
  for(let t=0;t<ix.length;t+=3){ const a=ix[t],b=ix[t+1],c=ix[t+2], ab=mid(a,b), bc=mid(b,c), ca=mid(c,a); ni.set([a,ab,ca, ab,b,bc, ca,bc,c, ab,bc,ca],w); w+=12; }
  const ng=new T.BufferGeometry(), tot=nv+extra.length/2;
- for(const name in g.attributes){ if(name==='_bj'||name==='_bw') continue; const A=g.attributes[name], is=A.itemSize, src=A.array, out=new (src.constructor)(tot*is); out.set(src.subarray(0,nv*is));
+ for(const name in g.attributes){ const A=g.attributes[name], is=A.itemSize, src=A.array, out=new (src.constructor)(tot*is); out.set(src.subarray(0,nv*is));
   for(let e=0;e<extra.length;e+=2){ const a=extra[e], b=extra[e+1], o=(nv+e/2)*is; for(let k=0;k<is;k++) out[o+k]=(src[a*is+k]+src[b*is+k])*0.5; }
   ng.setAttribute(name,new T.BufferAttribute(out,is,A.normalized)); }
- if(g.attributes._bj&&g.attributes._bw){ const J=g.attributes._bj.array, Wt=g.attributes._bw.array, oJ=new Float32Array(tot*4), oW=new Float32Array(tot*4); oJ.set(J.subarray(0,nv*4)); oW.set(Wt.subarray(0,nv*4)); const acc=new Map();   // o20: Skin-Gewichte der Kantenmitte = beide Endpunkte gemischt, beste 4, normiert
-  for(let e=0;e<extra.length;e+=2){ acc.clear(); for(const v of [extra[e],extra[e+1]]) for(let k=0;k<4;k++){ const w=Wt[v*4+k]; if(w>0) acc.set(J[v*4+k],(acc.get(J[v*4+k])||0)+w*0.5); }
-   const top=[...acc].sort((a,b)=>b[1]-a[1]).slice(0,4), sm=top.reduce((a,b)=>a+b[1],0)||1, o=(nv+e/2)*4; top.forEach(([j,w],k)=>{ oJ[o+k]=j; oW[o+k]=w/sm; }); }
-  ng.setAttribute('_bj',new T.BufferAttribute(oJ,4)); ng.setAttribute('_bw',new T.BufferAttribute(oW,4)); }
  const p=ng.attributes.position.array, n=ng.attributes.normal.array;
  for(let e=0;e<extra.length;e+=2){ const a=extra[e]*3, b=extra[e+1]*3, o=(nv+e/2)*3; let qx=0,qy=0,qz=0;
   for(const v of [a,b]){ const d=(p[o]-p[v])*n[v]+(p[o+1]-p[v+1])*n[v+1]+(p[o+2]-p[v+2])*n[v+2]; qx+=p[o]-d*n[v]; qy+=p[o+1]-d*n[v+1]; qz+=p[o+2]-d*n[v+2]; }
@@ -294,7 +290,7 @@ function settle(f){ // o13: liegt auf (statt zu schweben) – pro Körper-Abschn
  const dy=env.map((v,k)=>{ const a=env[Math.max(0,k-1)], c=env[Math.min(N-1,k+1)]; return -Math.min(0.035,Math.max(-0.003,(a+v+c)/3+0.002)); });
  const f_=x=>{ const u=(x-X0s)/DX-0.5; if(u<=0) return dy[0]; if(u>=N-1) return dy[N-1]; const k=Math.floor(u), t=u-k; return dy[k]*(1-t)+dy[k+1]*t; };
  f.root.traverse(o=>{ if(!o.isMesh) return; const A=o.geometry.attributes.position; for(let i=0;i<A.count;i++) A.setY(i,A.getY(i)+f_(A.getX(i))); A.needsUpdate=true; o.geometry.computeBoundingBox(); o.geometry.computeBoundingSphere(); });
- window.__oaseSettle=dy; f.sy=f_; }
+ window.__oaseSettle=dy; }
 function applyMode(f){ if(!f) return; const ad=ADULT(), P=f.parts;
  // jugendfrei: Bademantel + Bikini-Träger/-Oberteil IMMER sichtbar, Handtuch-only-Variante nie. Ab 18: Handtuch über der Hüfte, Rücken frei.
  P.robe.forEach(o=>o.visible=!ad); P.strap.forEach(o=>o.visible=!ad); P.top.forEach(o=>o.visible=!ad);
@@ -454,7 +450,7 @@ function dbgTick(){ DBG.wMax=Math.max(DBG.wMax*0.995,uPress.value.w); if(!DBG.on
  rows.forEach((r,i)=>{ x.fillStyle='#b89a62'; x.fillText(r[0],14,38+i*40); x.fillStyle='#f0e2c2'; x.fillText(String(r[1]).slice(0,34),128,38+i*40); }); DBG.mesh.material.map.needsUpdate=true; }
 function xrTick(){ if(!R.xr.isPresenting) return; const ses=R.xr.getSession&&R.xr.getSession(); dbgGrip(ses);
  const hp=new T.Vector3(); cam.getWorldPosition(hp);
- ctl.forEach((k,i)=>{ if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone(); if(p.distanceTo(hp)<0.12||p.lengthSq()<1e-6){ k.pl=null; if(k.rg){ regRelease(k.rg); k.rg=null; } rigHand(i,null); return; } const pl=bodyLocal(p); if(!pl) return; rigHand(i,pose==='lie'&&!st.done?pl:null);
+ ctl.forEach((k,i)=>{ if(useEnt&&!k.ent) return; const p=ctlPos(i,tmpV).clone(); if(p.distanceTo(hp)<0.12||p.lengthSq()<1e-6){ k.pl=null; if(k.rg){ regRelease(k.rg); k.rg=null; } return; } const pl=bodyLocal(p); if(!pl) return;
   const src=ses&&[...ses.inputSources].find(s_=>s_.handedness===k.hand), gp=src&&src.gamepad, grip=!!(gp&&gp.buttons[1]&&gp.buttons[1].pressed);
   if(pose==='up'){ upHand(k,p,gp,xrTick.d||0.016); k.gp=gp; return; } if(pose!=='lie') return;   // o18: 2. Pose (sitzt) – Berührung über Nähe zur Haut
   if(grip&&!k.rg&&!k.gripWas) { k.rg=regGrab(pl,i); if(k.rg&&gp.hapticActuators&&gp.hapticActuators[0]) gp.hapticActuators[0].pulse(0.3,25); } if(!grip&&k.rg){ regRelease(k.rg); k.rg=null; } k.gripWas=grip;
@@ -542,9 +538,9 @@ function regPrep(bl,P,n){ const A=bl.geometry.attributes._reg; if(!A) return; co
  A.needsUpdate=true; REG.forEach(r=>r.pts=[]); for(let i=0;i<n;i+=7){ const id=A.getX(i)|0, w=A.getY(i); if(id&&w>0.45) REG[id].pts.push(new T.Vector3(P.getX(i),P.getY(i),P.getZ(i)),w); }
  REG.forEach(r=>{ const a=[]; for(let k=0;k<r.pts.length;k+=2) a.push({p:r.pts[k],w:r.pts[k+1]}); r.pts=a.filter((_,k)=>k%Math.max(1,Math.ceil(a.length/60)|0)===0); }); window.__oaseReg=REG; }
 function regNear(pl,dim2,lim){ let best=null, bd=lim; REG.forEach(r=>{ if(!r.i) return; for(const s_ of r.pts){ const px=s_.p.x+r.x.x*s_.w, py=s_.p.y+r.x.y*s_.w, pz=s_.p.z+r.x.z*s_.w; const d=dim2?Math.hypot(pl.x-px,pl.z-pz):Math.hypot(pl.x-px,pl.y-py,pl.z-pz); if(d<bd){ bd=d; best={r,w:s_.w,d}; } } }); return best; }
-function regPush(pl,dl,dim2){ if(pose!=='lie'||st.done) return; if(RIG.on&&!dim2&&!R.xr.isPresenting) rigPush(pl,dl); const h=regNear(pl,dim2,dim2?0.03:0.045); if(!h) return; const r=h.r; if(r.grab) return; const m=Math.min(dl.length(),0.05); if(m<1e-4) return; const dir=dl.clone().normalize();
+function regPush(pl,dl,dim2){ if(pose!=='lie'||st.done) return; const h=regNear(pl,dim2,dim2?0.03:0.045); if(!h) return; const r=h.r; if(r.grab) return; const m=Math.min(dl.length(),0.05); if(m<1e-4) return; const dir=dl.clone().normalize();
  if(r.soft){ r.v.addScaledVector(dir,m*9); r.v.y-=m*4; } else if(ragLimb(r)){ ragPush(ragLimb(r),pl,dl); } else { r.v.addScaledVector(dir,m*14); r.v.y=Math.max(r.v.y,0); } }   // weich: Anstoß · Glied: wird ein Stück mitgeschoben
-function regGrab(pl,key){ if(pose!=='lie'||st.done) return null; if(RIG.on) return rigGrab(pl,key); const h=regNear(pl,false,0.06); if(!h||!h.r.limb) return null; { const l=ragLimb(h.r); if(l){ if(!l.hand) ragGrab(l,pl,key); return h.r; } } h.r.grab={key,h0:pl.clone(),x0:h.r.x.clone(),w:Math.max(0.35,h.w),tgt:h.r.x.clone()}; return h.r; }
+function regGrab(pl,key){ if(pose!=='lie'||st.done) return null; const h=regNear(pl,false,0.06); if(!h||!h.r.limb) return null; { const l=ragLimb(h.r); if(l){ if(!l.hand) ragGrab(l,pl,key); return h.r; } } h.r.grab={key,h0:pl.clone(),x0:h.r.x.clone(),w:Math.max(0.35,h.w),tgt:h.r.x.clone()}; return h.r; }
 function regTick(d){ if(pose!=='lie'||st.done){ REG.forEach((r,i)=>{ r.x.set(0,0,0); r.v.set(0,0,0); r.grab=null; uOff.value[i].set(0,0,0); }); return; }
  const n=Math.max(1,Math.ceil(d/0.008)), h=d/n; for(let s_=0;s_<n;s_++) REG.forEach(r=>{ if(!r.i||(r.limb&&RAG.on)) return; const x=r.x, v=r.v;
   if(r.soft){ v.addScaledVector(x,-120*h).addScaledVector(v,-7*h); x.addScaledVector(v,h); const L=x.length(); if(L>0.012) x.multiplyScalar(0.012/L); }
@@ -557,92 +553,8 @@ function regTick(d){ if(pose!=='lie'||st.done){ REG.forEach((r,i)=>{ r.x.set(0,0
 // seine Drehung dreht die Glied-Region im Shader um den Gelenkpunkt (weich gewichtet). Muskeltonus = schwacher PD-Motor zur Ruhepose, weiche Gelenkgrenzen, Liege als Kollider, Griff = Feder-Gelenk zur Hand.
 // Fällt Rapier aus (Laden/WASM) → die Feder-Glieder oben bleiben aktiv.
 const RAG={on:false,ms:0,k:1,L:[]};
-// ---------------------------------------------------------------- o20: Skelett (18 Knochen, GPU-Skinning) + aktive Ragdoll (Rapier) – Becken fest auf der Liege, Rest frei in anatomischen Grenzen
-const NB=18, uBQ={value:[...Array(NB)].map(()=>new T.Vector4(0,0,0,1))}, uBT={value:[...Array(NB)].map(()=>new T.Vector3())};
-const RIG={on:false,B:[],gr:[],hb:[],idle:0,rs:-1,dev:0,tone:1};
-const RIGV=`uniform vec4 uBQ[${NB}]; uniform vec3 uBT[${NB}]; attribute vec4 _bj; attribute vec4 _bw;
-vec3 qrot(vec4 q,vec3 v){ return v+2.0*cross(q.xyz,cross(q.xyz,v)+q.w*v); }
-vec3 skP(vec3 p){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*(qrot(uBQ[j],p)+uBT[j]); } } return o; }
-vec3 skN(vec3 n){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*qrot(uBQ[j],n); } } return normalize(o); }`;
-function rigPatch(m){ if(!m||m.userData.rig) return; m.userData.rig=1; const ob=m.onBeforeCompile, ck=m.customProgramCacheKey;
- m.onBeforeCompile=(sh,r)=>{ ob&&ob.call(m,sh,r); sh.uniforms.uBQ=uBQ; sh.uniforms.uBT=uBT;   // Verformungen (Delle, Atmen, Federn) bleiben im Ruheraum, Skinning ganz zuletzt
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+RIGV).replace('#include <defaultnormal_vertex>','vec3 nR_=objectNormal; objectNormal=skN(objectNormal);\n#include <defaultnormal_vertex>\nobjectNormal=nR_;').replace('#include <project_vertex>','transformed=skP(transformed);\n#include <project_vertex>'); };
- m.customProgramCacheKey=()=>(ck?ck.call(m):'m')+'-rig'; m.needsUpdate=true; }
-function rigAttr(g,j){ const n=g.attributes.position.count, J=new Float32Array(n*4), W=new Float32Array(n*4); for(let i=0;i<n;i++){ J[i*4]=j; W[i*4]=1; } g.setAttribute('_bj',new T.BufferAttribute(J,4)); g.setAttribute('_bw',new T.BufferAttribute(W,4)); }
-const RIGM={pelvis:12,spine:8,chest:14,neck:1.2,head:4.3,jaw:0.25,uarm:1.9,farm:1.2,hand:0.45,thigh:7,shin:3.2,foot:0.9};
-const _qa=new T.Quaternion(), _qb=new T.Quaternion(), _qd=new T.Quaternion(), _qs=new T.Quaternion(), _tv=new T.Vector3(), _wv=new T.Vector3(), _av=new T.Vector3();
-async function rigInit(RA,W){ const b=figBody(fig.lie), g=b&&b.geometry; if(!g||!g.attributes._bj||!(C.fig&&C.fig.rigAdult)) return false;
- const J=await (await fetch(C.fig.rigAdult)).json(), sy=fig.lie.sy||(()=>0), P=g.attributes.position, BJ=g.attributes._bj.array, BW=g.attributes._bw.array;
- const V=a=>new T.Vector3(a[0],a[1]+sy(a[0]),a[2]);
- const B=J.bones.map((d,i)=>{ const a=V(d.a), b_=V(d.b), dir=b_.clone().sub(a), len=dir.length(); dir.normalize(); return {i,name:d.name,kind:d.kind,lim:d.lim||[0,0],par:d.parent,a,b:b_,dir,len,c0:a.clone().lerp(b_,0.5),pts:[],mn:new T.Vector3(9,9,9),mx:new T.Vector3(-9,-9,-9),rmn:new T.Vector3(9,9,9),rmx:new T.Vector3(-9,-9,-9),typ:d.name.replace(/[RL]$/,'')}; });
- for(let i=0;i<P.count;i++){ let k=0; for(let q=1;q<4;q++) if(BW[i*4+q]>BW[i*4+k]) k=q; if(BW[i*4+k]<0.6) continue; const o=B[BJ[i*4+k]|0]; if(!o) continue; _tv.fromBufferAttribute(P,i);
-  o.mn.min(_tv); o.mx.max(_tv); const u=_av.copy(_tv).sub(o.a).dot(o.dir)/o.len; if(u>0.15&&u<0.85){ const pp=_av.addScaledVector(o.dir,-u*o.len); (o.dp||(o.dp=[])).push(pp.length()); (o.off||(o.off=new T.Vector3())).add(pp); } if(i%7===0&&o.pts.length<160) o.pts.push(_tv.clone()); }
- B.forEach(o=>{ o.p=o.par>=0?B[o.par]:null; o.kids=[]; }); B.forEach(o=>o.p&&o.p.kids.push(o));
- const LG=0x00010006, TG=0x00020005, LB=0x0004000F;   // Gruppen: Liege · Rumpf · Glieder/Kopf · Spieler-Hand
- B.forEach(o=>{ const m=RIGM[o.typ]||1, root=o.kind==='root';
-  o.bd=W.createRigidBody((root?RA.RigidBodyDesc.fixed():RA.RigidBodyDesc.dynamic().setLinearDamping(0.6).setAngularDamping(2.5).setCanSleep(true)).setTranslation(o.c0.x,o.c0.y,o.c0.z));
-  if(o.typ==='jaw') o.bd.setGravityScale(0,true);   // Kiefer: eigene Feder schließt ihn (Schwerkraft würde den Mund im Liegen aufziehen)
-  let cd; if(o.typ==='pelvis'||o.typ==='spine'||o.typ==='chest'){ const mn=o.mn, mx=o.mx, hx=Math.max(0.03,Math.abs(o.b.x-o.a.x)/2), hy=Math.max(0.03,(mx.y-mn.y)/2), hz=Math.max(0.05,(mx.z-mn.z)/2*0.86);
-   cd=RA.ColliderDesc.cuboid(hx,hy,hz).setTranslation(0,(mn.y+mx.y)/2+0.002-o.c0.y,(mn.z+mx.z)/2-o.c0.z).setDensity(m/(8*hx*hy*hz)).setCollisionGroups(TG); o.box=[hx,hy,hz]; }
-  else { const dp=(o.dp||[0.03]).sort((a,b)=>a-b), r=Math.max(0.016,Math.min(0.085,dp[Math.floor(dp.length*0.45)]*0.88)), hh=Math.max(0.004,o.len/2-r*0.5), of=o.off?o.off.divideScalar(o.dp.length):new T.Vector3(); if(of.length()>0.03) of.setLength(0.03);
-   const oy=of.y, oz=of.z, qa=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),o.dir);   // Kapsel = Median-Abstand der Haut von der Knochenachse (passt in den Körper, keine Überschneidung)
-   cd=RA.ColliderDesc.capsule(hh,r).setTranslation(0,oy,oz).setRotation({x:qa.x,y:qa.y,z:qa.z,w:qa.w}).setDensity(m/(Math.PI*r*r*2*hh+4.19*r*r*r)).setCollisionGroups(o.typ==='jaw'?0:LB); o.cap=[hh,r,oy,oz]; }
-  W.createCollider(cd.setFriction(0.9).setRestitution(0),o.bd); o.m=m; });
- B.forEach(o=>{ if(!o.p) return; const p=o.p, a1=o.a.clone().sub(p.c0), a2=o.a.clone().sub(o.c0); let jd;
-  if(o.kind==='hinge'){ const ax=o.typ==='jaw'?new T.Vector3(0,0,1):new T.Vector3().crossVectors(p.dir,new T.Vector3(0,1,0)).normalize(); o.hax=ax; jd=RA.JointData.revolute({x:a1.x,y:a1.y,z:a1.z},{x:a2.x,y:a2.y,z:a2.z},{x:ax.x,y:ax.y,z:ax.z}); jd.limitsEnabled=true;
-   jd.limits=o.typ==='farm'?[-0.05,o.lim[1]]:o.typ==='shin'?[-o.lim[1],0.05]:[-o.lim[1],0.0]; }   // Ellbogen beugt nach oben, Knie nach unten, Kiefer öffnet zur Brust hin (≈25°)
-  else jd=RA.JointData.spherical({x:a1.x,y:a1.y,z:a1.z},{x:a2.x,y:a2.y,z:a2.z});
-  o.j=W.createImpulseJoint(jd,p.bd,o.bd,true); o.j.setContactsEnabled(false); });
- const sub=o=>{ let m=o.m, s=o.c0.clone().multiplyScalar(o.m); o.kids.forEach(k=>{ const r=sub(k); m+=r.m; s.addScaledVector(r.c,r.m); }); o.ms=m; o.cm=s.divideScalar(m); return {m,c:o.cm}; }; sub(B[0]);
- B.forEach(o=>{ if(!o.p) return; let I=o.m*o.len*o.len/12; const add=k=>{ I+=k.m*k.c0.distanceToSquared(o.a); k.kids.forEach(add); }; add(o); o.kids.forEach(()=>{}); o.I=I; o.r0=new T.Quaternion(); });
- RIG.B=B; RIG.W=W; RIG.RA=RA; RIG.on=true;
- fig.lie.root.traverse(m=>{ if(!m.isMesh) return; const gg=m.geometry; if(!gg.attributes._bj){ gg.computeBoundingBox(); const bb=gg.boundingBox; if(bb.max.x<-0.62&&!fig.lie.parts.towel.includes(m)) rigAttr(gg,4); else return; } [].concat(m.material).forEach(rigPatch); });   // Haar, Brauen, Augen: starr am Kopf
- rigMouth(b,sy);
- for(let s=0;s<135;s++){ rigStep(W.timestep); W.step(); }   // 1,5 s einsinken lassen → das ist die Ruhepose (liegt wirklich auf)
- B.forEach(o=>{ if(!o.p) return; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); o.r0.set(qp.x,qp.y,qp.z,qp.w).invert().multiply(_qa.set(qc.x,qc.y,qc.z,qc.w)); const t=o.bd.translation(); o.rest={t:{x:t.x,y:t.y,z:t.z},q:{x:qc.x,y:qc.y,z:qc.z,w:qc.w}}; });
- rigPose(1); return true; }
-function rigMouth(b,sy){ const H=4, JW=5, y0=sy(-0.78), add=(geo,mat,wf)=>{ const n=geo.attributes.position.count, Jb=new Float32Array(n*4), Wb=new Float32Array(n*4), Pp=geo.attributes.position;
-  for(let i=0;i<n;i++){ const w=wf(Pp.getX(i),Pp.getY(i)-y0,Pp.getZ(i)); Jb[i*4]=JW; Jb[i*4+1]=H; Wb[i*4]=w; Wb[i*4+1]=1-w; } geo.setAttribute('_bj',new T.BufferAttribute(Jb,4)); geo.setAttribute('_bw',new T.BufferAttribute(Wb,4)); rigPatch(mat); const me=new T.Mesh(geo,mat); me.raycast=()=>{}; me.userData.keepUV=true; b.add(me); return me; };
- const ss=(a,c,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(c-a))); return t*t*(3-2*t); };
- { const g=new T.SphereGeometry(1,24,16); g.scale(0.026,0.02,0.03); g.translate(-0.783,0.228+y0,0); const col=new Float32Array(g.attributes.position.count*3); for(let i=0;i<col.length/3;i++){ const y=g.attributes.position.getY(i)-y0, t=ss(0.21,0.248,y); col[i*3]=0.05+0.17*t; col[i*3+1]=0.018+0.05*t; col[i*3+2]=0.016+0.045*t; } g.setAttribute('color',new T.BufferAttribute(col,3));
-  RIG.cav=add(g,new T.MeshStandardMaterial({vertexColors:true,roughness:0.6,side:T.BackSide}),(x,y)=>ss(-0.786,-0.770,x)*ss(0.25,0.232,y)); }   // dunkle Mundhöhle (kein Loch in den Kopf)
- const teeth=(x0,x1,yf,jaw)=>{ const g=new T.PlaneGeometry(1,1,10,1), Pp=g.attributes.position; for(let i=0;i<Pp.count;i++){ const u=Pp.getX(i), v=Pp.getY(i)+0.5, z=u*0.036; Pp.setXYZ(i,x0+(x1-x0)*v,yf-22*z*z+y0,z); } g.computeVertexNormals();
-  return add(g,new T.MeshStandardMaterial({color:0x8f877c,roughness:0.45,side:T.DoubleSide}),()=>jaw?1:0); };
- RIG.tu=teeth(-0.7835,-0.7775,0.2475,false); RIG.tl=teeth(-0.7745,-0.7690,0.2440,true);   // Zahnreihen nur angedeutet (gedämpft, liegen hinter den Lippen)
- { const g=new T.SphereGeometry(1,20,12); g.scale(0.017,0.006,0.019); g.translate(-0.7735,0.2325+y0,0); RIG.tg=add(g,new T.MeshStandardMaterial({color:0x6a3030,roughness:0.5}),()=>1); } }   // Zunge (auf dem Unterkiefer)
-function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0;
- for(const o of B){ if(!o.p) continue; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); _qa.set(qp.x,qp.y,qp.z,qp.w); _qb.set(qc.x,qc.y,qc.z,qc.w);
-  _qd.copy(_qa).invert().multiply(_qb).multiply(_qs.copy(o.r0).invert()); if(_qd.w<0) _qd.set(-_qd.x,-_qd.y,-_qd.z,-_qd.w);   // Abweichung von der Ruhepose (im Eltern-Rahmen)
-  const ang=2*Math.acos(Math.min(1,_qd.w)); dev=Math.max(dev,o.typ==='jaw'?0:ang); _tv.set(0,0,0); if(ang>1e-4) _tv.set(_qd.x,_qd.y,_qd.z).normalize().multiplyScalar(ang);
-  const jaw=o.typ==='jaw', kt=(jaw?45:9)*(jaw?1:mult); _wv.copy(_tv).multiplyScalar(-kt);   // schwacher Muskeltonus (Kiefer: sanfte Rückfeder)
-  if(o.kind==='ball'){ const ax=o.dir, tw=_qd.x*ax.x+_qd.y*ax.y+_qd.z*ax.z, tA=2*Math.atan2(tw,_qd.w); _qs.set(ax.x*tw,ax.y*tw,ax.z*tw,_qd.w); if(_qs.lengthSq()<1e-9) _qs.identity(); else _qs.normalize(); const sw=_qd.clone().multiply(_qs.invert()); if(sw.w<0) sw.set(-sw.x,-sw.y,-sw.z,-sw.w);
-   const sA=2*Math.acos(Math.min(1,sw.w)); let ex=0; if(sA>o.lim[0]){ ex=sA-o.lim[0]; _av.set(sw.x,sw.y,sw.z).normalize(); _wv.addScaledVector(_av,-900*ex); } if(Math.abs(tA)>o.lim[1]){ const e2=Math.abs(tA)-o.lim[1]; ex=Math.max(ex,e2); _wv.addScaledVector(ax,-900*e2*Math.sign(tA)); }   // weiche, aber steife Gelenkgrenze (Schwung-/Drehanteil getrennt)
-   const at=ex>0.02; if(at&&!o.atLim) rigHap(o); o.atLim=at; }
-  _wv.applyQuaternion(_qa); const wc=o.bd.angvel(), wp=o.p.bd.angvel(); const kd=(jaw?10:3)+(mult>1?2*Math.sqrt(kt):0); _wv.x-=kd*(wc.x-wp.x); _wv.y-=kd*(wc.y-wp.y); _wv.z-=kd*(wc.z-wp.z); _wv.multiplyScalar(o.I*h);
-  o.bd.applyTorqueImpulse({x:_wv.x,y:_wv.y,z:_wv.z},true); if(o.p.p) o.p.bd.applyTorqueImpulse({x:-_wv.x,y:-_wv.y,z:-_wv.z},true); }
- RIG.dev=dev; }
-function rigHap(o){ RIG.gr.forEach(g=>{ const c=ctl[g.key]; c&&hap(c.gp,0.6,28); }); }   // Anschlag spürbar (nur wenn sie gerade gehalten wird)
-function rigPose(k){ RIG.B.forEach(o=>{ const q=o.bd.rotation(), t=o.bd.translation(); _qa.set(q.x,q.y,q.z,q.w); if(k<1) _qa.slerp(_qb.identity(),1-k); _tv.set(t.x,t.y,t.z).sub(o.c0).multiplyScalar(k).add(o.c0); _av.copy(o.c0).applyQuaternion(_qa); uBQ.value[o.i].set(_qa.x,_qa.y,_qa.z,_qa.w); uBT.value[o.i].copy(_tv).sub(_av); }); }
-function rigPt(o,p,out){ const q=uBQ.value[o.i]; return out.copy(p).applyQuaternion(_qs.set(q.x,q.y,q.z,q.w)).add(uBT.value[o.i]); }
-function rigNear(pl,lim,grab){ let best=null, bd=lim; RIG.B.forEach(o=>{ if(o.typ==='pelvis'||o.typ==='spine'||o.typ==='chest') return; for(const p of o.pts){ const d=rigPt(o,p,_av).distanceTo(pl); if(d<bd){ bd=d; best=o; } } }); if(best&&grab&&best.typ==='neck') best=RIG.B[4]; return best; }
-function rigGrab(pl,key){ const o=rigNear(pl,0.06,true); if(!o) return null; RIG.idle=0; RIG.rs=-1; RIG.tone=1; const RA=RIG.RA, W=RIG.W, hb=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased().setTranslation(pl.x,pl.y,pl.z)); const t=o.bd.translation(), q=o.bd.rotation();
- _av.set(pl.x-t.x,pl.y-t.y,pl.z-t.z).applyQuaternion(_qa.set(q.x,q.y,q.z,q.w).invert()); const jaw=o.typ==='jaw', ms=jaw?0.25:Math.min(o.ms,9)+0.5;
- const j=W.createImpulseJoint(RA.JointData.spring(0,jaw?40:ms*240,jaw?3:ms*26,{x:0,y:0,z:0},{x:_av.x,y:_av.y,z:_av.z}),hb,o.bd,true); const g={rig:1,o,hb,j,key}; RIG.gr.push(g); o.bd.wakeUp(); rigHandOff(key,true); return g; }   // Feder zur Hand: Gewicht + Nachziehen (Bonelab)
-function rigMove(g,pl){ if(g.hb) g.hb.setNextKinematicTranslation({x:pl.x,y:Math.max(pl.y,0.02),z:pl.z}); RIG.idle=0; }
-function rigRelease(g){ if(!g||!g.hb) return; RIG.W.removeImpulseJoint(g.j,true); RIG.W.removeRigidBody(g.hb); g.hb=null; g.o.bd.wakeUp(); RIG.gr=RIG.gr.filter(x=>x!==g); rigHandOff(g.key,false); }   // los: bleibt liegen, wo sie Halt findet
-function rigPush(pl,dl){ const o=rigNear(pl,0.045,false); if(!o) return; const m=Math.min(dl.length(),0.05)*Math.min(o.ms,8)*5; if(m<1e-5) return; _av.copy(dl).normalize().multiplyScalar(m); o.bd.applyImpulseAtPoint({x:_av.x,y:Math.max(_av.y,0),z:_av.z},{x:pl.x,y:pl.y,z:pl.z},true); RIG.idle=0; }
-function rigHand(i,pl){ if(!RIG.on) return; let h=RIG.hb[i]; if(!h){ const RA=RIG.RA; h=RIG.hb[i]={b:RIG.W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased().setTranslation(0,-5,0)),off:false}; RIG.W.createCollider(RA.ColliderDesc.ball(0.035).setCollisionGroups(0x00080004).setFriction(0.6),h.b); }
- const ok=pl&&!h.off; h.b.setNextKinematicTranslation(ok?{x:pl.x,y:pl.y,z:pl.z}:{x:0,y:-5,z:0}); if(ok&&rigNear(pl,0.06,false)) RIG.idle=0; }   // Spieler-Hand als Kugel: schiebt Glieder/Kopf physikalisch (Rumpf nicht – dort wird eingeölt)
-function rigHandOff(i,v){ const h=RIG.hb[i]; if(h) h.off=v; }
-function rigFrame(d,live){ if(!RIG.on) return; if(!live) return;
- if(RIG.gr.length) RIG.idle=0; else RIG.idle+=d;
- if(RIG.rs<0&&RIG.idle>20&&RIG.dev>0.12) RIG.rs=0;   // ~20 s nicht berührt → schüttelt es ab und entspannt sich zurück
- if(RIG.rs>=0){ RIG.rs+=d; const r=RIG.rs; if(r<0.5){ const s=Math.sin(r*38)*(1-r/0.5); [4,8,11,14,17].forEach(i=>{ const o=RIG.B[i]; if(!o) return; const w=o.I*s*(i===4?1.6:0.9)*d*12; o.bd.applyTorqueImpulse({x:w*0.4,y:w,z:0},true); }); }
-  RIG.tone=r<0.4?1:1+16*Math.min(1,(r-0.4)/1.4); if(r>3.4||RIG.gr.length){ RIG.rs=-1; RIG.idle=0; RIG.tone=1; } } }
-function rigRest(){ RIG.gr.slice().forEach(rigRelease); RIG.B.forEach(o=>{ if(!o.rest) return; o.bd.setTranslation(o.rest.t,true); o.bd.setRotation(o.rest.q,true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); }); RIG.idle=0; RIG.rs=-1; RIG.tone=1; }
 async function ragInit(){ try{ const RA=(await import(new URL('rapier3d-compat-0.21.0.mjs',LIBDIR).href)).default; await RA.init(); const W=new RA.World({x:0,y:-9.81,z:0}); W.timestep=1/90;
-  const torso=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased()); const lc=W.createCollider(RA.ColliderDesc.cuboid(1.0,0.02,0.4).setTranslation(0.0,-0.02,0).setCollisionGroups(0x00010002).setFriction(0.9).setRestitution(0.15),torso);
-  { const fb=figBody(fig.lie); if(fb&&fb.geometry.attributes._bj){ lc.setCollisionGroups(0x00010006); if(await rigInit(RA,W)){ RAG.W=W; RAG.RA=RA; RAG.torso=torso; RAG.on=true; window.__oaseRag=RAG; if(window.__oase) window.__oase.RIG=RIG; return; } } }   // o20: ganzes Skelett statt Einzel-Glieder
+  const torso=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased()); W.createCollider(RA.ColliderDesc.cuboid(1.0,0.02,0.4).setTranslation(0.0,-0.02,0).setCollisionGroups(0x00010002).setFriction(0.9).setRestitution(0.15),torso);
   for(let i=6;i<10;i++){ const r=REG[i]; if(r.pts.length<8) continue; let a=null,b=null; r.pts.forEach(s_=>{ if(!a||s_.p.x<a.x) a=s_.p; if(!b||s_.p.x>b.x) b=s_.p; });
    const arm=i<8, x0=arm?-0.56:0.37; let pn=0, tn=0; const piv=new T.Vector3(), tip=new T.Vector3();
    r.pts.forEach(s_=>{ if(s_.p.x<a.x+0.08){ piv.add(s_.p); pn++; } if(s_.p.x>b.x-0.08){ tip.add(s_.p); tn++; } }); piv.divideScalar(Math.max(1,pn)); tip.divideScalar(Math.max(1,tn));
@@ -657,11 +569,10 @@ const _q=new T.Quaternion(), _q2=new T.Quaternion(), _v=new T.Vector3(), _ax=new
 function ragTick(d){ if(!RAG.on) return; const live=pose==='lie'&&!st.done;
  RAG.k=live?Math.min(1,RAG.k+d*4):Math.max(0,RAG.k-d/0.15);   // Sit-up: Ragdoll kinematisch einfrieren + in 0,15 s zur Ruhepose blenden
  if(live){ const t0=performance.now(); RAG.acc=Math.min((RAG.acc||0)+d,0.05);
-  while(RAG.acc>=RAG.W.timestep){ RAG.acc-=RAG.W.timestep; if(RIG.on) rigStep(RAG.W.timestep); RAG.L.forEach(l=>{ const q=l.bd.rotation(); _q.set(q.x,q.y,q.z,q.w).multiply(_q2.copy(l.q0).invert()); if(_q.w<0) _q.set(-_q.x,-_q.y,-_q.z,-_q.w);
+  while(RAG.acc>=RAG.W.timestep){ RAG.acc-=RAG.W.timestep; RAG.L.forEach(l=>{ const q=l.bd.rotation(); _q.set(q.x,q.y,q.z,q.w).multiply(_q2.copy(l.q0).invert()); if(_q.w<0) _q.set(-_q.x,-_q.y,-_q.z,-_q.w);
     const ang=2*Math.acos(Math.min(1,_q.w)); if(ang>1e-4){ _ax.set(_q.x,_q.y,_q.z).normalize(); const I=l.bd.mass()*l.len*l.len/3, k=I*(45*ang+(ang>l.lim?900*(ang-l.lim):0)); _v.copy(_ax).multiplyScalar(-k*RAG.W.timestep); l.bd.applyTorqueImpulse({x:_v.x,y:_v.y,z:_v.z},true); } const at=ang>l.lim; if(at&&!l.atLim&&l.hand){ const c=ctl[l.hand.key]; c&&hap(c.gp,0.6,28); } l.atLim=at; });   // o17: Gelenk am Anschlag → kräftiger Tick   // o18: PD stärker + gedämpft (sackt ab, kriecht ohne Federn zurück)   // Muskeltonus (schwach, ω≈5,5/s) + weiche Gelenkgrenze (steif ab lim)
    RAG.W.step(); }
   RAG.ms=RAG.ms*0.95+(performance.now()-t0)*0.05; }
- if(RIG.on){ rigFrame(d,live); rigPose(RAG.k); if(!live&&RAG.k===0&&!RIG.atRest){ rigRest(); RIG.atRest=1; } if(live) RIG.atRest=0; }
  RAG.L.forEach(l=>{ const q=l.bd.rotation(); _q.set(q.x,q.y,q.z,q.w).multiply(_q2.copy(l.q0).invert()); { if(_q.w<0) _q.set(-_q.x,-_q.y,-_q.z,-_q.w); const a_=2*Math.acos(Math.min(1,_q.w)), cap=l.lim+(l.i<8?0.5:0.35); if(a_>cap) _q.slerp(_q2.identity(),1-cap/a_); } _q2.identity().slerp(_q,RAG.k); uRot.value[l.i].set(_q2.x,_q2.y,_q2.z,_q2.w); });
  if(!live&&RAG.k===0) RAG.L.forEach(l=>{ if(l.hand){ RAG.W.removeImpulseJoint(l.hand.j,true); RAG.W.removeRigidBody(l.hand.b); l.hand=null; } l.bd.setTranslation({x:l.mid.x,y:l.mid.y,z:l.mid.z},true); l.bd.setRotation({x:l.q0.x,y:l.q0.y,z:l.q0.z,w:l.q0.w},true); l.bd.setLinvel({x:0,y:0,z:0},true); l.bd.setAngvel({x:0,y:0,z:0},true); }); }
 function ragLimb(r){ return RAG.on&&RAG.L.find(l=>l.r===r); }
@@ -671,8 +582,8 @@ function ragGrab(l,pl,key){ const RA=RAG.RA, W=RAG.W, hb=W.createRigidBody(RA.Ri
 function ragMove(l,pl){ if(l.hand) l.hand.b.setNextKinematicTranslation({x:pl.x,y:Math.max(pl.y,0.035),z:pl.z}); }
 function ragRelease(l){ if(l&&l.hand){ RAG.W.removeImpulseJoint(l.hand.j,true); RAG.W.removeRigidBody(l.hand.b); l.hand=null; l.bd.wakeUp(); } }   // los: fällt schlaff auf die Liege
 function ragPush(l,pl,dl){ const m=l.bd.mass(), s_=Math.min(dl.length(),0.05)*m*6; if(s_<1e-5) return; _v.copy(dl).normalize().multiplyScalar(s_); l.bd.applyImpulseAtPoint({x:_v.x,y:Math.max(_v.y,0),z:_v.z},{x:pl.x,y:pl.y,z:pl.z},true); }
-function regGrabMove(r,pl){ if(r&&r.rig){ rigMove(r,pl); return; } const l=ragLimb(r); if(l){ ragMove(l,pl); return; } const g=r.grab; if(!g) return; g.tgt.copy(g.x0).addScaledVector(new T.Vector3().subVectors(pl,g.h0),1/g.w); }
-function regRelease(r){ if(r&&r.rig){ rigRelease(r); return; } const l=r&&ragLimb(r); if(l) ragRelease(l); if(r) r.grab=null; }
+function regGrabMove(r,pl){ const l=ragLimb(r); if(l){ ragMove(l,pl); return; } const g=r.grab; if(!g) return; g.tgt.copy(g.x0).addScaledVector(new T.Vector3().subVectors(pl,g.h0),1/g.w); }
+function regRelease(r){ const l=r&&ragLimb(r); if(l) ragRelease(l); if(r) r.grab=null; }
 function bodyLocal(pw){ const b=figBody(fig.lie); return b?b.worldToLocal(pw.clone()):null; }
 
 // ---------------------------------------------------------------- o17: Leben (Augen unter Lidern, Flattern, Schlucken), Handtuch hebt sich über Hand/Glied, Haptik
@@ -685,7 +596,6 @@ function lifeTick(d){ const lie=pose==='lie'&&!st.done; uLife.value.w=lie?1:0; i
  if((L.swT-=d)<=0){ L.swT=25+Math.random()*30; L.sw=0; } let sw=0; if(L.sw>=0){ L.sw+=d; sw=L.sw<0.9?Math.sin(Math.PI*L.sw/0.9):0; if(L.sw>=0.9) L.sw=-1; }   // Schlucken alle 25–55 s
  uLife.value.set(L.ex*(0.6+0.4*Math.sin(L.ez)),L.ez,sw,1); uFl.value=L.fl>0?1:0;
  ctl.forEach((k,i)=>{ const v=uTw.value[i]; if(i<2&&k.pl&&R.xr.isPresenting){ v.set(k.pl.x,k.pl.y,k.pl.z,1); } else if(i<2) v.w=0; });
- if(RIG.on){ [8,11].forEach((bi,j)=>{ const v=uTw.value[2+j], o=RIG.B[bi], t=o.bd.translation(); if(o.y0===undefined) o.y0=t.y; v.set(t.x,t.y,t.z,Math.max(0,Math.min(0.14,t.y-o.y0))); }); return; }   // o20: Hand hebt das Handtuch an
  [6,7].forEach((ri,j)=>{ const v=uTw.value[2+j], l=RAG.on&&RAG.L.find(l=>l.i===ri); if(!l){ v.w=0; return; } const t=l.bd.translation(), q=l.bd.rotation(); _v.set(0,l.len/2-0.04,0).applyQuaternion(_q.set(q.x,q.y,q.z,q.w)); const y=t.y+_v.y; if(l.y0===undefined){ _v.set(0,l.len/2-0.04,0).applyQuaternion(l.q0); l.y0=l.mid.y+_v.y; } v.set(t.x+_v.x,y,t.z+_v.z,Math.max(0,Math.min(0.14,y-l.y0))); }); }
 let HM=null;   // Höhenkarte (Draufsicht) von Haut + Handtuch für Berührungs-Haptik
 function hmPrep(){ const f=fig.lie; if(!f) return; const g=(o,H)=>{ const P=o.geometry.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i), z=P.getZ(i), y=P.getY(i); const cx=Math.round((x+1)/0.02), cz=Math.round((z+0.35)/0.02); if(cx<0||cx>=100||cz<0||cz>=36) continue; const k=cx*36+cz; if(y>H[k]) H[k]=y; } };
@@ -754,5 +664,5 @@ AFRAME.registerComponent('oase',{init(){ S=this.el.object3D; R=this.el.renderer;
   if(window.__oaseSmoke){ window.__oaseSmoke.material.opacity=0.42+0.14*Math.sin(t*0.0013); window.__oaseSmoke.rotation.y=Math.sin(t*0.0005)*0.6; }
   if(window.__oaseTubes) window.__oaseTubes.emissiveIntensity=1.05+0.04*Math.sin(t*0.31)+(Math.random()<0.004?-0.4:0);
   if(window.__oaseNeon) window.__oaseNeon.color.setHex(Math.random()<0.003?0x704050:0xd07090); }});
-window.__oaseSnap=()=>swapPose(); window.__oaseXrTick=xrTick; window.__oaseDBG=DBG; window.__oasePose=()=>pose; window.__oase={RIG,rigNear,upTouch,upHand,uP3,REG,regPush,regGrab,regGrabMove,regRelease,bodyLocal,jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
+window.__oaseSnap=()=>swapPose(); window.__oaseXrTick=xrTick; window.__oaseDBG=DBG; window.__oasePose=()=>pose; window.__oase={upTouch,upHand,uP3,REG,regPush,regGrab,regGrabMove,regRelease,bodyLocal,jig,uJig,chestZ,gag,inChest,slapGag,uPress,st,coverage:()=>target?coverage():0,takeOil,rub,paintAt,punch,fig,TB,FIG,get pose(){return pose;},get drag(){return drag;},ctl,ADULT};
 })();
