@@ -3,7 +3,9 @@
 <meta name="theme-color" content="#2a1a12">
 <link rel="icon" href="data:,">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="test/lib/gissmoe.js?v=1"></script>
+<script src="test/lib/gissmoe.js?v=2"></script>
+<script src="test/lib/gissfun.js?v=1"></script>
+<script src="test/lib/gisswear.js?v=1"></script>
 <script src="test/lib/gissbrain.js?v=2"></script>
 <style>
 @font-face{font-family:"Kalam";src:url(fonts/Kalam-Regular.ttf)}
@@ -12,8 +14,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1d130e;touch-action:n
 #c{position:fixed;inset:0;width:100%;height:100%;display:block}
 #night{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(10,16,40,.55),rgba(3,5,14,.92));opacity:0;transition:opacity 1.2s}
 #bright{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 18% 12%,rgba(255,255,245,1) 0,rgba(255,252,235,.75) 22%,rgba(255,250,230,.25) 55%,rgba(255,250,230,0) 80%);opacity:0;transition:opacity .35s;mix-blend-mode:screen}
-#bar{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:8px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));z-index:10}
-@media (max-aspect-ratio:1/1){#bar{grid-template-columns:repeat(4,1fr)}}
+#bar{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(12,1fr);gap:7px;padding:8px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));z-index:10}
+@media (max-aspect-ratio:1/1){#bar{grid-template-columns:repeat(6,1fr);gap:5px}#bar .b{font-size:12px;min-height:62px;border-radius:17px}#bar .b i{font-size:26px}}
 .b{appearance:none;border:1px solid rgba(255,230,200,.22);border-radius:20px;min-height:64px;background:linear-gradient(180deg,rgba(80,52,36,.78),rgba(40,26,18,.82));color:#fbeedd;font:600 14px/1.1 system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 4px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,235,210,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none}
 .b i{font-style:normal;font-size:28px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 .b:active,.b.on{background:linear-gradient(180deg,rgba(150,100,60,.9),rgba(90,58,36,.9));transform:translateY(1px)}
@@ -49,6 +51,40 @@ a.chip{text-decoration:none}
 #shGear{background:none!important;opacity:.45;float:right;font-size:18px!important;padding:4px 6px!important}
 #sheet h3{margin:6px 0 2px;font:700 20px "Kalam",serif}#sheet .meta{font:600 15px system-ui;opacity:.8;margin:0 0 6px}
 #drag{position:fixed;z-index:15;font-size:46px;pointer-events:none;display:none;transform:translate(-50%,-50%)}
+#bub.long{white-space:normal;width:min(80vw,440px);text-align:center;font-size:21px}
+.pf{position:fixed;z-index:8;pointer-events:none;line-height:1;animation:pf var(--d) cubic-bezier(.2,.7,.4,1) forwards;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+@keyframes pf{0%{opacity:0;transform:translate(-50%,-50%) scale(var(--s0))}14%{opacity:1}75%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--s1))}}
+.panel{position:fixed;left:50%;bottom:0;transform:translate(-50%,110%);transition:transform .35s cubic-bezier(.3,1.3,.5,1);z-index:13;width:min(100vw,640px);box-sizing:border-box;max-height:72vh;overflow:auto;padding:12px 14px max(14px,env(safe-area-inset-bottom));border-radius:26px 26px 0 0;background:linear-gradient(180deg,#fff6e4,#f1dbb5);color:#4a2c14;box-shadow:0 -10px 40px rgba(0,0,0,.45)}
+.panel.show{transform:translate(-50%,0)}
+.panel .ph{display:flex;align-items:center;justify-content:space-between;margin:0 4px 8px}.panel .ph b{font:700 24px "Kalam",serif}
+.panel .x{width:48px;height:48px;border-radius:50%;border:0;background:rgba(90,50,20,.12);font:700 20px system-ui;color:#4a2c14}
+#tray .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.fd{border:0;border-radius:20px;min-height:96px;background:linear-gradient(180deg,#fffdf8,#f6e6c8);box-shadow:0 3px 10px rgba(90,50,20,.18),inset 0 -3px 0 rgba(150,100,50,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#4a2c14;padding:6px 4px;touch-action:manipulation}
+.fd:active{transform:scale(.94)}.fd i{font-style:normal;font-size:40px;line-height:1.1}.fd span{font:700 15px system-ui}.fd small{font:500 11.5px system-ui;opacity:.7}
+#talk .hint{margin:0 6px 10px;font:600 16px system-ui;opacity:.85}#talk .row{display:flex;gap:10px;margin:8px 0}
+#talk .big{flex:1;min-height:92px;border:0;border-radius:22px;font:700 17px system-ui;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 5px 14px rgba(0,0,0,.25),inset 0 -4px 0 rgba(0,0,0,.18)}
+#talk .big{font-size:38px}#talk .big span{font:700 16px system-ui}#tMic{background:linear-gradient(180deg,#ff8a5c,#e2533a)}#tTap{background:linear-gradient(180deg,#9a83f0,#6c52d6)}
+#tIn{flex:1;min-width:0;font:600 18px system-ui;padding:14px 16px;border-radius:16px;border:2px solid #d9b98d;background:#fffdf8;color:#4a2c14}#tGo{min-width:96px;border:0;border-radius:16px;font:700 18px system-ui;background:#5aa469;color:#fff}
+#tLvl{height:10px;border-radius:6px;background:rgba(90,50,20,.12);overflow:hidden;opacity:0;transition:opacity .3s}#tLvl.on{opacity:1}#tLvl div{height:100%;width:0;background:linear-gradient(90deg,#5aa469,#f2c25a);transition:width .08s}
+#cupHud{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translate(-50%,160%);transition:transform .35s;z-index:12;width:min(94vw,560px);text-align:center;color:#fbeedd}
+#cupHud.show{transform:translate(-50%,0)}#cupHud .hs{display:flex;gap:8px;justify-content:center}#cupHud .hs span{background:rgba(40,26,18,.78);border-radius:999px;padding:6px 14px;font:700 16px system-ui}
+#cMsg{margin:10px auto;font:700 23px/1.2 "Kalam",serif;text-shadow:0 2px 8px rgba(0,0,0,.6);min-height:28px}#cupHud .row{display:flex;gap:10px;justify-content:center}
+#cupHud .row button{min-height:64px;min-width:150px;border:0;border-radius:22px;font:700 20px system-ui;color:#3a2212;background:linear-gradient(180deg,#f2c27c,#c98a4b);box-shadow:0 6px 18px rgba(0,0,0,.4)}#cEnd{background:linear-gradient(180deg,#eee,#c9c0b4)!important}
+body.gaming #bar,body.gaming #bub{display:none}
+.wsl{font:700 15px system-ui;opacity:.7;margin:8px 6px 4px}.wrow{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px}
+.wi{flex:0 0 auto;width:92px;min-height:88px;border:3px solid transparent;border-radius:20px;background:linear-gradient(180deg,#fffdf8,#f6e6c8);box-shadow:0 3px 10px rgba(90,50,20,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#4a2c14;touch-action:manipulation}
+.wi i{font-style:normal;font-size:36px}.wi span{font:700 13px system-ui}.wi.on{border-color:#e2873a;background:linear-gradient(180deg,#fff4dc,#ffd9a0)}
+#wimmel{position:fixed;inset:0;z-index:20;display:none;background:#5aa548}#wimmel.show{display:block}#wmC{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#wimmel .wtop{position:absolute;left:10px;right:10px;top:max(10px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.wcard{display:flex;align-items:center;gap:8px;background:rgba(255,248,234,.95);border-radius:20px;padding:6px 12px 6px 6px;box-shadow:0 6px 18px rgba(0,0,0,.3);font:700 18px/1.05 "Kalam",serif;color:#4a2c14}.wcard canvas{height:64px;width:auto}
+.wst{display:flex;flex-direction:column;gap:6px;align-items:flex-end}.wst span{background:rgba(40,26,18,.78);color:#fbeedd;border-radius:999px;padding:6px 12px;font:700 15px system-ui}.wst span:empty{display:none}
+#wimmel .wbtn{position:absolute;right:12px;bottom:max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+#wimmel .wbtn button{width:64px;height:64px;border-radius:50%;border:0;font:700 28px system-ui;color:#4a2c14;background:rgba(255,248,234,.95);box-shadow:0 6px 18px rgba(0,0,0,.35)}#wmX{background:#f0d6c8!important}
+#wmMsg{position:absolute;left:50%;top:110px;transform:translate(-50%,-10px);opacity:0;transition:all .3s;background:rgba(40,26,18,.85);color:#fff;border-radius:16px;padding:10px 16px;font:700 17px system-ui;text-align:center;max-width:80vw;pointer-events:none}#wmMsg.show{opacity:1;transform:translate(-50%,0)}
+#wmDone{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,20,6,.4)}#wmDone.show{display:flex}
+#wmDone>div{background:#fff7ea;border-radius:26px;padding:20px 24px;text-align:center;color:#4a2c14;box-shadow:0 10px 40px rgba(0,0,0,.4);animation:popin .4s cubic-bezier(.3,1.6,.5,1)}@keyframes popin{from{transform:scale(.6);opacity:0}}
+#wmDone h2{margin:0 0 6px;font:700 32px "Kalam",serif}#wmDone p{font:600 18px system-ui;margin:4px 0 12px}#wmDone p{font-size:18px}#wmDone button{min-height:60px;padding:0 22px;margin:6px;border:0;border-radius:20px;font:700 19px system-ui;background:linear-gradient(180deg,#f2c27c,#c98a4b);color:#3a2212}#wmEnd{background:#e9d3b0!important}
+
 </style></head><body>
 <div id="bg"></div><canvas id="c"></canvas><div id="night"></div><div id="bright"></div>
 <div id="top"><a class="chip" href="../start.html" aria-label="Zurück">⟵</a><div class="chip">🍪 <div id="hun"><div></div></div></div><div class="chip" id="words">📖 <span id="wc">0</span> Wörter</div><div class="chip" id="age" style="display:none">🎂 <span id="ageN">1</span></div><div class="chip" id="moodC" style="display:none"></div><div class="chip" id="clock">🌙 00:05</div></div>
@@ -61,6 +97,11 @@ a.chip{text-decoration:none}
  <button class="b" id="bClock"><i>🕛</i>Mitternacht</button>
  <button class="b" id="bSong"><i>🎵</i>Lied</button>
  <button class="b" id="bClap"><i>👏</i>Klatschen</button>
+ <button class="b" id="bFood"><i>🍽️</i>Essen</button>
+ <button class="b" id="bTalk"><i>🎱</i>Frag Moe</button>
+ <button class="b" id="bCups"><i>🥤</i>Hütchen</button>
+ <button class="b" id="bWear"><i>👗</i>Anziehen</button>
+ <button class="b" id="bWimmel"><i>🔍</i>Such Moe</button>
 </div>
 <div id="start"><h1>Giß-Moe</h1><p id="stTxt">Giß-Moe schläft gerade …</p><button class="go" id="go">Aufwecken 👋</button>
 <small>Antippen = wecken · Bauch reiben = kitzeln · Kopf oder Rücken streicheln = schnurren · Kopf antippen = freuen · lange drücken = hochheben · daneben wischen = umdrehen · 3× im Takt klatschen = tanzen. Giß-Moe spricht erst Moe-Sprache und lernt jeden Tag mehr echte Wörter, merkt sich deinen Namen und lernt Kunststücke, wenn du etwas oft mit ihm machst.</small></div>
@@ -155,7 +196,7 @@ ui();
 /* ---------- Anzeige: Blase, Effekte ---------- */
 const bub=$('bub'); let bubT=0;
 function headScreen(dy){ const v=new THREE.Vector3(0,(dy||1.02)+G.C.lift,0); G.root.localToWorld(v); v.project(cam); return [(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight]; }
-function bubble(txt,dur){ if(R.xr.isPresenting) vrBubble(txt,dur); bub.textContent=txt; const p=headScreen(1.04); bub.style.left=Math.max(110,Math.min(innerWidth-110,p[0]))+'px'; bub.style.top=Math.max(70,p[1])+'px'; bub.classList.add('show'); clearTimeout(bubT); bubT=setTimeout(()=>bub.classList.remove('show'),(dur||1.5)*1000+600); }
+function bubble(txt,dur){ if(R.xr.isPresenting) vrBubble(txt,dur); bub.textContent=txt; bub.classList.toggle('long',txt.length>24); const p=headScreen(1.04); bub.style.left=Math.max(110,Math.min(innerWidth-110,p[0]))+'px'; bub.style.top=Math.max(70,p[1])+'px'; bub.classList.add('show'); clearTimeout(bubT); bubT=setTimeout(()=>bub.classList.remove('show'),(dur||1.5)*1000+600); }
 function fx(ch,cls,n){ n=n||1; for(let i=0;i<n;i++) setTimeout(()=>{ const p=headScreen(0.85); const e=document.createElement('div'); e.className='fx '+(cls||''); e.textContent=ch; e.style.left=(p[0]+(Math.random()-.5)*160)+'px'; e.style.top=p[1]+'px'; e.style.setProperty('--dx',((Math.random()-.5)*80)+'px'); document.body.appendChild(e); setTimeout(()=>e.remove(),2300); },i*220); }
 function toast(t){ const e=$('toast'); e.innerHTML=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),t.length>60?3200:1800); }
 /* ---------- Zustand ---------- */
@@ -165,9 +206,9 @@ function mark(n){ st.last=n; GM.log.push(n); if(GM.log.length>60) GM.log.shift()
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 let tok=0; function begin(){ return ++tok; } const alive=t=>t===tok;
 function mouthPlay(res){ st.mouth=res.mouth||[]; st.mouthT0=performance.now()/1000; return res.dur||1; }
-function say(text,o){ const r=V.say(text,o); bubble(text,r.dur); return mouthPlay(r); }
+function say(text,o){ const r=(window.GissFun&&GissFun.clip(text))||V.say(text,o); bubble(text,r.dur); return mouthPlay(r); }
 function sayK(k,o){ return say(wordText(k),o); }
-function rest(){ Object.assign(A,{lid:0.04,paw:0,low:0,earUp:0,earFwd:0,earWig:0,hx:0,hy:0,hz:0,sq:0,trem:0,pup:1,blush:0,brow:0,bodyZ:0,hop:0,spinEyes:0}); A.lift=st.lifted?0.32:0; A.sleepB=0; }
+function rest(){ Object.assign(A,{glow:0,lid:0.04,paw:0,low:0,earUp:0,earFwd:0,earWig:0,hx:0,hy:0,hz:0,sq:0,trem:0,pup:1,blush:0,brow:0,bodyZ:0,hop:0,spinEyes:0}); A.lift=st.lifted?0.32:0; A.sleepB=0; }
 function interact(){ st.lastInt=performance.now(); }
 async function learnedSay(){ while(sayQ.length){ const l=sayQ.shift(); await wait(300); A.blush=0.7; A.low=0.5; await wait(say(l)*1000+300); rest(); }
  while(trickQ.length){ const e=trickQ.shift(); await wait(400); V.chime(); fx('★','',4); toast('Giß-Moe hat ein neues Kunststück gelernt:<br><b>'+e.name+'</b>!'); A.blush=1; A.low=0.6; A.earWig=1; await wait(say('Guck mal'+nm()+'! Neuer Trick!',{pitch:1.05})*1000+300); rest(); await doTrick(e.id); }
@@ -196,7 +237,8 @@ async function feed(){ interact(); if(st.mode==='sleep'){ await wake(); }
  const B=new THREE.Vector3().fromArray(G.LM.beak); B.z+=0.06; G.head.localToWorld(B); stage.worldToLocal(B); const S0=new THREE.Vector3(0.55,0.15,1.1); cookie.visible=true; cookie.scale.setScalar(1);
  for(let i=0;i<=20;i++){ const k=i/20; cookie.position.lerpVectors(S0,B,k); cookie.position.y+=Math.sin(k*Math.PI)*0.18; cookie.rotation.set(1.2-k*0.6,k*3,0.4); await wait(22); }
  if(!alive(t)){ cookie.visible=false; return; }
- if(midnight){ // Mitternachts-Regel: frecher Blick, dann Spaß
+ if(midnight){ cookie.visible=false; M.hunger=Math.max(0,M.hunger-4); ui(); return GissFun.gremlin(t); }
+ if(false){
   A.brow=1; A.lid=0.5; A.jaw=0.25; A.earUp=-0.5; A.earFwd=-0.3; A.hz=0.12; A.pup=0.75; cookie.visible=false; V.chomp(1);
   const d=say('Hehehe …',{pitch:0.72,rate:1.5}); await wait(d*1000+500); if(!alive(t)) return; A.brow=0; A.jaw=0; A.lid=0.8; A.low=0.7; A.earUp=0.5; A.hop=0.7; A.pup=1.1;
   mouthPlay(V.giggle(7)); bubble('Spaß! Hihihi!',1.4); fx('♥','',2); await wait(1500); if(!alive(t)) return; rest(); M.hunger=Math.max(0,M.hunger-4); xp(2); learnedSay(); return; }
@@ -271,7 +313,7 @@ function hitRay(){ const h=ray.intersectObjects(picks,false)[0]; if(!h) return n
  else if(p.y>0.55&&Math.abs(p.x)>0.27) z='ear'; else if(p.y>0.55) z='head'; else if(p.y<0.13) z='feet'; else if(p.z<-0.05) z='back'; else if(Math.abs(p.x)<0.24&&p.z>0.05) z='belly';
  return {zone:z,p}; }
 let ptr=null;
-cv.addEventListener('pointerdown',e=>{ e.preventDefault(); V.unlock(); cv.setPointerCapture(e.pointerId); const h=hit(e.clientX,e.clientY);
+cv.addEventListener('pointerdown',e=>{ e.preventDefault(); V.unlock(); if(st.game){ GissFun.pointer(e); return; } cv.setPointerCapture(e.pointerId); const h=hit(e.clientX,e.clientY);
  ptr={ev:{timeStamp:e.timeStamp},id:e.pointerId,x:e.clientX,y:e.clientY,lx:e.clientX,ly:e.clientY,t:performance.now(),path:0,rev:0,dir:0,zone:h?h.zone:null,fired:false,lp:null,bgDrag:!h};
  if(h){ ptr.lp=setTimeout(()=>{ if(ptr&&ptr.path<14){ ptr.fired='lift'; lift(true); } },550); } });
 cv.addEventListener('pointermove',ev=>{ if(!ptr||ev.pointerId!==ptr.id) return; const L=ev.getCoalescedEvents?ev.getCoalescedEvents():[]; (L.length?L:[ev]).forEach(mv); });
@@ -367,14 +409,14 @@ function loop(now){ now=performance.now(); const dt=Math.min(0.05,(now-last)/100
  // Blinzeln / Leerlauf
  if(st.mode!=='sleep'){
   if(now>nextBlink){ nextBlink=now+2200+Math.random()*3500; const L=A.lid; if(L<0.6){ A.lid=1; setTimeout(()=>{ if(A.lid===1) A.lid=L; },130); } }
-  if(!st.mouth.length&&tok&&now>nextIdle){ nextIdle=now+7000+Math.random()*8000; idle(now); }
+  if(!st.mouth.length&&tok&&!st.game&&!st.busy&&now>nextIdle){ nextIdle=now+7000+Math.random()*8000; idle(now); }
   if(st.dozeAt&&now>st.dozeAt){ st.dozeAt=0; if(st.light==='dark'&&now-st.lastInt>6000) sleep('dark'); }
   // müde nach einer Weile
-  if(now-st.awakeAt>240000&&now-st.lastInt>40000) sleep('tired');
+  if(!st.game&&!st.busy&&now-st.awakeAt>240000&&now-st.lastInt>40000) sleep('tired');
   GB.decay(M,dt); if(now-st.lastInt>90000) GB.lonely(M,dt*1000); moodT+=dt; if(moodT>10){ moodT=0; ui(); }
   hungerT+=dt; if(hungerT>40){ hungerT=0; M.hunger=Math.min(10,M.hunger+1); ui(); save(); }
  } else { if(now>nextSnore){ nextSnore=now+3300; V.snore(); fx('z','z',2); A.sleepB=1; } }
- vrTick(dt); G.update(dt,t); R.render(S,cam);
+ GissFun.tick(dt,t); vrTick(dt); G.update(dt,t); if(!st.wimmel) R.render(S,cam);
 }
 const JOKES=['Was ist grün und klopft? Ein Klopf-Salat! Hihi!','Warum summen Bienen? Weil sie den Text vergessen haben! Hihi!','Was macht ein Keks unterm Baum? Krümel-Picknick! Hihi!','Wie heißt ein Bumerang, der nicht zurückkommt? Stock! Hihi!'];
 function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.mood(M,NOW());
@@ -389,7 +431,9 @@ function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.moo
  if(r<0.45){ const k=ORDER[(Math.random()*Math.max(3,M.learned+2))|0]||'play'; const t=begin(); mark('chat'); say(wordText(k)); return; }
  const t=begin(); A.lookX=(Math.random()-.5)*1.4; A.lookY=(Math.random()-.5)*0.6; A.hy=A.lookX*0.25; A.earWig=0.6; setTimeout(()=>{ if(alive(t)){ A.earWig=0; } },700); setTimeout(()=>{ if(alive(t)){ A.lookX=0; A.lookY=0; A.hy=0; } },2500);
 }
-R.setAnimationLoop(loop); vrInit();
+GM.k={THREE,V,A,G,st,M,save,say,bubble,fx,toast,mouthPlay,begin,alive,rest,mark,interact,xp,wake,sleep,feed,ui,cam,R,S,stage,shadow,learnedSay,headScreen,base:'test/lib/giss/'}; GissFun.init(GM.k);
+ btn('bFood',()=>GissFun.openTray()); btn('bTalk',()=>GissFun.openTalk()); btn('bCups',()=>GissFun.startCups()); GissWear.init(GM.k); btn('bWear',()=>GissWear.open()); btn('bWimmel',()=>GissWear.openWimmel());
+ R.setAnimationLoop(loop); vrInit();
 GM.proj=(x,y,z)=>{ const v=new THREE.Vector3(x,y,z); G.root.localToWorld(v); v.project(cam); return [(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight]; }; GM.G=G; GM.R=R; GM.vr={vrMode,ctl,ctlHit,vrTick,stage}; GM.ready=true; GM.GB=GB; GM.api={doTrick,idle,greetEvents,feed,tickle,purr,happy,wake,sleep,water,bright,song,dance,sneeze,lift};
 })().catch(e=>{ console.error(e); document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;top:40%;left:0;right:0;text-align:center;color:#fff;font:18px system-ui">Giß-Moe konnte nicht laden: '+e.message+'</div>'); });
 </script></body></html>
