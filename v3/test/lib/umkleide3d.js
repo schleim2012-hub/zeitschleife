@@ -1,5 +1,5 @@
-/* Umkleide C&Ä u1 (Pete, 25.10.): private Testseite. Eine Kabine (Vorhang, Spiegel, Haken, Bank, Preisschilder, Parodie-Plakat) + Petes Figur stehend.
-   Spiegel = gespiegelte Kopie des Raums hinter der Glasfläche (VR-tauglich, kein Extra-Render). Keine Links in Spielszenen. VR-Boden y=0, nichts kopffest. */
+/* Umkleide C&Ä u1 (Pete, 25.10.): private Testseite. Eine Kabine (Vorhang, Haken, Bank, Preisschilder, Parodie-Plakat) + Petes Figur stehend.
+   u2: kein Spiegel, weiches Licht ohne Schatten-Maps. Keine Links in Spielszenen. VR-Boden y=0, nichts kopffest. */
 (function(){
 const T=()=>AFRAME.THREE;
 function cvTex(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new (T().CanvasTexture)(c); t.colorSpace=T().SRGBColorSpace; t.anisotropy=8; return t; }
@@ -19,13 +19,8 @@ AFRAME.registerComponent('umkleide',{ init(){
   box(W,0.04,D1-D0,M({color:'#2a2420',roughness:0.9}),0,H+0.02,(D0+D1)/2);
   const wood=M({color:'#5a3a24',roughness:0.55,metalness:0.0}), brass=M({color:'#b08a4a',roughness:0.35,metalness:0.85});
   box(W,0.08,0.02,wood,0,0.04,D0+0.012); // Sockelleiste
-  // Spiegel: Messingrahmen + leicht getöntes Glas (die gespiegelte Kopie liegt dahinter)
-  const glass=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.95),new THREE.MeshPhysicalMaterial({color:'#bcd0d4',transparent:true,opacity:0.10,roughness:0.05,metalness:0.0,clearcoat:1,depthWrite:false}));
-  glass.position.set(0,1.1,MZ+0.004); G.add(glass);
-  for(const [w,h,x,y] of [[1.6,0.05,0,2.1],[1.6,0.05,0,0.1],[0.05,2.0,-0.78,1.1],[0.05,2.0,0.78,1.1]]) box(w,h,0.03,brass,x,y,MZ+0.01);
-  // Wand neben dem Spiegel (hinter der Glasfläche zu, außerhalb des Rahmens)
-  for(const [w,x] of [[0.42,-0.99],[0.42,0.99]]) box(w,H,0.03,wall,x,H/2,MZ+0.0);
-  box(1.6,0.32,0.03,wall,0,2.29,MZ); box(1.6,0.09,0.03,wall,0,0.045,MZ);
+  box(W,H,0.03,wall,0,H/2,D0);   // Rückwand (u2: Spiegel komplett entfernt – keine Spiegelflächen)
+  box(0.9,0.006,0.02,brass,0,1.0,D0+0.02);   // Handlauf-Leiste
   // Bank mit Polster (links)
   box(0.42,0.04,1.0,wood,-0.95,0.44,0.15); for(const z of [-0.3,0.6]) box(0.38,0.42,0.04,wood,-0.95,0.21,z);
   box(0.40,0.06,0.96,M({color:'#7a1f2b',roughness:0.85}),-0.95,0.49,0.15);
@@ -53,25 +48,25 @@ AFRAME.registerComponent('umkleide',{ init(){
     const c=new THREE.Mesh(g,new THREE.MeshPhysicalMaterial({color:'#5b1020',roughness:0.85,sheen:1,sheenColor:new THREE.Color('#d0607a'),sheenRoughness:0.5,side:THREE.DoubleSide}));
     c.position.set(x0,1.17,z0); c.rotation.y=ang; G.add(c); };
   curtain(0.9,W/2+0.02,D1-0.45,-Math.PI/2); curtain(1.6,-0.4,D1,Math.PI); box(0.025,0.025,0.9,brass,W/2,2.3,D1-0.45); box(W,0.025,0.025,brass,0,2.3,D1);
-  // Licht: warmer Deckenspot (Schatten), weiche Füllung, kühles Glas-Streiflicht → dunkel, aber nicht schwarz
-  box(0.3,0.04,0.3,M({color:'#111',roughness:0.4,metalness:0.7}),0,H-0.02,-0.2); const lamp=new THREE.Mesh(new THREE.CircleGeometry(0.11,24),M({emissive:'#ffd7a0',emissiveIntensity:3,color:'#000'})); lamp.rotation.x=Math.PI/2; lamp.position.set(0,H-0.045,-0.2); G.add(lamp);
-  const sp=new THREE.SpotLight('#ffd2a0',28,6,0.85,0.6,1.6); sp.position.set(0,H-0.06,-0.1); sp.target.position.set(0,0.9,-0.6); sp.castShadow=true; sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.0004; sp.shadow.radius=4; sc.add(sp,sp.target);
-  const fill=new THREE.PointLight('#ffb98a',2.2,5,1.5); fill.position.set(0.3,1.5,1.0); sc.add(fill);
-  sc.add(new THREE.HemisphereLight('#c9b8a6','#2b1d16',0.35));
-  const rim=new THREE.PointLight('#9fc4ff',1.2,3.5,1.6); rim.position.set(-0.7,1.9,-1.0); sc.add(rim);
-  this.el.sceneEl.renderer.shadowMap.enabled=true; this.el.sceneEl.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  // Licht u2: weich und warm, keine Schatten-Maps (Quest-günstig, keine harten Flecken): Decken-Leuchte als Key, Füllung von vorn, Hemisphäre
+  const lamp=new THREE.Mesh(new THREE.CircleGeometry(0.16,24),M({emissive:'#ffe2bd',emissiveIntensity:2.2,color:'#000'})); lamp.rotation.x=Math.PI/2; lamp.position.set(0,H-0.01,-0.1); G.add(lamp);
+  const key=new THREE.PointLight('#ffd6ac',3.2,6,1.2); key.position.set(0.1,H-0.15,0.1); sc.add(key);
+  const fill=new THREE.PointLight('#ffc49a',1.6,6,1.2); fill.position.set(0.2,1.4,1.2); sc.add(fill);
+  const side=new THREE.PointLight('#f0d8c8',0.8,4,1.4); side.position.set(-1.0,1.7,-0.6); sc.add(side);
+  sc.add(new THREE.HemisphereLight('#e6d4c0','#3a2a20',0.75));
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(0.42,32),new THREE.MeshBasicMaterial({map:cvTex(128,128,(x,w,h)=>{const g=x.createRadialGradient(64,64,4,64,64,64);g.addColorStop(0,'rgba(0,0,0,0.55)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}),transparent:true,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,-0.55); G.add(blob);   // weicher Kontaktschatten unter den Füßen
   // Figur
-  const loader=new THREE.GLTFLoader(), url=(window.UMK&&UMK.fig)||'../assets/umkleide/figur_stand_u1.glb?v=1';
+  const loader=new THREE.GLTFLoader(), url=(window.UMK&&UMK.fig)||'../assets/umkleide/figur_stand_u2.glb?v=1';
   loader.load(url,(gl)=>{ const f=gl.scene; f.position.set(0,0,-0.55); f.rotation.y=0;
-    f.traverse(o=>{ if(!o.isMesh) return; o.castShadow=true; o.receiveShadow=true; const m0=o.material, nm=(m0.name||'');
-      if(/^skin_/.test(nm)){ o.material=new THREE.MeshPhysicalMaterial({map:m0.map,normalMap:m0.normalMap,normalScale:new THREE.Vector2(0.18,0.18),color:'#ffffff',roughness:0.6,
+    f.traverse(o=>{ if(!o.isMesh) return; o.frustumCulled=false; const m0=o.material, nm=(m0.name||'');
+      if(/^skin_/.test(nm)||o.name==='body'){ o.material=new THREE.MeshPhysicalMaterial({map:m0.map,normalMap:m0.normalMap,normalScale:new THREE.Vector2(0.18,0.18),color:'#ffffff',roughness:0.6,
           sheen:0.45,sheenColor:new THREE.Color('#ffd9c8'),sheenRoughness:0.8,vertexColors:!!o.geometry.attributes.color}); }
-      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0.36,alphaToCoverage:true,transparent:false,side:THREE.DoubleSide,roughness:0.5}); if(o.geometry.attributes.color) m0.vertexColors=true; }
-      else if(/eyelash|eyebrow/.test(o.name)){ Object.assign(m0,{alphaTest:0.4,transparent:false,side:THREE.DoubleSide}); o.castShadow=false; }
+      else if(/^hair_/.test(nm)){ Object.assign(m0,{alphaTest:0,alphaToCoverage:false,transparent:false,side:THREE.DoubleSide,roughness:0.5});   /* u2: Haar deckend (Alpha-Strähnen verschwanden aus der Nähe) */
+        { const P=o.geometry.attributes.position; for(let i=0;i<P.count;i++){ const x=P.getX(i),y=P.getY(i),z=P.getZ(i); if(z>0.06&&y<1.63&&Math.abs(x)<0.075){ P.setY(i,1.63+(y-1.63)*0.12); P.setZ(i,z-0.01); } } P.needsUpdate=true; o.geometry.computeVertexNormals(); }   /* Pony aus den Augen */ if(o.geometry.attributes.color) m0.vertexColors=true; }
+      else if(/eyelash|eyebrow/.test(o.name)){ Object.assign(m0,{alphaTest:0.4,transparent:false,side:THREE.DoubleSide}); }
       m0.needsUpdate=true; });
     G.add(f);
-    // Spiegelwelt: gespiegelte Kopie von allem außer der Glasfläche (z an der Spiegelebene)
-    const MG=G.clone(); MG.children=MG.children.filter(c=>c.uuid!==glass.uuid&&c.geometry!==glass.geometry); MG.scale.z=-1; MG.position.z=2*MZ; MG.traverse(o=>{o.castShadow=false;}); sc.add(MG);
     window.__umk={ready:true,fig:f};
   },undefined,(e)=>{ console.error('Figur-GLB fehlt',e); });
 }});
