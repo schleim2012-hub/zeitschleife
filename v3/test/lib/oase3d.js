@@ -561,9 +561,9 @@ const RAG={on:false,ms:0,k:1,L:[]};
 const NB=18, uBQ={value:[...Array(NB)].map(()=>new T.Vector4(0,0,0,1))}, uBT={value:[...Array(NB)].map(()=>new T.Vector3())};
 const RIG={on:false,B:[],gr:[],hb:[],idle:0,rs:-1,dev:0,tone:1};
 const RIGV=`uniform vec4 uBQ[${NB}]; uniform vec3 uBT[${NB}]; attribute vec4 _bj; attribute vec4 _bw;
-vec3 qrot(vec4 q,vec3 v){ return v+2.0*cross(q.xyz,cross(q.xyz,v)+q.w*v); }
-vec3 skP(vec3 p){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*(qrot(uBQ[j],p)+uBT[j]); } } return o; }
-vec3 skN(vec3 n){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*qrot(uBQ[j],n); } } return normalize(o); }`;
+vec3 rqrot(vec4 q,vec3 v){ return v+2.0*cross(q.xyz,cross(q.xyz,v)+q.w*v); }
+vec3 skP(vec3 p){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*(rqrot(uBQ[j],p)+uBT[j]); } } return o; }
+vec3 skN(vec3 n){ vec3 o=vec3(0.0); for(int k=0;k<4;k++){ float w=_bw[k]; if(w>0.0){ int j=int(_bj[k]+0.5); o+=w*rqrot(uBQ[j],n); } } return normalize(o); }`;
 function rigPatch(m){ if(!m||m.userData.rig) return; m.userData.rig=1; const ob=m.onBeforeCompile, ck=m.customProgramCacheKey;
  m.onBeforeCompile=(sh,r)=>{ ob&&ob.call(m,sh,r); sh.uniforms.uBQ=uBQ; sh.uniforms.uBT=uBT;   // Verformungen (Delle, Atmen, Federn) bleiben im Ruheraum, Skinning ganz zuletzt
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+RIGV).replace('#include <defaultnormal_vertex>','vec3 nR_=objectNormal; objectNormal=skN(objectNormal);\n#include <defaultnormal_vertex>\nobjectNormal=nR_;').replace('#include <project_vertex>','transformed=skP(transformed);\n#include <project_vertex>'); };
@@ -585,7 +585,7 @@ async function rigInit(RA,W){ const b=figBody(fig.lie), g=b&&b.geometry; if(!g||
   let cd; if(o.typ==='pelvis'||o.typ==='spine'||o.typ==='chest'){ const mn=o.mn, mx=o.mx, hx=Math.max(0.03,Math.abs(o.b.x-o.a.x)/2), hy=Math.max(0.03,(mx.y-mn.y)/2), hz=Math.max(0.05,(mx.z-mn.z)/2*0.7);
    cd=RA.ColliderDesc.cuboid(hx,hy,hz).setTranslation(0,(mn.y+mx.y)/2+0.002-o.c0.y,(mn.z+mx.z)/2-o.c0.z).setDensity(m/(8*hx*hy*hz)).setCollisionGroups(TG); o.box=[hx,hy,hz]; }
   else { const dp=(o.dp||[0.03]).sort((a,b)=>a-b), r=Math.max(0.016,Math.min(0.085,dp[Math.floor(dp.length*0.45)]*0.88)), hh=Math.max(0.004,o.len/2-r*0.5), of=o.off?o.off.divideScalar(o.dp.length):new T.Vector3(); if(of.length()>0.03) of.setLength(0.03);
-   const oy=of.y, oz=of.z, qa=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),o.dir);   // Kapsel = Median-Abstand der Haut von der Knochenachse (passt in den Körper, keine Überschneidung)
+   const low=o.c0.y+of.y-r-hh*Math.abs(o.dir.y), want=Math.max(o.mn.y,0)+0.003, oy=of.y+Math.max(-0.03,Math.min(0.1,want-low)), oz=of.z, qa=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),o.dir);   // Kapsel = Median-Abstand der Haut von der Knochenachse (passt in den Körper, keine Überschneidung)
    cd=RA.ColliderDesc.capsule(hh,r).setTranslation(0,oy,oz).setRotation({x:qa.x,y:qa.y,z:qa.z,w:qa.w}).setDensity(m/(Math.PI*r*r*2*hh+4.19*r*r*r)).setCollisionGroups(o.typ==='jaw'?0:LB); o.cap=[hh,r,oy,oz]; }
   W.createCollider(cd.setFriction(0.9).setRestitution(0),o.bd); o.m=m; });
  { const all=[]; B.forEach(o=>{ for(let k=0;k<o.bd.numColliders();k++){ const c=o.bd.collider(k); c.setActiveHooks(RA.ActiveHooks.FILTER_CONTACT_PAIRS); all.push(c); } }); const g0=W.gravity; W.gravity={x:0,y:0,z:0}; const ts=W.timestep; W.timestep=1e-6; W.step();
@@ -642,9 +642,10 @@ function rigHand(i,pl){ if(!RIG.on) return; let h=RIG.hb[i]; if(!h){ const RA=RI
 function rigHandOff(i,v){ const h=RIG.hb[i]; if(h) h.off=v; }
 function rigFrame(d,live){ if(!RIG.on) return; if(!live) return;
  if(RIG.gr.length) RIG.idle=0; else RIG.idle+=d;
- if(RIG.rs<0&&RIG.idle>20&&RIG.dev>0.12) RIG.rs=0;   // ~20 s nicht berührt → schüttelt es ab und entspannt sich zurück
+ if(RIG.rs<0&&RIG.autoReset&&RIG.idle>20&&RIG.dev>0.12) RIG.rs=0;   // 25.10. Pete: Posen bleiben dauerhaft; nur das Ende (Aufsetzen) ändert sie → Auto-Reset aus   // ~20 s nicht berührt → schüttelt es ab und entspannt sich zurück
  if(RIG.rs>=0){ RIG.rs+=d; const r=RIG.rs; if(r<0.5){ const s=Math.sin(r*38)*(1-r/0.5); [4,8,11,14,17].forEach(i=>{ const o=RIG.B[i]; if(!o) return; const w=o.I*s*(i===4?1.6:0.9)*d*12; o.bd.applyTorqueImpulse({x:w*0.4,y:w,z:0},true); }); }
-  RIG.tone=r<0.4?1:1+16*Math.min(1,(r-0.4)/1.4); if(r>3.4||RIG.gr.length){ RIG.rs=-1; RIG.idle=0; RIG.tone=1; } } }
+  if(r>=0.5){ const a=Math.min(1,d/Math.max(d,2.3-r)); RIG.B.forEach(o=>{ if(!o.rest||!o.p) return; const t=o.bd.translation(), q=o.bd.rotation(); _qa.set(q.x,q.y,q.z,q.w).slerp(_qb.set(o.rest.q.x,o.rest.q.y,o.rest.q.z,o.rest.q.w),a); o.bd.setTranslation({x:t.x+(o.rest.t.x-t.x)*a,y:t.y+(o.rest.t.y-t.y)*a,z:t.z+(o.rest.t.z-t.z)*a},true); o.bd.setRotation({x:_qa.x,y:_qa.y,z:_qa.z,w:_qa.w},true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); }); }   // o20d: nach dem Abschütteln sanft (1,8 s) zurück in die Ruhepose
+  RIG.tone=1; RIG.rsN=(RIG.rsN||0)+(r<=d?1:0); if(r>2.4||RIG.gr.length){ RIG.rs=-1; RIG.idle=0; RIG.tone=1; } } }
 function rigRest(){ RIG.gr.slice().forEach(rigRelease); RIG.B.forEach(o=>{ if(!o.rest) return; o.bd.setTranslation(o.rest.t,true); o.bd.setRotation(o.rest.q,true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); }); RIG.idle=0; RIG.rs=-1; RIG.tone=1; }
 async function ragInit(){ try{ const RA=(await import(new URL('rapier3d-compat-0.21.0.mjs',LIBDIR).href)).default; await RA.init(); const W=new RA.World({x:0,y:-9.81,z:0}); W.timestep=1/90;
   const torso=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased()); const lc=W.createCollider(RA.ColliderDesc.cuboid(1.0,0.02,0.4).setTranslation(0.0,-0.02,0).setCollisionGroups(0x00010002).setFriction(0.9).setRestitution(0.15),torso);
