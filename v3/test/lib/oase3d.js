@@ -614,7 +614,8 @@ function rigMouth(b,sy){ const H=4, JW=5, y0=sy(-0.78), add=(geo,mat,wf)=>{ cons
   return add(g,new T.MeshStandardMaterial({color:0x8f877c,roughness:0.45,side:T.DoubleSide}),()=>jaw?1:0); };
  RIG.tu=teeth(-0.7835,-0.7775,0.2475,false); RIG.tl=teeth(-0.7745,-0.7690,0.2440,true);   // Zahnreihen nur angedeutet (gedämpft, liegen hinter den Lippen)
  { const g=new T.SphereGeometry(1,20,12); g.scale(0.017,0.006,0.019); g.translate(-0.7735,0.2325+y0,0); RIG.tg=add(g,new T.MeshStandardMaterial({color:0x6a3030,roughness:0.5}),()=>1); } }   // Zunge (auf dem Unterkiefer)
-function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0;
+function rigIb(bd){ const v=bd.principalInertia(); return Math.max(1e-6,Math.min(v.x,v.y,v.z)); }
+function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0; RIG.t=(RIG.t||0)+h; const ramp=Math.min(1,RIG.t/0.5);   // o20c: Kräfte über 0,5 s einblenden
  for(const o of B){ if(!o.p) continue; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); _qa.set(qp.x,qp.y,qp.z,qp.w); _qb.set(qc.x,qc.y,qc.z,qc.w);
   _qd.copy(_qa).invert().multiply(_qb).multiply(_qs.copy(o.r0).invert()); if(_qd.w<0) _qd.set(-_qd.x,-_qd.y,-_qd.z,-_qd.w);   // Abweichung von der Ruhepose (im Eltern-Rahmen)
   const ang=2*Math.acos(Math.min(1,_qd.w)); dev=Math.max(dev,o.typ==='jaw'?0:ang); _tv.set(0,0,0); if(ang>1e-4) _tv.set(_qd.x,_qd.y,_qd.z).normalize().multiplyScalar(ang);
@@ -622,7 +623,8 @@ function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0;
   if(o.kind==='ball'){ const ax=o.dir, tw=_qd.x*ax.x+_qd.y*ax.y+_qd.z*ax.z, tA=2*Math.atan2(tw,_qd.w); _qs.set(ax.x*tw,ax.y*tw,ax.z*tw,_qd.w); if(_qs.lengthSq()<1e-9) _qs.identity(); else _qs.normalize(); const sw=_qd.clone().multiply(_qs.invert()); if(sw.w<0) sw.set(-sw.x,-sw.y,-sw.z,-sw.w);
    const sA=2*Math.acos(Math.min(1,sw.w)); let ex=0; if(sA>o.lim[0]){ ex=sA-o.lim[0]; _av.set(sw.x,sw.y,sw.z).normalize(); _wv.addScaledVector(_av,-900*ex); } if(Math.abs(tA)>o.lim[1]){ const e2=Math.abs(tA)-o.lim[1]; ex=Math.max(ex,e2); _wv.addScaledVector(ax,-900*e2*Math.sign(tA)); }   // weiche, aber steife Gelenkgrenze (Schwung-/Drehanteil getrennt)
    const at=ex>0.02; if(at&&!o.atLim) rigHap(o); o.atLim=at; }
-  _wv.applyQuaternion(_qa); const wc=o.bd.angvel(), wp=o.p.bd.angvel(); const kd=(jaw?10:3)+(mult>1?2*Math.sqrt(kt):0); _wv.x-=kd*(wc.x-wp.x); _wv.y-=kd*(wc.y-wp.y); _wv.z-=kd*(wc.z-wp.z); _wv.multiplyScalar(o.I*h);
+  _wv.applyQuaternion(_qa); const wc=o.bd.angvel(), wp=o.p.bd.angvel(); const kd=(jaw?10:3)+(mult>1?2*Math.sqrt(kt):0); _wv.x-=kd*(wc.x-wp.x); _wv.y-=kd*(wc.y-wp.y); _wv.z-=kd*(wc.z-wp.z); const Ib=Math.min(o.ib||(o.ib=rigIb(o.bd)), o.p.p?(o.p.ib||(o.p.ib=rigIb(o.p.bd))):1e9), Ie=Math.min(o.I, 0.4*Ib/(kd*h), 2.5*Ib); _wv.multiplyScalar(Ie*h*ramp);   // o20c: Trägheit auf den leichteren Einzelkörper begrenzt → expliziter PD bleibt stabil
+  if(RIG.t<1.2){ const w=o.bd.angvel(), m=Math.hypot(w.x,w.y,w.z); if(m>4) o.bd.setAngvel({x:w.x*4/m,y:w.y*4/m,z:w.z*4/m},true); const v=o.bd.linvel(), n=Math.hypot(v.x,v.y,v.z); if(n>0.5) o.bd.setLinvel({x:v.x*0.5/n,y:v.y*0.5/n,z:v.z*0.5/n},true); }   // Ladephase: nichts fliegt weg
   o.bd.applyTorqueImpulse({x:_wv.x,y:_wv.y,z:_wv.z},true); if(o.p.p) o.p.bd.applyTorqueImpulse({x:-_wv.x,y:-_wv.y,z:-_wv.z},true); }
  RIG.dev=dev; }
 function rigHap(o){ RIG.gr.forEach(g=>{ const c=ctl[g.key]; c&&hap(c.gp,0.6,28); }); }   // Anschlag spürbar (nur wenn sie gerade gehalten wird)
