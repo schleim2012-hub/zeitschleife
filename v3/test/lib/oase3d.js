@@ -574,7 +574,7 @@ const _qa=new T.Quaternion(), _qb=new T.Quaternion(), _qd=new T.Quaternion(), _q
 async function rigInit(RA,W){ const b=figBody(fig.lie), g=b&&b.geometry; if(!g||!g.attributes._bj||!(C.fig&&C.fig.rigAdult)) return false;
  const J=await (await fetch(C.fig.rigAdult)).json(), sy=fig.lie.sy||(()=>0), P=g.attributes.position, BJ=g.attributes._bj.array, BW=g.attributes._bw.array;
  const V=a=>new T.Vector3(a[0],a[1]+sy(a[0]),a[2]);
- const B=J.bones.map((d,i)=>{ const a=V(d.a), b_=V(d.b), dir=b_.clone().sub(a), len=dir.length(); dir.normalize(); return {i,name:d.name,kind:d.kind,lim:d.lim||[0,0],par:d.parent,a,b:b_,dir,len,c0:a.clone().lerp(b_,0.5),pts:[],mn:new T.Vector3(9,9,9),mx:new T.Vector3(-9,-9,-9),rmn:new T.Vector3(9,9,9),rmx:new T.Vector3(-9,-9,-9),typ:d.name.replace(/[RL]$/,'')}; });
+ const B=J.bones.map((d,i)=>{ const a=V(d.a), b_=V(d.b), dir=b_.clone().sub(a), len=dir.length(); dir.normalize(); return {i,name:d.name,kind:d.kind,lim:/^uarm/.test(d.name)?[2.9,1.0]:(d.lim||[0,0]),par:d.parent,a,b:b_,dir,len,c0:a.clone().lerp(b_,0.5),pts:[],mn:new T.Vector3(9,9,9),mx:new T.Vector3(-9,-9,-9),rmn:new T.Vector3(9,9,9),rmx:new T.Vector3(-9,-9,-9),typ:d.name.replace(/[RL]$/,'')}; });
  for(let i=0;i<P.count;i++){ let k=0; for(let q=1;q<4;q++) if(BW[i*4+q]>BW[i*4+k]) k=q; if(BW[i*4+k]<0.6) continue; const o=B[BJ[i*4+k]|0]; if(!o) continue; _tv.fromBufferAttribute(P,i);
   o.mn.min(_tv); o.mx.max(_tv); const u=_av.copy(_tv).sub(o.a).dot(o.dir)/o.len; if(u>0.15&&u<0.85){ const pp=_av.addScaledVector(o.dir,-u*o.len); (o.dp||(o.dp=[])).push(pp.length()); (o.off||(o.off=new T.Vector3())).add(pp); } if(i%7===0&&o.pts.length<160) o.pts.push(_tv.clone()); }
  B.forEach(o=>{ o.p=o.par>=0?B[o.par]:null; o.kids=[]; }); B.forEach(o=>o.p&&o.p.kids.push(o));
@@ -596,13 +596,13 @@ async function rigInit(RA,W){ const b=figBody(fig.lie), g=b&&b.geometry; if(!g||
   if(o.kind==='hinge'){ const ax=o.typ==='jaw'?new T.Vector3(0,0,1):new T.Vector3().crossVectors(p.dir,new T.Vector3(0,1,0)).normalize(); o.hax=ax; jd=RA.JointData.revolute({x:a1.x,y:a1.y,z:a1.z},{x:a2.x,y:a2.y,z:a2.z},{x:ax.x,y:ax.y,z:ax.z}); jd.limitsEnabled=true;
    jd.limits=o.typ==='farm'?[-0.05,o.lim[1]]:o.typ==='shin'?[-o.lim[1],0.05]:[-o.lim[1],0.0]; }   // Ellbogen beugt nach oben, Knie nach unten, Kiefer öffnet zur Brust hin (≈25°)
   else jd=RA.JointData.spherical({x:a1.x,y:a1.y,z:a1.z},{x:a2.x,y:a2.y,z:a2.z});
-  o.j=W.createImpulseJoint(jd,p.bd,o.bd,true); o.j.setContactsEnabled(false); });
+  o.j=W.createImpulseJoint(jd,p.bd,o.bd,true); o.j.setContactsEnabled(false); if(o.typ==='jaw') o.j.configureMotorPosition(0,3,0.3); });   // Kiefer: schwache Feder zu
  const sub=o=>{ let m=o.m, s=o.c0.clone().multiplyScalar(o.m); o.kids.forEach(k=>{ const r=sub(k); m+=r.m; s.addScaledVector(r.c,r.m); }); o.ms=m; o.cm=s.divideScalar(m); return {m,c:o.cm}; }; sub(B[0]);
  B.forEach(o=>{ if(!o.p) return; let I=o.m*o.len*o.len/12; const add=k=>{ I+=k.m*k.c0.distanceToSquared(o.a); k.kids.forEach(add); }; add(o); o.kids.forEach(()=>{}); o.I=I; o.r0=new T.Quaternion(); });
  RIG.B=B; RIG.W=W; RIG.RA=RA; RIG.on=true;
  fig.lie.root.traverse(m=>{ if(!m.isMesh) return; const gg=m.geometry; if(!gg.attributes._bj){ gg.computeBoundingBox(); const bb=gg.boundingBox; if(bb.max.x<-0.62&&!fig.lie.parts.towel.includes(m)) rigAttr(gg,4); else return; } [].concat(m.material).forEach(rigPatch); });   // Haar, Brauen, Augen: starr am Kopf
- rigMouth(b,sy);
- for(let s=0;s<135;s++){ rigStep(W.timestep); W.step(undefined,RIG.hooks); }   // 1,5 s einsinken lassen → das ist die Ruhepose (liegt wirklich auf)
+ rigScalp(b,B); rigMouth(b,sy);
+ B.forEach(o=>{ if(o.p) o.bd.sleep(); });   // o20e: kein Einsinken mehr – Autorenpose = Ruhepose, alles schläft bis zur ersten Berührung
  B.forEach(o=>{ if(!o.p) return; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); o.r0.set(qp.x,qp.y,qp.z,qp.w).invert().multiply(_qa.set(qc.x,qc.y,qc.z,qc.w)); const t=o.bd.translation(); o.rest={t:{x:t.x,y:t.y,z:t.z},q:{x:qc.x,y:qc.y,z:qc.z,w:qc.w}}; });
  rigPose(1); return true; }
 function rigMouth(b,sy){ const H=4, JW=5, y0=sy(-0.78), add=(geo,mat,wf)=>{ const n=geo.attributes.position.count, Jb=new Float32Array(n*4), Wb=new Float32Array(n*4), Pp=geo.attributes.position;
@@ -614,18 +614,22 @@ function rigMouth(b,sy){ const H=4, JW=5, y0=sy(-0.78), add=(geo,mat,wf)=>{ cons
   return add(g,new T.MeshStandardMaterial({color:0x8f877c,roughness:0.45,side:T.DoubleSide}),()=>jaw?1:0); };
  RIG.tu=teeth(-0.7835,-0.7775,0.2475,false); RIG.tl=teeth(-0.7745,-0.7690,0.2440,true);   // Zahnreihen nur angedeutet (gedämpft, liegen hinter den Lippen)
  { const g=new T.SphereGeometry(1,20,12); g.scale(0.017,0.006,0.019); g.translate(-0.7735,0.2325+y0,0); RIG.tg=add(g,new T.MeshStandardMaterial({color:0x6a3030,roughness:0.5}),()=>1); } }   // Zunge (auf dem Unterkiefer)
+function rigScalp(b,B){ const g=b.geometry, P=g.attributes.position, J=g.attributes._bj, Wt=g.attributes._bw; if(!J) return; const hd=B[4], jw=B[5], nk=B[3]; let n=0;   // o20e: Kopfhaut/Haaransatz 100 % Kopf (kein Spalt zur starren Haarkappe), Kiefer nur am Unterkiefer
+ for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i); const top=x<jw.a.x-0.005||y<jw.a.y-0.025, up=x<hd.a.x-0.025; let hw=0, ch=false; for(let k=0;k<4;k++){ const j=Math.round(J.getComponent(i,k)), w=Wt.getComponent(i,k); if(w<=0) continue; if((j===5&&top)||((j===3||j===2)&&up)){ hw+=w; Wt.setComponent(i,k,0); ch=true; } else if(j===4){ hw+=w; Wt.setComponent(i,k,0); } }
+  if(hw>0){ let put=false; for(let k=0;k<4&&!put;k++) if(Wt.getComponent(i,k)<=0){ J.setComponent(i,k,4); Wt.setComponent(i,k,hw); put=true; } } if(ch) n++; }
+ J.needsUpdate=true; Wt.needsUpdate=true; RIG.scalp=n; }
 function rigIb(bd){ const v=bd.principalInertia(); return Math.max(1e-6,Math.min(v.x,v.y,v.z)); }
 function rigStep(h){ const B=RIG.B, mult=RIG.tone; let dev=0; RIG.t=(RIG.t||0)+h; const ramp=Math.min(1,RIG.t/0.5);   // o20c: Kräfte über 0,5 s einblenden
  for(const o of B){ if(!o.p) continue; const qp=o.p.bd.rotation(), qc=o.bd.rotation(); _qa.set(qp.x,qp.y,qp.z,qp.w); _qb.set(qc.x,qc.y,qc.z,qc.w);
   _qd.copy(_qa).invert().multiply(_qb).multiply(_qs.copy(o.r0).invert()); if(_qd.w<0) _qd.set(-_qd.x,-_qd.y,-_qd.z,-_qd.w);   // Abweichung von der Ruhepose (im Eltern-Rahmen)
   const ang=2*Math.acos(Math.min(1,_qd.w)); dev=Math.max(dev,o.typ==='jaw'?0:ang); _tv.set(0,0,0); if(ang>1e-4) _tv.set(_qd.x,_qd.y,_qd.z).normalize().multiplyScalar(ang);
-  const jaw=o.typ==='jaw', kt=(jaw?45:9)*(jaw?1:mult); _wv.copy(_tv).multiplyScalar(-kt);   // schwacher Muskeltonus (Kiefer: sanfte Rückfeder)
+  if(o.bd.isSleeping()) continue; const jaw=o.typ==='jaw'; if(jaw) continue; const kt=9*mult;   // o20e: Kiefer über Gelenkmotor (implizit, stabil) _wv.copy(_tv).multiplyScalar(-kt);   // schwacher Muskeltonus (Kiefer: sanfte Rückfeder)
   if(o.kind==='ball'){ const ax=o.dir, tw=_qd.x*ax.x+_qd.y*ax.y+_qd.z*ax.z, tA=2*Math.atan2(tw,_qd.w); _qs.set(ax.x*tw,ax.y*tw,ax.z*tw,_qd.w); if(_qs.lengthSq()<1e-9) _qs.identity(); else _qs.normalize(); const sw=_qd.clone().multiply(_qs.invert()); if(sw.w<0) sw.set(-sw.x,-sw.y,-sw.z,-sw.w);
    const sA=2*Math.acos(Math.min(1,sw.w)); let ex=0; if(sA>o.lim[0]){ ex=sA-o.lim[0]; _av.set(sw.x,sw.y,sw.z).normalize(); _wv.addScaledVector(_av,-900*ex); } if(Math.abs(tA)>o.lim[1]){ const e2=Math.abs(tA)-o.lim[1]; ex=Math.max(ex,e2); _wv.addScaledVector(ax,-900*e2*Math.sign(tA)); }   // weiche, aber steife Gelenkgrenze (Schwung-/Drehanteil getrennt)
    const at=ex>0.02; if(at&&!o.atLim) rigHap(o); o.atLim=at; }
   _wv.applyQuaternion(_qa); const wc=o.bd.angvel(), wp=o.p.bd.angvel(); const kd=(jaw?10:3)+(mult>1?2*Math.sqrt(kt):0); _wv.x-=kd*(wc.x-wp.x); _wv.y-=kd*(wc.y-wp.y); _wv.z-=kd*(wc.z-wp.z); const Ib=Math.min(o.ib||(o.ib=rigIb(o.bd)), o.p.p?(o.p.ib||(o.p.ib=rigIb(o.p.bd))):1e9), Ie=Math.min(o.I, 0.4*Ib/(kd*h), 2.5*Ib); _wv.multiplyScalar(Ie*h*ramp);   // o20c: Trägheit auf den leichteren Einzelkörper begrenzt → expliziter PD bleibt stabil
   if(RIG.t<1.2){ const w=o.bd.angvel(), m=Math.hypot(w.x,w.y,w.z); if(m>4) o.bd.setAngvel({x:w.x*4/m,y:w.y*4/m,z:w.z*4/m},true); const v=o.bd.linvel(), n=Math.hypot(v.x,v.y,v.z); if(n>0.5) o.bd.setLinvel({x:v.x*0.5/n,y:v.y*0.5/n,z:v.z*0.5/n},true); }   // Ladephase: nichts fliegt weg
-  o.bd.applyTorqueImpulse({x:_wv.x,y:_wv.y,z:_wv.z},true); if(o.p.p) o.p.bd.applyTorqueImpulse({x:-_wv.x,y:-_wv.y,z:-_wv.z},true); }
+  o.bd.applyTorqueImpulse({x:_wv.x,y:_wv.y,z:_wv.z},false); if(o.p.p&&!o.p.bd.isSleeping()) o.p.bd.applyTorqueImpulse({x:-_wv.x,y:-_wv.y,z:-_wv.z},false); }
  RIG.dev=dev; }
 function rigHap(o){ RIG.gr.forEach(g=>{ const c=ctl[g.key]; c&&hap(c.gp,0.6,28); }); }   // Anschlag spürbar (nur wenn sie gerade gehalten wird)
 function rigPose(k){ RIG.B.forEach(o=>{ const q=o.bd.rotation(), t=o.bd.translation(); _qa.set(q.x,q.y,q.z,q.w); if(k<1) _qa.slerp(_qb.identity(),1-k); _tv.set(t.x,t.y,t.z).sub(o.c0).multiplyScalar(k).add(o.c0); _av.copy(o.c0).applyQuaternion(_qa); uBQ.value[o.i].set(_qa.x,_qa.y,_qa.z,_qa.w); uBT.value[o.i].copy(_tv).sub(_av); }); }
@@ -633,9 +637,9 @@ function rigPt(o,p,out){ const q=uBQ.value[o.i]; return out.copy(p).applyQuatern
 function rigNear(pl,lim,grab){ let best=null, bd=lim; RIG.B.forEach(o=>{ if(o.typ==='pelvis'||o.typ==='spine'||o.typ==='chest') return; for(const p of o.pts){ const d=rigPt(o,p,_av).distanceTo(pl); if(d<bd){ bd=d; best=o; } } }); if(best&&grab&&best.typ==='neck') best=RIG.B[4]; return best; }
 function rigGrab(pl,key){ const o=rigNear(pl,0.06,true); if(!o) return null; RIG.idle=0; RIG.rs=-1; RIG.tone=1; const RA=RIG.RA, W=RIG.W, hb=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased().setTranslation(pl.x,pl.y,pl.z)); const t=o.bd.translation(), q=o.bd.rotation();
  _av.set(pl.x-t.x,pl.y-t.y,pl.z-t.z).applyQuaternion(_qa.set(q.x,q.y,q.z,q.w).invert()); const jaw=o.typ==='jaw', ms=jaw?0.25:Math.min(o.ms,9)+0.5;
- const j=W.createImpulseJoint(RA.JointData.spring(0,jaw?40:ms*240,jaw?3:ms*26,{x:0,y:0,z:0},{x:_av.x,y:_av.y,z:_av.z}),hb,o.bd,true); const g={rig:1,o,hb,j,key}; RIG.gr.push(g); o.bd.wakeUp(); rigHandOff(key,true); return g; }   // Feder zur Hand: Gewicht + Nachziehen (Bonelab)
+ const j=W.createImpulseJoint(RA.JointData.spring(0,jaw?40:ms*240,jaw?3:ms*26,{x:0,y:0,z:0},{x:_av.x,y:_av.y,z:_av.z}),hb,o.bd,true); const g={rig:1,o,hb,j,key}; RIG.gr.push(g); if(jaw) o.j.configureMotorPosition(0,0.15,0.05); o.bd.wakeUp(); rigHandOff(key,true); return g; }   // Feder zur Hand: Gewicht + Nachziehen (Bonelab)
 function rigMove(g,pl){ if(g.hb) g.hb.setNextKinematicTranslation({x:pl.x,y:Math.max(pl.y,0.02),z:pl.z}); RIG.idle=0; }
-function rigRelease(g){ if(!g||!g.hb) return; RIG.W.removeImpulseJoint(g.j,true); RIG.W.removeRigidBody(g.hb); g.hb=null; g.o.bd.wakeUp(); RIG.gr=RIG.gr.filter(x=>x!==g); rigHandOff(g.key,false); }   // los: bleibt liegen, wo sie Halt findet
+function rigRelease(g){ if(!g||!g.hb) return; RIG.W.removeImpulseJoint(g.j,true); RIG.W.removeRigidBody(g.hb); g.hb=null; g.o.bd.wakeUp(); if(g.o.typ==='jaw') g.o.j.configureMotorPosition(0,3,0.3); RIG.gr=RIG.gr.filter(x=>x!==g); rigHandOff(g.key,false); }   // los: bleibt liegen, wo sie Halt findet
 function rigPush(pl,dl){ const o=rigNear(pl,0.045,false); if(!o) return; const m=Math.min(dl.length(),0.05)*Math.min(o.ms,8)*5; if(m<1e-5) return; _av.copy(dl).normalize().multiplyScalar(m); o.bd.applyImpulseAtPoint({x:_av.x,y:Math.max(_av.y,0),z:_av.z},{x:pl.x,y:pl.y,z:pl.z},true); RIG.idle=0; }
 function rigHand(i,pl){ if(!RIG.on) return; let h=RIG.hb[i]; if(!h){ const RA=RIG.RA; h=RIG.hb[i]={b:RIG.W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased().setTranslation(0,-5,0)),off:false}; RIG.W.createCollider(RA.ColliderDesc.ball(0.035).setCollisionGroups(0x00080004).setFriction(0.6),h.b); }
  const ok=pl&&!h.off; h.b.setNextKinematicTranslation(ok?{x:pl.x,y:pl.y,z:pl.z}:{x:0,y:-5,z:0}); if(ok&&rigNear(pl,0.06,false)) RIG.idle=0; }   // Spieler-Hand als Kugel: schiebt Glieder/Kopf physikalisch (Rumpf nicht – dort wird eingeölt)
@@ -646,7 +650,7 @@ function rigFrame(d,live){ if(!RIG.on) return; if(!live) return;
  if(RIG.rs>=0){ RIG.rs+=d; const r=RIG.rs; if(r<0.5){ const s=Math.sin(r*38)*(1-r/0.5); [4,8,11,14,17].forEach(i=>{ const o=RIG.B[i]; if(!o) return; const w=o.I*s*(i===4?1.6:0.9)*d*12; o.bd.applyTorqueImpulse({x:w*0.4,y:w,z:0},true); }); }
   if(r>=0.5){ const a=Math.min(1,d/Math.max(d,2.3-r)); RIG.B.forEach(o=>{ if(!o.rest||!o.p) return; const t=o.bd.translation(), q=o.bd.rotation(); _qa.set(q.x,q.y,q.z,q.w).slerp(_qb.set(o.rest.q.x,o.rest.q.y,o.rest.q.z,o.rest.q.w),a); o.bd.setTranslation({x:t.x+(o.rest.t.x-t.x)*a,y:t.y+(o.rest.t.y-t.y)*a,z:t.z+(o.rest.t.z-t.z)*a},true); o.bd.setRotation({x:_qa.x,y:_qa.y,z:_qa.z,w:_qa.w},true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); }); }   // o20d: nach dem Abschütteln sanft (1,8 s) zurück in die Ruhepose
   RIG.tone=1; RIG.rsN=(RIG.rsN||0)+(r<=d?1:0); if(r>2.4||RIG.gr.length){ RIG.rs=-1; RIG.idle=0; RIG.tone=1; } } }
-function rigRest(){ RIG.gr.slice().forEach(rigRelease); RIG.B.forEach(o=>{ if(!o.rest) return; o.bd.setTranslation(o.rest.t,true); o.bd.setRotation(o.rest.q,true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); }); RIG.idle=0; RIG.rs=-1; RIG.tone=1; }
+function rigRest(){ RIG.gr.slice().forEach(rigRelease); RIG.B.forEach(o=>{ if(!o.rest) return; o.bd.setTranslation(o.rest.t,true); o.bd.setRotation(o.rest.q,true); o.bd.setLinvel({x:0,y:0,z:0},true); o.bd.setAngvel({x:0,y:0,z:0},true); if(o.p) o.bd.sleep(); }); RIG.idle=0; RIG.rs=-1; RIG.tone=1; }
 async function ragInit(){ try{ const RA=(await import(new URL('rapier3d-compat-0.21.0.mjs',LIBDIR).href)).default; await RA.init(); const W=new RA.World({x:0,y:-9.81,z:0}); W.timestep=1/90;
   const torso=W.createRigidBody(RA.RigidBodyDesc.kinematicPositionBased()); const lc=W.createCollider(RA.ColliderDesc.cuboid(1.0,0.02,0.4).setTranslation(0.0,-0.02,0).setCollisionGroups(0x00010002).setFriction(0.9).setRestitution(0.15),torso);
   { const fb=figBody(fig.lie); if(fb&&fb.geometry.attributes._bj){ lc.setCollisionGroups(0x00010006); if(await rigInit(RA,W)){ RAG.W=W; RAG.RA=RA; RAG.torso=torso; RAG.on=true; window.__oaseRag=RAG; if(window.__oase) window.__oase.RIG=RIG; return; } } }   // o20: ganzes Skelett statt Einzel-Glieder
