@@ -1,13 +1,13 @@
 {
-"voice": "ElevenLabs \"Navi\" + pitch 1.2",
+"voice": "ElevenLabs \"Lumi\" (zndmYEEoWWxRYyEL2ZZY), eleven_multilingual_v2, speed 1.12",
 "answers": [
 {
 "id": "p1",
 "cat": "pos",
-"t": "Dah! Auf jeden Fall! *wackelt mit den Ohren* 👽✨",
+"t": "Jaaa! Auf jeden Fall! *wackelt mit den Ohren* ✨",
 "parts": [
 {
-"a": "p1_0.mp3"
+"a": "a_p1_0.mp3"
 },
 {
 "fx": "earwig"
@@ -17,20 +17,20 @@
 {
 "id": "p2",
 "cat": "pos",
-"t": "Me love diese Idee! Das wird super! 🎵",
+"t": "Oh ja! Diese Idee ist so gut, ich muss tanzen! 🎵",
 "parts": [
 {
-"a": "p2_0.mp3"
+"a": "a_p2_0.mp3"
 }
 ]
 },
 {
 "id": "p3",
 "cat": "pos",
-"t": "Kah! Ganz sicher ja! *knuspert glücklich* 🍪",
+"t": "Ganz sicher ja! *knuspert glücklich einen Keks* 🍪",
 "parts": [
 {
-"a": "p3_0.mp3"
+"a": "a_p3_0.mp3"
 },
 {
 "fx": "chomp"
@@ -40,115 +40,115 @@
 {
 "id": "p4",
 "cat": "pos",
-"t": "U-nye! Die Sterne sagen JA! 🌟",
+"t": "Die Sterne sagen JA! Und die Kekse auch! 🌟",
 "parts": [
 {
-"a": "p4_0.mp3"
+"a": "a_p4_0.mp3"
 }
 ]
 },
 {
 "id": "p5",
 "cat": "pos",
-"t": "Doo-moh! Mein Bauchnabel leuchtet grün für 'Ja'! 💚",
+"t": "Mein Bauchnabel kribbelt – das heißt JA! 💛",
 "parts": [
 {
-"a": "p5_0.mp3"
+"a": "a_p5_0.mp3"
 }
 ]
 },
 {
 "id": "p6",
 "cat": "pos",
-"t": "Auf jeden Fall! Aber fütter mich bloß nicht nach Mitternacht, wenn wir das feiern! 🍔🚫",
+"t": "Na klar! Da wackeln sogar meine Ohren vor Freude! 🐾",
 "parts": [
 {
-"a": "p6_0.mp3"
+"a": "a_p6_0.mp3"
+},
+{
+"fx": "earwig"
 }
 ]
 },
 {
 "id": "p7",
 "cat": "pos",
-"t": "Way-loh! Das ist eine mega gute Frage! Ja! 🐾",
+"t": "Jippie! Das ist eine mega gute Frage! Ja! 🎉",
 "parts": [
 {
-"a": "p7_0.mp3"
+"a": "a_p7_0.mp3"
 }
 ]
 },
 {
 "id": "n1",
 "cat": "neu",
-"t": "Noo-kah... *gähnt* mein Gehirn ist gerade im Energiesparmodus. Frag später! 😴",
+"t": "Hmm … *gähnt* mein Kopf macht gerade ein Nickerchen. Frag später! 😴",
 "parts": [
 {
-"a": "n1_0.mp3"
+"a": "a_n1_0.mp3"
 },
 {
 "fx": "yawn"
 },
 {
-"a": "n1_1.mp3"
+"a": "a_n1_1.mp3"
 }
 ]
 },
 {
 "id": "n2",
 "cat": "neu",
-"t": "Hmm... *knabbert an der Tastatur* ... ich bin mir noch unsicher. 🤔",
+"t": "Hmm … *knabbert an einem Keks* … ich bin mir noch nicht sicher. 🤔",
 "parts": [
 {
-"a": "n2_0.mp3"
+"a": "a_n2_0.mp3"
 },
 {
 "fx": "chomp"
 },
 {
-"a": "n2_1.mp3"
+"a": "a_n2_1.mp3"
 }
 ]
 },
 {
 "id": "n3",
 "cat": "neu",
-"t": "Mein Fell steht zu Berge... ich kann es noch nicht sehen. *fiept leise* 🐾",
+"t": "Meine Kristallkugel ist ganz beschlagen … *pustet* 🔮",
 "parts": [
 {
-"a": "n3_0.mp3"
-},
-{
-"fx": "whine"
+"a": "a_n3_0.mp3"
 }
 ]
 },
 {
 "id": "n4",
 "cat": "neu",
-"t": "Way-loh? Das ist zu kompliziert für meinen kleinen Gizmo-Kopf! Frag nochmal! 🌀",
+"t": "Das ist zu kniffelig für meinen flauschigen Kopf! Frag nochmal! 🌀",
 "parts": [
 {
-"a": "n4_0.mp3"
+"a": "a_n4_0.mp3"
 }
 ]
 },
 {
 "id": "n5",
 "cat": "neu",
-"t": "Ich muss erst mal meine Flauschigkeit sortieren... versuch es später nochmal! ☁️",
+"t": "Ich muss erst meine Flauschigkeit sortieren … versuch es gleich nochmal! ☁️",
 "parts": [
 {
-"a": "n5_0.mp3"
+"a": "a_n5_0.mp3"
 }
 ]
 },
 {
 "id": "x1",
 "cat": "neg",
-"t": "Noo! Auf keinen Fall! *versteckt sich in seinem Fell* 🙈",
+"t": "Nööö! Auf keinen Fall! *versteckt sich im Fell* 🙈",
 "parts": [
 {
-"a": "x1_0.mp3"
+"a": "a_x1_0.mp3"
 },
 {
 "fx": "hide"
@@ -158,56 +158,56 @@
 {
 "id": "x2",
 "cat": "neg",
-"t": "Dah-no! Mein Gremlin-Teil sagt NEIN! Das ist eine schlechte Idee! 👾🔥",
+"t": "Mein Kicher-Kompass zeigt auf NEIN! Hihi! 🧭",
 "parts": [
 {
-"a": "x2_0.mp3"
+"a": "a_x2_0.mp3"
 }
 ]
 },
 {
 "id": "x3",
 "cat": "neg",
-"t": "U-nye... die Zeichen stehen schlecht. Besser nicht! 🌧️",
+"t": "Hmm, die Wolken sagen: lieber nicht! ☁️",
 "parts": [
 {
-"a": "x3_0.mp3"
+"a": "a_x3_0.mp3"
 }
 ]
 },
 {
 "id": "x4",
 "cat": "neg",
-"t": "Mein drittes Auge rollt... Nein, lass das lieber! 🙄✨",
+"t": "Mein linkes Ohr sagt Nein. Und mein rechtes Ohr auch! 👂",
 "parts": [
 {
-"a": "x4_0.mp3"
+"a": "a_x4_0.mp3"
 }
 ]
 },
 {
 "id": "x5",
 "cat": "neg",
-"t": "Nee, nee, nee! *macht ein trotziges Geräusch* Bwaaaah! Nein! 🙅‍♂️",
+"t": "Nee, nee, nee! *macht ein Schmollgesicht* Nein! 😝",
 "parts": [
 {
-"a": "x5_0.mp3"
+"a": "a_x5_0.mp3"
 },
 {
 "fx": "pout"
 },
 {
-"a": "x5_1.mp3"
+"a": "a_x5_1.mp3"
 }
 ]
 },
 {
 "id": "x6",
 "cat": "neg",
-"t": "Mein Sensor sagt: Gefahr! Nein! *piept warnend* 🚨",
+"t": "Mein Flausch-Sensor piept: Nein! *piep piep* 🚨",
 "parts": [
 {
-"a": "x6_0.mp3"
+"a": "a_x6_0.mp3"
 },
 {
 "fx": "beep"
@@ -223,20 +223,20 @@
 "fx": "poke"
 },
 {
-"a": "nudge_0.mp3"
+"a": "a_nudge_0.mp3"
 }
 ]
 },
 {
 "id": "bye1",
 "cat": "sys",
-"t": "*gähnt laut* Okay... ich gehe in meine Höhle...",
+"t": "*gähnt laut* Okay … ich kuschel mich in meine Höhle …",
 "parts": [
 {
 "fx": "yawn"
 },
 {
-"a": "bye1_0.mp3"
+"a": "a_bye1_0.mp3"
 }
 ]
 },
@@ -253,10 +253,10 @@
 {
 "id": "bye3",
 "cat": "sys",
-"t": "Bis zum nächsten Mal! Dah!",
+"t": "Bis zum nächsten Mal! Träum was Schönes!",
 "parts": [
 {
-"a": "bye3_0.mp3"
+"a": "a_bye3_0.mp3"
 }
 ]
 },
@@ -266,99 +266,288 @@
 "t": "Frag mich was! Eine Ja-oder-Nein-Frage! 🎱",
 "parts": [
 {
-"a": "ask_0.mp3"
+"a": "a_ask_0.mp3"
 }
 ]
 },
 {
 "id": "listen",
 "cat": "sys",
-"t": "Ich höre zu... 👂",
+"t": "Ich höre zu … 👂",
 "parts": [
 {
-"a": "listen_0.mp3"
+"a": "a_listen_0.mp3"
 }
 ]
 },
 {
 "id": "says",
 "cat": "sys",
-"t": "🎱 Dein Haustier sagt:",
+"t": "🎱 Giß-Moe sagt:",
 "parts": [
 {
-"a": "says_0.mp3"
+"a": "a_says_0.mp3"
 }
 ]
 }
 ],
 "words": {
-"hallo": "w00.mp3",
-"lecker": "w01.mp3",
-"habdichlieb": "w02.mp3",
-"daskitzelt": "w03.mp3",
-"gutenacht": "w04.mp3",
-"hunger": "w05.mp3",
-"spielen": "w06.mp3",
-"juhu": "w07.mp3",
-"schön": "w08.mp3",
-"kuscheln": "w09.mp3",
-"nochmal": "w10.mp3",
-"tanzen": "w11.mp3",
-"gutenmorgen": "w12.mp3",
-"dubistlustig": "w13.mp3",
-"freunde": "w14.mp3",
-"ichbingißmoe": "w15.mp3",
-"hihi": "w17.mp3",
-"hoppla": "w18.mp3",
-"keinwasser": "w19.mp3",
-"nichtsohell": "w20.mp3",
-"besserso": "w21.mp3",
-"miristschwindelig": "w22.mp3",
-"kekszeit": "w23.mp3",
-"wieheißtdu": "w24.mp3",
-"puh": "w25.mp3",
-"hmpf": "w26.mp3",
-"pöh": "w27.mp3",
-"brrrrrr": "w28.mp3",
-"hicks": "w29.mp3",
-"scharfscharf": "w30.mp3",
-"brrristdaskalt": "w31.mp3",
-"hatelektrolyte": "w32.mp3",
-"wuuusch": "w33.mp3",
-"leckermöhre": "w34.mp3",
-"regenbogen": "w35.mp3",
-"hehehe": "w36.mp3",
-"mitternachtssnack": "w37.mp3",
-"huchwaswardennlos": "w38.mp3",
-"gefunden": "w39.mp3",
-"fast": "w40.mp3",
-"schick": "w41.mp3",
-"wieseheichaus": "w42.mp3",
-"suchmich": "w43.mp3",
-"hierbinich": "w44.mp3",
-"mmhmilch": "w45.mp3",
-"kicherbrause": "w46.mp3",
-"kaffeeichbinsooowach": "w47.mp3",
-"schnellerschnellerschneller": "w48.mp3",
-"huuuhheißfeuer": "w49.mp3",
-"ichwilldeinkekssaugenmuahaha": "w50.mp3",
-"ichbineinvampirbläh": "w51.mp3",
-"tomatensaftschlürf": "w52.mp3",
-"bähknoblauch": "w53.mp3",
-"uffmeinatemstinkt": "w54.mp3",
-"binichnocheinvampir": "w55.mp3",
-"sauersauer": "w56.mp3",
-"ichbineinhäschen": "w57.mp3",
-"zuckerschockwiiii": "w58.mp3",
-"uhuhahahbananentanz": "w59.mp3",
-"popcornplopp": "w60.mp3",
-"starkwieeinbär": "w61.mp3",
-"ichhabeinenmilchbart": "w62.mp3",
-"gummibärchenregenbogen": "w63.mp3",
-"ichglühe": "w64.mp3",
-"somüde": "w65.mp3",
-"ichbineingefroren": "w66.mp3",
-"hehehemitternachtssnack": "w67.mp3",
-"puhwiedernormal": "w68.mp3"
+"ahhdasistschön": "w_4bd9822e.mp3",
+"ahhhvielbesserdanke": "w_43e90365.mp3",
+"amliebstenerdbeerenundkuchenabernichtzuviel": "w_942ddacc.mp3",
+"auabauchweh": "w_f26dee79.mp3",
+"auameinbauchichbrauchpfefferminztee": "w_5130d135.mp3",
+"aujalassunsspielen": "w_12280bed.mp3",
+"aujawaswollenwirspielen": "w_2a2ca850.mp3",
+"aussetzenichbinnochmaldran": "w_fc05ac38.mp3",
+"besserso": "w_8b718f98.mp3",
+"bisspäterkrümelmonster": "w_b8811ba1.mp3",
+"bittebitteimmerwieder": "w_9b85f7e2.mp3",
+"blubbblubbichbineinemeerjungfraumitglitzerflossewerschwimmtmitmir": "w_3c667c61.mp3",
+"boingdaskitzelt": "w_be967be3.mp3",
+"brrristdaskalt": "w_5526c6dd.mp3",
+"brrrrrr": "w_ec1afe6d.mp3",
+"bähknoblauch": "w_cb65244e.mp3",
+"dafürsindmeinehaarenochzukurz": "w_c4f47bc7.mp3",
+"danebenätschibätsch": "w_3fc78e05.mp3",
+"dankedubistauchwunderschön": "w_c645be5e.mp3",
+"daskitzelt": "w_b3223094.mp3",
+"dasmikrogehtgeradenichtschreibeseinfachauf": "w_562b5a1c.mp3",
+"daswareinfroschduschlingel": "w_ab463fa3.mp3",
+"daswarichnichtdaswarderteppichhihi": "w_29e81b86.mp3",
+"dubistdran": "w_cbbc3592.mp3",
+"dubistlustig": "w_5a7bdeef.mp3",
+"duhastgewonnensupergespielt": "w_25000e1c.mp3",
+"echtjetztwiespannend": "w_c0a73439.mp3",
+"einduttwieeineballerina": "w_a392f14f.mp3",
+"einenstockhihi": "w_40df9819.mp3",
+"einenuschelhihihi": "w_81e0e2cd.mp3",
+"einewanderinehihihi": "w_c880d2b1.mp3",
+"einkaramelhihihi": "w_2957ee3d.mp3",
+"einklopfsalathihi": "w_9d7b737a.mp3",
+"einuhumitschnupfenhihi": "w_fcb285de.mp3",
+"erdrücktdieentertastehihi": "w_3ebcc185.mp3",
+"falscherkopfhihi": "w_ab22fe74.mp3",
+"fangmichdochwenndukannsthihi": "w_017b8e0d.mp3",
+"fragmichwaseinejaoderneinfrage": "w_421e2744.mp3",
+"freunde": "w_cef5136a.mp3",
+"friseurbittemeinehaarekitzeln": "w_5062ec90.mp3",
+"friseurjuhu": "w_11342ff0.mp3",
+"ganztollvorallemwenndudabist": "w_4e7afc0d.mp3",
+"gefunden": "w_07a7317f.mp3",
+"gerngeschehen": "w_5dcaee0a.mp3",
+"gißunoichmischedufängstan": "w_af78c8e0.mp3",
+"goldenermoedreipunkte": "w_736fdf2c.mp3",
+"guckmalneuertrick": "w_51b642e5.mp3",
+"gummibärchenregenbogen": "w_3a764098.mp3",
+"gutekarte": "w_1b43e1df.mp3",
+"gutenacht": "w_a0f6c650.mp3",
+"gutenachtträumwasschönes": "w_de3f12d8.mp3",
+"gutenmorgen": "w_76693140.mp3",
+"habdichlieb": "w_cf7303a9.mp3",
+"hallo": "w_598d4c20.mp3",
+"halloschöndassdudabist": "w_68e776b7.mp3",
+"halloschönername": "w_e0e6e40d.mp3",
+"halloworüberwollenwirquatschen": "w_22453c5f.mp3",
+"hatelektrolyte": "w_6dd1d80c.mp3",
+"hehehe": "w_ffe55369.mp3",
+"hehehemitternachtssnack": "w_bd98daaa.mp3",
+"heyheydabistduja": "w_5ee368d2.mp3",
+"heymeinefrisur": "w_75d84406.mp3",
+"hierbinich": "w_500b8b4c.mp3",
+"hihi": "w_e9f5713d.mp3",
+"hihidasverstehichnichtganzaberesklingttoll": "w_b9807426.mp3",
+"hihidaswardochnichtich": "w_ea013264.mp3",
+"hihidaswareinbohnentrompetenkonzert": "w_0755abe8.mp3",
+"hihidaswarlustignochmal": "w_ee39a019.mp3",
+"hihidasziept": "w_a3792aa5.mp3",
+"hihidubistlustig": "w_6bf50314.mp3",
+"hihierwischt": "w_f66e833e.mp3",
+"hihigellichbineinwitzeprofi": "w_3fe0b892.mp3",
+"hihinichtkitzelnhihihi": "w_b15e589c.mp3",
+"hihinochmal": "w_5f247e88.mp3",
+"hihipupsenistlustigabernureinbisschen": "w_e3f18e1e.mp3",
+"hihitschuldigungdaswarendiebohnen": "w_5219b8d9.mp3",
+"hmmdasistabernichtsonettwollenwirlieberwaslustigesmachen": "w_af6a20fb.mp3",
+"hmmgutefragedamussichmalmeinfellschütteln": "w_62934f61.mp3",
+"hmmichbinnureinkleinermoefragmichwasleichteres": "w_c26ca535.mp3",
+"hmmichmussziehen": "w_1174c1e2.mp3",
+"hmmichzähleinkeksennichtinjahren": "w_4e59a0d8.mp3",
+"hmmmalüberlegen": "w_5f4b4150.mp3",
+"hmpf": "w_f6bc5468.mp3",
+"hmpfduwarstsooolangeweg": "w_7c396cfb.mp3",
+"hmpflassmich": "w_b21d8b5d.mp3",
+"hokuspokusfidibusichbineinekleinehexewerfliegtmitaufmeinembesen": "w_b5bfb933.mp3",
+"hoppla": "w_01e7aaf5.mp3",
+"huchwaswardennlos": "w_69cd2ae3.mp3",
+"huhuichhabschonaufdichgewartet": "w_38001816.mp3",
+"hunger": "w_e105e7a8.mp3",
+"huuuhheißfeuer": "w_789fe290.mp3",
+"huuuhichbineinkleinesgespenstbuhhihihabichdicherschreckt": "w_6f95d628.mp3",
+"häichhabdichnichtverstandenkannstduestippen": "w_951d348c.mp3",
+"ichbinaucheinbisschenmüde": "w_c98c02f3.mp3",
+"ichbinderlottergeiststreifenstreifenstreifenundmeinehaaresindgrünwiewackelpuddinghihi": "w_ed356653.mp3",
+"ichbineingefroren": "w_5911beac.mp3",
+"ichbineingißmoehalbkuscheltierhalbkeksmonster": "w_dce3e6cf.mp3",
+"ichbineinhäschen": "w_47ed57d6.mp3",
+"ichbineinkürbisrundundorangewerwillkürbissuppehihi": "w_336b15d7.mp3",
+"ichbineinrocker": "w_48aacce8.mp3",
+"ichbineinvampirbläh": "w_74bc016b.mp3",
+"ichbinfrankensteinchenganzstarkundganzliebwillstdukuschelnhihi": "w_e48b18dc.mp3",
+"ichbingißmoe": "w_e0bac132.mp3",
+"ichbingißmoederflauschigstemoederwelt": "w_5fb921c4.mp3",
+"ichbinschoneinewochealtdanke": "w_aef2f9b8.mp3",
+"ichbinsoaltwieeingänseblümchenglaubeich": "w_a89f4b54.mp3",
+"ichbinsuperstarkundkerngesund": "w_c8aa7478.mp3",
+"ichbraucheinenpfefferminztee": "w_9a6cc628.mp3",
+"ichglühe": "w_36ebb3eb.mp3",
+"ichhabdichauchliebganzdoll": "w_e35abc39.mp3",
+"ichhabeinenmilchbart": "w_d23e3d64.mp3",
+"ichhabgewonnenhihinochmal": "w_12d57cce.mp3",
+"ichhabnochschokoimgesichtschleckschleckhihi": "w_165f6595.mp3",
+"ichheißegißmoeunddubistmeineallerbestefreundin": "w_d11d714d.mp3",
+"ichwilldeinkekssaugenmuahaha": "w_5fb68407.mp3",
+"ichwohnehierbeidirinmeinemgemütlichenzimmer": "w_b17919e3.mp3",
+"ichwünschemirblau": "w_3aab1e0c.mp3",
+"ichwünschemirgelb": "w_510ed651.mp3",
+"ichwünschemirgrün": "w_db2bd8ca.mp3",
+"ichwünschemirrot": "w_80a04146.mp3",
+"juhu": "w_4746bbbd.mp3",
+"juhudasfreutmich": "w_3681a963.mp3",
+"juhuimkleiderschranksindhalloweenkostümeschaumalrein": "w_29fb0293.mp3",
+"kaffeeichbinsooowach": "w_30531319.mp3",
+"keinwasser": "w_e5200056.mp3",
+"kekseundpfannkuchenundbohnenaberdannmussichpupsenhihi": "w_7edcd9e2.mp3",
+"kekszeit": "w_534bf9af.mp3",
+"klapperklapperichbineinskeletthihidaskitzeltindenknochen": "w_23a5d0b5.mp3",
+"kuscheln": "w_27a4ea39.mp3",
+"kämmstdumirdiehaare": "w_fd3575f1.mp3",
+"lalalaaaichbindergißmoeflauschigundfrohlalalaaa": "w_fec20593.mp3",
+"lecker": "w_76c3f94c.mp3",
+"leckermöhre": "w_3af8decb.mp3",
+"lockenboingboing": "w_75117e1f.mp3",
+"längergehtnichtdiewachsenvonallein": "w_30703efa.mp3",
+"meinbauchgrummeltwieeindonnerwetter": "w_a38c7e1b.mp3",
+"meinehaaresindganzzerzaust": "w_f17f3b77.mp3",
+"meinehaaresindsolang": "w_f2fcc790.mp3",
+"meinehaaresindsooolangichsehfastnix": "w_52effddd.mp3",
+"meinelieblingsfarbeistregenbogenglitzer": "w_7d62f381.mp3",
+"mennoichmussaussetzen": "w_43a8e88e.mp3",
+"mennoziehen": "w_1ae4f163.mp3",
+"mirgehtessupermeinfellistheuteextraflauschig": "w_b01cd1b7.mp3",
+"miristschwindelig": "w_a040f424.mp3",
+"mmh": "w_d2e2ed2a.mp3",
+"mmhbohnen": "w_e4864872.mp3",
+"mmhmilch": "w_de3f29cc.mp3",
+"mmhpfefferminzteeschönfrisch": "w_56f8c764.mp3",
+"neindankemeinbauchisteingrummelnderbärpfefferminzteebitte": "w_90e462b1.mp3",
+"neuehaarfarbetoll": "w_e45e6b66.mp3",
+"neuerhaarschnittschick": "w_18a90253.mp3",
+"neuerrekordwahnsinn": "w_2721b6d7.mp3",
+"nichtsohell": "w_10c5effe.mp3",
+"nocheinstückkuchenmmmh": "w_4e35be4f.mp3",
+"nochmal": "w_508bb801.mp3",
+"nochmehrkuchen": "w_0ce944b0.mp3",
+"nochnichtunoruftmanbeidervorletztenkarte": "w_f000fca6.mp3",
+"ohclever": "w_83b0481b.mp3",
+"ohhhjetztwerdeichganzrot": "w_5e8a0a93.mp3",
+"ohjaichhabhungerzeigmalwasesgibt": "w_4ce632cc.mp3",
+"ohjamodenschauichziehmichschickan": "w_9576a9a1.mp3",
+"ohneinerwischtichhabunovergessen": "w_f39657ec.mp3",
+"ohneinkommherichkuscheldich": "w_69197fdb.mp3",
+"ohneinzweikartennawarte": "w_bd9eb8ad.mp3",
+"ohwasneueszumanziehen": "w_7cd1e13c.mp3",
+"okayichkuschelmicheingutenacht": "w_9bd871b8.mp3",
+"oooohichdichauchriesenkuschel": "w_4e0e5941.mp3",
+"orangewiemeinfellundrosa": "w_243f0535.mp3",
+"pfefferminzteeschlürf": "w_085bf940.mp3",
+"pfefferminzteewärjetztgut": "w_14eda261.mp3",
+"pferdeschwanzhühott": "w_e9e0a4ce.mp3",
+"pfffthihimeinpohathallogesagt": "w_b4cc0ecf.mp3",
+"pieppiepichbineinalienvomplanetenkeksichkommeinfriedenhihi": "w_7e331087.mp3",
+"plusvierhihihitutmirgarnichtleid": "w_3e0f6fd6.mp3",
+"pluszweifürdichhihi": "w_dbcb0471.mp3",
+"popcornplopp": "w_05ff9bc3.mp3",
+"primaunddir": "w_c33e8a99.mp3",
+"puh": "w_97ed9f7e.mp3",
+"puhdubistsuperschnell": "w_41f06a21.mp3",
+"puhwiedernormal": "w_3efdc136.mp3",
+"pöh": "w_f82bfdc6.mp3",
+"pünktlichzurkekszeit": "w_c9d65b62.mp3",
+"regenbogen": "w_16158d25.mp3",
+"regenbogenhaarewow": "w_72cfc679.mp3",
+"richtungswechselichnochmal": "w_835f8d9b.mp3",
+"sauberdankeschön": "w_7be05f64.mp3",
+"sauersauer": "w_9f186bc2.mp3",
+"scharfscharf": "w_7730644a.mp3",
+"schick": "w_c954da35.mp3",
+"schnellerschnellerschneller": "w_b72b1afe.mp3",
+"schokolademmmmh": "w_d3a06fc5.mp3",
+"schön": "w_088c4e6c.mp3",
+"schöngekämmtdanke": "w_8ace77a6.mp3",
+"sehrelegant": "w_74a74fe7.mp3",
+"sollichdireinenwitzerzählendashilftimmer": "w_42fd2db4.mp3",
+"somüde": "w_3e379ea4.mp3",
+"spielen": "w_5a140325.mp3",
+"stacheligwieeinigel": "w_df0a9344.mp3",
+"starkwieeinbär": "w_be380272.mp3",
+"suchmich": "w_91a4b937.mp3",
+"superdannlassunswaslustigesmachen": "w_02b16281.mp3",
+"tanzen": "w_de66d118.mp3",
+"tomatensaftschlürf": "w_dd9e9e9f.mp3",
+"tschüsskommbaldwieder": "w_44292cd4.mp3",
+"uffmeinatemstinkt": "w_64a0dbc6.mp3",
+"uffmeinbauchistganzvoll": "w_22b98eaa.mp3",
+"uffmeinbauchmachtblubbdreikuchenwarenzuviel": "w_e3c81982.mp3",
+"uhuhahahbananentanz": "w_652c2a82.mp3",
+"uidubistaberschnell": "w_fc011166.mp3",
+"uierzählmirmehr": "w_e2b1120a.mp3",
+"uiiiganzkurzdaskitzelt": "w_dc584763.mp3",
+"uiiiquietsch": "w_27a5e450.mp3",
+"uno": "w_1eaa8bb1.mp3",
+"unovergessenzweikartenziehenhihi": "w_b6e7ed2b.mp3",
+"upsnocheinerzugabehihi": "w_9e462cbe.mp3",
+"upsschokoschnutejetzthabicheinenschokobarthihi": "w_664059a9.mp3",
+"uuuuhichbineinzombieichwillkekseganzvielekeksehihi": "w_4ed1cc82.mp3",
+"vierkartendubistjafrechhihi": "w_bc646fba.mp3",
+"vitamincbombeichfunkelwieeinglitzerstern": "w_be81293d.mp3",
+"warumhabengiraffensolangehälse": "w_85cb7907.mp3",
+"wasistbraunklebrigundläuftdurchdiewüste": "w_3174022b.mp3",
+"wasistgrünundklopftandietür": "w_23bb38ba.mp3",
+"wasistorangeundwandertdurchdenwald": "w_67a082ff.mp3",
+"wasliegtamstrandundsprichtundeutlich": "w_799a1e27.mp3",
+"wasmachteinpiratamcomputer": "w_20e45c63.mp3",
+"wassitztaufdembaumundruftaha": "w_62e0bf4e.mp3",
+"weilihrefüßesostinkenhihi": "w_99de58be.mp3",
+"weiterso": "w_5e4bc139.mp3",
+"wiederganznatürlich": "w_61b99abf.mp3",
+"wieheißtdu": "w_5dc37bc5.mp3",
+"wienenntmaneinenbumerangdernichtzurückkommt": "w_f6504b6d.mp3",
+"wieseheichaus": "w_a2d94bcd.mp3",
+"wiezuckerwatte": "w_bdf9bbdf.mp3",
+"willstdumichfrisierenjuhuabzumfriseur": "w_7b85fe1a.mp3",
+"wollenwirzusammenspielen": "w_d61ede27.mp3",
+"wuschelig": "w_8858624b.mp3",
+"wuuusch": "w_74108ab2.mp3",
+"zuckerschockwiiii": "w_253d9acc.mp3",
+"zöpfchenwiesüß": "w_738d911e.mp3",
+"ichbinaucheinbisschenmüdegähn": "w_c98c02f3.mp3"
+},
+"sfx": {
+"giggle": [
+"s_giggle0.mp3",
+"s_giggle1.mp3",
+"s_giggle2.mp3"
+],
+"whine": [
+"s_whine0.mp3",
+"s_whine1.mp3"
+],
+"yawn": [
+"s_yawn0.mp3"
+],
+"sneeze": [
+"s_sneeze0.mp3"
+]
 }
 }

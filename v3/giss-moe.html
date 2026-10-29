@@ -3,10 +3,13 @@
 <meta name="theme-color" content="#2a1a12">
 <link rel="icon" href="data:,">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-<script src="test/lib/gissmoe.js?v=2"></script>
-<script src="test/lib/gissfun.js?v=1"></script>
-<script src="test/lib/gisswear.js?v=1"></script>
-<script src="test/lib/gissbrain.js?v=2"></script>
+<script src="test/lib/gissmoe.js?v=3"></script>
+<script src="test/lib/gissfun.js?v=3"></script>
+<script src="test/lib/gisswear.js?v=3"></script>
+<script src="test/lib/gissbrain.js?v=3"></script>
+<script src="test/lib/gisshair.js?v=3"></script>
+<script src="test/lib/gisstalk.js?v=3"></script>
+<script src="test/lib/gissgames.js?v=3"></script>
 <style>
 @font-face{font-family:"Kalam";src:url(fonts/Kalam-Regular.ttf)}
 html,body{margin:0;height:100%;overflow:hidden;background:#1d130e;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}
@@ -98,10 +101,10 @@ body.gaming #bar,body.gaming #bub{display:none}
  <button class="b" id="bSong"><i>🎵</i>Lied</button>
  <button class="b" id="bClap"><i>👏</i>Klatschen</button>
  <button class="b" id="bFood"><i>🍽️</i>Essen</button>
- <button class="b" id="bTalk"><i>🎱</i>Frag Moe</button>
- <button class="b" id="bCups"><i>🥤</i>Hütchen</button>
+ <button class="b" id="bTalk"><i>💬</i>Reden</button>
+ <button class="b" id="bGames"><i>🎲</i>Spiele</button>
  <button class="b" id="bWear"><i>👗</i>Anziehen</button>
- <button class="b" id="bWimmel"><i>🔍</i>Such Moe</button>
+ <button class="b" id="bHair"><i>✂️</i>Friseur</button>
 </div>
 <div id="start"><h1>Giß-Moe</h1><p id="stTxt">Giß-Moe schläft gerade …</p><button class="go" id="go">Aufwecken 👋</button>
 <small>Antippen = wecken · Bauch reiben = kitzeln · Kopf oder Rücken streicheln = schnurren · Kopf antippen = freuen · lange drücken = hochheben · daneben wischen = umdrehen · 3× im Takt klatschen = tanzen. Giß-Moe spricht erst Moe-Sprache und lernt jeden Tag mehr echte Wörter, merkt sich deinen Namen und lernt Kunststücke, wenn du etwas oft mit ihm machst.</small></div>
@@ -208,7 +211,7 @@ let tok=0; function begin(){ return ++tok; } const alive=t=>t===tok;
 function mouthPlay(res){ st.mouth=res.mouth||[]; st.mouthT0=performance.now()/1000; return res.dur||1; }
 function say(text,o){ const r=(window.GissFun&&GissFun.clip(text))||V.say(text,o); bubble(text,r.dur); return mouthPlay(r); }
 function sayK(k,o){ return say(wordText(k),o); }
-function rest(){ Object.assign(A,{glow:0,lid:0.04,paw:0,low:0,earUp:0,earFwd:0,earWig:0,hx:0,hy:0,hz:0,sq:0,trem:0,pup:1,blush:0,brow:0,bodyZ:0,hop:0,spinEyes:0}); A.lift=st.lifted?0.32:0; A.sleepB=0; }
+function rest(){ Object.assign(A,{glow:0,lid:0.04,paw:0,low:0,earUp:0,earFwd:0,earWig:0,hx:0,hy:0,hz:0,sq:0,trem:0,pup:1,blush:0,brow:0,bodyZ:0,hop:0,spinEyes:0}); A.lift=st.lifted?0.32:0; A.sleepB=0; A.belly=M.tummy?1:0; }
 function interact(){ st.lastInt=performance.now(); }
 async function learnedSay(){ while(sayQ.length){ const l=sayQ.shift(); await wait(300); A.blush=0.7; A.low=0.5; await wait(say(l)*1000+300); rest(); }
  while(trickQ.length){ const e=trickQ.shift(); await wait(400); V.chime(); fx('★','',4); toast('Giß-Moe hat ein neues Kunststück gelernt:<br><b>'+e.name+'</b>!'); A.blush=1; A.low=0.6; A.earWig=1; await wait(say('Guck mal'+nm()+'! Neuer Trick!',{pitch:1.05})*1000+300); rest(); await doTrick(e.id); }
@@ -224,14 +227,14 @@ async function bedtime(){ const t=begin(); mark('story'); rest(); A.lid=0.6; A.e
 // Gesten
 async function tickle(){ if(st.mode==='sleep') return wake(); const t=begin(); interact(); mark('giggle'); note('tickle'); if(M.tricks.includes('giggle')&&Math.random()<0.5) return doTrick('giggle'); rest(); A.lid=0.85; A.low=0.7; A.blush=1; A.earUp=0.35; A.earWig=1.2; A.hop=0.6; A.hz=0.1;
  let d=mouthPlay(V.giggle(8)); fx('♥','',2); await wait(d*1000); if(!alive(t)) return; A.hop=0; A.hz=-0.08; await wait(say(wordText('tickle'))*1000); if(!alive(t)) return; rest(); xp(1); learnedSay(); }
-async function grumpy(t){ mark('grumpy'); rest(); A.earUp=-0.6; A.brow=1; A.lid=0.45; A.hy=0.45; A.low=0; const l=['Hmpf.','Hmpf! Lass mich.','Pöh.',M.name?'Hmpf, '+M.name+' war so lange weg …':'Du warst so lange weg …'][(Math.random()*4)|0]; await wait(say(l,{pitch:0.85,rate:1.2})*1000+500); if(alive(t)){ A.brow=0; rest(); A.earUp=-0.35; } learnedSay(); }
+async function grumpy(t){ mark('grumpy'); rest(); A.earUp=-0.6; A.brow=1; A.lid=0.45; A.hy=0.45; A.low=0; const l=['Hmpf.','Hmpf! Lass mich.','Pöh.','Hmpf! Du warst sooo lange weg!'][(Math.random()*4)|0]; await wait(say(l,{pitch:0.85,rate:1.2})*1000+500); if(alive(t)){ A.brow=0; rest(); A.earUp=-0.35; } learnedSay(); }
 async function purr(){ if(st.mode==='sleep') return wake(); const t=begin(); interact(); if(GB.mood(M,NOW())==='grumpy'){ note('pet'); return grumpy(t); } mark('purr'); note('pet'); if(M.tricks.includes('ears')&&Math.random()<0.3) return doTrick('ears'); rest(); A.lid=0.82; A.low=0.4; A.blush=0.7; A.earUp=-0.25; A.hz=0.12; A.hy=0.08;
  V.purr(2.6); fx('♥','',3); await wait(2400); if(!alive(t)) return; await wait(sayK(Math.random()<.5?'love':'cuddle',{pitch:.95})*1000); if(!alive(t)) return; rest(); xp(1); learnedSay(); }
 async function happy(){ if(st.mode==='sleep') return wake(); const t=begin(); interact(); if(GB.mood(M,NOW())==='grumpy'){ note('happy'); return grumpy(t); } mark('happy'); note('happy'); rest(); A.lid=0.7; A.low=0.6; A.earUp=0.5; A.earWig=1; A.sq=0.06; A.hx=0.08;
  await wait(150); A.sq=0; A.hop=0.5; await wait(sayK(Math.random()<.6?'happy':'nice')*1000); if(!alive(t)) return; A.hop=0; rest(); xp(1); learnedSay(); }
 async function sneeze(){ if(st.mode==='sleep') return wake(); const t=begin(); interact(); mark('sneeze'); note('sneeze'); rest(); A.lid=0.5; A.hx=-0.2; const r=V.sneeze(); mouthPlay(r); bubble('Ha … ha … HATSCHI!',1.2);
  await wait(850); A.hx=0.3; A.lid=1; A.sq=0.08; A.earUp=0.6; await wait(400); A.sq=0; A.hx=0; A.lid=0.18; await wait(500); if(!alive(t)) return; A.low=0.5; say('Hihi.'); await wait(700); rest(); xp(1); }
-async function feed(){ interact(); if(st.mode==='sleep'){ await wake(); }
+async function feed(){ interact(); if(st.mode==='sleep'){ await wake(); } if(M.tummy) return GissFun.tummyRefuse(); M.cakeRow=null;
  const t=begin(); const midnight=st.midnight||new Date().getHours()<5; mark(midnight?'grumpy':'eat'); const wasSnack=GB.snackTime(M,NOW()); note(midnight?'tease':'feed'); rest(); A.lid=0.08; A.pup=1.25; A.earUp=0.4;
  // Keks fliegt zum Schnabel
  const B=new THREE.Vector3().fromArray(G.LM.beak); B.z+=0.06; G.head.localToWorld(B); stage.worldToLocal(B); const S0=new THREE.Vector3(0.55,0.15,1.1); cookie.visible=true; cookie.scale.setScalar(1);
@@ -387,7 +390,8 @@ async function greetEvents(){ await wait(600); for(const e of bootEv){
   if(e.type==='unlock'){ const U={mood:'Er hat jetzt eigene Launen – je nachdem, wie du ihn behandelst.',snack:'Er merkt sich, wann du ihn fütterst.',tricks:'Wenn du etwas oft mit ihm machst, lernt er Kunststücke!',joke:'Er kennt jetzt Witze.',ownsong:'Er hat sich eigene Lieder ausgedacht.',story:'Bei „Licht aus“ sagt er jetzt richtig Gute Nacht.',party:'Eine ganze Woche zusammen!'}; if(U[e.what]){ toast('✨ Neu: '+U[e.what]); await wait(3400); } }
   if(e.type==='missed'){ const t=begin(); await grumpy(t); }
   if(e.type==='party'){ M.seen.party=1; save(); const t=begin(); mark('party'); A.hop=1; A.blush=1; A.earWig=1.5; fx('🎉','',6); V.chime(); await wait(say('Ich bin schon eine Woche alt'+nm()+'! Danke!',{pitch:1.1})*1000+400); if(alive(t)){ A.hop=0; rest(); } }
- } bootEv.length=0; askName(); }
+ } bootEv.length=0; await plusEvents(); askName(); }
+async function plusEvents(){ const L=[]; if(window.GissWear&&GissWear.unlocks) L.push(...GissWear.unlocks()); if(window.GissHair) L.push(...GissHair.events()); for(const x of L){ toast(x); if(/Kleiderschrank|Frisur/.test(x)){ V.chime(); fx('🎁','',3); } await wait(3300); } }
 let nameAsked=false; function askName(){ if(nameAsked||M.name||M.seen.askName||R.xr.isPresenting||!GB.has(M,'name',NOW())) return; nameAsked=true; setTimeout(()=>{ if(R.xr.isPresenting) return; say('Wie heißt du?',{pitch:1.05}); $('name').style.display='flex'; setTimeout(()=>$('nmIn').focus(),300); },(M.sessions>1?1500:9000)); }
 function nameDone(skip){ $('name').style.display='none'; $('nmIn').blur(); if(skip) return; const n=GB.cleanName($('nmIn').value); if(!n) return; M.name=n; M.seen.askName=1; save(); const t=begin(); mark('name'); A.blush=1; A.low=0.6; A.earWig=1; fx('♥','',3); const d=say('Hallo, '+n+'! Schöner Name!',{pitch:1.05}); setTimeout(()=>{ if(alive(t)) rest(); },d*1000+400); }
 $('nmOk').addEventListener('click',()=>nameDone(false)); $('nmLater').addEventListener('click',()=>nameDone(true)); $('nmIn').addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter') nameDone(false); });
@@ -408,7 +412,7 @@ function loop(now){ now=performance.now(); const dt=Math.min(0.05,(now-last)/100
  G.group.rotation.y=st.spin;
  // Blinzeln / Leerlauf
  if(st.mode!=='sleep'){
-  if(now>nextBlink){ nextBlink=now+2200+Math.random()*3500; const L=A.lid; if(L<0.6){ A.lid=1; setTimeout(()=>{ if(A.lid===1) A.lid=L; },130); } }
+  // (Blinzeln: weich & automatisch in gissmoe.js)
   if(!st.mouth.length&&tok&&!st.game&&!st.busy&&now>nextIdle){ nextIdle=now+7000+Math.random()*8000; idle(now); }
   if(st.dozeAt&&now>st.dozeAt){ st.dozeAt=0; if(st.light==='dark'&&now-st.lastInt>6000) sleep('dark'); }
   // müde nach einer Weile
@@ -416,10 +420,11 @@ function loop(now){ now=performance.now(); const dt=Math.min(0.05,(now-last)/100
   GB.decay(M,dt); if(now-st.lastInt>90000) GB.lonely(M,dt*1000); moodT+=dt; if(moodT>10){ moodT=0; ui(); }
   hungerT+=dt; if(hungerT>40){ hungerT=0; M.hunger=Math.min(10,M.hunger+1); ui(); save(); }
  } else { if(now>nextSnore){ nextSnore=now+3300; V.snore(); fx('z','z',2); A.sleepB=1; } }
- GissFun.tick(dt,t); vrTick(dt); G.update(dt,t); if(!st.wimmel) R.render(S,cam);
+ GissFun.tick(dt,t); window.GissHair&&GissHair.tick(dt,t); window.GissWear&&GissWear.tick&&GissWear.tick(dt,t); window.GissGames&&GissGames.tick&&GissGames.tick(dt,t); vrTick(dt); G.update(dt,t); if(!st.wimmel) R.render(S,cam);
 }
 const JOKES=['Was ist grün und klopft? Ein Klopf-Salat! Hihi!','Warum summen Bienen? Weil sie den Text vergessen haben! Hihi!','Was macht ein Keks unterm Baum? Krümel-Picknick! Hihi!','Wie heißt ein Bumerang, der nicht zurückkommt? Stock! Hihi!'];
 function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.mood(M,NOW());
+ if(GissFun.idleHook&&GissFun.idleHook(r)) return; if(window.GissHair&&GissHair.idleHook&&GissHair.idleHook(r)) return;
  if(M.hunger>=2&&GB.snackTime(M,NOW())&&r<0.7){ const t=begin(); mark('snacktime'); A.earUp=0.5; A.pup=1.25; A.lid=0.2; const d=say('Keks-Zeit'+nm()+'!',{pitch:1.1}); fx('🍪','',1); setTimeout(()=>{ if(alive(t)) rest(); },d*1000+300); return; }
  if(M.hunger>=7&&r<0.6) return whine();
  if(md==='grumpy'&&r<0.5){ const t=begin(); return grumpy(t); }
@@ -432,8 +437,8 @@ function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.moo
  const t=begin(); A.lookX=(Math.random()-.5)*1.4; A.lookY=(Math.random()-.5)*0.6; A.hy=A.lookX*0.25; A.earWig=0.6; setTimeout(()=>{ if(alive(t)){ A.earWig=0; } },700); setTimeout(()=>{ if(alive(t)){ A.lookX=0; A.lookY=0; A.hy=0; } },2500);
 }
 GM.k={THREE,V,A,G,st,M,save,say,bubble,fx,toast,mouthPlay,begin,alive,rest,mark,interact,xp,wake,sleep,feed,ui,cam,R,S,stage,shadow,learnedSay,headScreen,base:'test/lib/giss/'}; GissFun.init(GM.k);
- btn('bFood',()=>GissFun.openTray()); btn('bTalk',()=>GissFun.openTalk()); btn('bCups',()=>GissFun.startCups()); GissWear.init(GM.k); btn('bWear',()=>GissWear.open()); btn('bWimmel',()=>GissWear.openWimmel());
+ btn('bFood',()=>GissFun.openTray()); btn('bTalk',()=>window.GissTalk?GissTalk.open():GissFun.openTalk()); GissWear.init(GM.k); btn('bWear',()=>GissWear.open()); GissHair.init(GM.k); btn('bHair',()=>GissHair.open()); window.GissTalk&&GissTalk.init(GM.k); window.GissGames&&GissGames.init(GM.k); btn('bGames',()=>GissGames.openMenu());
  R.setAnimationLoop(loop); vrInit();
-GM.proj=(x,y,z)=>{ const v=new THREE.Vector3(x,y,z); G.root.localToWorld(v); v.project(cam); return [(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight]; }; GM.G=G; GM.R=R; GM.vr={vrMode,ctl,ctlHit,vrTick,stage}; GM.ready=true; GM.GB=GB; GM.api={doTrick,idle,greetEvents,feed,tickle,purr,happy,wake,sleep,water,bright,song,dance,sneeze,lift};
+GM.proj=(x,y,z)=>{ const v=new THREE.Vector3(x,y,z); G.root.localToWorld(v); v.project(cam); return [(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight]; }; GM.G=G; GM.R=R; GM.cam=cam; GM.vr={vrMode,ctl,ctlHit,vrTick,stage}; GM.ready=true; GM.GB=GB; GM.api={doTrick,idle,greetEvents,feed,tickle,purr,happy,wake,sleep,water,bright,song,dance,sneeze,lift};
 })().catch(e=>{ console.error(e); document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;top:40%;left:0;right:0;text-align:center;color:#fff;font:18px system-ui">Giß-Moe konnte nicht laden: '+e.message+'</div>'); });
 </script></body></html>

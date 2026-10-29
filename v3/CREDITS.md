@@ -80,3 +80,9 @@
 
 - Rapier 3D (`@dimforge/rapier3d-compat` 0.21.0, Dimforge / Sébastien Crozet), Lizenz **Apache-2.0** (https://github.com/dimforge/rapier) – selbst gehostet als `v3/test/lib/rapier3d-compat-0.21.0.mjs` (WASM inline), Lizenztext `v3/test/lib/rapier3d-compat-LICENSE.txt`. Unverändert.
 - Ragdoll-Aufbau (Kapseln für Arme/Unterschenkel an Schulter/Knie, Tonus-Motor, Feder-Griff) und die Feder-Regionen für Brust/Bauch/Oberschenkel: eigene Arbeit.
+
+## Giß-Moe (v3/giss-moe.html, Kinder-Haustier)
+- 3D-Figur, Fell, Kleidung, Frisuren, Spiele (Hütchen, Such Moe, Maulwurf, Giß-UNO): eigener three.js/Canvas-Code, keine fremden Assets. UNO als bekannte Spielidee nachgebaut, ohne Original-Logo oder -Grafik.
+- Stimme (test/lib/giss/voice/): ElevenLabs TTS, Stimme „Lumi“ (zndmYEEoWWxRYyEL2ZZY), eleven_multilingual_v2, Tempo 1,12, eigene Texte; nachbearbeitet (Stille, loudnorm). Erzeuger: gissapk/voice_gen/gen_v3.py (außerhalb des Repos).
+- Geräusche live per WebAudio. Schrift Kalam (SIL OFL 1.1).
+- Halloween-Kostüme und Augen (Iris-Shader, Blinzeln): eigener three.js-Code. „Lottergeist“ nur stilistisch inspiriert, kein Markenname.

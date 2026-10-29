@@ -6,7 +6,7 @@ let K, THREE, VM=null, BUF={}, RAWB={}, base='';
 const GF={};
 /* ---------- Stimme: vorgerenderte Clips ---------- */
 async function loadVoice(){ try{ VM=await fetch(base+'voice/voice.json').then(r=>r.json()); }catch(e){ VM=null; return; }
- const files=new Set(Object.values(VM.words)); VM.answers.forEach(a=>a.parts.forEach(p=>p.a&&files.add(p.a)));
+ const files=new Set(Object.values(VM.words)); VM.answers.forEach(a=>a.parts.forEach(p=>p.a&&files.add(p.a))); Object.values(VM.sfx||{}).forEach(L=>L.forEach(f=>files.add(f)));
  await Promise.all([...files].map(f=>fetch(base+'voice/'+f).then(r=>r.ok?r.arrayBuffer():null).then(b=>{ if(b) RAWB[f]=b; }).catch(()=>{}))); decodeAll(); }
 let decoding=false;
 function decodeAll(){ const c=K.V.ctx; if(!c||decoding) return; decoding=true;
@@ -16,10 +16,13 @@ function envMouth(ab){ const d=ab.getChannelData(0), sr=ab.sampleRate, w=Math.ro
   if(rms>0.035&&on<0) on=t; else if(rms<=0.035&&on>=0){ if(t-on>0.05) m.push([on,t]); on=-1; } }
  if(on>=0) m.push([on,d.length/sr]); return m; }
 function play(f){ const b=BUF[f], c=K.V.ctx; if(!b||!c) return null; const s=c.createBufferSource(); s.buffer=b.ab; s.connect(K.V.out); s.start(c.currentTime+0.02); return {dur:b.ab.duration+0.02,mouth:b.mouth.map(x=>[x[0]+0.02,x[1]+0.02])}; }
-GF.clip=function(text){ if(!VM) return null; decodeAll(); const f=VM.words[norm(text)]; return f?play(f):null; };
+GF.clip=function(text){ if(!VM) return null; decodeAll(); let f=VM.words[norm(text)];
+ if(!f&&K.M.name){ const n=K.M.name; f=VM.words[norm(text.split(n).join(''))]; }
+ return f?play(f):null; };
+GF.hasClip=text=>!!(VM&&(VM.words[norm(text)]||(K.M.name&&VM.words[norm(text.split(K.M.name).join(''))])));
 function speak(text){ // Notfall: Gerätestimme, ohne Emojis und *Aktionen*
  const t=stripSpoken(text); if(!t||!window.speechSynthesis) return {dur:1.2,mouth:[[0,1]]};
- try{ const u=new SpeechSynthesisUtterance(t); u.lang='de-DE'; u.pitch=1.9; u.rate=1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
+ try{ const u=new SpeechSynthesisUtterance(t); u.lang='de-DE'; u.pitch=1.25; u.rate=1.08; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
  const d=0.35+t.length*0.065, m=[]; for(let x=0;x<d;x+=0.22) m.push([x,x+0.15]); return {dur:d,mouth:m}; }
 /* ---------- kleine Helfer ---------- */
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -33,7 +36,7 @@ const earP=s=>()=>scr(s<0?K.G.LM.earL:K.G.LM.earR);
 /* Fell-Farbe weich überblenden */
 const FX={tint:null,glow:null,hue:0,rainbow:0};
 function baseTint(){ return K.M.vamp?[0.86,0.9,1.02]:[1,1,1]; }
-GF.tick=function(dt,t){ if(K.V.ctx&&Object.keys(RAWB).length) decodeAll(); const U=K.G.U, k=1-Math.exp(-dt*3); const tt=FX.tint||baseTint(), gg=FX.glow||[0,0,0];
+GF.tick=function(dt,t){ if((t*4|0)!==(GF._lt|0)){ GF._lt=t*4; chocoUpd(); if(K.M.tummy&&Date.now()-K.M.tummy>2*3600000){ K.M.tummy=0; K.save(); } } if(K.V.ctx&&Object.keys(RAWB).length) decodeAll(); const U=K.G.U, k=1-Math.exp(-dt*3); const tt=FX.tint||baseTint(), gg=FX.glow||[0,0,0];
  U.uTint.value.r+=(tt[0]-U.uTint.value.r)*k; U.uTint.value.g+=(tt[1]-U.uTint.value.g)*k; U.uTint.value.b+=(tt[2]-U.uTint.value.b)*k;
  const pulse=FX.glow?0.75+0.25*Math.sin(t*9):1; U.uGlow.value.setRGB(U.uGlow.value.r+(gg[0]*pulse-U.uGlow.value.r)*k,U.uGlow.value.g+(gg[1]*pulse-U.uGlow.value.g)*k,U.uGlow.value.b+(gg[2]*pulse-U.uGlow.value.b)*k);
  if(FX.rainbow>performance.now()){ U.uHue.value=(t*2.2)%(Math.PI*2)+0.001; } else U.uHue.value=0;
@@ -77,7 +80,11 @@ const FOOD=[
  {id:'banane',e:'🍌',n:'Banane',h:'Affentanz'},
  {id:'popcorn',e:'🍿',n:'Popcorn',h:'Plopp!'},
  {id:'brokkoli',e:'🥦',n:'Brokkoli',h:'stark'},
- {id:'gummi',e:'🐻',n:'Gummibärchen',h:'Regenbogen'}];
+ {id:'gummi',e:'🐻',n:'Gummibärchen',h:'Regenbogen'},
+ {id:'orange',e:'🍊',n:'Orange',h:'Vitamin-C-Bombe'},
+ {id:'bohnen',e:'🫘',n:'Bohnen',h:'pupsig …'},
+ {id:'schoko',e:'🍫',n:'Schokolade',h:'Schoko-Schnute'},
+ {id:'tee',e:'🍵',n:'Pfefferminztee',h:'gut für den Bauch'}];
 const sprCache={};
 function foodSprite(e){ if(!sprCache[e]){ const c=document.createElement('canvas'); c.width=c.height=160; const x=c.getContext('2d'); x.font='120px system-ui,"Noto Color Emoji",sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=10; x.shadowOffsetY=5; x.fillText(e,80,86);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; sprCache[e]=t; } const s=new THREE.Sprite(new THREE.SpriteMaterial({map:sprCache[e],depthTest:true})); s.scale.setScalar(0.17); return s; }
@@ -89,6 +96,8 @@ const say=(t,o)=>K.say(t,o);
 async function sayW(t,o,extra){ await wait(say(t,o)*1000+(extra==null?250:extra)); }
 const isMidnight=()=>K.st.midnight||new Date().getHours()<5;
 GF.eat=async function(id){ const k=K; k.interact(); if(k.st.mode==='sleep') await k.wake(); closeTray();
+ if(k.M.tummy&&id!=='tee'){ return GF.tummyRefuse(); }
+ cakeCount(id);
  if(id==='keks'&&!isMidnight()) return k.feed();
  const f=FOOD.find(x=>x.id===id); const t=k.begin(); k.mark('food-'+id); k.rest(); k.A.lid=0.08; k.A.pup=1.25; k.A.earUp=0.4;
  if(!(await flyIn(f.e,t))) return; k.M.hunger=Math.max(0,k.M.hunger-2); k.ui(); k.save();
@@ -125,7 +134,26 @@ GF.eat=async function(id){ const k=K; k.interact(); if(k.st.mode==='sleep') awai
   await sayW('Sauer! Sauer!',{rate:0.8},600); if(!al()) return; A.sq=0; A.trem=0; await wait(600); return end(); }
  case 'karotte': { A.earUp=1.25; A.earFwd=0.2; A.low=0.6; A.lid=0.4; await sayW('Lecker Möhre!'); if(!al()) return;
   for(let i=0;i<6;i++){ A.hop=i%2?0:1.6; A.sq=i%2?0.08:0; await wait(300); if(!al()) return; } await sayW('Ich bin ein Häschen!'); if(!al()) return; return end(); }
- case 'kuchen': { A.lid=-0.02; A.pup=1.4; A.earWig=2; A.blush=1; await sayW('Zuckerschock! Wiiii!',{},50); if(!al()) return;
+ case 'orange': { FX.glow=[0.34,0.17,0.0]; A.glow=1; A.lid=-0.04; A.pup=1.35; A.earUp=0.9; A.blush=0.6; k.V.chime(); pf('✨',()=>scr([0,0.7,0.2]),{n:14,gap:70,sx:320,dy:-120}); pf('🍊',()=>scr([0,1,0.1]),{n:2,gap:300,dy:-90});
+  await sayW('Vitamin-C-Bombe! Ich funkel wie ein Glitzerstern!',{},100); if(!al()) return; k.M.hunger=Math.max(0,k.M.hunger-1); k.M.sick=0; k.ui(); k.save();
+  for(let i=0;i<4;i++){ A.hop=i%2?1.4:0.3; A.earWig=1.4; if(i===1) k.st.spinV=9; await wait(330); if(!al()) return; } A.hop=0; A.earWig=0;
+  pf('💪',()=>scr([-0.42,0.4,0.15],k.G.root),{n:2,gap:250,dy:-30,sx:20,fs:38}); pf('💪',()=>scr([0.42,0.4,0.15],k.G.root),{n:2,gap:250,dy:-30,sx:20,fs:38}); A.brow=0.5; A.sq=-0.06;
+  await sayW('Ich bin superstark und kerngesund!',{},500); A.sq=0; A.brow=0; if(!al()) return; return end(); }
+ case 'bohnen': { A.low=0.5; A.lid=0.35; await sayW('Mmh, Bohnen!',{},700); if(!al()) return; A.lid=-0.05; A.pup=1.45; A.earUp=0.9; A.sq=0.06; await wait(500); if(!al()) return;
+  fart(1); A.hop=0.8; A.trem=0.6; pf('💨',()=>scr([0,0.12,-0.12],k.G.root),{n:7,gap:55,sx:240,dy:-50,s0:0.6,s1:2.6,d:1.8}); cloud(); await wait(420); A.hop=0; A.trem=0; A.sq=0; if(!al()) return;
+  A.blush=1.2; A.lid=0.55; A.low=0.7; A.hz=0.1; k.mouthPlay(GF.sfx('giggle')||k.V.giggle(5)); await wait(900); if(!al()) return; await sayW(['Hihi! Tschuldigung! Das waren die Bohnen!','Hihi! Das war ein Bohnen-Trompeten-Konzert!','Pffft! Hihi! Mein Po hat Hallo gesagt!'][(Math.random()*3)|0],{},400); if(!al()) return;
+  if(Math.random()<0.6){ A.lookX=0.6; A.lookY=-0.2; await wait(400); fart(0.55); pf('💨',()=>scr([0,0.12,-0.12],k.G.root),{n:3,gap:60,sx:120,dy:-40,s1:1.8}); await wait(300); A.lookX=0; A.lookY=0; await sayW('Ups! Noch einer! Zugabe! Hihi!',{},300); if(!al()) return; k.mouthPlay(GF.sfx('giggle')||k.V.giggle(4)); await wait(900); }
+  A.hz=0; return end(); }
+ case 'schoko': { A.low=0.65; A.lid=0.45; A.blush=0.8; await sayW('Schokolade! Mmmmh!',{},200); if(!al()) return; for(let i=0;i<3;i++){ A.jaw=0.8; await wait(140); A.jaw=0.1; k.V.chomp(1); await wait(160); }
+  k.M.choco={t:Date.now(),a:1}; k.save(); chocoUpd(true); A.lookY=-0.4; A.pup=1.3; await wait(500); if(!al()) return; k.mouthPlay(GF.sfx('giggle')||k.V.giggle(3)); A.lookY=0; await sayW('Ups! Schoko-Schnute! Jetzt hab ich einen Schoko-Bart! Hihi!',{},300); if(!al()) return;
+  k.toast('🍫 Giß-Moe ist ganz schokoladig!<br>Tipp auf 🧽 zum Abwischen'); return end(); }
+ case 'tee': { if(k.M.tummy){ A.belly=0.6; A.lid=0.6; A.low=0.4; pf('🌿',()=>scr([0,0.95,0.15]),{n:5,gap:180,sx:180,dy:-100}); await sayW('Pfefferminztee … schlürf …',{},500); if(!al()) return;
+   k.M.tummy=0; k.M.cakeRow=null; k.save(); A.belly=0; A.lid=0.15; A.pup=1.3; A.earUp=0.7; A.blush=0.8; k.V.chime(); pf('✨',()=>scr([0,0.35,0.3],k.G.root),{n:8,gap:60,sx:200}); await sayW('Ahhh! Viel besser! Danke!',{},400); if(!al()) return;
+   A.hop=1; await wait(300); A.hop=0; k.xp(2); return end(); }
+  A.low=0.5; A.lid=0.5; pf('🌿',()=>scr([0,0.95,0.15]),{n:3,gap:200,sx:160,dy:-100}); await sayW('Mmh, Pfefferminztee! Schön frisch!',{},300); if(!al()) return; return end(); }
+ case 'kuchen': { if(k.M.cakeRow&&k.M.cakeRow.n>=3) return bellyache(t);
+  if(k.M.cakeRow&&k.M.cakeRow.n===2){ A.lid=0.3; A.low=0.6; A.blush=0.9; await sayW('Noch ein Stück Kuchen! Mmmh!',{},250); if(!al()) return; A.belly=0.4; await sayW('Uff … mein Bauch ist ganz voll.',{},300); A.belly=0; if(!al()) return; return end(); }
+  A.lid=-0.02; A.pup=1.4; A.earWig=2; A.blush=1; await sayW('Zuckerschock! Wiiii!',{},50); if(!al()) return;
   for(let i=0;i<9;i++){ A.hop=i%2?1.5:0.4; if(i%3===0) k.st.spinV=11; if(i%2) K.V.giggle(3); pf('🍭',()=>scr([0,0.9,0.1]),{n:1,sx:240}); await wait(300); if(!al()) return; }
   A.hop=0; A.earWig=0; A.lid=0.7; A.earUp=-0.6; A.hx=0.18; await sayW('So müde...',{pitch:0.85,rate:1.4},200); if(!al()) return; A.lid=1; A.sleepB=1; K.V.snore(); pf('z',()=>scr([0.1,1,0.1]),{n:3,gap:500}); await wait(3300); if(!al()) return; A.lid=0.2; A.sleepB=0; A.hx=0; return end(); }
  case 'milch': { stache.visible=true; A.low=0.6; A.lid=0.5; await sayW('Mmh, Milch …',{},300); if(!al()){ return; } A.lookY=-0.4; A.blush=0.8; await sayW('Ich hab einen Milchbart!',{},400); A.lookY=0; k.mouthPlay(V.giggle(5));
@@ -145,6 +173,53 @@ GF.eat=async function(id){ const k=K; k.interact(); if(k.st.mode==='sleep') awai
  case 'keks': return end();
  } };
 function mark2(){}
+/* ---------- v3: Kuchen-Zähler, Bauchweh, Pupse, Schoko-Schnute ---------- */
+function cakeCount(id){ const M=K.M, now=Date.now(); if(id==='kuchen'){ const c=M.cakeRow; M.cakeRow=(c&&now-c.ts<30*60000)?{n:c.n+1,ts:now}:{n:1,ts:now}; } else if(id!=='tee') M.cakeRow=null; K.save(); }
+async function bellyache(t){ const k=K, A=k.A, al=()=>k.alive(t); A.low=0.4; A.lid=0.3; await sayW('Noch mehr Kuchen …',{},200); if(!al()) return;
+ A.lid=0.6; A.earUp=-0.7; A.brow=-0.4; A.belly=1; A.hx=0.12; A.pup=1.2; k.M.tummy=Date.now(); k.M.cakeRow=null; k.save(); FX.tint=[0.9,1.02,0.86];
+ const r=GF.sfx('whine')||k.V.whine(); k.mouthPlay(r); await wait(r.dur*1000+200); if(!al()) return;
+ await sayW('Uff! Mein Bauch macht Blubb! Drei Kuchen waren zu viel!',{},300); if(!al()) return;
+ k.toast('🤢 Giß-Moe hat Bauchweh!<br>Gib ihm einen Pfefferminztee 🍵'); await sayW('Ich brauch einen Pfefferminztee!',{},400); FX.tint=null; if(al()) k.rest(); }
+GF.tummyRefuse=async function(){ const k=K; if(!k.M.tummy) return false; const t=k.begin(); k.rest(); const A=k.A; A.belly=1; A.lid=0.6; A.earUp=-0.6; A.hx=-0.1; A.brow=-0.3;
+ const r=GF.sfx('whine')||k.V.whine(); k.mouthPlay(r); await wait(r.dur*1000+150); if(!k.alive(t)) return true; await sayW(['Aua, mein Bauch! Ich brauch Pfefferminztee!','Nein danke! Mein Bauch ist ein grummelnder Bär! Pfefferminztee bitte!'][(Math.random()*2)|0],{},300);
+ if(k.alive(t)) k.rest(); return true; };
+GF.idleHook=function(r){ const k=K, M=k.M; if(M.tummy&&r<0.55){ const t=k.begin(); k.rest(); const A=k.A; A.belly=1; A.lid=0.55; A.earUp=-0.5; A.hx=0.1; const w=GF.sfx('whine')||k.V.whine(); k.mouthPlay(w);
+   setTimeout(()=>{ if(k.alive(t)) k.say(['Aua … Bauchweh …','Pfefferminztee wär jetzt gut …','Mein Bauch grummelt wie ein Donnerwetter …'][(Math.random()*3)|0]); },w.dur*1000+100); setTimeout(()=>{ if(k.alive(t)) k.rest(); },w.dur*1000+3000); return true; }
+ if(M.choco&&chocoA()>0.3&&r<0.22){ const t=k.begin(); const A=k.A; A.lookY=-0.35; A.blush=0.7; for(let i=0;i<3;i++) setTimeout(()=>{ A.jaw=0.7; setTimeout(()=>A.jaw=0.1,120); },i*300); setTimeout(()=>{ if(k.alive(t)){ k.say('Ich hab noch Schoko im Gesicht! Schleck, schleck! Hihi!'); } },1000); setTimeout(()=>{ if(k.alive(t)) k.rest(); },3600); return true; }
+ return false; };
+/* Pups-Geräusch (Synth, kindgerecht albern) */
+function fart(s){ const V=K.V, c=V.ctx; if(!c) return; const t=c.currentTime+0.02, d=0.55+0.5*s;
+ const o=c.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(95+Math.random()*20,t); o.frequency.exponentialRampToValueAtTime(58,t+d);
+ const lfo=c.createOscillator(); lfo.frequency.setValueAtTime(22,t); lfo.frequency.linearRampToValueAtTime(14,t+d); const lg=c.createGain(); lg.gain.value=26; lfo.connect(lg).connect(o.frequency);
+ const am=c.createOscillator(); am.frequency.value=31; const ag=c.createGain(); ag.gain.value=0.35; am.connect(ag);
+ const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(700,t); lp.frequency.exponentialRampToValueAtTime(260,t+d); lp.Q.value=4;
+ const g=c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.55*s+0.2,t+0.04); g.gain.setValueAtTime(0.5*s+0.2,t+d*0.7); g.gain.exponentialRampToValueAtTime(0.0001,t+d); ag.connect(g.gain);
+ o.connect(lp).connect(g).connect(V.out); [o,lfo,am].forEach(x=>{ x.start(t); x.stop(t+d+0.05); });
+ V.noise&&V.noise(t+d*0.6,d*0.5,'bandpass',420,0.12*s,1.5); }
+/* kleine Pups-Wolke in 3D (hellgrün, weich) */
+function cloud(){ const g=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:0xcfe9a6,roughness:1,transparent:true,opacity:0.8,depthWrite:false});
+ for(let i=0;i<7;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(0.05+Math.random()*0.04,14,10),m); b.position.set((Math.random()-.5)*0.18,Math.random()*0.08,(Math.random()-.5)*0.08); g.add(b); }
+ g.position.set(0,0.12,-0.3); K.G.root.add(g); const t0=performance.now();
+ (function an(){ const k=(performance.now()-t0)/2400; if(k>=1){ K.G.root.remove(g); g.children.forEach(c=>c.geometry.dispose()); m.dispose(); return; }
+  g.position.y=0.12+k*0.35; g.position.z=-0.3-k*0.2; g.scale.setScalar(0.7+k*1.2); m.opacity=0.8*(1-k); requestAnimationFrame(an); })(); }
+/* Schoko-Schnute */
+let choco=null; const CHOCO_FADE=20*60000;
+function chocoA(){ const c=K.M.choco; if(!c) return 0; return Math.max(0,c.a*(1-(Date.now()-c.t)/CHOCO_FADE)); }
+function buildChoco(){ choco={visible:false}; }
+function chocoUpd(force){ if(!choco) buildChoco(); const a=chocoA(); if(K.M.choco&&a<=0.02){ K.M.choco=null; K.save(); }
+ choco.visible=a>0.02; if(K.G.U.uChoco) K.G.U.uChoco.value=Math.min(1,a*1.3); chips(); }
+let chipEl=null;
+function chips(){ if(!chipEl){ chipEl=document.createElement('div'); chipEl.id='chips'; document.body.appendChild(chipEl);
+  const st=document.createElement('style'); st.textContent='#chips{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(170px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;z-index:11}#chips button{border:0;border-radius:22px;padding:10px 16px;font:800 17px system-ui;color:#4a2c14;background:linear-gradient(180deg,#fff6e4,#f1d6a8);box-shadow:0 6px 18px rgba(0,0,0,.35),inset 0 -3px 0 rgba(120,70,20,.25);animation:chipIn .4s}#chips button.on{outline:3px solid #ffb84d}@keyframes chipIn{from{transform:scale(.6);opacity:0}}@media (max-aspect-ratio:1/1){#chips{bottom:calc(158px + env(safe-area-inset-bottom))}}'; document.head.appendChild(st); }
+ const want=[]; if(choco&&choco.visible) want.push(['wipe','🧽 Abwischen']); if(K.M.tummy) want.push(['tea','🍵 Tee geben']);
+ const key=want.map(w=>w[0]).join(); if(chipEl.dataset.k===key) return; chipEl.dataset.k=key; chipEl.innerHTML='';
+ want.forEach(([id,tx])=>{ const b=document.createElement('button'); b.textContent=tx; b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('pointerup',e=>{ e.stopPropagation(); K.V.unlock&&K.V.unlock(); if(id==='wipe') GF.wipe(); else GF.eat('tee'); }); chipEl.appendChild(b); }); }
+GF.wipe=function(){ if(!K.M.choco) return; K.V.unlock&&K.V.unlock(); if(window.GissHair){ GissHair.setTool('sponge'); K.toast('🧽 Wisch Giß-Moe übers Gesicht!'); } else { K.M.choco=null; chocoUpd(); } };
+function onWipe(d){ const c=K.M.choco; if(!c) return; const a=chocoA(); const na=Math.max(0,a-d/1800); c.a=na/Math.max(0.05,1-(Date.now()-c.t)/CHOCO_FADE); K.A.lid=0.7; K.A.low=0.5; K.A.blush=0.7;
+ if(Math.random()<0.05) K.mouthPlay(GF.sfx('giggle')||K.V.giggle(2)); chocoUpd();
+ if(na<=0.03){ K.M.choco=null; K.save(); chocoUpd(); if(window.GissHair) GissHair.setTool(null); K.V.chime(); K.fx('✨','',4); K.xp(1); K.say('Sauber! Danke schön!'); setTimeout(()=>K.rest(),1800); } }
+/* vorgerenderte Geräusch-Clips (Kichern etc.) statt Synth */
+GF.sfx=function(kind){ const L=VM&&VM.sfx&&VM.sfx[kind]; if(!L||!L.length) return null; const f=L[(Math.random()*L.length)|0]; return BUF[f]?play(f):null; };
 let gremlin=async function(t){ const k=K, A=k.A, al=()=>k.alive(t); k.mark('gremlin');
  A.trem=1; pf('✨',()=>scr([0,0.6,0.2]),{n:10,gap:40,sx:280,dy:-60}); k.V.chime(); await wait(600); if(!al()) return;
  FX.tint=[0.62,1.05,0.5]; crest.visible=true; A.trem=0; A.brow=1; A.earUp=0.95; A.earFwd=-0.5; A.lid=0.45; A.pup=0.7; A.low=0.5;
@@ -277,9 +352,10 @@ async function reveal(i){ const g=game, k=K, A=k.A; g.state='reveal'; const ok=i
   k.rest(); A.low=0.6; A.lid=0.4; A.earWig=1; A.hz=0.15; await wait(say('Hier bin ich!')*1000+200); A.hz=0; hudSet('Fast! Nochmal? 💪',true); }
  g.state='done'; }
 /* ---------- Init ---------- */
-GF.init=function(k){ K=k; THREE=k.THREE; base=k.base; buildBits(); buildTray(); buildTalk(); buildCups(); buildHud(); loadVoice(); };
+GF.init=function(k){ K=k; THREE=k.THREE; base=k.base; buildBits(); buildChoco(); chocoUpd(); if(window.GissHair) GissHair.onWipe=onWipe; buildTray(); buildTalk(); buildCups(); buildHud(); loadVoice(); };
 const busyW=f=>async(...a)=>{ K.st.busy=(K.st.busy||0)+1; try{ return await f(...a); } finally{ K.st.busy--; } };
 GF.eat=busyW(GF.eat); gremlin=busyW(gremlin); askMic=busyW(askMic); askSilent=busyW(askSilent); askText=busyW(askText);
+GF.ask8=v=>askText(v); GF.askMicVAD=()=>askMic();
 GF.unlock=decodeAll; GF.gremlin=gremlin; GF._={FX,BUF,get VM(){return VM;},answer,askText,askMic,FOOD,get game(){return game;},reveal};
 window.GissFun=GF;
 })();
