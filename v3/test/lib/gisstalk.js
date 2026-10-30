@@ -100,7 +100,7 @@ function say(t){ const k=K; const d=k.say(t)||1.5; return d; }
 async function sayW(t,extra){ add(t,'g'); const d=say(t); await wait(d*1000+(extra==null?250:extra)); }
 /* ---------- Verstehen ---------- */
 function norm(s){ return (s||'').toLowerCase().replace(/[!?.,;:]+/g,' ').replace(/\s+/g,' ').trim(); }
-let lastJoke=-1, ynUntil=0;
+let lastJoke=-1, ynUntil=0, jokeOn=false;
 T.reply=function(v,src){ const s=norm(v); if(!s) return {k:'empty'}; if(BAD.test(s)) return {k:'dumm'};
  /* 3.1: nach dem Ja-Nein-Knopf geht die nächste Eingabe immer ans Orakel (vorher schnappten Wörter wie "lustig" oder "Hunger" die Frage weg) */
  if(Date.now()<ynUntil){ ynUntil=0; return {k:'8ball'}; }
@@ -113,7 +113,7 @@ T.send=async function(v,src){ v=(v||'').trim().slice(0,140); const k=K; if(!v){ 
 async function act(r,v){ const k=K, A=k.A; const t=k.begin(); k.rest(); A.earUp=0.6; A.earWig=0.8; await wait(350); A.earWig=0;
  const happy=()=>{ A.low=0.6; A.lid=0.35; A.hop=0.4; setTimeout(()=>{ if(k.alive(t)) A.hop=0; },500); };
  switch(r.k){
-  case 'witz': { let i; do{ i=(Math.random()*JOKES.length)|0; }while(i===lastJoke&&JOKES.length>1); lastJoke=i; const j=JOKES[i]; A.lookX=0.3; await sayW(j[0],900); if(!k.alive(t)) return; happy(); A.trem=0.6; window.GissFun&&GissFun.sfx&&GissFun.sfx('giggle'); await sayW(j[1],200); A.trem=0; k.xp(1); break; }
+  case 'witz': { if(jokeOn) break; jokeOn=true; try{ let i; do{ i=(Math.random()*JOKES.length)|0; }while(i===lastJoke&&JOKES.length>1); lastJoke=i; const j=JOKES[i]; A.lookX=0.3; await sayW(j[0],900); if(!k.alive(t)) return; happy(); A.trem=0.6; /* 3.1: kein Extra-Kichern mehr – die Pointe hat ihr „Hihi!“ schon im Clip, sonst klang sie doppelt */ await sayW(j[1],200); A.trem=0; k.xp(1); } finally{ jokeOn=false; } break; }
   case '8ball': pan.classList.remove('show'); if(window.GissFun&&GissFun.ask8){ try{ await GissFun.ask8(v); }catch(e){} } setTimeout(()=>{ if(!K.st.busy) pan.classList.add('show'); },600); status('🎱 Noch eine Frage? Tipp auf „Ja-Nein-Frage“.'); return;
   case 'essen': await sayW(pick(R.essen)); T.close(); window.GissFun&&GissFun.openTray(); return;
   case 'spielen': await sayW(pick(R.spielen)); T.close(); window.GissGames&&GissGames.openMenu(); return;
