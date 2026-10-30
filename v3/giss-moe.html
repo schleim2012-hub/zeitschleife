@@ -4,12 +4,12 @@
 <link rel="icon" href="data:,">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <script src="test/lib/gissmoe.js?v=3"></script>
-<script src="test/lib/gissfun.js?v=3"></script>
-<script src="test/lib/gisswear.js?v=3"></script>
+<script src="test/lib/gissfun.js?v=4"></script>
+<script src="test/lib/gisswear.js?v=4"></script>
 <script src="test/lib/gissbrain.js?v=3"></script>
 <script src="test/lib/gisshair.js?v=4"></script>
-<script src="test/lib/gisstalk.js?v=3"></script>
-<script src="test/lib/gissgames.js?v=3"></script>
+<script src="test/lib/gisstalk.js?v=4"></script>
+<script src="test/lib/gissgames.js?v=4"></script>
 <style>
 @font-face{font-family:"Kalam";src:url(fonts/Kalam-Regular.ttf)}
 html,body{margin:0;height:100%;overflow:hidden;background:#1d130e;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}
@@ -63,7 +63,7 @@ a.chip{text-decoration:none}
 .panel .x{width:48px;height:48px;border-radius:50%;border:0;background:rgba(90,50,20,.12);font:700 20px system-ui;color:#4a2c14}
 #tray .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .fd{border:0;border-radius:20px;min-height:96px;background:linear-gradient(180deg,#fffdf8,#f6e6c8);box-shadow:0 3px 10px rgba(90,50,20,.18),inset 0 -3px 0 rgba(150,100,50,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#4a2c14;padding:6px 4px;touch-action:manipulation}
-.fd:active{transform:scale(.94)}.fd i{font-style:normal;font-size:40px;line-height:1.1}.fd span{font:700 15px system-ui}.fd small{font:500 11.5px system-ui;opacity:.7}
+.gumh{position:fixed;left:50%;top:max(70px,calc(env(safe-area-inset-top) + 64px));transform:translateX(-50%);z-index:9;background:linear-gradient(180deg,#c58cff,#7b3fe0);color:#fff;border-radius:20px;padding:8px 16px;font:600 15px system-ui;box-shadow:0 4px 14px rgba(0,0,0,.3);pointer-events:none;white-space:nowrap;animation:gumb .8s ease-in-out infinite alternate}@keyframes gumb{to{transform:translateX(-50%) scale(1.06)}}.fd:active{transform:scale(.94)}.fd i{font-style:normal;font-size:40px;line-height:1.1}.fd span{font:700 15px system-ui}.fd small{font:500 11.5px system-ui;opacity:.7}
 #talk .hint{margin:0 6px 10px;font:600 16px system-ui;opacity:.85}#talk .row{display:flex;gap:10px;margin:8px 0}
 #talk .big{flex:1;min-height:92px;border:0;border-radius:22px;font:700 17px system-ui;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 5px 14px rgba(0,0,0,.25),inset 0 -4px 0 rgba(0,0,0,.18)}
 #talk .big{font-size:38px}#talk .big span{font:700 16px system-ui}#tMic{background:linear-gradient(180deg,#ff8a5c,#e2533a)}#tTap{background:linear-gradient(180deg,#9a83f0,#6c52d6)}

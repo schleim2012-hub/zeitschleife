@@ -90,7 +90,7 @@ function build(){ pan=document.createElement('div'); pan.id='chat'; pan.classNam
  const go=()=>{ K.V.unlock(); const v=inp.value; inp.value=''; T.send(v,'text'); };
  pan.querySelector('#cGo').addEventListener('pointerup',e=>{ e.preventDefault(); go(); }); inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); go(); } });
  micBtn.addEventListener('pointerup',e=>{ e.preventDefault(); K.V.unlock(); listening?stopMic():startMic(); });
- pan.querySelectorAll('.cc').forEach(b=>b.addEventListener('pointerup',e=>{ e.preventDefault(); K.V.unlock(); const t=b.dataset.t; if(t==='Ja-Nein-Frage'){ add('Frag mich was mit Ja oder Nein! Zum Beispiel: Bin ich lustig?','g'); K.say('Frag mich was! Eine Ja-oder-Nein-Frage!'); inp.focus(); return; } T.send(t,'chip'); })); }
+ pan.querySelectorAll('.cc').forEach(b=>b.addEventListener('pointerup',e=>{ e.preventDefault(); K.V.unlock(); const t=b.dataset.t; if(t==='Ja-Nein-Frage'){ if(busy) return; ynUntil=Date.now()+60000; add('Frag mich was mit Ja oder Nein! Zum Beispiel: Bin ich lustig?','g'); const GF=window.GissFun; if(!(GF&&GF.askCooldown&&GF.askCooldown())){ K.say('Frag mich was! Eine Ja-oder-Nein-Frage!'); GF&&GF.markAsk&&GF.markAsk(); } status('🎱 Jetzt deine Frage – tippen oder ins Mikro sagen.'); inp.focus(); return; } T.send(t,'chip'); })); }
 function add(t,who){ const d=document.createElement('div'); d.className='m '+who; d.textContent=t; log.appendChild(d); while(log.children.length>30) log.firstChild.remove(); log.scrollTop=log.scrollHeight; }
 function status(t){ const s=document.getElementById('cSt'); if(s) s.textContent=t||''; }
 T.open=async()=>{ document.querySelectorAll('.panel.show').forEach(p=>p.classList.remove('show')); pan.classList.add('show'); const k=K; if(k.st.mode==='sleep') await k.wake();
@@ -100,18 +100,21 @@ function say(t){ const k=K; const d=k.say(t)||1.5; return d; }
 async function sayW(t,extra){ add(t,'g'); const d=say(t); await wait(d*1000+(extra==null?250:extra)); }
 /* ---------- Verstehen ---------- */
 function norm(s){ return (s||'').toLowerCase().replace(/[!?.,;:]+/g,' ').replace(/\s+/g,' ').trim(); }
-let lastJoke=-1;
-T.reply=function(v){ const s=norm(v); if(!s) return {k:'empty'}; if(BAD.test(s)) return {k:'dumm'};
+let lastJoke=-1, ynUntil=0;
+T.reply=function(v,src){ const s=norm(v); if(!s) return {k:'empty'}; if(BAD.test(s)) return {k:'dumm'};
+ /* 3.1: nach dem Ja-Nein-Knopf geht die nächste Eingabe immer ans Orakel (vorher schnappten Wörter wie "lustig" oder "Hunger" die Frage weg) */
+ if(Date.now()<ynUntil){ ynUntil=0; return {k:'8ball'}; }
+ /* Spracherkennung liefert kein "?" – Ja-Nein-Fragen auch ohne Fragezeichen erkennen, und zwar VOR den Stichwörtern */
+ if(YN.test(s)&&(/\?\s*$/.test(v.trim())||src==='voice'||s.split(' ').length>=3)) return {k:'8ball'};
  for(const [re,k] of INT) if(re.test(s)) return {k};
- if(/\?\s*$/.test(v.trim())&&YN.test(s)) return {k:'8ball'};
  if(/\?\s*$/.test(v.trim())) return {k:'frage'}; return {k:'egal'}; };
 T.send=async function(v,src){ v=(v||'').trim().slice(0,140); const k=K; if(!v){ status('Schreib etwas oder tipp auf einen Knopf 🙂'); return; }
- if(busy) return; busy=true; add(v,'u'); k.interact(); try{ if(k.st.mode==='sleep') await k.wake(); await act(T.reply(v),v); } finally{ busy=false; } };
+ if(busy) return; busy=true; add(v,'u'); k.interact(); try{ if(k.st.mode==='sleep') await k.wake(); await act(T.reply(v,src),v); } finally{ busy=false; } };
 async function act(r,v){ const k=K, A=k.A; const t=k.begin(); k.rest(); A.earUp=0.6; A.earWig=0.8; await wait(350); A.earWig=0;
  const happy=()=>{ A.low=0.6; A.lid=0.35; A.hop=0.4; setTimeout(()=>{ if(k.alive(t)) A.hop=0; },500); };
  switch(r.k){
   case 'witz': { let i; do{ i=(Math.random()*JOKES.length)|0; }while(i===lastJoke&&JOKES.length>1); lastJoke=i; const j=JOKES[i]; A.lookX=0.3; await sayW(j[0],900); if(!k.alive(t)) return; happy(); A.trem=0.6; window.GissFun&&GissFun.sfx&&GissFun.sfx('giggle'); await sayW(j[1],200); A.trem=0; k.xp(1); break; }
-  case '8ball': pan.classList.remove('show'); if(window.GissFun&&GissFun.ask8){ await GissFun.ask8(v); } setTimeout(()=>pan.classList.add('show'),400); return;
+  case '8ball': pan.classList.remove('show'); if(window.GissFun&&GissFun.ask8){ try{ await GissFun.ask8(v); }catch(e){} } setTimeout(()=>{ if(!K.st.busy) pan.classList.add('show'); },600); status('🎱 Noch eine Frage? Tipp auf „Ja-Nein-Frage“.'); return;
   case 'essen': await sayW(pick(R.essen)); T.close(); window.GissFun&&GissFun.openTray(); return;
   case 'spielen': await sayW(pick(R.spielen)); T.close(); window.GissGames&&GissGames.openMenu(); return;
   case 'frisur': await sayW(pick(R.frisur)); T.close(); window.GissHair&&GissHair.open(); return;

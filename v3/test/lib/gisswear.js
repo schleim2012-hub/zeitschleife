@@ -40,7 +40,7 @@ function specs(frame,lens,op,shape){ const g=new THREE.Group(), fm=std(frame,{ro
   else { const f=new THREE.Mesh(new THREE.ShapeGeometry((()=>{ const h=new THREE.Shape(); h.moveTo(0,-0.058); h.bezierCurveTo(-0.104,0.0,-0.058,0.082,0,0.036); h.bezierCurveTo(0.058,0.082,0.104,0.0,0,-0.058); return h; })(),16),fm); f.position.set(s*dx,0,0.001); g.add(f); }
   const arm=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.16),fm); arm.position.set(s*(dx+0.07),0.01,-0.08); g.add(arm); });
  const br=new THREE.Mesh(new THREE.TorusGeometry(0.03,0.007,8,16,Math.PI),fm); br.position.set(0,0.005,0.008); g.add(br); return g; }
-const SLOTS={hat:{n:'Hüte',parent:'head',pos:()=>[0.0,0.985,0.1],rot:[-0.22,0,0],sc:1.35},glasses:{n:'Brillen',parent:'head',pos:()=>{ const E=K.G.LM.eyeL; return [0.0034,E[1]+0.012,E[2]+0.12]; },rot:[0,0,0],sc:1.5},neck:{n:'Hals',parent:'root',pos:()=>[0.0034,0.5,0.09],rot:[0,0,0]}};
+const SLOTS={hat:{n:'Hüte',parent:'head',pos:()=>[0.0,0.955,0.06],rot:[-0.16,0,0],sc:1.5},glasses:{n:'Brillen',parent:'head',pos:()=>{ const E=K.G.LM.eyeL; return [0.0034,E[1]+0.012,E[2]+0.12]; },rot:[0,0,0],sc:1.5},neck:{n:'Hals',parent:'root',pos:()=>[0.0034,0.5,0.09],rot:[0,0,0]}};
 /* ---------- v3: Körper-Kleidung (passt sich der Fell-Form an) ---------- */
 let PROF=null; const PY=30, PT=36, PY0=0.0, PY1=0.58;
 function prof(){ if(PROF) return PROF; const P=K.G.geo.attributes.position.array, a=new Float32Array(PY*PT);
@@ -57,7 +57,7 @@ function shell(y0,y1,a0,a1,off,ny,nt){ ny=ny||26; nt=nt||64; const pos=[],uv=[],
  for(let i=0;i<ny;i++) for(let j=0;j<nt;j++){ const a=i*(nt+1)+j, b=a+1, c=a+nt+1, d=c+1; idx.push(a,c,b,b,c,d); }
  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
 function ptAt(y,th,off){ const r=R(y,th)+off; return new THREE.Vector3(Math.sin(th)*r,y,Math.cos(th)*r); }
-const FUR=0.036;
+const FUR=0.044;
 function noiseTex(base,amt,w,extra){ return tex((x,W,H)=>{ x.fillStyle=base; x.fillRect(0,0,W,H); const im=x.getImageData(0,0,W,H), d=im.data; for(let i=0;i<d.length;i+=4){ const n=(Math.random()-0.5)*amt; d[i]+=n; d[i+1]+=n; d[i+2]+=n; } x.putImageData(im,0,0); if(extra) extra(x,W,H); },w||256,w||256); }
 ITEMS.body=[
  {id:'jacke',e:'🧥',n:'Lederjacke',unlock:{d:7,xp:200},make(){ const g=new THREE.Group();
@@ -171,8 +171,8 @@ const HALLO=[
      x.globalCompositeOperation='destination-out'; x.beginPath(); x.moveTo(0,H); for(let i=0;i<=24;i++) x.lineTo(i*W/24,H-(i%2?26:6)-Math.random()*10); x.lineTo(W,H); x.fill(); x.globalCompositeOperation='source-over'; },512,256);
    map.flipY=true; const m=std(0xffffff,{map,alphaTest:0.5,roughness:0.85,clearcoat:0,side:THREE.DoubleSide});
    g.add(new THREE.Mesh(shell(0.08,0.5,-Math.PI,Math.PI,(y,th,v)=>FUR+0.008+Math.sin(v*Math.PI)*0.01,26,96),m));
-   const H=new THREE.Group(); H.name='H'; const tape=std(0xf1c9a0,{roughness:0.8,clearcoat:0});
-   [0.6,-0.6].forEach(r=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.042,0.008),tape); stick(b,[0.45,0.75,0.45],0.375); const w=new THREE.Group(); w.add(b); b.rotateZ(r); H.add(w); });
+   const H=new THREE.Group(); H.name='H'; const tape=std(0xfff0d8,{roughness:0.8,clearcoat:0});
+   [0.6,-0.6].forEach(r=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.055,0.012),tape); stick(b,[0.45,0.75,0.45],0.375); const w=new THREE.Group(); w.add(b); b.rotateZ(r); H.add(w); });
    g.add(H); return g; }},
  {id:'skelett',e:'💀',n:'Skelett',say:'Klapper, klapper! Ich bin ein Skelett! Hihi, das kitzelt in den Knochen!',make(){ const g=new THREE.Group();
    const map=tex((x,W,H)=>{ x.fillStyle='#1d1b22'; x.fillRect(0,0,W,H); const cx=W/2; x.fillStyle='#f4f1e8'; x.strokeStyle='#f4f1e8'; x.lineCap='round';
@@ -184,9 +184,9 @@ const HALLO=[
    g.add(new THREE.Mesh(shell(0.03,0.53,-Math.PI,Math.PI,(y,th,v)=>FUR+0.008+Math.sin(v*Math.PI)*0.012,28,96),m));
    const H=new THREE.Group(); H.name='H'; const bm=std(0xf4f1e8,{roughness:0.4,clearcoat:0.6}); const bone=new THREE.Group();
    const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.13,10),bm); sh.rotation.z=Math.PI/2; bone.add(sh); [-1,1].forEach(a=>[-1,1].forEach(b=>{ const k=new THREE.Mesh(new THREE.SphereGeometry(0.022,12,8),bm); k.position.set(a*0.068,b*0.014,0); bone.add(k); }));
-   const o=onHead([-0.5,0.8,0.35],0.39); bone.position.copy(o.p); bone.rotation.z=0.5; H.add(bone); g.add(H); return g; }},
+   const o=onHead([-0.45,0.85,0.25],0.372); bone.position.copy(o.p); bone.rotation.z=0.5; H.add(bone); g.add(H); return g; }},
  {id:'hexe',e:'🧹',n:'Hexe',hatLike:true,say:'Hokus Pokus, Fidibus! Ich bin eine kleine Hexe! Wer fliegt mit auf meinem Besen?',make(){ const g=new THREE.Group();
-   const H=new THREE.Group(); H.name='H'; const hat=new THREE.Group(); hat.position.set(0,0.985,0.1); hat.rotation.set(-0.22,0,0); hat.scale.setScalar(1.35); H.add(hat);
+   const H=new THREE.Group(); H.name='H'; const hat=new THREE.Group(); hat.position.set(0,0.955,0.06); hat.rotation.set(-0.16,0,0); hat.scale.setScalar(1.5); H.add(hat);
    const hm=std(0x2b1f3d,{roughness:0.7}); const brim=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.012,48),hm); hat.add(brim);
    const c1=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.125,0.17,40),hm); c1.position.y=0.09; hat.add(c1);
    const c2=new THREE.Mesh(new THREE.ConeGeometry(0.075,0.17,40),hm); c2.position.set(0.04,0.235,0); c2.rotation.z=-0.55; hat.add(c2);
@@ -205,7 +205,7 @@ const HALLO=[
    g.add(H); return g; }},
  {id:'franken',e:'🔩',n:'Frankensteinchen',hideHair:true,say:'Ich bin Frankensteinchen! Ganz stark und ganz lieb! Willst du kuscheln? Hihi!',make(){ const g=new THREE.Group();
    const H=new THREE.Group(); H.name='H'; const hm=std(0x2f4a2a,{roughness:0.75,clearcoat:0.1});
-   const top=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,0.44,2,1,2),hm); top.position.set(0,0.95,-0.02); H.add(top); const dome=new THREE.Mesh(new THREE.SphereGeometry(0.355,32,16,0,Math.PI*2,0,1.15),hm); dome.position.set(0,0.66,-0.02); dome.scale.set(1.09,0.9,1.06); H.add(dome);
+   const top=new THREE.Mesh(new THREE.SphereGeometry(0.25,28,12,0,Math.PI*2,0,Math.PI/2),hm); top.scale.set(1.04,0.42,0.92); top.position.set(0,0.93,-0.02); H.add(top); const dome=new THREE.Mesh(new THREE.SphereGeometry(0.355,32,16,0,Math.PI*2,0,1.15),hm); dome.position.set(0,0.66,-0.02); dome.scale.set(1.09,0.9,1.06); H.add(dome);
    const top2=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.3,0.08,24),hm); top2.position.set(0,0.91,-0.02); H.add(top2);
    for(let i=0;i<9;i++){ const x=-0.2+i*0.05; const c=new THREE.Mesh(new THREE.ConeGeometry(0.03,0.07+((i*7)%3)*0.015,6),hm); c.rotation.x=Math.PI; c.position.set(x,0.885,0.22-Math.abs(x)*0.25); H.add(c); }
    const sm=std(0x3a2a2a,{roughness:0.6}); const s0=onHead([0,0.42,1],0.372); const pts=[-0.09,0,0.09].map(dx=>onHead([dx*2.6,0.42,1],0.372).p); const line=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),16,0.005,6),sm); H.add(line);
@@ -265,7 +265,8 @@ function isLocked(it){ if(!it.unlock) return false; const U=K.M.unl=K.M.unl||{};
 W.isLocked=id=>{ for(const s in ITEMS){ const it=ITEMS[s].find(x=>x.id===id); if(it) return isLocked(it); } return false; };
 W.unlocks=function(){ const out=[], seen=K.M.unlSeen=K.M.unlSeen||{}; for(const s in ITEMS) ITEMS[s].forEach(it=>{ if(it.unlock&&!isLocked(it)&&!seen[it.id]){ seen[it.id]=1; out.push('🎁 Neu im Kleiderschrank: '+it.e+' '+it.n+'!'); } }); if(out.length) K.save(); return out; };
 let chkT=0, t0=performance.now(), spinA=0;
-W.tick=function(dt,t){ const cx=cur.costume&&cur.costume.userData.extra; if(cx){ const tt=performance.now()/1000; cx.traverse(o=>{ if(o.name==='ant'){ o.rotation.z=o.userData.s*(0.12*Math.sin(tt*3+o.userData.s)+(K.A.hop||0)*0.4+(K.A.earWig||0)*0.15*Math.sin(tt*14)); } }); }
+W.tick=function(dt,t){ /* 3.1: Kleidung atmet mit dem Fell mit (sonst schaut das Fell beim Atmen durch) */ const bU=K.G.U, br=bU.uBreath.value; ['costume','body'].forEach(sl=>{ const c=cur[sl]&&cur[sl].children[0]; if(c) c.scale.set(1+br*0.03,1+br*0.008,1+br*0.03); });
+ const cx=cur.costume&&cur.costume.userData.extra; if(cx){ const tt=performance.now()/1000; cx.traverse(o=>{ if(o.name==='ant'){ o.rotation.z=o.userData.s*(0.12*Math.sin(tt*3+o.userData.s)+(K.A.hop||0)*0.4+(K.A.earWig||0)*0.15*Math.sin(tt*14)); } }); }
  const h=cur.hat; if(h){ const p=h.getObjectByName('prop'); if(p){ const v=10+(K.A.hop||0)*30+(K.A.earWig||0)*6; spinA+=v*Math.min(0.05,dt||0.016); p.rotation.y=spinA; } }
  const now=performance.now(); if(now-t0<25000||now-chkT<5000) return; chkT=now; if(K.st.busy||K.st.game) return;
  const u=W.unlocks(); if(u.length){ (async()=>{ for(const m of u){ K.toast(m); try{ K.V.chime&&K.V.chime(); }catch(e){} await wait(400); K.say('Oh! Was Neues zum Anziehen!'); await wait(3300); } if(pan) mark(); })(); } };

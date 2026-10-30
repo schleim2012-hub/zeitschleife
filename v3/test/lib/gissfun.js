@@ -36,7 +36,7 @@ const earP=s=>()=>scr(s<0?K.G.LM.earL:K.G.LM.earR);
 /* Fell-Farbe weich überblenden */
 const FX={tint:null,glow:null,hue:0,rainbow:0};
 function baseTint(){ return K.M.vamp?[0.86,0.9,1.02]:[1,1,1]; }
-GF.tick=function(dt,t){ if((t*4|0)!==(GF._lt|0)){ GF._lt=t*4; chocoUpd(); if(K.M.tummy&&Date.now()-K.M.tummy>2*3600000){ K.M.tummy=0; K.save(); } } if(K.V.ctx&&Object.keys(RAWB).length) decodeAll(); const U=K.G.U, k=1-Math.exp(-dt*3); const tt=FX.tint||baseTint(), gg=FX.glow||[0,0,0];
+GF.tick=function(dt,t){ springTick(dt); if((t*4|0)!==(GF._lt|0)){ GF._lt=t*4; chocoUpd(); if(K.M.tummy&&Date.now()-K.M.tummy>2*3600000){ K.M.tummy=0; K.save(); } } if(K.V.ctx&&Object.keys(RAWB).length) decodeAll(); const U=K.G.U, k=1-Math.exp(-dt*3); const tt=FX.tint||baseTint(), gg=FX.glow||[0,0,0];
  U.uTint.value.r+=(tt[0]-U.uTint.value.r)*k; U.uTint.value.g+=(tt[1]-U.uTint.value.g)*k; U.uTint.value.b+=(tt[2]-U.uTint.value.b)*k;
  const pulse=FX.glow?0.75+0.25*Math.sin(t*9):1; U.uGlow.value.setRGB(U.uGlow.value.r+(gg[0]*pulse-U.uGlow.value.r)*k,U.uGlow.value.g+(gg[1]*pulse-U.uGlow.value.g)*k,U.uGlow.value.b+(gg[2]*pulse-U.uGlow.value.b)*k);
  if(FX.rainbow>performance.now()){ U.uHue.value=(t*2.2)%(Math.PI*2)+0.001; } else U.uHue.value=0;
@@ -85,8 +85,67 @@ const FOOD=[
  {id:'bohnen',e:'🫘',n:'Bohnen',h:'pupsig …'},
  {id:'schoko',e:'🍫',n:'Schokolade',h:'Schoko-Schnute'},
  {id:'tee',e:'🍵',n:'Pfefferminztee',h:'gut für den Bauch'}];
+/* ---------- 3.1: neue Leckereien (Brause, Wackelpudding, Sauer-Gurke, Gum-Gum-Frucht) ---------- */
+const ICON={
+ wackel(x){ x.save(); x.fillStyle='rgba(0,0,0,.18)'; x.beginPath(); x.ellipse(80,132,62,14,0,0,7); x.fill(); x.fillStyle='#f4f4f8'; x.beginPath(); x.ellipse(80,126,64,15,0,0,7); x.fill();
+  x.beginPath(); x.moveTo(30,124); x.bezierCurveTo(26,60,44,30,80,30); x.bezierCurveTo(116,30,134,60,130,124); x.closePath(); x.clip(); const cs=['#ff4d6d','#ff9f1c','#ffe14d','#4fd36a','#3fa7ff','#9b5cff']; cs.forEach((c,i)=>{ x.fillStyle=c; x.fillRect(0,30+i*16,160,17); });
+  const g=x.createLinearGradient(30,0,130,0); g.addColorStop(0,'rgba(255,255,255,.0)'); g.addColorStop(0.25,'rgba(255,255,255,.45)'); g.addColorStop(0.4,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,160,160); x.restore();
+  x.fillStyle='#fff'; x.beginPath(); x.ellipse(80,30,12,8,0,0,7); x.fill(); x.fillStyle='#e8243c'; x.beginPath(); x.arc(80,22,9,0,7); x.fill(); },
+ gumgum(x){ x.save(); x.fillStyle='rgba(0,0,0,.2)'; x.beginPath(); x.ellipse(80,140,46,10,0,0,7); x.fill();
+  const g=x.createRadialGradient(64,62,8,80,86,58); g.addColorStop(0,'#c58cff'); g.addColorStop(1,'#5a1f9e'); x.fillStyle=g; x.beginPath(); x.ellipse(80,88,54,50,0,0,7); x.fill(); x.clip();
+  x.strokeStyle='rgba(235,210,255,.85)'; x.lineWidth=4; x.lineCap='round'; [[58,70],[100,72],[80,108],[50,108],[112,110]].forEach(([cx,cy])=>{ x.beginPath(); for(let a=0;a<12;a+=0.2){ const r=a*1.6; const px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r; a?x.lineTo(px,py):x.moveTo(px,py); } x.stroke(); }); x.restore();
+  x.strokeStyle='#3fa83a'; x.lineWidth=6; x.lineCap='round'; x.beginPath(); x.moveTo(80,42); x.bezierCurveTo(78,26,96,24,92,14); x.stroke(); x.beginPath(); x.moveTo(84,30); x.bezierCurveTo(98,32,104,20,96,14); x.stroke();
+  x.fillStyle='rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(60,62,12,7,-0.6,0,7); x.fill(); }};
+const iconURL=id=>{ const c=document.createElement('canvas'); c.width=c.height=160; ICON[id](c.getContext('2d')); return c.toDataURL(); };
+FOOD.push({id:'brause',e:'🥤',n:'Blubber-Brause',h:'Hicks!'},{id:'wackel',e:'🍮',n:'Wackelpudding',h:'Regenbogen-Wabbel',draw:1},{id:'gurke',e:'🥒',n:'Sauer-Gurke',h:'super sauer'},{id:'gumgum',e:'🟣',n:'Gum-Gum-Frucht',h:'gummi-wummi',draw:1});
+/* Feder-Physik für den ganzen Giß-Moe (Wabbeln, Gummi-Dehnen) */
+const SP={x:0,y:0,l:0,vx:0,vy:0,vl:0,hold:null,was:false};
+function springTick(dt){ const g=K.G.group; const act=SP.hold||Math.abs(SP.x)+Math.abs(SP.y)+Math.abs(SP.l)+Math.abs(SP.vx)+Math.abs(SP.vy)+Math.abs(SP.vl)>2e-3;
+ if(!act){ if(SP.was){ SP.x=SP.y=SP.l=SP.vx=SP.vy=SP.vl=0; g.scale.set(1,1,1); g.rotation.z=0; SP.was=false; } return; } SP.was=true;
+ const h=Math.min(0.04,dt||0.016)/4; for(let i=0;i<4;i++){ if(SP.hold){ const q=0.18; SP.x+=(SP.hold.x-SP.x)*q; SP.y+=(SP.hold.y-SP.y)*q; SP.l+=(SP.hold.l-SP.l)*q; SP.vx=SP.vy=SP.vl=0; }
+  else { const k=190,c=4.2; SP.vx+=(-k*SP.x-c*SP.vx)*h; SP.vy+=(-k*SP.y-c*SP.vy)*h; SP.vl+=(-k*SP.l-c*SP.vl)*h; SP.x+=SP.vx*h; SP.y+=SP.vy*h; SP.l+=SP.vl*h; } }
+ const cl=v=>Math.max(0.45,Math.min(2.2,v)); g.scale.set(cl(1+SP.x-0.35*SP.y),cl(1+SP.y-0.4*SP.x),cl(1+0.6*SP.x-0.35*SP.y)); g.rotation.z=Math.max(-0.6,Math.min(0.6,SP.l)); }
+GF._sp=SP;
+function boingS(f0,f1,d){ const V=K.V, c=V.ctx; if(!c) return; const o=c.createOscillator(), g=c.createGain(), t=c.currentTime; o.type='sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+d); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g).connect(V.out); o.start(t); o.stop(t+d+0.02); }
+function burp(){ const V=K.V, c=V.ctx; if(!c) return; const t=c.currentTime+0.02, d=0.55; const o=c.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(85,t+d);
+ const lfo=c.createOscillator(); lfo.frequency.value=38; const lg=c.createGain(); lg.gain.value=18; lfo.connect(lg).connect(o.frequency); const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=650; lp.Q.value=6;
+ const g=c.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.6,t+0.03); g.gain.setValueAtTime(0.5,t+d*0.6); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(lp).connect(g).connect(V.out); [o,lfo].forEach(x=>{ x.start(t); x.stop(t+d+0.05); }); }
+/* echte 3D-Seifenblasen aus dem Mund */
+let bubM=null;
+function bubbles(n,big){ if(!bubM) bubM=new THREE.MeshPhysicalMaterial({color:0xdff6ff,roughness:0.05,transparent:true,opacity:0.42,iridescence:1,iridescenceIOR:1.3,clearcoat:1,depthWrite:false});
+ const B=K.G.LM.beak; for(let i=0;i<n;i++) setTimeout(()=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(1,18,12),bubM); const r=(big?0.03:0.018)+Math.random()*(big?0.035:0.02); m.scale.setScalar(0.001); m.position.set(B[0]+(Math.random()-.5)*0.03,B[1]-0.01,B[2]+0.05); K.G.head.add(m);
+  const vx=(Math.random()-.5)*0.25, vz=0.12+Math.random()*0.15, vy=0.18+Math.random()*0.2, t0=performance.now(), life=1500+Math.random()*1200;
+  const step=()=>{ const a=(performance.now()-t0)/1000; if(a*1000>life){ K.G.head.remove(m); m.geometry.dispose(); try{ K.V.pop(); }catch(e){} return; } m.position.x+=vx*0.016+Math.sin(a*6+i)*0.0015; m.position.y+=vy*0.016; m.position.z+=vz*0.016; m.scale.setScalar(r*Math.min(1,a*5)*(1+0.06*Math.sin(a*14))); requestAnimationFrame(step); }; step(); },i*(big?45:90)); }
+/* Gum-Gum: Kneten mit dem Finger */
+let gum=null;
+function gumKnead(sec){ return new Promise(res=>{ const k=K; const hint=document.createElement('div'); hint.className='gumh'; document.body.appendChild(hint); let ptr=null, lastSay=0; const t0=performance.now();
+ const onEar=(x,y)=>{ for(const s of [-1,1]){ const p=earP(s)(); if(Math.hypot(x-p[0],y-p[1])<75) return s; } return 0; };
+ const down=e=>{ if(e.target.tagName!=='CANVAS') return; e.stopImmediatePropagation(); e.preventDefault(); ptr={id:e.pointerId,x:e.clientX,y:e.clientY,ear:onEar(e.clientX,e.clientY),mv:false}; SP.hold={x:0.16,y:-0.26,l:0}; k.A.lid=0.6; k.A.blush=1; boingS(260,180,0.12); };
+ const move=e=>{ if(!ptr||e.pointerId!==ptr.id) return; e.stopImmediatePropagation(); const dx=e.clientX-ptr.x, dy=e.clientY-ptr.y; if(Math.hypot(dx,dy)>10) ptr.mv=true; if(!ptr.mv) return; const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  if(ptr.ear){ k.A.earUp=cl(-dy/70,-1,1.8); k.A.earFwd=cl(dx*ptr.ear/90,-1,1); k.A.earWig=0.4; SP.hold={x:cl(Math.abs(dx)/500,0,0.25),y:cl(-dy/400,-0.2,0.35),l:cl(-dx/700,-0.3,0.3)}; }
+  else SP.hold={x:cl(Math.abs(dx)/240-Math.max(0,-dy)/900,-0.3,0.85),y:cl(-dy/200,-0.45,1.0),l:cl(-dx/520,-0.55,0.55)}; };
+ const up=e=>{ if(!ptr||e.pointerId!==ptr.id) return; e.stopImmediatePropagation(); const H=SP.hold; SP.hold=null; ptr=null; k.A.earUp=0.6; k.A.earFwd=0; k.A.earWig=1.2; setTimeout(()=>{ k.A.earWig=0; },500); k.A.lid=0.3;
+  if(H){ SP.vx-=H.x*6; SP.vy-=H.y*6; } boingS(220,760,0.28); const now=performance.now(); if(now-lastSay>2600){ lastSay=now; if(Math.random()<0.5) k.say(['Boing! Das kitzelt!','Hihi!','Uiii! Quietsch!','Nochmal!'][(Math.random()*4)|0]); else k.mouthPlay(GF.sfx('giggle')||k.V.giggle(4)); } };
+ addEventListener('pointerdown',down,true); addEventListener('pointermove',move,true); addEventListener('pointerup',up,true); addEventListener('pointercancel',up,true);
+ const iv=setInterval(()=>{ const rem=Math.ceil(sec-(performance.now()-t0)/1000); hint.innerHTML='🟣 <b>Knete mich!</b> Zieh an mir oder drück mich · '+Math.max(0,rem)+' s'; if(rem<=0||gum!==iv){ fin(); } },200); gum=iv;
+ function fin(){ clearInterval(iv); if(gum===iv) gum=null; removeEventListener('pointerdown',down,true); removeEventListener('pointermove',move,true); removeEventListener('pointerup',up,true); removeEventListener('pointercancel',up,true); SP.hold=null; hint.remove(); res(); } }); }
+async function newFood(id,t){ const k=K, A=k.A, V=k.V, al=()=>k.alive(t);
+ if(id==='brause'){ A.low=0.5; A.lid=0.35; FX.tint=[0.95,1.02,1.12]; await sayW('Lecker!',{},200); if(!al()) return;
+  for(let i=0;i<4;i++){ A.sq=0.12; A.lid=0.9; await wait(110); A.sq=0; A.hop=1.2; A.pup=1.4; k.bubble('Hicks!',0.5); V.pop(); bubbles(3); SP.vy+=1.6; await wait(380); A.hop=0; A.lid=0.2; await wait(380+Math.random()*250); if(!al()) return; }
+  A.sq=-0.06; A.earUp=0.9; await wait(250); A.jaw=1; A.hx=-0.1; try{ k.mouthPlay(V.burp()); }catch(e){ burp(); } bubbles(14,true); SP.vx+=2.5; k.bubble('BUUUÄRPS! 🫧',1.2); pf('🫧',beakP,{n:6,gap:80,dy:-150,sx:200,s0:.5,s1:1.8,d:2}); await wait(700); A.jaw=0; A.hx=0; A.sq=0; if(!al()) return;
+  A.blush=1.2; A.lid=0.5; await sayW('Hoppla!',{},150); if(!al()) return; k.mouthPlay(GF.sfx('giggle')||V.giggle(4)); await wait(900); return true; }
+ if(id==='wackel'){ FX.rainbow=performance.now()+7500; FX.glow=[0.08,0.06,0.1]; A.low=0.6; A.lid=0.4; A.blush=0.8; await sayW('Uiii! Quietsch!',{},100); if(!al()) return;
+  for(let i=0;i<18;i++){ const s=i%2?1:-1; SP.vx+=s*1.9; SP.vy-=s*1.5; SP.vl+=s*0.6; A.earWig=1.5; if(i%3===0) pf(['🌈','✨','💖'][i%3?1:0],()=>scr([0,1.0,0.1]),{n:1,sx:240,dy:-90}); if(i%4===0) boingS(300+i*20,200,0.12); await wait(170); if(!al()) return; }
+  A.earWig=0; A.lid=0.6; A.hz=0.12; await sayW('Mir ist schwindelig …',{},300); A.hz=0; if(!al()) return; return true; }
+ if(id==='gurke'){ const bk=k.G.beak; A.lid=0.85; A.brow=1; A.low=0.7; A.hx=-0.12; A.earUp=0.9; A.sq=0.1; A.trem=1.4; bk.scale.set(0.62,0.75,1.25);
+  for(let i=0;i<6;i++){ FX.tint=i%2?[1,1,1]:[0.62,1.32,0.55]; k.G.U.uTint.value.setRGB(...FX.tint); await wait(160); } FX.tint=[0.82,1.15,0.75]; pf('💦',()=>scr([0,0.75,0.25]),{n:6,sx:200,dy:-60}); pf('🥒',()=>scr([0,1.05,0.1]),{n:1,dy:-80,s1:1.8});
+  await sayW('Sauer! Sauer!',{},200); if(!al()){ bk.scale.set(1,1,1); return; } A.trem=2; SP.vx+=1.2; await sayW('Brrrrrr!',{},200); bk.scale.set(1,1,1); A.trem=0; A.sq=0; A.brow=0; A.lid=0.4; if(!al()) return; await sayW('Puh …',{},300); return true; }
+ if(id==='gumgum'){ FX.tint=[1.06,0.9,1.16]; A.lid=-0.05; A.pup=1.4; A.earUp=0.9; pf('🟣',()=>scr([0,1.0,0.1]),{n:1,dy:-80,s1:2}); boingS(200,900,0.35); SP.vy+=7; await wait(450); if(!al()) return;
+  await sayW('Boing! Das kitzelt!',{},100); SP.vx+=5; SP.vl+=2; boingS(700,180,0.3); await wait(500); if(!al()) return;
+  A.low=0.6; A.lid=0.3; await gumKnead(13); if(!al()) return; SP.vy+=3; boingS(300,900,0.3); await sayW('Hihi! Das war lustig! Nochmal?',{},300); return true; }
+ return false; }
 const sprCache={};
-function foodSprite(e){ if(!sprCache[e]){ const c=document.createElement('canvas'); c.width=c.height=160; const x=c.getContext('2d'); x.font='120px system-ui,"Noto Color Emoji",sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=10; x.shadowOffsetY=5; x.fillText(e,80,86);
+function foodSprite(e){ if(!sprCache[e]){ const c=document.createElement('canvas'); c.width=c.height=160; const x=c.getContext('2d'); x.font='120px system-ui,"Noto Color Emoji",sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.shadowColor='rgba(0,0,0,.35)'; x.shadowBlur=10; x.shadowOffsetY=5; if(ICON[e]) ICON[e](x); else x.fillText(e,80,86);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; sprCache[e]=t; } const s=new THREE.Sprite(new THREE.SpriteMaterial({map:sprCache[e],depthTest:true})); s.scale.setScalar(0.17); return s; }
 async function flyIn(e,t){ const s=foodSprite(e); K.stage.add(s); const B=new THREE.Vector3().fromArray(K.G.LM.beak); B.z+=0.08; K.G.head.localToWorld(B); K.stage.worldToLocal(B); const S0=new THREE.Vector3(0.55,0.15,1.1);
  for(let i=0;i<=20;i++){ const k=i/20; s.position.lerpVectors(S0,B,k); s.position.y+=Math.sin(k*Math.PI)*0.18; s.material.rotation=k*2; await wait(22); }
@@ -100,10 +159,11 @@ GF.eat=async function(id){ const k=K; k.interact(); if(k.st.mode==='sleep') awai
  cakeCount(id);
  if(id==='keks'&&!isMidnight()) return k.feed();
  const f=FOOD.find(x=>x.id===id); const t=k.begin(); k.mark('food-'+id); k.rest(); k.A.lid=0.08; k.A.pup=1.25; k.A.earUp=0.4;
- if(!(await flyIn(f.e,t))) return; k.M.hunger=Math.max(0,k.M.hunger-2); k.ui(); k.save();
+ if(!(await flyIn(f.draw?f.id:f.e,t))) return; k.M.hunger=Math.max(0,k.M.hunger-2); k.ui(); k.save();
  if(isMidnight()) return gremlin(t);
  const A=k.A, V=k.V, al=()=>k.alive(t);
  const end=()=>{ FX.tint=null; FX.glow=null; k.rest(); k.xp(1); k.learnedSay(); };
+ if(f.n&&/^(brause|wackel|gurke|gumgum)$/.test(id)){ const ok=await newFood(id,t); if(ok) return end(); FX.tint=null; FX.glow=null; return; }
  switch(id){
  case 'kaffee': { A.lid=-0.05; A.pup=1.45; A.earUp=0.85; A.trem=1; A.low=0.4; pf('☕',()=>scr([0,1,0.1]),{n:2});
   await sayW('Kaffee! Ich bin sooo wach!',{rate:0.6}); if(!al()) return;
@@ -231,7 +291,7 @@ let gremlin=async function(t){ const k=K, A=k.A, al=()=>k.alive(t); k.mark('grem
 let tray;
 function buildTray(){ tray=document.createElement('div'); tray.id='tray'; tray.className='panel';
  tray.innerHTML='<div class="ph"><b>Was soll Giß-Moe essen?</b><button class="x" aria-label="Schließen">✕</button></div><div class="grid"></div>';
- const g=tray.querySelector('.grid'); FOOD.forEach(f=>{ const b=document.createElement('button'); b.className='fd'; b.innerHTML='<i>'+f.e+'</i><span>'+f.n+'</span><small>'+f.h+'</small>'; b.addEventListener('pointerup',e=>{ e.preventDefault(); e.stopPropagation(); K.V.unlock(); GF.eat(f.id); }); g.appendChild(b); });
+ const g=tray.querySelector('.grid'); FOOD.forEach(f=>{ const b=document.createElement('button'); b.className='fd'; b.innerHTML='<i>'+(f.draw?'<img src="'+iconURL(f.id)+'" style="width:46px;height:46px;display:block">':f.e)+'</i><span>'+f.n+'</span><small>'+f.h+'</small>'; b.addEventListener('pointerup',e=>{ e.preventDefault(); e.stopPropagation(); K.V.unlock(); GF.eat(f.id); }); g.appendChild(b); });
  tray.querySelector('.x').addEventListener('pointerup',e=>{ e.stopPropagation(); closeTray(); }); tray.addEventListener('pointerdown',e=>e.stopPropagation()); document.body.appendChild(tray); }
 function closeTray(){ tray.classList.remove('show'); }
 GF.openTray=()=>{ closeTalk(); tray.classList.add('show'); };
@@ -250,7 +310,10 @@ function buildTalk(){ talk=document.createElement('div'); talk.id='talk'; talk.c
  const go=()=>{ K.V.unlock(); const v=$('tIn').value; $('tIn').value=''; $('tIn').blur(); askText(v); };
  $('tGo').addEventListener('pointerup',e=>{ e.preventDefault(); go(); }); $('tIn').addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter') go(); }); }
 function closeTalk(){ if(talk) talk.classList.remove('show'); stopMic(); }
-GF.openTalk=async()=>{ closeTray(); talk.classList.add('show'); const k=K; if(k.st.mode==='sleep') await k.wake(); const t=k.begin(); k.rest(); k.A.earUp=0.5; k.A.low=0.4; await partsPlay(ans('ask'),t); };
+let lastAskT=0;
+GF.openTalk=async()=>{ closeTray(); talk.classList.add('show'); const k=K; if(k.st.mode==='sleep') await k.wake(); if(asking||k.st.busy) return; const t=k.begin(); k.rest(); k.A.earUp=0.5; k.A.low=0.4;
+ /* 3.1: Aufforderung nicht bei jedem Öffnen wiederholen (Cooldown 90 s) */ const now=Date.now(); if(now-lastAskT<90000){ k.bubble('Frag mich was! 🎱',2); return; } lastAskT=now; await partsPlay(ans('ask'),t); };
+GF.askCooldown=()=>Date.now()-lastAskT<90000; GF.markAsk=()=>{ lastAskT=Date.now(); };
 const ans=id=>VM&&VM.answers.find(a=>a.id===id)||FALLBACK.find(a=>a.id===id);
 const FALLBACK=[{id:'ask',t:'Frag mich was! Eine Ja-oder-Nein-Frage! 🎱',parts:[]},{id:'nudge',t:'🐾 *stupst dich an* Hey! Du hast gar nichts gefragt! Probier es nochmal!',parts:[]},{id:'listen',t:'Ich höre zu... 👂',parts:[]},{id:'says',t:'🎱 Dein Haustier sagt:',parts:[]},
  {id:'bye1',t:'*gähnt laut* Okay... ich gehe in meine Höhle...',parts:[]},{id:'bye2',t:'*schnarcht leise und rollt sich zusammen* 💤🐾',parts:[]},{id:'bye3',t:'Bis zum nächsten Mal! Dah!',parts:[]}];
@@ -289,25 +352,26 @@ let askMic=async function(){ if(asking) return; const k=K; if(k.st.mode==='sleep
    if(spoke&&now-lastLoud>1100){ res='q'; return done(); } if(!spoke&&now-t0>6500){ res='none'; return done(); } if(now-t0>12000){ res=spoke?'q':'none'; return done(); }
    requestAnimationFrame(step); }; step(); });
  stopMic(); src.disconnect(); listenPose(false); asking=false; if(res==='cancel') return;
- if(res==='none') return nudge(t); return answer(t); }
-let askSilent=async function(){ const k=K; if(k.st.mode==='sleep') await k.wake(); const t=k.begin(); k.rest(); listenPose(true); k.bubble('Denk ganz fest an deine Frage … 🤔',2); await wait(2300); listenPose(false); if(k.alive(t)) answer(t); }
+ if(res==='none'&&Date.now()-lastNudge>45000){ lastNudge=Date.now(); return nudge(t); } return answer(t); }
+let lastNudge=0;
+let askSilent=async function(){ const k=K; if(k.st.mode==='sleep') await k.wake(); const t=k.begin(); k.rest(); listenPose(true); k.bubble('Denk ganz fest an deine Frage … 🤔',2); await wait(2300); listenPose(false); if(k.alive(t)) await answer(t); }
 const BYE=/\b(schlafen|schlaf|exit|beenden|bye)\b/i;
 let askText=async function(v){ const k=K; if(k.st.mode==='sleep') await k.wake(); const t=k.begin(); k.rest(); v=(v||'').trim();
- if(!v) return nudge(t); if(BYE.test(v)) return bye(t); listenPose(true); await wait(900); listenPose(false); answer(t); }
+ if(!v) return nudge(t); if(BYE.test(v)) return bye(t); listenPose(true); await wait(900); listenPose(false); if(k.alive(t)) await answer(t); }
 async function nudge(t){ K.rest(); await partsPlay(ans('nudge'),t); K.rest(); }
 async function bye(t){ const k=K, A=k.A; closeTalk(); await partsPlay(ans('bye1'),t); if(!k.alive(t)) return; A.lid=0.8; A.earUp=-0.5; await wait(300);
  A.lid=1; A.hx=0.22; A.hz=0.08; A.sleepB=1; k.bubble(ans('bye2').t,2.4); await sfx('snore'); if(!k.alive(t)) return; await partsPlay(ans('bye3'),t);
  k.st.mode='sleep'; k.mark('sleep'); A.lid=1; A.hx=0.22; A.hz=0.08; A.earUp=-0.6; A.sleepB=1; }
-let lastAns='';
+let lastAns='', lastCat='';
 async function answer(t){ const k=K, A=k.A, V=k.V, al=()=>k.alive(t); k.mark('8ball'); k.rest();
  k.bubble('*rattert* *fiept* *schüttelt sein ganzes Fell*',1.8); A.trem=1.3; A.earWig=2.5; A.lid=0.6; rattle(1.4); setTimeout(()=>al()&&V.whine(),700);
  for(let i=0;i<6;i++){ A.hz=(i%2?1:-1)*0.2; A.bodyY=(i%2?1:-1)*0.25; await wait(220); if(!al()) return; }
  A.trem=0; A.earWig=0; A.hz=0; A.bodyY=0; A.lid=-0.05; A.pup=1.35; await wait(250);
  k.bubble('✨ *Augen leuchten auf* ✨',1.4); A.glow=1; V.chime(); pf('✨',()=>scr([0,0.72,0.3]),{n:6,gap:90,sx:160,dy:-70}); await wait(1500); if(!al()) return;
- const pool=VM?VM.answers.filter(a=>a.cat!=='sys'&&a.id!==lastAns):[]; const a=pool.length?pool[(Math.random()*pool.length)|0]:{t:'Dah! Auf jeden Fall! *wackelt mit den Ohren* 👽✨',parts:[{fx:'earwig'}],cat:'pos'}; lastAns=a.id;
- const sc=ans('says'); const sp=sc&&sc.parts[0]&&sc.parts[0].a&&play(sc.parts[0].a); k.bubble('🎱 Dein Haustier sagt: …',1.2); if(sp){ k.mouthPlay(sp); await wait(sp.dur*1000+120); } else await wait(700); if(!al()) return;
+ /* 3.1: "Frag nochmal"-Antworten (neu) selten und nie zweimal hintereinander – sonst Endlosschleife */ const neuOk=lastCat!=='neu'&&Math.random()<0.15; const pool=VM?VM.answers.filter(a=>a.cat!=='sys'&&a.id!==lastAns&&(a.cat!=='neu'||neuOk)):[]; const a=pool.length?pool[(Math.random()*pool.length)|0]:{t:'Dah! Auf jeden Fall! *wackelt mit den Ohren* 👽✨',parts:[{fx:'earwig'}],cat:'pos'}; lastAns=a.id; lastCat=a.cat||'';
+ const sc=ans('says'); const sp=sc&&sc.parts[0]&&sc.parts[0].a&&play(sc.parts[0].a); k.bubble('🎱 Giß-Moe sagt: …',1.2); if(sp){ k.mouthPlay(sp); await wait(sp.dur*1000+120); } else await wait(700); if(!al()) return;
  A.glow=0; if(a.cat==='pos'){ A.low=0.6; A.lid=0.35; A.earUp=0.5; A.hop=0.5; } else if(a.cat==='neg'){ A.brow=0.6; A.earUp=-0.4; A.lid=0.35; } else { A.lookX=0.4; A.lookY=0.3; A.lid=0.4; }
- await partsPlay(a,t,'🎱 Dein Haustier sagt: '); if(!al()) return; await wait(600); k.rest(); k.xp(1); }
+ await partsPlay(a,t,'🎱 Giß-Moe sagt: '); if(!al()) return; await wait(600); k.rest(); k.xp(1); }
 /* ---------- Hütchenspiel (3D, auf der Decke) ---------- */
 let cups=[], cupG=null, game=null;
 function buildCups(){ cupG=new THREE.Group(); cupG.visible=false; K.stage.add(cupG);
