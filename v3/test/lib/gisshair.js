@@ -11,13 +11,15 @@ const STYLES=[
  {id:'natur',e:'🙂',n:'Wuschel',min:0,day:0},{id:'scheitel',e:'💁',n:'Scheitel',min:0.05,day:0},{id:'igel',e:'🦔',n:'Igel',min:0,day:0},
  {id:'iro',e:'🤘',n:'Iro',min:0,day:1},{id:'zoepfe',e:'🎀',n:'Zöpfchen',min:0.1,day:2},{id:'zopf',e:'🐴',n:'Pferdeschwanz',min:0.11,day:3},
  {id:'locken',e:'🌀',n:'Locken',min:0.06,day:4},{id:'dutt',e:'🍩',n:'Dutt',min:0.1,day:5}];
-const CUTS=[{n:'Ganz kurz',L:0.04},{n:'Kurz',L:0.07},{n:'Mittel',L:0.11},{n:'Lang',L:0.17}];
+const CUTS=[{n:'Ganz ab',L:0},{n:'Ganz kurz',L:0.04},{n:'Kurz',L:0.07},{n:'Mittel',L:0.11},{n:'Lang',L:0.17}];
 /* ---------- Zustand ---------- */
-function S(){ const M=K.M; if(!M.hair){ M.hair={L0:0.05,t0:Date.now(),color:'natur',style:'natur',m0:0,ct:Date.now()}; } return M.hair; }
+function S(){ const M=K.M; if(!M.hair){ M.hair={L0:0.05,t0:Date.now(),color:'natur',style:'natur',m0:0,ct:Date.now(),on:false,v:301}; }
+ if(M.hair.v!==301){ M.hair.v=301; M.hair.on=false; } /* 3.0.1: Standard = keine Haare (Migration alter Stände) */
+ return M.hair; }
 function days(){ return (K.M.days&&K.M.days.length)||1; }
 H.len=function(now){ const s=S(); return Math.max(LMIN,Math.min(LMAX,s.L0+GROW*Math.max(0,((now||Date.now())-s.t0)/DAY))); };
 H.mess=function(now){ const s=S(); return Math.max(0,Math.min(1,s.m0+0.24*Math.max(0,((now||Date.now())-s.ct)/DAY))); };
-H.needs=()=>H.len()>0.15&&H.mess()>0.7;
+H.needs=()=>!!S().on&&H.len()>0.15&&H.mess()>0.7;
 /* ---------- Wurzeln auf der Kopfhaut (flächengewichtet) ---------- */
 function rng(seed){ let s=seed>>>0||1; return ()=>{ s^=s<<13; s^=s>>>17; s^=s<<5; return ((s>>>0)%100000)/100000; }; }
 function scalp(p){ const x=Math.abs(p[0]), y=p[1], z=p[2]; if(x>0.215) return false; if(y<0.74) return false;
@@ -116,7 +118,7 @@ function buildMat(){ const GU=K.G.U; mat=new THREE.ShaderMaterial({side:THREE.Do
   uKeyCol:GU.uKeyCol,uFillCol:GU.uFillCol,uSky:GU.uSky,uKeyDirV:{value:new THREE.Vector3(-0.5,0.7,0.6)}},vertexShader:VS,fragmentShader:FS}); colorUniforms(); }
 H.tick=function(dt,t){ if(!mat) return; const v=mat.uniforms.uKeyDirV.value; v.set(-2,3,3).normalize().transformDirection(K.cam.matrixWorldInverse);
  const now=performance.now(); if(now-lastCheck>20000){ lastCheck=now; buildGeo(); } };
-H.refresh=()=>{ built=''; buildGeo(); colorUniforms(); const hide=!!(window.GissWear&&GissWear.hairHidden&&GissWear.hairHidden()); if(mesh) mesh.visible=!hide; if(tie) tie.visible=!hide; };
+H.refresh=()=>{ built=''; buildGeo(); colorUniforms(); const hide=!S().on||!!(window.GissWear&&GissWear.hairHidden&&GissWear.hairHidden()); if(mesh) mesh.visible=!hide; if(tie) tie.visible=!hide; };
 /* ---------- Friseur-Panel ---------- */
 const css=`#salon .tabs{display:flex;gap:6px;margin:0 2px 8px}#salon .tabs button{flex:1;min-height:52px;border:0;border-radius:16px;background:rgba(90,50,20,.1);font:700 15px system-ui;color:#4a2c14}
 #salon .tabs button.on{background:linear-gradient(180deg,#ffd38a,#e7a24f);box-shadow:0 3px 10px rgba(150,80,20,.35)}#salon .tabs i{font-style:normal;font-size:22px;display:block}
@@ -172,18 +174,18 @@ function combStroke(d){ const s=S(), now=Date.now(); combDist+=d; if(combDist<55
  else if(performance.now()-lastSay>4500){ lastSay=performance.now(); K.say(['Ahh, das ist schön!','Hihi, das ziept!','Weiter so!'][(Math.random()*3)|0]); } }
 /* Schneiden */
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-H.cut=async function(L){ const k=K, s=S(), cur=H.len(); if(L>=cur-0.004){ k.say('Länger geht nicht! Die wachsen von allein!'); return; }
+H.cut=async function(L){ const k=K, s=S(), cur=H.len(); if(!s.on){ k.say('Ich hab doch gar keine Haare!'); return; } if(L>=cur-0.004){ k.say('Länger geht nicht! Die wachsen von allein!'); return; }
  const t=k.begin(); k.rest(); k.A.lid=0.3; k.A.earUp=-0.2; k.A.pup=1.2; const el=document.getElementById('tool'); el.innerHTML='<span style="font-size:64px">✂️</span>'; el.style.display='block';
  const c=COLORS.find(x=>x.id===s.color)||COLORS[0]; const steps=8;
  for(let i=0;i<=steps;i++){ const p=k.headScreen(0.93); const x=p[0]+(i/steps-0.5)*Math.min(innerWidth,innerHeight)*0.5, y=p[1]+Math.sin(i)*12; el.style.left=x+'px'; el.style.top=y+'px';
   snip(); for(let j=0;j<3;j++){ const b=document.createElement('div'); b.className='hairbit'; b.style.left=(x+(Math.random()-.5)*40)+'px'; b.style.top=(y+10)+'px'; b.style.background=c.rainbow?'hsl('+(Math.random()*360)+',80%,60%)':c.c[(Math.random()*2)|0]; b.style.setProperty('--dx',((Math.random()-.5)*120)+'px'); b.style.setProperty('--r',((Math.random()-.5)*400)+'deg'); document.body.appendChild(b); setTimeout(()=>b.remove(),1500); }
   s.L0=cur+(L-cur)*(i/steps); s.t0=Date.now(); built=''; buildGeo(); await wait(170); }
- el.style.display='none'; s.L0=L; s.t0=Date.now(); s.m0=0; s.ct=Date.now(); k.save(); H.refresh(); fill(); k.xp(2);
- k.A.lid=0.3; k.A.low=0.7; k.A.blush=1; k.A.earWig=1.2; k.A.hop=0.6; k.fx('✨','',4); await wait(k.say(L<0.05?'Uiii, ganz kurz! Das kitzelt!':'Neuer Haarschnitt! Schick!')*1000+300); if(k.alive(t)){ k.A.hop=0; k.rest(); } };
+ el.style.display='none'; if(L<=0){ s.on=false; L=0.05; } s.L0=L; s.t0=Date.now(); s.m0=0; s.ct=Date.now(); k.save(); H.refresh(); fill(); k.xp(2);
+ k.A.lid=0.3; k.A.low=0.7; k.A.blush=1; k.A.earWig=1.2; k.A.hop=0.6; k.fx('✨','',4); await wait(k.say(!s.on?'Glatze! Huii, ist das luftig!':L<0.05?'Uiii, ganz kurz! Das kitzelt!':'Neuer Haarschnitt! Schick!')*1000+300); if(k.alive(t)){ k.A.hop=0; k.rest(); } };
 function snip(){ const V=K.V, c=V.ctx; if(!c) return; const t=c.currentTime+0.01; [0,0.05].forEach((o,i)=>{ const b=c.createBuffer(1,c.sampleRate*0.04,c.sampleRate), d=b.getChannelData(0); for(let j=0;j<d.length;j++) d[j]=(Math.random()*2-1)*Math.exp(-j/(d.length*0.15));
  const s=c.createBufferSource(); s.buffer=b; const f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=i?4200:2600; const g=c.createGain(); g.gain.value=0.5; s.connect(f).connect(g).connect(V.out); s.start(t+o); }); }
 /* Frisur & Farbe */
-H.style=async function(id){ const k=K, s=S(), x=STYLES.find(q=>q.id===id); if(H.len()<x.min){ k.say('Dafür sind meine Haare noch zu kurz!'); return; }
+H.style=async function(id){ const k=K, s=S(), x=STYLES.find(q=>q.id===id); if(!s.on){ s.on=true; s.L0=Math.max(0.07,x.min+0.015); s.t0=Date.now(); s.seenL=null; } if(H.len()<x.min){ k.say('Dafür sind meine Haare noch zu kurz!'); return; }
  if(k.M.wear&&k.M.wear.hat&&id!=='natur'){ k.toast('🎩 Erst den Hut absetzen – sonst sieht man die Frisur nicht!'); }
  s.style=id; s.m0=0; s.ct=Date.now(); k.save(); const t=k.begin(); k.rest(); k.A.trem=0.6; K.fx('✨','',5); k.V.chime(); await wait(350); H.refresh(); fill(); k.A.trem=0; k.A.lid=0.25; k.A.low=0.7; k.A.blush=0.9; k.A.earWig=1; k.xp(1);
  const L={natur:'Wuschelig!',scheitel:'Sehr elegant!',igel:'Stachelig wie ein Igel!',iro:'Ich bin ein Rocker!',zoepfe:'Zöpfchen! Wie süß!',zopf:'Pferdeschwanz! Hü-hott!',locken:'Locken! Boing, boing!',dutt:'Ein Dutt wie eine Ballerina!'}[id];
@@ -196,7 +198,7 @@ H.idleHook=function(r){ if(!H.needs()||r>0.2) return false; const k=K, t=k.begin
  const L=H.len()>0.2?['Meine Haare sind sooo lang! Ich seh fast nix!','Friseur bitte! Meine Haare kitzeln!']:['Meine Haare sind ganz zerzaust!','Kämmst du mir die Haare?'];
  const d=k.say(L[(Math.random()*L.length)|0]); setTimeout(()=>{ if(k.alive(t)) k.rest(); },d*1000+500); return true; };
 /* Tagesmeldung: Haare gewachsen / zerzaust */
-H.events=function(){ const s=S(), out=[]; const L=H.len(); if(s.seenL==null) s.seenL=L; if(L-s.seenL>0.015){ out.push('💇 Giß-Moes Haare sind gewachsen!'+(L>0.17?'<br>Zeit für den Friseur? ✂️':'')); s.seenL=L; }
+H.events=function(){ const s=S(), out=[]; const L=H.len(); if(s.seenL==null) s.seenL=L; if(s.on&&L-s.seenL>0.015){ out.push('💇 Giß-Moes Haare sind gewachsen!'+(L>0.17?'<br>Zeit für den Friseur? ✂️':'')); s.seenL=L; }
  if(H.needs()&&s.toldMess!==new Date().toDateString()){ s.toldMess=new Date().toDateString(); out.push('😵 Giß-Moes Haare sind ganz zerzaust!<br>Kämm sie im Friseur-Salon 💇'); } K.save(); return out; };
 H.init=function(k){ K=k; THREE=k.THREE; S(); buildMat(); H.refresh(); buildPanel(); };
 H._={strand:(...a)=>strand(...a), roots:()=>roots, travel(d){ const s=S(); s.t0-=d*DAY; s.ct-=d*DAY; K.save(); H.refresh(); }, get S(){ return S(); }, STYLES, COLORS, get mesh(){ return mesh; }, buildGeo, setTab, fill};
