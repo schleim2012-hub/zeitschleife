@@ -81,7 +81,7 @@ AFRAME.registerComponent('warteraum',{
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
    self.buildCols(S,root);
    self.dust(T,sc,FX,ch);
-   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls};
+   window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls,ells:self.ells,comp:self};
   });
  },
  drawFlip(a,b,k){ const {cx}=this.flip, W=512, H=148; cx.fillStyle='#16181a'; cx.fillRect(0,0,W,H); cx.fillStyle='#8a8e86'; cx.font='600 26px "Barlow Condensed",Arial Narrow,sans-serif'; cx.textAlign='center'; cx.fillText('JETZT BEDIENT',W/2,30);
@@ -133,9 +133,9 @@ AFRAME.registerComponent('warteraum',{
  // · NO-EXIT-Tür/Schacht unverändert (+0.22) · Figuren-Boxen aus scene.json werden durch die Hüllen ersetzt.
  // touchctl (Handy-Tippen) gleitet zum Ziel, die Szene schiebt zurück → das Gehen bleibt an der Kante stehen. ?cols=1 zeigt die Zonen.
  buildCols(S,root){ const T=THREE, cols=[], hulls=[]; const FIG_M=0.12, FURN_M=0.18, DOOR_M=0.22;
-  root.updateMatrixWorld(true); const pts={}, v=new T.Vector3();
+  root.updateMatrixWorld(true); const pts={}, pts3={}, v=new T.Vector3();
   root.traverse(o=>{ if(!o.isMesh||!o.material) return; const m=/^wr_fig_(\w+)$/.exec(o.material.name||''); if(!m||m[1]==='frl') return; // Fräulein steht hinter der Theke
-   const P=o.geometry.attributes.position, A=(pts[m[1]]=pts[m[1]]||[]); for(let i=0;i<P.count;i+=2){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); if(v.y<1.9) A.push([v.x,v.z]); } });
+   const P=o.geometry.attributes.position, A=(pts[m[1]]=pts[m[1]]||[]); for(let i=0;i<P.count;i+=2){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); if(v.y<1.9){ A.push([v.x,v.z]); (pts3[m[1]]=pts3[m[1]]||[]).push([v.x,v.y,v.z]); } } });
   const hull=P=>{ P=P.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]); const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]); const lo=[],up=[];
    for(const p of P){ while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0) lo.pop(); lo.push(p); }
    for(let i=P.length-1;i>=0;i--){ const p=P[i]; while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0) up.pop(); up.push(p); }
@@ -147,8 +147,26 @@ AFRAME.registerComponent('warteraum',{
    if(!door&&Object.values(fb).some(f=>{ const ox=Math.max(0,Math.min(a1,f[1])-Math.max(a0,f[0])), oz=Math.max(0,Math.min(b1,f[3])-Math.max(b0,f[2])); return ox*oz>0.6*ar; })) return; // Figurenkörper → Hülle
    const m=door?DOOR_M:FURN_M; cols.push([a0-m,a1+m,b0-m,b1+m,door?'tuer':'moebel']); });
   this.cols=cols; this.hulls=hulls;
+  // v9 (Ecstatica-Skelett): unsichtbare Ellipsoid-Kette je Figur samt Stuhl (Scheiben à 14 cm, je Teil eine gedrehte Ellipse, 75 % Überlappung in der Höhe) statt Grundriss-Hülle.
+  // Kopf = Kugel 0.12 m gegen das Skelett in 3-D, Körper (Säule unter dem Kopf) mit Lehn-Spielraum → man kommt Gesichtern auf ~12 cm nahe, läuft aber nie durch Beine/Stuhl. ?ell=0 = alte Hüllen.
+  this.ells=[]; if(!/[?&]ell=0/.test(Q)){ this.hulls=[]; Object.entries(pts3).forEach(([n,A])=>this.ells.push(...this.fitEll(n,A))); }
   if(/[?&]cols=1/.test(Q)){ const g=new T.Group(); cols.forEach(([a0,a1,b0,b1,n])=>{ const me=new T.Mesh(new T.BoxGeometry(a1-a0,0.04,b1-b0),new T.MeshBasicMaterial({color:n==='tuer'?0x30a0ff:0xffa020,transparent:true,opacity:0.35,depthWrite:false})); me.position.set((a0+a1)/2,0.03,(b0+b1)/2); g.add(me); });
-   hulls.forEach(({H})=>{ const sh=new T.Shape(H.map(h=>new T.Vector2(h[0],-h[1]))); const me=new T.Mesh(new T.ShapeGeometry(sh),new T.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:0.45,depthWrite:false,side:T.DoubleSide})); me.rotation.x=-Math.PI/2; me.position.y=0.035; g.add(me); }); this.el.object3D.add(g); } },
+   hulls.forEach(({H})=>{ const sh=new T.Shape(H.map(h=>new T.Vector2(h[0],-h[1]))); const me=new T.Mesh(new T.ShapeGeometry(sh),new T.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:0.45,depthWrite:false,side:T.DoubleSide})); me.rotation.x=-Math.PI/2; me.position.y=0.035; g.add(me); }); (this.ells||[]).forEach(e=>{ const me=new T.Mesh(new T.SphereGeometry(1,12,8),new T.MeshBasicMaterial({color:0x40ff80,wireframe:true,transparent:true,opacity:0.5})); me.scale.set(e.r[0],e.r[1],e.r[2]); me.position.set(e.c[0],e.c[1],e.c[2]); me.rotation.y=-e.a; g.add(me); }); this.el.object3D.add(g); } },
+ fitEll(n,A){ const SL=0.14, out=[], EF=num('eef',1.0); const split=(B,gap)=>{ for(const k of [0,1]){ const S=B.slice().sort((a,b)=>a[k]-b[k]); for(let i=1;i<S.length;i++) if(S[i][k]-S[i-1][k]>gap) return [...split(S.slice(0,i),gap),...split(S.slice(i),gap)]; } return [B]; };
+  for(let y0=0;y0<1.9;y0+=SL){ const band=A.filter(p=>p[1]>=y0&&p[1]<y0+SL).map(p=>[p[0],p[2]]); if(band.length<10) continue;
+   split(band,0.08).forEach(C=>{ if(C.length<6) return; let mx=0,mz=0; C.forEach(p=>{mx+=p[0];mz+=p[1];}); mx/=C.length; mz/=C.length; let xx=0,zz=0,xz=0; C.forEach(p=>{const dx=p[0]-mx,dz=p[1]-mz; xx+=dx*dx; zz+=dz*dz; xz+=dx*dz;});
+    const a=0.5*Math.atan2(2*xz,xx-zz), cs=Math.cos(a), sn=Math.sin(a); let u0=9,u1=-9,w0=9,w1=-9; C.forEach(p=>{ const dx=p[0]-mx,dz=p[1]-mz, u=dx*cs+dz*sn, w=-dx*sn+dz*cs; u0=Math.min(u0,u); u1=Math.max(u1,u); w0=Math.min(w0,w); w1=Math.max(w1,w); });
+    const um=(u0+u1)/2, wm=(w0+w1)/2; out.push({n,a,cs,sn,c:[mx+um*cs-wm*sn,y0+SL/2,mz+um*sn+wm*cs],r:[Math.max(0.03,(u1-u0)/2*EF),SL*0.75,Math.max(0.03,(w1-w0)/2*EF)]}); }); }
+  return out; },
+ // Punkt (x,y,z) gegen ein Ellipsoid mit Rand mh (waagrecht) / mv (senkrecht): 0 = frei, sonst Füllgrad; mit fix=true wird p waagrecht auf die Oberfläche geschoben
+ ellHit(p,y,e,mh,mv,fix){ const ry=e.r[1]+mv, dy=y-e.c[1]; if(Math.abs(dy)>=ry) return 0; const k=Math.sqrt(1-(dy/ry)*(dy/ry)), ax=Math.max(0.02,e.r[0]+mh)*k, az=Math.max(0.02,e.r[2]+mh)*k;
+  const dx=p.x-e.c[0], dz=p.z-e.c[2]; let lx=dx*e.cs+dz*e.sn, lz=-dx*e.sn+dz*e.cs; const q=(lx/ax)*(lx/ax)+(lz/az)*(lz/az); if(q>=1) return 0; if(!fix) return 1-q;
+  if(q<1e-6){ const ox=-e.c[0], oz=-e.c[2], L=Math.hypot(ox,oz)||1; lx=(ox*e.cs+oz*e.sn)/L*ax; lz=(-ox*e.sn+oz*e.cs)/L*az; } else { const f=1.002/Math.sqrt(q); lx*=f; lz*=f; }
+  p.x=e.c[0]+lx*e.cs-lz*e.sn; p.z=e.c[2]+lx*e.sn+lz*e.cs; return 1; },
+ // Spieler-Proben: Kopf (Kugel 0.11 m) + Körpersäule darunter (Beine/Schoß bis 0.8 m: 8 cm Lehn-Spielraum, darüber 0) · ?ehm/ebl/ebu/eef zum Feintunen
+ probes(hy){ const HM=num('ehm',0.11), BL=-num('ebl',0.08), BU=-num('ebu',0); const P=[[hy,HM,HM]]; for(const y of [0.2,0.45,0.7,0.95,1.2]) if(y<=hy-0.4) P.push([y,y<0.8?BL:BU,0]); return P; },
+ ellPush(p,hy){ let hit=false; const P=this.probes(hy); for(const e of this.ells||[]) for(const [y,mh,mv] of P) if(this.ellHit(p,y,e,mh,mv,true)) hit=true; return hit; },
+ ellFree(p,hy,ex){ const P=this.probes(hy==null?(this._hy||1.6):hy); for(const e of this.ells||[]) for(const [y,mh,mv] of P) if(this.ellHit(p,y,e,mh+(ex||0),mv+(ex>0?ex:0),false)>(ex?0:0.02)) return false; return true; },
  // Punkt aus konvexem Polygon (CCW) + Rand m schieben
  pushHull(p,H,m){ let inside=true; const n=H.length, cand=[]; const B=[-2.65,2.55,-2.2,2.2];
   for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1], L=Math.hypot(ex,ez); if(L<1e-6) continue; const ox=ez/L, oz=-ex/L; // Außennormale (CCW in x,z)
@@ -162,6 +180,7 @@ AFRAME.registerComponent('warteraum',{
   for(let it=0;it<6;it++){ let hit=false;
    p.x=Math.min(B[1],Math.max(B[0],p.x)); p.z=Math.min(B[3],Math.max(B[2],p.z));
    for(const h of hulls) if(this.pushHull(p,h.H,h.m)) hit=true;
+   if(this.ellPush(p,this._hy||1.6)) hit=true;
    for(const [a0,a1,b0,b1] of cols){ if(p.x>a0&&p.x<a1&&p.z>b0&&p.z<b1){ hit=true; const c=[[p.x-a0,'x',a0],[a1-p.x,'x',a1],[p.z-b0,'z',b0],[b1-p.z,'z',b1]].sort((u,v)=>u[0]-v[0])[0]; p[c[1]]=c[2]+(c[2]===a0||c[2]===b0?-1e-3:1e-3); } }
    if(!hit) break; }
   // Sicherheitsnetz: widersprechen sich zwei Zonen (enge Nische), bleibt der Kopf an der letzten freien Stelle statt in einem Modell
@@ -180,13 +199,13 @@ AFRAME.registerComponent('warteraum',{
   if(!best) return; const nx=best.x-best.ux*0.06, nz=best.z-best.uz*0.06;   // 6 cm in die Zone: die Kollision hält den Kopf an der Kante, touchctl gilt als angekommen
   this._tw=nx.toFixed(3)+','+nz.toFixed(3); this._touchGoal={x:nx,z:nz,edge:[best.x,best.z],from:k}; Z.walkTo(nx,nz); },
  // 0 = weit weg, 1 = innerhalb r an einer Zone, 2 = in einer Hülle bzw. näher als ihr Rand
- nearZone(p,r){ let res=0; for(const [a0,a1,b0,b1] of this.cols||[]){ const dx=Math.max(a0-p.x,0,p.x-a1), dz=Math.max(b0-p.z,0,p.z-b1); if(Math.hypot(dx,dz)<r) res=1; }
+ nearZone(p,r){ let res=0; if(this.ells&&this.ells.length){ if(!this.ellFree(p)) return 2; if(!this.ellFree(p,null,r)) res=1; } for(const [a0,a1,b0,b1] of this.cols||[]){ const dx=Math.max(a0-p.x,0,p.x-a1), dz=Math.max(b0-p.z,0,p.z-b1); if(Math.hypot(dx,dz)<r) res=1; }
   for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); }
    if(ins||md<h.m) return 2; if(md<r+h.m) res=1; } return res; },
- free(p){ for(const [a0,a1,b0,b1] of this.cols||[]) if(p.x>a0+5e-4&&p.x<a1-5e-4&&p.z>b0+5e-4&&p.z<b1-5e-4) return false; // auch Möbel/Tür: Rückfallpunkt nie in einem Möbel
+ free(p){ if(!this.ellFree(p)) return false; for(const [a0,a1,b0,b1] of this.cols||[]) if(p.x>a0+5e-4&&p.x<a1-5e-4&&p.z>b0+5e-4&&p.z<b1-5e-4) return false; // auch Möbel/Tür: Rückfallpunkt nie in einem Möbel
  for(const h of this.hulls||[]){ const H=h.H, n=H.length; let ins=true, md=1e9; for(let i=0;i<n;i++){ const a=H[i], b=H[(i+1)%n]; const ex=b[0]-a[0], ez=b[1]-a[1]; const L2=ex*ex+ez*ez; if(L2<1e-12) continue; if(ex*(p.z-a[1])-ez*(p.x-a[0])<0) ins=false; const t=Math.max(0,Math.min(1,((p.x-a[0])*ex+(p.z-a[1])*ez)/L2)); md=Math.min(md,Math.hypot(p.x-a[0]-ex*t,p.z-a[1]-ez*t)); } if(ins||md<h.m*0.9) return false; } return true; },
  clamp(){ if(!this.cols) return; const h=this.head(), rig=document.getElementById('rig').object3D, cam=document.getElementById('cam').object3D;
-  const p=this.push({x:h.x,z:h.z});
+  this._hy=h.y; const p=this.push({x:h.x,z:h.z});
   const dx=p.x-h.x, dz=p.z-h.z; if(Math.abs(dx)>1e-4||Math.abs(dz)>1e-4){ if(this.el.renderer.xr.isPresenting){ rig.position.x+=dx; rig.position.z+=dz; } else { cam.position.x+=dx; cam.position.z+=dz; } } },
  // Staubkörnchen im Lampenlicht (1 Draw, Points, additiv sehr schwach, keine Lichtpunkte)
  dust(T,sc,FX,ch){ const N=260, g=new T.BufferGeometry(), P=new Float32Array(N*3), S0=new Float32Array(N*3);
