@@ -16,15 +16,17 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
+  const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035','1.710','0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
   const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
   const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
-  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=7c'); sc.appendChild(el);
+  const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=11s'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
    mats.forEach(m=>{ M[m.name]=m; m.envMapIntensity=0; if(m.map) m.map.anisotropy=8;
     if(VLN.has(m.name)){ // v7: gebackenes Vertex-Licht (Col = Tönung × Licht/vlScale) → als Eigenleuchten, gleiche Skala wie die Lightmap
-     m.lightMap=null; m.vertexColors=true; m.onBeforeCompile=sh=>{ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * '+(VLG*(m.name==='wr_sofa'?num('sofag',0.86):1)).toFixed(4)+' * vec3(1.0,0.97,0.92);'); }; // v8: Sofa etwas zurückgenommen (war heller als der Raum)
-     m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3)+m.name; }
+     m.lightMap=null; m.vertexColors=true; const BKF=/^wr_fig_/.test(m.name)?num('bk',0.05):0; m.onBeforeCompile=sh=>{ if(BKF){ const SB=SEAM[m.name]; sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWs;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWs=(modelMatrix*vec4(transformed,1.0)).xyz;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWs;').replace('#include <color_fragment>','#include <color_fragment>\n if(!gl_FrontFacing){ vec3 tx=diffuseColor.rgb/max(vColor.rgb,vec3(0.002)); diffuseColor.rgb=max(diffuseColor.rgb,tx*'+BKF.toFixed(4)+');'+(SB?' if(vWs.y>'+SB[0]+'&&vWs.y<'+SB[1]+'&&abs(vWs.z-('+SB[3]+'))<'+SB[4]+'&&(dot(tx,vec3(0.3,0.5,0.2))>0.12||tx.r>tx.g*1.6+0.01)) diffuseColor.rgb=vec3('+SB[2]+');':'')+' }'); } /* v8: Innenseiten an der Kopf-Schnittkante (Ausschnitt Assistentin, Kragen Oma) waren graue Zacken → Rückseiten bekommen die Front-Projektion mit mittlerem Licht */ sh.fragmentShader=sh.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * '+(VLG*(m.name==='wr_sofa'?num('sofag',0.86):1)).toFixed(4)+' * vec3(1.0,0.97,0.92);'); }; // v8: Sofa etwas zurückgenommen (war heller als der Raum)
+     m.customProgramCacheKey=()=>'wrvl'+VLG.toFixed(3)+m.name+BKF; }
     else if(!/[?&]nolm=1/.test(Q)&&!/wr_glass|wr_emit|wr_flip|wr_shade/.test(m.name)){ m.lightMap=lm; m.lightMapIntensity=LMI;
      // v4: warme Film-Stimmung (Lightmap kaum getönt; Grün nur aus Tür-Schacht und Schalter); v7: Schatten sanft angehoben (lift), Lichtinseln bleiben
      // v8: Film-Kontrast – Lightmap-Kurve (Lichtinseln bleiben, Mitten/Schatten tiefer) + raumfeste Abdunklung zu Ecken und Decke (Weltkoordinaten, nie kopffest)
@@ -101,13 +103,13 @@ AFRAME.registerComponent('warteraum',{
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
-    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
-    case 'arm': { const c=(u%11)/11; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.55:m.n==='frl_arm'?0:-0.18)*(lift*lift*(3-2*lift));
+    case 'head': { const g=(u*0.37)%14; a=0.5*Math.sin(u*0.27)+0.16*Math.sin(u*0.61+1.3)+(g<1.6?0.28*Math.sin(g*Math.PI/0.4)*Math.sin(g*Math.PI/1.6):0); } /* v11: deutlich sichtbar (bis ~38°) + gelegentliches Kopfschütteln */ if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.6*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
+    case 'arm': { const c=(u%7)/7; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.8:m.n==='frl_arm'?0:-0.3)*(lift*lift*(3-2*lift));
        if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(this.talk) a=0; else if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
        if(m.n==='brand_arm'&&this.tw>0) a+=0.07*Math.sin(s*39)*this.tw;
        if(m.n==='gruen_arm') a=-0.12*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
-    case 'foot': { const burst=Math.sin(u*0.13)>0.2; a=burst?0.22*Math.max(0,Math.sin(u*2*Math.PI*1.9)):0; if(m.n==='taucher_foot') a=0.12*Math.sin(u*1.1)*Math.max(0,Math.sin(u*0.3)); break; }
-    case 'page': { const p=(u%9)/9; a=p<0.1?Math.PI*0.97*(p/0.1)*(p/0.1)*(3-2*p/0.1):0; if(p<0.1&&!m.on){ m.on=1; this.sfx('page'); } if(p>=0.1) m.on=0; break; }
+    case 'foot': { const burst=Math.sin(u*0.13)>-0.2; a=burst?0.32*Math.max(0,Math.sin(u*2*Math.PI*1.9)):0; if(m.n==='taucher_foot') a=0.25*Math.sin(u*1.4)*Math.max(0,Math.sin(u*0.3)); break; }
+    case 'page': { const p=(u%6)/6; a=p<0.1?Math.PI*0.97*(p/0.1)*(p/0.1)*(3-2*p/0.1):0; if(p<0.1&&!m.on){ m.on=1; this.sfx('page'); } if(p>=0.1) m.on=0; break; }
     case 'clock': { const now=new Date(), sec=now.getSeconds()+now.getMilliseconds()/1000, mi=now.getMinutes()+sec/60, hr=(now.getHours()%12)+mi/60;
        a=m.n==='clk_s'?Math.floor(sec)/60*2*Math.PI:m.n==='clk_m'?mi/60*2*Math.PI:hr/12*2*Math.PI; break; } // Achse = Wandnormale → läuft linksherum (Jenseits)
    }
@@ -176,7 +178,7 @@ AFRAME.registerComponent('warteraum',{
  a38Done(){ try{ return localStorage.getItem('zs_a38_done')==='1'; }catch(e){ return false; } },
  // Kopf zum Spieler drehen, wenn er nah und vorn steht (Gewicht weich), sonst Idle
  look(m,a,d){ if(!m.f) return a; const h=this.head(); const tx=h.x-m.P.x, tz=h.z-m.P.z, dist=Math.hypot(tx,tz); let th=Math.atan2(m.f.y,m.f.x)-Math.atan2(tz,tx); th=Math.atan2(Math.sin(th),Math.cos(th));
-  const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.15:0.55; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
+  const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.3:0.7; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
   return a*(1-m.w*0.85)+m.la*m.w; },
  extraTick(s,d){ (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph); });
   // Brandopfer: ab und zu ein Zucken (0.4 s), dazu dauernd Glimm-Rauch
