@@ -21,9 +21,10 @@ fs.mkdirSync(OUT,{recursive:true});
  await pg.evaluate(()=>{ const s=document.querySelector('a-scene'), r=s.renderer; window.__dc=[]; const o=r.render.bind(r); r.render=function(a,b){ o(a,b); window.__dc.push(r.info.render.calls+'|'+r.info.render.triangles); if(window.__dc.length>60) window.__dc.shift(); };
   const c=document.getElementById('cam'); c.setAttribute('look-controls','enabled:false'); c.removeAttribute('wasd-controls'); const cm=s.components.warteraum; cm.clamp=()=>{}; });
  await new Promise(r=>setTimeout(r,WAIT)); const log=[];
- for(const [n,x,y,z,yaw,pitch,fov] of V){
+ for(const [n,x,y,z,yaw,pitch,fov,js] of V){
   await pg.evaluate((x,y,z,yaw,pitch,fov)=>{ const rig=document.getElementById('rig').object3D; rig.position.set(0,0,0); rig.rotation.set(0,0,0); const ce=document.getElementById('cam'); const c=ce.object3D; c.position.set(x,y,z); c.rotation.set(pitch*Math.PI/180,yaw*Math.PI/180,0,'YXZ'); const cam=ce.getObject3D('camera'); cam.fov=fov; cam.updateProjectionMatrix(); window.__dc.length=0; },x,y,z,yaw,pitch,fov);
-  await new Promise(r=>setTimeout(r,2200));
+  if(js) await pg.evaluate(js); // optionaler 8. Eintrag: JS vor dem Bild (z. B. Klingel)
+  await new Promise(r=>setTimeout(r,js?3500:2200));
   const st=await pg.evaluate(()=>{ const d=window.__dc.slice(-6).map(s=>s.split('|').map(Number)); return {calls:Math.max(...d.map(x=>x[0])),tris:d.length?d[d.length-1][1]:0,tex:document.querySelector('a-scene').renderer.info.memory.textures}; });
   await pg.screenshot({path:path.join(OUT,n+'.png')}); const e={view:n,...st}; log.push(e); console.log(JSON.stringify(e)); }
  log.push({errors:[...new Set(errs)].slice(0,20)}); console.log(JSON.stringify(log[log.length-1]));

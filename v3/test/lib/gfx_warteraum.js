@@ -76,11 +76,12 @@ AFRAME.registerComponent('warteraum',{
    const pm=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:new T.CanvasTexture(c2)},sz:{value:900}},
     vertexShader:'attribute float alpha; varying float va; uniform float sz; void main(){ va=alpha; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=sz*(0.03+0.05*(1.0-alpha))/-mv.z; gl_Position=projectionMatrix*mv; }',
     fragmentShader:'uniform sampler2D map; varying float va; void main(){ vec4 c=texture2D(map,gl_PointCoord); gl_FragColor=vec4(c.rgb*0.55,c.a*va*0.35); }'});
-   const pts=new T.Points(g,pm); pts.frustumCulled=false; sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
+   self.smokeMat=pm; const pts=new T.Points(g,pm); pts.frustumCulled=false; sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
    // bewegliche Teile
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
    self.buildCols(S,root);
    self.dust(T,sc,FX,ch);
+   self.extras(S,root,M);
    window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls,ells:self.ells,comp:self};
   });
  },
@@ -100,12 +101,13 @@ AFRAME.registerComponent('warteraum',{
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
-    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); break;
+    case 'head': a=0.22*Math.sin(u*0.21)+0.1*Math.sin(u*0.53+1.3); if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.35*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
     case 'arm': { const c=(u%11)/11; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.55:m.n==='frl_arm'?0:-0.18)*(lift*lift*(3-2*lift));
-       if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
+       if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(this.talk) a=0; else if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
+       if(m.n==='brand_arm'&&this.tw>0) a+=0.07*Math.sin(s*39)*this.tw;
        if(m.n==='gruen_arm') a=-0.12*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
     case 'foot': { const burst=Math.sin(u*0.13)>0.2; a=burst?0.22*Math.max(0,Math.sin(u*2*Math.PI*1.9)):0; if(m.n==='taucher_foot') a=0.12*Math.sin(u*1.1)*Math.max(0,Math.sin(u*0.3)); break; }
-    case 'page': { const p=(u%13)/13; a=p<0.1?Math.PI*0.97*(p/0.1)*(p/0.1)*(3-2*p/0.1):0; if(p<0.1&&!m.on){ m.on=1; this.sfx('page'); } if(p>=0.1) m.on=0; break; }
+    case 'page': { const p=(u%9)/9; a=p<0.1?Math.PI*0.97*(p/0.1)*(p/0.1)*(3-2*p/0.1):0; if(p<0.1&&!m.on){ m.on=1; this.sfx('page'); } if(p>=0.1) m.on=0; break; }
     case 'clock': { const now=new Date(), sec=now.getSeconds()+now.getMilliseconds()/1000, mi=now.getMinutes()+sec/60, hr=(now.getHours()%12)+mi/60;
        a=m.n==='clk_s'?Math.floor(sec)/60*2*Math.PI:m.n==='clk_m'?mi/60*2*Math.PI:hr/12*2*Math.PI; break; } // Achse = Wandnormale → läuft linksherum (Jenseits)
    }
@@ -118,7 +120,96 @@ AFRAME.registerComponent('warteraum',{
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
+  this.extraTick(s,d);
   this.touchFix(); this.clamp(); this.locoTick(d); this.audioTick(s); },
+ // ---------------- v10: Atmen, Hinschauen, Klingel + Empfangsdame, Passierschein A38, Poster, Garfield ----------------
+ extras(S,root,M){ const T=THREE, sc=this.el, self=this, A=S.anchors;
+  // Atmen: Vertex-Verschiebung entlang der Normalen, Gauß-Gewicht um die Brust (≤6 mm, bleibt weit in den 0.11-m-Rändern des Skeletts)
+  this.breath=[]; const heads={}; this.mov.forEach(m=>{ if(m.kind==='head') heads[m.n.replace(/_head$/,'')]=m; });
+  const fwdOf=(n,P)=>n==='frl'?new T.Vector2(0,1):P.x<-2.1?new T.Vector2(1,0):P.x>2.1?new T.Vector2(-1,0):new T.Vector2(0.3-P.x,-P.z).normalize();
+  Object.entries(heads).forEach(([n,m])=>{ const P=new T.Vector3(...S.movers[m.n].pivot), f=fwdOf(n,P); m.P=P; m.f=f;
+   const wq=new T.Quaternion(); m.o.parent.getWorldQuaternion(wq); wq.multiply(m.q0); m.sg=Math.sign(m.ax.clone().applyQuaternion(wq).y)||1; m.w=0; m.la=0;
+   const mat=M['wr_fig_'+n]; if(!mat||mat.__br) return; mat.__br=1; const U={c:{value:new T.Vector3(P.x+f.x*0.07,P.y-0.3,P.z+f.y*0.07)},a:{value:0}};
+   const ob=mat.onBeforeCompile, pk=mat.customProgramCacheKey; mat.onBeforeCompile=(sh,r)=>{ ob&&ob.call(mat,sh,r); sh.uniforms.uBc=U.c; sh.uniforms.uBa=U.a;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform vec3 uBc; uniform float uBa;').replace('#include <begin_vertex>','#include <begin_vertex>\n{ vec3 bq=(modelMatrix*vec4(transformed,1.0)).xyz-uBc; transformed+=objectNormal*uBa*exp(-dot(bq,bq)/0.032); }'); };
+   mat.customProgramCacheKey=()=>(pk?pk.call(mat):'')+'br'; mat.needsUpdate=true; this.breath.push({U,ph:Math.random()*6.3,f:0.2+Math.random()*0.07,amp:n==='frl'?0.004:0.006}); });
+  // Glimmen am Brandopfer: zweiter, dünner Rauch von den Schultern
+  const bh=heads.brand; if(bh&&this.smoke){ const N=10, g=new T.BufferGeometry(), P=new Float32Array(N*3), Aa=new Float32Array(N); g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(Aa,1));
+   const pts=new T.Points(g,this.smokeMat); pts.frustumCulled=false; sc.object3D.add(pts); this.smoke2={g,P,A:Aa,N,base:new T.Vector3(bh.P.x+0.03,bh.P.y-0.2,bh.P.z),age:new Float32Array(N).map((_,i)=>i/N*5),off:new Float32Array(N*2).map(()=>(Math.random()-0.5)*0.22)}; }
+  this.tw=0; this.twNext=6;
+  // Garfield-Porträt statt Palmenbild (gleiche Atlas-Zelle → Licht bleibt gebacken, 0 Draws extra)
+  if(M.wr_paint&&!/[?&]nogar=1/.test(Q)) new T.TextureLoader().load(BASE+'paintings2.webp?v=10',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; const o=M.wr_paint.map; tx.wrapS=o?o.wrapS:tx.wrapS; tx.wrapT=o?o.wrapT:tx.wrapT; M.wr_paint.map=tx; M.wr_paint.needsUpdate=true; });
+  // Theke per Strahl finden (Front + Oberkante)
+  root.updateMatrixWorld(true); const rc=new T.Raycaster(), meshes=[]; root.traverse(o=>{ if(o.isMesh&&!/wr_fig|wr_glass/.test(o.material.name||'')) meshes.push(o); });
+  rc.set(new T.Vector3(0.32,0.56,-1.6),new T.Vector3(0,0,-1)); let h=rc.intersectObjects(meshes,false)[0]; const fz=h&&h.point.z<-1.8&&h.point.z>-2.7?h.point.z:-2.02;
+  rc.set(new T.Vector3(1.45,1.4,-2.25),new T.Vector3(0,-1,0)); h=rc.intersectObjects(meshes,false).find(x=>x.point.y<1.25&&x.point.y>0.85); const ty=h?h.point.y:1.05;
+  (this.cols||[]).forEach(c=>{ if(c[4]==='moebel'&&c[0]<0&&c[1]>2.3&&c[3]>-2.4&&c[3]<-2.2&&c[2]<-2.7) c[3]=-2.05+0.16; }); // v10: Thekenkollider bis an die echte Front (+16 cm)
+  // Poster „TAKE ME“ (Pete), an die Thekenfront geklebt, gedimmt wie der Raum
+  const ptx=new T.TextureLoader().load(BASE+'poster_takeme.jpg?v=10'); ptx.colorSpace=T.SRGBColorSpace; ptx.anisotropy=8;
+  const post=new T.Mesh(new T.PlaneGeometry(0.40,0.567),new T.MeshBasicMaterial({map:ptx,color:new T.Color(num('postg',0.5),num('postg',0.5)*0.96,num('postg',0.5)*0.9)})); post.position.set(0.32,0.56,fz+0.007); post.rotation.set(-0.067,0,0.035); /* Thekenfront lehnt leicht zurück */ sc.object3D.add(post); this.poster=post;
+  // Tischklingel
+  const bell=new T.Group(), brass=new T.MeshStandardMaterial({color:0xc9a050,metalness:0.6,roughness:0.32,emissive:0x2a1c08}), dark=new T.MeshStandardMaterial({color:0x6a4a2c,roughness:0.5,emissive:0x140c06});
+  const base=new T.Mesh(new T.CylinderGeometry(0.048,0.05,0.014,24),dark); base.position.y=0.007; const dome=new T.Mesh(new T.SphereGeometry(0.04,24,10,0,6.2832,0,Math.PI/2),brass); dome.position.y=0.014; dome.scale.y=0.8;
+  const knob=new T.Mesh(new T.CylinderGeometry(0.006,0.006,0.018,8),brass); knob.position.y=0.052; const cap=new T.Mesh(new T.SphereGeometry(0.009,10,6),brass); cap.position.y=0.062;
+  bell.add(knob,cap); /* die Glocke selbst steht schon im GLB (wr_metal, ~1.61/-2.25): nur Druckknopf dazu */ bell.position.set(1.61,ty-0.003,-2.25); sc.object3D.add(bell); this.bell={g:bell,knob,cap,press:0,cool:0,top:new T.Vector3(1.61,ty+0.05,-2.25)};
+  const hit=document.createElement('a-entity'); hit.setAttribute('class','clickable'); hit.setAttribute('geometry','primitive:sphere; radius:0.09'); hit.setAttribute('material','visible:false'); hit.setAttribute('position',`1.61 ${ty+0.03} -2.25`); sc.appendChild(hit);
+  hit.addEventListener('click',e=>{ if(this.el.renderer.xr.isPresenting) this.ring(); }); this.bellHit=hit;
+  // Dialog-Tafel (Canvas, schwebt vor dem Spieler, immer lesbar)
+  const cv=document.createElement('canvas'); cv.width=1024; cv.height=640; const tx=new T.CanvasTexture(cv); tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=4;
+  const pm=new T.Mesh(new T.PlaneGeometry(0.64,0.4),new T.MeshBasicMaterial({map:tx,transparent:true,depthTest:false,toneMapped:false,fog:false})); pm.renderOrder=999; pm.visible=false; pm.position.set(0,-50,0); sc.object3D.add(pm);
+  const pe=document.createElement('a-entity'); pe.setAttribute('class','clickable'); sc.appendChild(pe); pe.setObject3D('mesh',pm); pe.object3D.visible=true;
+  pe.addEventListener('click',e=>{ if(!this.el.renderer.xr.isPresenting) return; const it=e.detail&&e.detail.intersection; if(it&&it.uv) this.pickUV(it.uv); });
+  this.panel={cv,cx:cv.getContext('2d'),tx,m:pm,opts:[],sub:'',hl:-1};
+  // Maus/Handy (touchctl schickt echte click-Events auf die Leinwand): eigener Strahl gegen Klingel + Tafel; Ziehen zum Umschauen zählt nicht
+  const canvas=sc.canvas; let dn=null; canvas.addEventListener('mousedown',e=>{ dn=[e.clientX,e.clientY]; });
+  canvas.addEventListener('click',e=>{ if(this.el.renderer.xr.isPresenting) return; if(dn&&Math.hypot(e.clientX-dn[0],e.clientY-dn[1])>8) return; const r=canvas.getBoundingClientRect();
+   const nd=new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1), ry=new T.Raycaster(); ry.setFromCamera(nd,this.el.camera);
+   const objs=[...(pm.visible?[pm]:[]),hit.getObject3D('mesh')].filter(Boolean); const x=ry.intersectObjects(objs,false)[0]; if(!x||x.distance>4) return;
+   setTimeout(()=>{ if(x.object===pm) this.pickUV(x.uv); else this.ring(); },0); });
+  window.addEventListener('keydown',e=>{ if(e.key==='b'||e.key==='B') this.ring(); const k=+e.key; if(k>=1&&k<=5&&pm.visible) this.choose(k-1); });
+  this.lines={greet:'Willkommen im Jenseits-Bürgeramt. Sie sind tot, ich bin beschäftigt. Was wollen Sie?',leben:'Zurück ins Leben? Wie süß. Ohne den rosa Passierschein A38 kann ich nichts für Sie tun.',
+   dauer:'Aktuelle Wartezeit: 125 Jahre. Mit dem rosa Passierschein A38 nur 124.',nummer:'Schön für Sie. Aufgerufen wird erst mit dem rosa Passierschein A38. Fragen Sie beim FBI, die verlegen ständig Akten.',
+   nichts:'Grundloses Klingeln kostet hundert Jahre extra. Ich hab’s notiert.',a38:'Der rosa Passierschein A38! Den hat seit dem Mittelalter keiner mehr gesehen. Gestempelt. Bitte nehmen Sie Platz, Wartezeit nun 124 Jahre.',wieder:'Sie schon wieder. Gestempelt ist gestempelt. Setzen Sie sich.'};
+  if(/[?&]a38=1/.test(Q)) try{ localStorage.setItem('zs_a38','1'); }catch(e){}
+ },
+ hasA38(){ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } },
+ a38Done(){ try{ return localStorage.getItem('zs_a38_done')==='1'; }catch(e){ return false; } },
+ // Kopf zum Spieler drehen, wenn er nah und vorn steht (Gewicht weich), sonst Idle
+ look(m,a,d){ if(!m.f) return a; const h=this.head(); const tx=h.x-m.P.x, tz=h.z-m.P.z, dist=Math.hypot(tx,tz); let th=Math.atan2(m.f.y,m.f.x)-Math.atan2(tz,tx); th=Math.atan2(Math.sin(th),Math.cos(th));
+  const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.15:0.55; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
+  return a*(1-m.w*0.85)+m.la*m.w; },
+ extraTick(s,d){ (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph); });
+  // Brandopfer: ab und zu ein Zucken (0.4 s), dazu dauernd Glimm-Rauch
+  this.twNext-=d; if(this.twNext<=0){ this.tw=1; this.twNext=5+Math.random()*9; } this.tw=Math.max(0,this.tw-d*2.5);
+  const S=this.smoke2; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>5) S.age[i]-=5; const k=S.age[i]/5; S.P[i*3]=S.base.x+S.off[i*2]*0.6+0.03*Math.sin(k*6+i); S.P[i*3+1]=S.base.y+k*0.45; S.P[i*3+2]=S.base.z+S.off[i*2+1]+0.03*Math.cos(k*5+i); S.A[i]=Math.sin(k*Math.PI)*0.5; } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
+  const B=this.bell; if(B){ B.cool-=d; if(B.press>0){ B.press=Math.max(0,B.press-d*5); const y=-0.006*Math.sin(B.press*Math.PI); B.knob.position.y=0.052+y; B.cap.position.y=0.062+y; }
+   // VR: Hand/Controller tippt auf die Klingel
+   if(this.el.renderer.xr.isPresenting&&B.cool<=0) for(const id of ['hl','hr']){ const c=document.getElementById(id); if(!c) continue; const v=new THREE.Vector3(); c.object3D.getWorldPosition(v); if(v.distanceTo(B.top)<0.07){ this.ring(); break; } } }
+  const P=this.panel; if(P&&P.m.visible){ const h=this.head(); if(Math.hypot(h.x-P.at.x,h.z-P.at.z)>2.2) this.closePanel(); }
+  if(this.talk&&this.talkEnd&&performance.now()>this.talkEnd) this.talk=0;
+  if(this.closeAt&&performance.now()>this.closeAt){ this.closeAt=0; this.closePanel(); } },
+ ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; B.press=1; this.ding();
+  this.talk=1; this.talkEnd=performance.now()+20000; setTimeout(()=>{ this.openPanel(); this.say(this.a38Done()?'wieder':'greet'); },650); },
+ ding(){ const ac=this.ac; if(!ac) return; const p=this.pan(this.bell.top.toArray(),0.8,1.2), t=ac.currentTime;
+  [[2350,0.5,1.6],[5640,0.18,0.7],[2353.5,0.3,1.4],[7120,0.06,0.35]].forEach(([f,v,dur])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v*0.5,t+0.004); g.gain.exponentialRampToValueAtTime(0.0005,t+dur); o.connect(g); g.connect(p); o.start(t); o.stop(t+dur+0.05); }); },
+ say(k){ const P=this.panel; P.sub=this.lines[k]||''; this.drawPanel(); this.talk=1; this.talkEnd=performance.now()+(4000+P.sub.length*70);
+  if(!this.ac) return; if(this.vo){ try{ this.vo.stop(); }catch(e){} this.vo=null; }
+  const n='frl_'+k; (this.buf[n]||(this.buf[n]=fetch(BASE+'audio/'+n+'.mp3?v=1').then(r=>r.arrayBuffer()).then(b=>new Promise((res,rej)=>this.ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; const g=this.ac.createGain(); g.gain.value=1.1; s.connect(g); g.connect(this.pan(this.S.anchors.frl||[1.22,1.48,-2.97],1.2,1)); s.start(); this.vo=s; this.talkEnd=performance.now()+b.duration*1000+1500; }).catch(()=>{}); },
+ openPanel(){ const P=this.panel, h=this.head(), F=new THREE.Vector3(1.2,h.y,-2.9); const dir=F.clone().sub(h); dir.y=0; const L=dir.length(); dir.normalize(); const dd=Math.min(0.62,Math.max(0.35,L-0.25));
+  P.at=h.clone(); P.m.position.set(h.x+dir.x*dd,h.y-0.16,h.z+dir.z*dd); P.m.lookAt(h.x,h.y-0.05,h.z); P.m.visible=true; this.closeAt=0;
+  const o=[['leben','Ich will zurück ins Leben.'],['dauer','Wie lange dauert das hier?'],['nummer','Ich hab eine Nummer gezogen.'],['nichts','Nichts, nur geklingelt.']]; if(this.hasA38()&&!this.a38Done()) o.push(['a38','Hier, der rosa Passierschein A38.']); P.opts=o; this.drawPanel(); },
+ closePanel(){ const P=this.panel; if(P){ P.m.visible=false; P.m.position.set(0,-50,0); } },
+ pickUV(uv){ const P=this.panel, y=(1-uv.y)*640; if(y<300) return; const i=Math.floor((y-300)/(340/Math.max(4,P.opts.length))); if(i>=0&&i<P.opts.length) this.choose(i); },
+ choose(i){ const P=this.panel, o=P.opts[i]; if(!o) return; const k=o[0]; P.hl=i; this.say(k); P.hl=-1;
+  if(k==='nichts') this.closeAt=performance.now()+6500;
+  if(k==='a38'){ try{ localStorage.setItem('zs_a38_done','1'); }catch(e){} P.opts=P.opts.filter(x=>x[0]!=='a38'); P.stamp=1; this.drawPanel();
+   setTimeout(()=>{ this.sfx('stamp'); this.sfx('stamp'); },2600); const F=this.flip; setTimeout(()=>{ if(F&&!F.anim){ F.anim=performance.now()/1000; this.sfx('flip'); } this.ding(); },4200); } },
+ drawPanel(){ const P=this.panel, c=P.cx, W=1024, H=640; c.clearRect(0,0,W,H); c.fillStyle='rgba(16,14,11,0.86)'; c.fillRect(0,0,W,H); c.strokeStyle='#8a7a52'; c.lineWidth=4; c.strokeRect(6,6,W-12,H-12);
+  c.fillStyle='#b9a77a'; c.font='600 30px Georgia,serif'; c.fillText('JENSEITS-BÜRGERAMT · Schalter 1',36,52);
+  c.fillStyle='#ece3cb'; c.font='italic 38px Georgia,serif'; const words=('„'+P.sub+'“').split(' '); let line='', y=110; for(const w of words){ const t=line?line+' '+w:w; if(c.measureText(t).width>W-80){ c.fillText(line,36,y); y+=46; line=w; } else line=t; } c.fillText(line,36,y);
+  const n=Math.max(4,P.opts.length), rh=340/n; P.opts.forEach((o,i)=>{ const yy=300+i*rh; c.fillStyle=o[0]==='a38'?'rgba(214,120,150,0.30)':'rgba(255,240,200,0.07)'; c.fillRect(30,yy+5,W-60,rh-10); c.fillStyle=o[0]==='a38'?'#f4b8c8':'#d8cfb8'; c.font='600 34px Georgia,serif'; c.fillText((i+1)+'  '+o[1],52,yy+rh/2+12); });
+  if(P.stamp){ c.save(); c.translate(800,200); c.rotate(-0.25); c.strokeStyle='rgba(200,40,50,0.85)'; c.lineWidth=7; c.strokeRect(-150,-46,300,92); c.fillStyle='rgba(200,40,50,0.85)'; c.font='800 46px Georgia,serif'; c.textAlign='center'; c.fillText('GESTEMPELT',0,16); c.restore(); }
+  P.tx.needsUpdate=true; },
  // ---------------- Bewegung (L-Stick gehen, R-Stick drehen; Desktop WASD) ----------------
  loco(){ this.ax=[0,0]; this.snap=0; setTimeout(()=>{ const L=document.getElementById('hl'), Rr=document.getElementById('hr');
   L&&L.addEventListener('thumbstickmoved',e=>{ this.ax=[e.detail.x,e.detail.y]; });

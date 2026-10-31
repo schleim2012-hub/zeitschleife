@@ -140,6 +140,19 @@ window.aptBuildOffice=function(sc,K){ const T=THREE, G=new T.Group(); G.name='of
  const solid=[[39.72,41.28,-0.88,-0.12],[41.95,42.5,-1.9,0.0],[38,38.45,-1.92,-0.6],[40.1,40.6,0.9,1.5],[38.45,38.95,0.9,1.3],[41.6,42.1,0.5,0.9],[40.3,40.8,-1.45,-1.0]];
  const collide=p=>{ const r=0.22; p.x=cl(p.x,X0+r,X1-r); p.z=cl(p.z,Z0+r,Z1-r); for(const [a0,a1,b0,b1] of solid){ if(p.x>a0-r&&p.x<a1+r&&p.z>b0-r&&p.z<b1+r){ const c=[[p.x-(a0-r),'x',a0-r],[(a1+r)-p.x,'x',a1+r],[p.z-(b0-r),'z',b0-r],[(b1+r)-p.z,'z',b1+r]].filter(e=>e[1]==='x'?(e[2]>=X0+r-1e-3&&e[2]<=X1-r+1e-3):(e[2]>=Z0+r-1e-3&&e[2]<=Z1-r+1e-3)).sort((u,v)=>u[0]-v[0])[0]; if(c) p[c[1]]=c[2]; } } };
  interact.unshift({hit:pcHit,fn:pcPress,name:'pc'}); // PC bleibt Eintrag 0 (gfx_wohnung_buero.js)
+ // v10: rosa Passierschein A38 (Running Gag Warteraum) – liegt in der halb offenen Aktenschublade; einmal genommen → localStorage zs_a38
+ { const has=()=>{ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } };
+  const cv=document.createElement('canvas'); cv.width=256; cv.height=362; const x=cv.getContext('2d'); x.fillStyle='#e9a6bc'; x.fillRect(0,0,256,362); x.fillStyle='rgba(120,40,70,0.9)'; x.font='bold 22px Georgia,serif'; x.textAlign='center';
+  x.fillText('PASSIERSCHEIN',128,40); x.font='bold 54px Georgia,serif'; x.fillText('A 38',128,98); x.font='12px Georgia,serif'; x.fillText('Jenseits-Bürgeramt · Abt. Unbefristetes',128,122);
+  x.strokeStyle='rgba(120,40,70,0.55)'; x.lineWidth=1; for(let i=0;i<9;i++){ x.beginPath(); x.moveTo(24,150+i*20); x.lineTo(232,150+i*20); x.stroke(); } x.strokeRect(150,300,82,44); x.font='10px Georgia,serif'; x.fillText('Stempel',191,356);
+  x.fillStyle='rgba(90,60,40,0.12)'; x.beginPath(); x.arc(70,290,38,0,6.3); x.fill();
+  const tx=new T.CanvasTexture(cv); tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=4;
+  const sheet=new T.Mesh(new T.PlaneGeometry(0.21,0.297),new T.MeshLambertMaterial({map:tx,emissive:0x3a1622,emissiveMap:tx,emissiveIntensity:0.35})); sheet.rotation.set(-Math.PI/2,0,0.35); sheet.position.set(41.84,0.663,-0.72); sheet.name='a38';
+  if(!has()){ G.add(sheet);
+   interact.push({hit:sheet,name:'a38',fn:()=>{ if(!sheet.parent) return; G.remove(sheet); try{ localStorage.setItem('zs_a38','1'); }catch(e){} try{ (K.sfx||window.aptSFX||(()=>null))('paper',0.5); }catch(e){}
+    const lc=document.createElement('canvas'); lc.width=512; lc.height=128; const l=lc.getContext('2d'); l.fillStyle='rgba(20,10,14,0.82)'; l.fillRect(0,0,512,128); l.fillStyle='#f4b8c8'; l.font='bold 34px Georgia,serif'; l.textAlign='center'; l.fillText('Passierschein A38 eingesteckt',256,52); l.fillStyle='#e0d6c0'; l.font='22px Georgia,serif'; l.fillText('Die Empfangsdame im Warteraum wartet darauf.',256,96);
+    const lt=new T.CanvasTexture(lc); lt.colorSpace=T.SRGBColorSpace; const lab=new T.Mesh(new T.PlaneGeometry(0.6,0.15),new T.MeshBasicMaterial({map:lt,transparent:true,depthTest:false,toneMapped:false})); lab.renderOrder=999; lab.position.set(41.6,1.25,-0.72); lab.rotation.y=-Math.PI/2; G.add(lab); setTimeout(()=>G.remove(lab),5000);
+    const d=document.createElement('div'); d.textContent='Rosa Passierschein A38 eingesteckt – ab in den Warteraum.'; d.style.cssText='position:fixed;left:50%;top:14%;transform:translateX(-50%);background:rgba(30,12,20,.88);color:#f4b8c8;font:600 17px Georgia,serif;padding:10px 18px;border-radius:10px;z-index:99;pointer-events:none'; document.body.appendChild(d); setTimeout(()=>d.remove(),4500); }}); } }
  return {group:G,lights:[lampS,crtL,projS,hemi],collide,X0,X1,Z0,Z1,doors:{living:{pos:[DN.x,Z1-0.02],face:[0,-1],w:DN.w,spawn:[DN.x,Z1-0.8],yaw:0}},
   interact,files,tick,pcIsOn:()=>pcOn};
 };
