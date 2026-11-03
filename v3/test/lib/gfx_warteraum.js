@@ -229,11 +229,11 @@ AFRAME.registerComponent('warteraum',{
  purrSnd(){ const ac=this.ac; if(!ac) return; const t=ac.currentTime, N=ac.sampleRate*2.2|0, b=ac.createBuffer(1,N,ac.sampleRate), d=b.getChannelData(0);
   for(let i=0;i<N;i++){ const ph=i/ac.sampleRate, am=0.5+0.5*Math.sin(ph*2*Math.PI*26), br=0.6+0.4*Math.sin(ph*2*Math.PI*0.9); d[i]=(Math.random()*2-1)*am*am*br*Math.min(1,ph*4,(2.2-ph)*3); }
   const s=ac.createBufferSource(); s.buffer=b; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=260; const gg=ac.createGain(); gg.gain.value=0.9; s.connect(f); f.connect(gg); gg.connect(this.pan(this.cat.g.position.toArray(),0.6,1.4)); s.start(t); },
- catParty(){ const C=this.cat; if(!C||C.party>0) return; C.party=10.7; C.t0=performance.now()/1000; C.veil.visible=false; [...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=true);
+ catParty(){ const C=this.cat; if(!C||C.party>0) return; C.party=13.0; C.t0=performance.now()/1000; C.veil.visible=false; [...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=true);
   const keep=new Set([C.g,...C.spots,...C.beams,...C.fog]), sc=this.el.object3D, cam=this.el.camera; C.hid=[];
   sc.traverse(o=>{ if(!(o.isMesh||o.isPoints||o.isSprite||o.isLine)||!o.visible) return; let p=o; while(p){ if(keep.has(p)||p===cam||p.isCamera) return; p=p.parent; } o.visible=false; C.hid.push(o); });
   C.bg=sc.background; sc.background=new THREE.Color(0); C.fg=sc.fog; sc.fog=null;
-  if(this.ac){ const n='oiia'; (this.buf[n]||(this.buf[n]=fetch(BASE+'audio/oiia.mp3?v=1').then(r=>r.arrayBuffer()).then(b=>new Promise((res,rej)=>this.ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; const g=this.ac.createGain(); g.gain.value=1.0; s.connect(g); g.connect(this.ac.destination); s.start(); C.src=s; }).catch(()=>this.oiiaMusic()); } },
+  if(this.ac){ const n='oiia'; (this.buf[n]||(this.buf[n]=fetch(BASE+'audio/oiia.mp3?v=2').then(r=>r.arrayBuffer()).then(b=>new Promise((res,rej)=>this.ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; const g=this.ac.createGain(); g.gain.value=1.0; s.connect(g); g.connect(this.ac.destination); s.start(); C.src=s; if(C.party>0){ C.t0=performance.now()/1000; C.party=13.0; } }).catch(()=>this.oiiaMusic()); } },
  catEnd(){ const C=this.cat; (C.hid||[]).forEach(o=>o.visible=true); C.hid=[]; const sc=this.el.object3D; sc.background=C.bg||null; if(C.fg) sc.fog=C.fg; C.lvl=0; C.party=0;
   [C.veil,...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=false); const B=C.body; B.position.y=0; B.rotation.y=0; B.scale.set(1,1,1); C.mats.forEach(m=>m.emissiveIntensity=m===C.mats[0]?0.07:1); try{ C.src&&C.src.stop(); }catch(e){} },
  oiiaMusic(){ const ac=this.ac; if(!ac) return; const t0=ac.currentTime+0.05, out=ac.createGain(); out.gain.value=0.7; out.connect(ac.destination); const bt=60/128;
@@ -249,15 +249,15 @@ AFRAME.registerComponent('warteraum',{
   if(this.el.renderer.xr.isPresenting&&!(C.party>0)){ C.hc=(C.hc||0)-d; if(C.hc<=0) for(const id of ['hl','hr']){ const c=document.getElementById(id); if(!c) continue; const v=new THREE.Vector3(); c.object3D.getWorldPosition(v); if(v.distanceTo(C.g.position)<0.22&&v.y<C.g.position.y+0.4){ C.hc=0.45; this.catTap(); break; } } }
   if(!(C.party>0)){ B.scale.y=1+0.015*Math.sin(now*1.6); return; }
   C.party-=d; if(C.party<=0){ this.catEnd(); return; }            // abruptes Ende: alles sofort zurück
-  const te=now-C.t0, beat=te*128/60, ph=beat%1, sm=(a,b)=>Math.min(1,Math.max(0,(te-a)/(b-a)));
-  const k=sm(0,0.4), fogL=sm(1.5,4), colL=sm(3.5,5.5), strL=sm(6,10)*0.5;   // Aufbau: Spot+Drehung → Nebel → Farben → Strobe
+  const te=now-C.t0, beat=(te+98)*128/60, ph=beat%1, sm=(a,b)=>Math.min(1,Math.max(0,(te-a)/(b-a)));
+  const k=sm(0,0.4), fogL=sm(0.3,2.2), colL=sm(1.9,2.4), strL=sm(6.5,12.5)*0.55;   // Aufbau synchron zum Clip: Spot+Drehung → Nebel → Drop bei 2.0 s: Farben → Strobe steigt bis Ende
   B.position.y=k*(0.14+0.06*Math.abs(Math.sin(beat*Math.PI))); B.rotation.y=(B.rotation.y+d*k*(13+5*sm(5,10)))%(2*Math.PI);
   const sq=1+0.14*k*Math.cos(beat*2*Math.PI); B.scale.set(1/Math.sqrt(sq),sq,1/Math.sqrt(sq));
   const st=strL>0&&(beat*2)%1<0.22?1:0, fl=1-strL*(1-st);      // Strobe: moderat, nur Katze+Lichter, nie Vollbild
   C.mats[0].emissiveIntensity=(0.35+0.35*st*strL*2)*fl; C.mats[1].emissiveIntensity=(1.0+0.8*st*strL*2)*fl;
   C.spot.material.opacity=0.22*k*fl;
   C.spots.forEach((m,i)=>{ const a=te*(0.7+colL)+i*1.047, cx=C.g.position.x, cz=C.g.position.z; m.position.set(cx+1.3*Math.cos(a),0.02,cz+1.3*Math.sin(a*1.1)); m.material.opacity=colL*(0.5+0.3*Math.pow(1-ph,2))*fl; });
-  C.beams.forEach((m,i)=>{ if(m===C.spot) return; m.rotation.set(0.5*Math.sin(te*(0.9+colL)+i*1.6),0,0.5*Math.cos(te*0.8+i*1.6)); m.material.opacity=colL*0.18*fl; });
+  C.beams.forEach((m,i)=>{ if(m===C.spot) return; m.rotation.set(0.5*Math.sin(te*(0.9+colL)+i*1.6),0,0.5*Math.cos(te*0.8+i*1.6)); m.material.opacity=colL*0.11*fl; });
   C.fog.forEach((m,i)=>{ m.position.x+=d*0.06*Math.sin(i+te*0.2); m.material.opacity=fogL*0.2*(0.6+0.4*fl); }); },
  ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; B.press=1; this.ding();
   this.talk=1; this.talkEnd=performance.now()+20000; setTimeout(()=>{ this.openPanel(); this.say(this.a38Done()?'wieder':'greet'); },650); },
