@@ -163,6 +163,7 @@ GF.eat=async function(id){ const k=K; k.interact(); if(k.st.mode==='sleep') awai
  if(isMidnight()) return gremlin(t);
  const A=k.A, V=k.V, al=()=>k.alive(t);
  const end=()=>{ FX.tint=null; FX.glow=null; k.rest(); k.xp(1); k.learnedSay(); };
+ if(GF.xEat&&GF.xEat[id]){ let ok=false; try{ ok=await GF.xEat[id](t,GF.H); }catch(e){ console.error(e); } stache.visible=false; if(ok) return end(); FX.tint=null; FX.glow=null; return; }
  if(f.n&&/^(brause|wackel|gurke|gumgum)$/.test(id)){ const ok=await newFood(id,t); if(ok) return end(); FX.tint=null; FX.glow=null; return; }
  switch(id){
  case 'kaffee': { A.lid=-0.05; A.pup=1.45; A.earUp=0.85; A.trem=1; A.low=0.4; pf('☕',()=>scr([0,1,0.1]),{n:2});
@@ -291,10 +292,11 @@ let gremlin=async function(t){ const k=K, A=k.A, al=()=>k.alive(t); k.mark('grem
 let tray;
 function buildTray(){ tray=document.createElement('div'); tray.id='tray'; tray.className='panel';
  tray.innerHTML='<div class="ph"><b>Was soll Giß-Moe essen?</b><button class="x" aria-label="Schließen">✕</button></div><div class="grid"></div>';
- const g=tray.querySelector('.grid'); FOOD.forEach(f=>{ const b=document.createElement('button'); b.className='fd'; b.innerHTML='<i>'+(f.draw?'<img src="'+iconURL(f.id)+'" style="width:46px;height:46px;display:block">':f.e)+'</i><span>'+f.n+'</span><small>'+f.h+'</small>'; b.addEventListener('pointerup',e=>{ e.preventDefault(); e.stopPropagation(); K.V.unlock(); GF.eat(f.id); }); g.appendChild(b); });
+ const g=tray.querySelector('.grid'); FOOD.forEach(f=>{ const b=document.createElement('button'); b.className='fd'; b.dataset.id=f.id; b.innerHTML='<i>'+(f.draw?'<img src="'+iconURL(f.id)+'" style="width:46px;height:46px;display:block">':f.e)+'</i><span>'+f.n+'</span><small>'+f.h+'</small>'; b.addEventListener('pointerup',e=>{ e.preventDefault(); e.stopPropagation(); K.V.unlock(); GF.eat(f.id); }); g.appendChild(b); });
  tray.querySelector('.x').addEventListener('pointerup',e=>{ e.stopPropagation(); closeTray(); }); tray.addEventListener('pointerdown',e=>e.stopPropagation()); document.body.appendChild(tray); }
 function closeTray(){ tray.classList.remove('show'); }
-GF.openTray=()=>{ closeTalk(); tray.classList.add('show'); };
+GF.openTray=()=>{ closeTalk(); tray.querySelectorAll('.fd').forEach(b=>{ const f=FOOD.find(x=>x.id===b.dataset.id); b.style.display=(f&&f.hide&&f.hide())?'none':''; }); tray.classList.add('show'); };
+GF.FOOD=FOOD; GF.ICON=ICON; GF.H={pf,scr,beakP,earP,FX,SP,boingS,bubbles,sayW,wait,burp,get stache(){return stache;},get icicles(){return icicles;}};
 /* ---------- Frag Moe (Magic 8 Ball) ---------- */
 let talk, micStream=null, micDenied=false, asking=false;
 function buildTalk(){ talk=document.createElement('div'); talk.id='talk'; talk.className='panel';

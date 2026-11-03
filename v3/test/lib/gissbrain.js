@@ -33,7 +33,7 @@ function wordCap(M,now){ return WORDCAP[Math.min(7,age(M,now))]; }
 function germanP(M,now){ const d=(M.days||[]).length; return clamp(0.25+0.09*d+(M.xp||0)*0.002,0.25,0.92); }
 // Eine Begegnung merken → Stimmung, Gewohnheiten, Kunststücke
 const EFFECT={pet:{love:.5},tickle:{love:.4},hug:{love:.6},feed:{love:.4},happy:{love:.25},dance:{love:.3},song:{love:.2},
- water:{cheek:1.1},bright:{cheek:.9},tease:{cheek:1},sneeze:{cheek:.5}};
+ water:{love:.3},bright:{cheek:.9},tease:{cheek:1},sneeze:{cheek:.5}};
 function note(M,kind,now){ const ev=[]; const e=EFFECT[kind]||{}; const m=M.mood;
  for(const k in e) m[k]=clamp(m[k]+e[k],0,10);
  if(e.love) m.grump=clamp(m.grump-0.7,0,10); // Zuwendung macht Grummeln weg

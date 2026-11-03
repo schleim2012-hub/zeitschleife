@@ -4,12 +4,13 @@
 <link rel="icon" href="data:,">
 <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <script src="test/lib/gissmoe.js?v=3"></script>
-<script src="test/lib/gissfun.js?v=4"></script>
-<script src="test/lib/gisswear.js?v=4"></script>
+<script src="test/lib/gissfun.js?v=5"></script>
+<script src="test/lib/gisswear.js?v=5"></script>
 <script src="test/lib/gissbrain.js?v=3"></script>
 <script src="test/lib/gisshair.js?v=4"></script>
 <script src="test/lib/gisstalk.js?v=5"></script>
-<script src="test/lib/gissgames.js?v=4"></script>
+<script src="test/lib/gissgames.js?v=5"></script>
+<script src="test/lib/gissxmas.js?v=1"></script>
 <style>
 @font-face{font-family:"Kalam";src:url(fonts/Kalam-Regular.ttf)}
 html,body{margin:0;height:100%;overflow:hidden;background:#1d130e;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}
@@ -251,12 +252,38 @@ async function feed(){ interact(); if(st.mode==='sleep'){ await wake(); } if(M.t
  await wait((wasSnack?say('Pünktlich zur Keks-Zeit'+nm()+'!'):sayK('eat'))*1000+200); if(!alive(t)) return;
  if(st.cookies.length>=3){ st.cookies=[]; mark('burp'); A.lid=0.4; A.sq=0.05; mouthPlay(V.burp()); bubble('*Bööörps*',0.7); await wait(800); A.sq=0; A.low=0.6; say('Hoppla!'); await wait(900); }
  rest(); xp(1); learnedSay(); }
-async function water(){ interact(); if(st.mode==='sleep') await wake(); const t=begin(); mark('panic'); note('water'); st.water=true; glass.visible=true; $('bWater').classList.add('on');
- for(let i=0;i<=15;i++){ glass.position.x=1.6-i/15*1.0; await wait(20); }
+/* 3.2: Moe trinkt sein Glas Wasser (nur in der Mitternachts-Stunde gilt die alte Regel: kein Wasser!) */
+const XSF=(n,g,o)=>{ try{ return window.GissXmas&&GissXmas.sfx?GissXmas.sfx(n,g,o):null; }catch(e){ return null; } };
+async function waterPanic(t){ const p0=new THREE.Vector3(0.62,0.16,0.62), p1=new THREE.Vector3(1.7,0.16,0.62); glass.rotation.set(0,0,0); glass.scale.setScalar(0.62);
+ for(let i=0;i<=15;i++){ glass.position.lerpVectors(p1,p0,i/15); await wait(20); }
  rest(); A.lid=-0.05; A.pup=0.7; A.earUp=0.9; A.trem=1; A.bodyZ=-0.25; A.hy=-0.3; A.hz=-0.1; const r=V.panic(); mouthPlay(r); bubble('Kein Wasser!!',1.6);
- await wait(1700); if(!alive(t)) return; say('Kein Wasser!!',{pitch:1.2,rate:0.8}); await wait(1300);
- for(let i=0;i<=15;i++){ glass.position.x=0.6+i/15*1.0; await wait(20); } glass.visible=false; st.water=false; $('bWater').classList.remove('on');
- A.trem=0; A.bodyZ=0; A.hy=0; A.lid=0.5; await wait(say('Puh …',{pitch:.9,rate:1.4})*1000); rest(); xp(1); learnedSay(); }
+ await wait(1700); if(alive(t)){ say('Kein Wasser!!',{pitch:1.2,rate:0.8}); await wait(1300); }
+ for(let i=0;i<=15;i++){ glass.position.lerpVectors(p0,p1,i/15); await wait(20); } A.trem=0; A.bodyZ=0; A.hy=0; A.lid=0.5; if(alive(t)) await wait(say('Puh …',{pitch:.9,rate:1.4})*1000); }
+async function water(){ interact(); if(st.mode==='sleep') await wake(); const t=begin(); st.water=true; glass.visible=true; $('bWater').classList.add('on');
+ const done=()=>{ glass.visible=false; glass.rotation.set(0,0,0); wat.scale.y=1; wat.position.y=-0.045; st.water=false; $('bWater').classList.remove('on'); };
+ if(st.midnight){ mark('panic'); note('tease'); await waterPanic(t); done(); if(alive(t)){ rest(); xp(1); learnedSay(); } return; }
+ mark('drink'); note('water'); rest(); A.lid=0.08; A.pup=1.25; A.earUp=0.5;
+ const now=performance.now(); st.drinks=(st.drinks||[]).filter(x=>now-x<45000); st.drinks.push(now); const nD=st.drinks.length;
+ // Glas schwebt zum Schnabel (Rand am Mund), kippt, Wasserstand sinkt
+ const B=new THREE.Vector3().fromArray(G.LM.beak); B.z+=0.05; G.head.localToWorld(B); stage.worldToLocal(B);
+ const SC=0.42, S0=new THREE.Vector3(0.62,0.1,1.05), P=B.clone().add(new THREE.Vector3(0,-0.09*SC/0.42,0.075)); glass.scale.setScalar(SC); glass.rotation.set(0,0,0); wat.scale.y=1; wat.position.y=-0.045;
+ for(let i=0;i<=20;i++){ const k=i/20, e=k*k*(3-2*k); glass.position.lerpVectors(S0,P,e); glass.position.y+=Math.sin(k*Math.PI)*0.12; glass.rotation.z=(1-e)*0.25; await wait(22); }
+ if(!alive(t)){ done(); return; }
+ A.hx=-0.16; A.lookY=-0.25; A.lid=0.55; A.jaw=0.35; const g=XSF('m_gulp',0.85);
+ const T=Math.max(2300,(g&&g.dur?g.dur:1.3)*1000+500), t0=performance.now(); let g2=0;
+ while(performance.now()-t0<T){ if(!alive(t)){ done(); return; } const k=Math.min(1,(performance.now()-t0)/T); glass.rotation.x=-0.25-k*0.75; glass.position.y=P.y+k*0.03; wat.scale.y=Math.max(0.08,1-k*0.92); wat.position.y=-0.155+0.11*wat.scale.y; A.jaw=0.25+Math.abs(Math.sin(k*Math.PI*3))*0.3; if(!g&&Math.random()<0.08) V.chomp&&V.chomp(1); if(!g2&&g&&g.dur&&performance.now()-t0>g.dur*1000+80&&performance.now()-t0<T-700){ g2=1; XSF('m_gulp',0.7); } await wait(30); }
+ A.jaw=0; A.hx=0; A.lookY=0;
+ for(let i=0;i<=18;i++){ const k=i/18; glass.position.lerpVectors(P,S0,k); glass.rotation.x=-1+k; await wait(26); } done(); if(!alive(t)) return;
+ M.hunger=Math.max(0,M.hunger-1); M.mood.grump=Math.max(0,(M.mood.grump||0)-0.5); ui(); save();
+ // erfrischt: Glitzer + Tropfen + zufriedenes „Aaah"
+ A.lid=0.35; A.low=0.5; A.blush=0.7; A.earUp=0.8; A.pup=1.2; XSF('m_drops',0.55); fx('💧','',3); fx('✨','',3);
+ await wait(say(['Aaah! Das tut gut!','Aaah! Schön erfrischend!','Mmh, lecker Wasser!'][(Math.random()*3)|0])*1000+250); if(!alive(t)) return;
+ if(nD===3){ A.sq=-0.05; A.earUp=1; await wait(300); const b=XSF('m_burp',0.9); if(!b) mouthPlay(V.burp()); else { A.jaw=0.7; setTimeout(()=>{ A.jaw=0; },380); } bubble('*Hicks-Rülps*',0.8); A.hop=0.4; await wait(700); A.sq=0; A.hop=0; A.blush=1.2; A.lid=0.5; A.low=0.7; mouthPlay(V.giggle(3)); await wait(700); if(!alive(t)) return; await wait(say('Hihi, Tschuldigung!')*1000+200); }
+ else if(nD>=5){ st.drinks=[]; A.blush=1.2; A.pup=1.35; A.earUp=0.9; A.lookX=0.5; await wait(250); A.lookX=-0.5; await wait(250); A.lookX=0;
+  bubble('Ich muss mal! 🙈',1.6); for(let i=0;i<8;i++){ A.hop=i%2?0.9:0.2; A.hz=(i%2?1:-1)*0.08; A.trem=0.4; await wait(170); if(!alive(t)) return; } A.hop=0; A.hz=0; A.trem=0;
+  await wait(say('Hihi, ich muss mal ganz schnell aufs Töpfchen!')*1000+200); if(!alive(t)) return; A.lid=0.4; A.low=0.6; mouthPlay(V.giggle(3)); await wait(600); }
+ else { A.hop=0.6; await wait(350); A.hop=0; }
+ rest(); xp(1); learnedSay(); }
 async function bright(){ interact(); setLight('bright'); if(st.mode==='sleep'){ st.mode='awake'; st.awakeAt=performance.now(); } const t=begin(); mark('shield'); note('bright'); rest();
  A.lid=1; A.low=0.6; A.paw=1; A.earUp=-0.4; A.earFwd=0.5; A.hx=0.12; A.hy=0.12; A.trem=0.4; A.bodyZ=-0.08; await wait(200); bubble('Nicht so hell!',1.6); mouthPlay(V.say('Nicht so hell!',{pitch:1.15}));
  await wait(2600); setLight(lampOn?'normal':'dark'); $('bBright').classList.remove('on'); A.trem=0; await wait(500); if(!alive(t)) return; rest(); A.lid=0.4; await wait(400);
@@ -420,7 +447,7 @@ function loop(now){ now=performance.now(); const dt=Math.min(0.05,(now-last)/100
   GB.decay(M,dt); if(now-st.lastInt>90000) GB.lonely(M,dt*1000); moodT+=dt; if(moodT>10){ moodT=0; ui(); }
   hungerT+=dt; if(hungerT>40){ hungerT=0; M.hunger=Math.min(10,M.hunger+1); ui(); save(); }
  } else { if(now>nextSnore){ nextSnore=now+3300; V.snore(); fx('z','z',2); A.sleepB=1; } }
- GissFun.tick(dt,t); window.GissHair&&GissHair.tick(dt,t); window.GissWear&&GissWear.tick&&GissWear.tick(dt,t); window.GissGames&&GissGames.tick&&GissGames.tick(dt,t); vrTick(dt); G.update(dt,t); if(!st.wimmel) R.render(S,cam);
+ GissFun.tick(dt,t); window.GissHair&&GissHair.tick(dt,t); window.GissWear&&GissWear.tick&&GissWear.tick(dt,t); window.GissGames&&GissGames.tick&&GissGames.tick(dt,t); window.GissXmas&&GissXmas.tick(dt,t); vrTick(dt); G.update(dt,t); if(!st.wimmel) R.render(S,cam);
 }
 const JOKES=['Was ist grün und klopft? Ein Klopf-Salat! Hihi!','Warum summen Bienen? Weil sie den Text vergessen haben! Hihi!','Was macht ein Keks unterm Baum? Krümel-Picknick! Hihi!','Wie heißt ein Bumerang, der nicht zurückkommt? Stock! Hihi!'];
 function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.mood(M,NOW());
@@ -436,8 +463,8 @@ function idle(now){ const r=Math.random(); if(st.lifted) return; const md=GB.moo
  if(r<0.45){ const k=ORDER[(Math.random()*Math.max(3,M.learned+2))|0]||'play'; const t=begin(); mark('chat'); say(wordText(k)); return; }
  const t=begin(); A.lookX=(Math.random()-.5)*1.4; A.lookY=(Math.random()-.5)*0.6; A.hy=A.lookX*0.25; A.earWig=0.6; setTimeout(()=>{ if(alive(t)){ A.earWig=0; } },700); setTimeout(()=>{ if(alive(t)){ A.lookX=0; A.lookY=0; A.hy=0; } },2500);
 }
-GM.k={THREE,V,A,G,st,M,save,say,bubble,fx,toast,mouthPlay,begin,alive,rest,mark,interact,xp,wake,sleep,feed,ui,cam,R,S,stage,shadow,learnedSay,headScreen,base:'test/lib/giss/'}; GissFun.init(GM.k);
- btn('bFood',()=>GissFun.openTray()); btn('bTalk',()=>window.GissTalk?GissTalk.open():GissFun.openTalk()); GissWear.init(GM.k); btn('bWear',()=>GissWear.open()); GissHair.init(GM.k); btn('bHair',()=>GissHair.open()); window.GissTalk&&GissTalk.init(GM.k); window.GissGames&&GissGames.init(GM.k); btn('bGames',()=>GissGames.openMenu());
+GM.k={THREE,V,A,G,st,M,save,say,bubble,fx,toast,mouthPlay,begin,alive,rest,mark,interact,xp,wake,sleep,feed,ui,cam,R,S,stage,shadow,learnedSay,headScreen,glass,base:'test/lib/giss/'}; GissFun.init(GM.k);
+ btn('bFood',()=>GissFun.openTray()); btn('bTalk',()=>window.GissTalk?GissTalk.open():GissFun.openTalk()); GissWear.init(GM.k); btn('bWear',()=>GissWear.open()); GissHair.init(GM.k); btn('bHair',()=>GissHair.open()); window.GissTalk&&GissTalk.init(GM.k); window.GissGames&&GissGames.init(GM.k); window.GissXmas&&GissXmas.init(GM.k); btn('bGames',()=>GissGames.openMenu());
  R.setAnimationLoop(loop); vrInit();
 GM.proj=(x,y,z)=>{ const v=new THREE.Vector3(x,y,z); G.root.localToWorld(v); v.project(cam); return [(v.x*.5+.5)*innerWidth,(-v.y*.5+.5)*innerHeight]; }; GM.G=G; GM.R=R; GM.cam=cam; GM.vr={vrMode,ctl,ctlHit,vrTick,stage}; GM.ready=true; GM.GB=GB; GM.api={doTrick,idle,greetEvents,feed,tickle,purr,happy,wake,sleep,water,bright,song,dance,sneeze,lift};
 })().catch(e=>{ console.error(e); document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;top:40%;left:0;right:0;text-align:center;color:#fff;font:18px system-ui">Giß-Moe konnte nicht laden: '+e.message+'</div>'); });

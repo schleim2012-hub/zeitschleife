@@ -255,13 +255,14 @@ const HALLO=[
 ITEMS.costume=HALLO;
 SLOTS.costume={n:'🎃 Halloween-Kostüme',parent:'root',pos:()=>[0,0,0],rot:[0,0,0]};
 { const o=Object.assign({},ITEMS); Object.keys(ITEMS).forEach(k=>delete ITEMS[k]); ITEMS.costume=o.costume; Object.keys(o).forEach(k=>{ if(k!=='costume') ITEMS[k]=o[k]; }); }
+W.lib={ITEMS,SLOTS,std,tex,noiseTex,shell,ptAt,FUR,onHead,stick,HC,R};
 const costumeIt=()=>{ const id=K&&K.M.wear&&K.M.wear.costume; return id?HALLO.find(x=>x.id===id):null; };
 W.hairHidden=()=>{ const c=costumeIt(); return !!(c&&c.hideHair); };
 W.costumeHat=()=>{ const c=costumeIt(); return !!(c&&c.hatLike); };
 W.costumes=()=>HALLO.map(x=>x.id); W._item=id=>HALLO.find(x=>x.id===id);
 /* ---------- Freischalten ---------- */
 const days=()=>Math.max(1,(K.M.days||[]).length);
-function isLocked(it){ if(!it.unlock) return false; const U=K.M.unl=K.M.unl||{}; if(U[it.id]) return false; if(days()>=it.unlock.d||(K.M.xp||0)>=it.unlock.xp){ U[it.id]=1; K.save(); return false; } return true; }
+function isLocked(it){ if(it.lock) return !!it.lock(); if(!it.unlock) return false; const U=K.M.unl=K.M.unl||{}; if(U[it.id]) return false; if(days()>=it.unlock.d||(K.M.xp||0)>=it.unlock.xp){ U[it.id]=1; K.save(); return false; } return true; }
 W.isLocked=id=>{ for(const s in ITEMS){ const it=ITEMS[s].find(x=>x.id===id); if(it) return isLocked(it); } return false; };
 W.unlocks=function(){ const out=[], seen=K.M.unlSeen=K.M.unlSeen||{}; for(const s in ITEMS) ITEMS[s].forEach(it=>{ if(it.unlock&&!isLocked(it)&&!seen[it.id]){ seen[it.id]=1; out.push('🎁 Neu im Kleiderschrank: '+it.e+' '+it.n+'!'); } }); if(out.length) K.save(); return out; };
 let chkT=0, t0=performance.now(), spinA=0;
@@ -281,8 +282,9 @@ function wear(slot,id,silent){ const S=SLOTS[slot]; if(cur[slot]){ const x=cur[s
  (S.parent==='head'?K.G.head:K.G.root).add(g); cur[slot]=g; const SC=S.sc||1;
  const hp=inner.getObjectByName('H'); let hg=null; if(hp){ inner.remove(hp); hg=new THREE.Group(); hg.add(hp); K.G.head.add(hg); g.userData.extra=hg; }
  const setS=v=>{ g.scale.setScalar(v); if(hg) hg.scale.setScalar(v); };
- setS(silent?SC:0.01); if(!silent){ let k=0; const pop=()=>{ k=Math.min(1,k+0.08); const e=1+Math.sin(k*Math.PI)*0.25*(1-k); setS(Math.max(0.01,k*e)*SC); if(k<1) requestAnimationFrame(pop); }; pop(); } }
+ setS(silent?SC:0.01); if(!silent){ const t0=performance.now(); let k=0; const pop=()=>{ k=Math.min(1,(performance.now()-t0)/350); const e=1+Math.sin(k*Math.PI)*0.25*(1-k); setS(Math.max(0.01,k*e)*SC); if(k<1) requestAnimationFrame(pop); }; pop(); } }
 W._wear=(s,i,q)=>wear(s,i,q); W.snap=()=>snapMoe(); W.emoji=(c,p)=>emoji(c,p);
+W.react=(id,it)=>react(id,it); W.mark=()=>{ if(pan) mark(); };
 W.wearing=()=>Object.assign({},K.M.wear||{});
 W.setVisible=v=>Object.values(cur).forEach(g=>{ if(!g) return; g.visible=v; if(g.userData.extra) g.userData.extra.visible=v; });
 /* Kleiderschrank-Panel */
@@ -292,8 +294,8 @@ function buildPanel(){ pan=document.createElement('div'); pan.id='wardrobe'; pan
  for(const s in ITEMS){ h+='<div class="wsl">'+SLOTS[s].n+'</div><div class="wrow" data-s="'+s+'"><button class="wi" data-id=""><i>🚫</i><span>ohne</span></button>'+ITEMS[s].map(it=>'<button class="wi" data-id="'+it.id+'"><i>'+it.e+'</i><span>'+it.n+'</span><em></em></button>').join('')+'</div>'; }
  pan.innerHTML=h; document.body.appendChild(pan); pan.addEventListener('pointerdown',e=>e.stopPropagation());
  pan.querySelector('.x').addEventListener('pointerup',e=>{ e.stopPropagation(); pan.classList.remove('show'); });
- pan.querySelectorAll('.wi').forEach(b=>b.addEventListener('pointerup',e=>{ e.stopPropagation(); K.V.unlock(); const s=b.parentNode.dataset.s, id=b.dataset.id; const it=ITEMS[s].find(x=>x.id===id); if(it&&isLocked(it)){ const n=Math.max(1,it.unlock.d-days()); K.toast('🔒 '+it.n+' gibt es bald! Noch '+n+(n>1?' Tage':' Tag')+' – oder ganz viel mit Giß-Moe spielen.'); return; } wear(s,id); mark(); react(id,it); })); mark(); }
-function mark(){ const w=K.M.wear||{}; pan.querySelectorAll('.wrow').forEach(r=>r.querySelectorAll('.wi').forEach(b=>{ const it=ITEMS[r.dataset.s].find(x=>x.id===b.dataset.id); const L=!!(it&&isLocked(it)); b.classList.toggle('lock',L); const em=b.querySelector('em'); if(em) em.textContent=L?'ab Tag '+it.unlock.d:''; })); pan.querySelectorAll('.wrow').forEach(r=>r.querySelectorAll('.wi').forEach(b=>b.classList.toggle('on',(w[r.dataset.s]||'')===b.dataset.id))); }
+ pan.querySelectorAll('.wi').forEach(b=>b.addEventListener('pointerup',e=>{ e.stopPropagation(); K.V.unlock(); const s=b.parentNode.dataset.s, id=b.dataset.id; const it=ITEMS[s].find(x=>x.id===id); if(it&&it.lock&&isLocked(it)){ K.toast(it.lockMsg||'🔒 Gibt es bald!'); return; } if(it&&isLocked(it)){ const n=Math.max(1,it.unlock.d-days()); K.toast('🔒 '+it.n+' gibt es bald! Noch '+n+(n>1?' Tage':' Tag')+' – oder ganz viel mit Giß-Moe spielen.'); return; } wear(s,id); mark(); react(id,it); })); mark(); }
+function mark(){ const w=K.M.wear||{}; pan.querySelectorAll('.wrow').forEach(r=>r.querySelectorAll('.wi').forEach(b=>{ const it=ITEMS[r.dataset.s].find(x=>x.id===b.dataset.id); const L=!!(it&&isLocked(it)); b.classList.toggle('lock',L); const em=b.querySelector('em'); if(em) em.textContent=L?(it.lock?(it.lockTag||''):'ab Tag '+it.unlock.d):''; b.style.display=(it&&it.hide&&it.hide())?'none':''; })); pan.querySelectorAll('.wrow').forEach(r=>{ const vis=[...r.querySelectorAll('.wi')].some(b=>b.dataset.id&&b.style.display!=='none'); r.style.display=vis?'':'none'; r.previousElementSibling.style.display=vis?'':'none'; }); pan.querySelectorAll('.wrow').forEach(r=>r.querySelectorAll('.wi').forEach(b=>b.classList.toggle('on',(w[r.dataset.s]||'')===b.dataset.id))); }
 let reactT=0;
 async function react(id,it){ const k=K, A=k.A; if(k.st.mode==='sleep') await k.wake(); const t=k.begin(); k.rest(); k.mark('wear'); A.low=0.6; A.lid=0.35; A.blush=0.8; A.earWig=1.2; A.hop=0.5; k.st.spinV=id?6:0;
  if(id){ k.fx('✨','',3); } const line=!id?'Puh …':(it&&it.say)?it.say:(Date.now()-reactT<5000?(Math.random()<.5?'Schick!':'Hihi!'):'Wie sehe ich aus?'); reactT=Date.now();

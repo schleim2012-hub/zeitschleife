@@ -86,3 +86,9 @@
 - Stimme (test/lib/giss/voice/): ElevenLabs TTS, Stimme „Lumi“ (zndmYEEoWWxRYyEL2ZZY), eleven_multilingual_v2, Tempo 1,12, eigene Texte; nachbearbeitet (Stille, loudnorm). Erzeuger: gissapk/voice_gen/gen_v3.py (außerhalb des Repos).
 - Geräusche live per WebAudio. Schrift Kalam (SIL OFL 1.1).
 - Halloween-Kostüme und Augen (Iris-Shader, Blinzeln): eigener three.js-Code. „Lottergeist“ nur stilistisch inspiriert, kein Markenname.
+
+### Giß-Moe 3.2 – Weihnachts-Update (Adventskalender, Moe Jump, Silvester)
+- Adventskalender, Moe Jump (Türchen 24), Silvester-Feuerwerk, Weihnachts-/Silvester-Kleidung, Essen-Effekte: eigener three.js/Canvas-Code (`test/lib/gissxmas.js`), keine fremden Assets. Moe Jump ist eine eigene Umsetzung der bekannten Hüpfspiel-Idee, ohne fremde Grafiken oder Namen.
+- Gedichte: „Knecht Ruprecht“ von Theodor Storm (1862) und Volksgut – gemeinfrei. Vorgelesen mit ElevenLabs TTS (Stimme „Lumi“).
+- Geräusche (`test/lib/giss/xmas/*.mp3`, u. a. Türchen, Glitzer, Glöckchen, Schlucken, Rülpser, Tropfen, Feuerwerk): ElevenLabs Sound Effects, generiert für dieses Projekt.
+- Hintergrundmusik „Moe Winterzauber“ (`test/lib/giss/xmas/musik.ogg`): mit Suno erstellt (Suno-Pro-Abo von Pete, kommerzielle Nutzung erlaubt), instrumental. Aus zwei Versionen (A + B) mit Überblendung zu einer Endlosschleife von ca. 187 s geschnitten, OGG Vorbis mit ca. 96 kbit/s.

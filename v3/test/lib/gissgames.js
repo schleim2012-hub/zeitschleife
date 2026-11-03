@@ -76,7 +76,7 @@ function buildMenu(){ menu=document.createElement('div'); menu.id='gmenu'; menu.
  $('.x',menu).addEventListener('pointerup',e=>{ e.stopPropagation(); menu.classList.remove('show'); });
  menu.querySelectorAll('.gb').forEach(b=>b.addEventListener('pointerup',e=>{ e.stopPropagation(); K.V.unlock(); menu.classList.remove('show'); const g=b.dataset.g;
   if(g==='cups') GissFun.startCups(); else if(g==='such') GissWear.openWimmel(); else if(g==='mole') G.startMole(); else if(g==='ball') G.startBall(); else G.startUno(); })); }
-G.openMenu=async()=>{ if(K.st.game) return; document.querySelectorAll('.panel.show').forEach(p=>p.classList.remove('show')); menu.classList.add('show'); if(K.st.mode==='sleep') await K.wake(); say('Au ja! Was wollen wir spielen?'); };
+G.openMenu=async()=>{ if(K.st.game) return; document.querySelectorAll('.panel.show').forEach(p=>p.classList.remove('show')); if(G.menuHook) G.menuHook(menu); menu.classList.add('show'); if(K.st.mode==='sleep') await K.wake(); say('Au ja! Was wollen wir spielen?'); };
 /* ---------- Maulwurf ---------- */
 const ML={start:['Fang mich doch, wenn du kannst! Hihi!'],hit:['Hihi! Erwischt!','Boing! Das kitzelt!','Hey! Meine Frisur!','Ui! Du bist aber schnell!','Hihi! Nochmal!','Uiii! Quietsch!'],
  decoy:['Hihi! Das war doch nicht ich!','Falscher Kopf! Hihi!','Das war ein Frosch, du Schlingel!'],gold:['Goldener Moe! Drei Punkte!'],miss:['Daneben! Ätschibätsch!'],
@@ -263,6 +263,7 @@ function drawBall(){ const b=ball; if(!b) return; const dpr=Math.min(2,devicePix
  /* Giß-Moe kommentiert unten links */ const mx=Math.max(6,sx-96), my=top+sh-80; if(b.img.complete&&b.img.naturalWidth){ const s=88/b.img.naturalHeight; x.drawImage(b.img,mx,my+Math.sin(t*3)*3,b.img.naturalWidth*s,88); }
  if(b.talk&&performance.now()<b.talkT){ x.font='700 14px system-ui'; const tw=Math.min(W-20,x.measureText(b.talk).width+20); const tx=Math.max(8,Math.min(W-tw-8,mx)), ty=my-40; x.fillStyle='#fff'; rr(x,tx,ty,tw,30,14); x.fill(); x.fillStyle='#2b1a0e'; x.fillText(b.talk,tx+10,ty+20); }
  x.fillStyle='#9fd0ff'; x.font='700 13px system-ui'; x.fillText('Stufe '+b.lvl,sx,top-14); }
+G._enter=enterGame; G._leave=leaveGame;
 G.init=function(k){ K=k; const st=document.createElement('style'); st.textContent=CSS; document.head.appendChild(st); buildMenu(); buildMole(); buildUno(); buildBall(); };
 window.GissGames=G;
 })();
