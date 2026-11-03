@@ -19,3 +19,5 @@ ElevenLabs (Text: eigene Zeilen für Zeitschleife), erzeugt für dieses Projekt.
 ## Bilder (v10)
 `poster_takeme.jpg`: Petes „TAKE ME“-Motiv, für den Raum gealtert. Garfield-Porträt in `paintings2.webp`:
 Parodie/Hommage nach Petes Vorlage, beschnitten und gealtert.
+
+- oiia.mp3 — short "OIIA OIIA" spinning-cat meme clip (via myinstants.com, re-encoded mono 64 kbit/s), used as an easter-egg sound bite.
