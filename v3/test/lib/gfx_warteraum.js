@@ -88,6 +88,8 @@ AFRAME.registerComponent('warteraum',{
    self.dust(T,sc,FX,ch);
    self.extras(S,root,M);
    window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls,ells:self.ells,comp:self};
+   // v24: beim Betreten setzt sich der Raum aus türkisen Datenblöcken zusammen (fx/zs_reality.js), danach leichte Rest-Unruhe. ?noreal=1 aus
+   if(window.ZSR){ self.reality=ZSR.assemble(sc.object3D,{duration:3.2,cell:0.15,radial:0.62}); window.__wr.reality=self.reality; }
   });
  },
  drawFlip(a,b,k){ const {cx}=this.flip, W=512, H=148; cx.fillStyle='#16181a'; cx.fillRect(0,0,W,H); cx.fillStyle='#8a8e86'; cx.font='600 26px "Barlow Condensed",Arial Narrow,sans-serif'; cx.textAlign='center'; cx.fillText('JETZT BEDIENT',W/2,30);

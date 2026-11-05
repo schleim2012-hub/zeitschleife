@@ -354,10 +354,12 @@ async function go(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode=
 function fade(to,ms){ return new Promise(r=>{ const f=fadeA,t0=performance.now(); const st=()=>{ const p=Math.min(1,(performance.now()-t0)/ms); fadeA=f+(to-f)*p; if(p<1) setTimeout(st,16); else r(); }; st(); }); }
 async function enter(){ const n=G.nodes[S.node]; sceneT=0; S.visited[n.epoch]=1; S.sceneVisits[S.node]=(S.sceneVisits[S.node]||0)+1; if(n.enter) await run(n.enter); if(!MEM.seen['first'+S.node]){ MEM.seen['first'+S.node]=1; saveMem(); setTimeout(()=>bark('first'+S.node,true),700); } }
 // ---------- Epochenwechsel: Vortex auf die aktuelle Blickrichtung zentriert
+// v24: Realität entsteht – nach jedem Raumaufbau setzt sich die Welt (Photosphäre, Proxy, Props) aus Datenblöcken zusammen (fx/zs_reality.js). Glitch AUS = ohne.
+function realityIn(){ if(!window.ZSR) return; try{ if(!SET.glitch){ ZSR.stop(); return; } ZSR.assemble(roomG,{duration:SET.glitch<1?2.2:2.8,origin:eyePos(),cell:0.16,radial:0.45,blocks:1800}); }catch(e){ console.warn('ZSR',e); } }
 async function epochJump(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode='vortex'; S.sel=null; const ep=G.nodes[id].epoch; sfx('whoosh');
  const yaw=eyeYaw(); lastVortexYaw=yaw; roomG.visible=false; const DUR=2.8;
  try{ await ZSFX.hyperspace(sceneEl,{duration:DUR,yaw,video:$('vortexvid')}); }catch(e){ console.warn(e); await sleep(DUR*1000); }
- await buildRoom(id,eyeYaw()); roomG.visible=true; S.node=id; vhsT=1; vhsRW=true; rewindSnd(); mode='play'; music(); saveGame();
+ await buildRoom(id,eyeYaw()); roomG.visible=true; realityIn(); S.node=id; vhsT=1; vhsRW=true; rewindSnd(); mode='play'; music(); saveGame();
  // Glitch-Stufen je Rückkehr: Ton, Sprüche, Zeit (Bild nur dezentes VHS)
  if(ep!=='hub'){ const v=S.visits[ep]=(S.visits[ep]||0)+1; const gl=(G.glitch[ep]||{}), lvl=Math.min(5,v);
   if(v===1&&S.loop>=2&&MEM.seen['era_'+ep]&&G.glitch.remember[ep]) await act(G.glitch.remember[ep]);
@@ -562,13 +564,13 @@ function drawTitle(now){ if(!vrMode){ if(titleImg&&titleImg.complete&&titleImg.n
  button([X,Y+136,bw,54],'OPTIONEN',()=>{titleOpt=true;},{s:23,rad:14}); button([X,Y+204,bw,54],'CREDITS',()=>showCredits(false),{s:23,rad:14});
  if(!audioPlaying()) text('🔇 Tippen für Ton',W-30,40,{s:22,w:600,a:'right',c:'#ffd27a'}); drawToasts(now,40); }
 function toTitle(){ pauseOpen=false; wm.open=false; msg=null; dlg=null; stopVoice(); S=null; mode='title'; titleOpt=false; roomG.visible=false; $('titlesky').object3D.visible=vrMode; music(); }
-async function startAt(node){ await buildRoom(node,eyeYaw()); roomG.visible=true; S.node=node; vhsT=1; mode='play'; music(); await enter(); }
+async function startAt(node){ await buildRoom(node,eyeYaw()); roomG.visible=true; realityIn(); S.node=node; vhsT=1; mode='play'; music(); await enter(); }
 async function newGame(){ localStorage.removeItem('zs3_save'); MEM.bonusKeys={}; saveMem(); S=fresh(); S.notes=[]; mode='intro'; music(); $('titlesky').object3D.visible=false;
  { const e=eyePos(); roomG.position.set(e.x,EYE,e.z); roomG.rotation.set(0,eyeYaw(),0); skyEl.visible=false; propG.visible=false; hitG.visible=false; plate.visible=false; roomG.visible=true; }
  if(!/[?&]nointro=1/.test(Q)) await playClip('intro_komplett'); skyEl.visible=true; propG.visible=true; hitG.visible=true; await startAt(S.node); }
 async function continueGame(){ let d; try{ d=JSON.parse(localStorage.zs3_save); }catch(e){} if(!d) return; S=Object.assign(fresh(),d.S); $('titlesky').object3D.visible=false; await startAt(S.node); }
 async function newLoop(){ MEM.loops++; saveMem(); msg=null; dlg=null; stopVoice(); wm.open=false; const notes=S.notes; S=fresh(); S.notes=notes; { const bk=MEM.bonusKeys||{}; let b=0; for(const k in bk){ S.pen['b_'+k]=1; b+=bk[k]; } b=Math.min(b,TM.maxBonus); S.bonus=b; S.time+=b; } mode='play';
- await act(G.config.lines.newLoop); if(MEM.loops===2) setTimeout(()=>bark('loop2',true),2500); if(MEM.loops===3) setTimeout(()=>bark('loop3',true),2500); await buildRoom(S.node,eyeYaw()); vhsT=1; await enter(); }
+ await act(G.config.lines.newLoop); if(MEM.loops===2) setTimeout(()=>bark('loop2',true),2500); if(MEM.loops===3) setTimeout(()=>bark('loop3',true),2500); await buildRoom(S.node,eyeYaw()); realityIn(); vhsT=1; await enter(); }
 // ---------- Frame
 let lastStepT=0;
 function frame(now,noRaf){ lastStepT=performance.now(); const dt=Math.min(0.1,(now-last)/1000); last=now; ui=[];
