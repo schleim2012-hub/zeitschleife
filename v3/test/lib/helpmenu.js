@@ -78,9 +78,9 @@ const PAGES={
   C('grip','Grip','Gegenstand greifen und halten'),
   C('trig','Trigger','Benutzen · mit dem Laser auch aus der Ferne greifen'),
   C('laser','Laser','Auf Türen, Automaten und Dinge zeigen + Trigger'),
-  C('abxy','A / X · B / Y','A/X = Aktion · B/Y = zurück, Spiel verlassen'),
-  C('phone','Handy','Aus dem Inventar wählen = in der Hand · B legt es zurück'),
-  C('bag','Inventar','Gesammelte Dinge'),
+  C('abxy','A / X · B / Y','A/X = Aktion · Y = Taschen · B = zurück'),
+  C('phone','Handy','Aus dem Inventar wählen = in die Hand · B legt es zurück'),
+  C('bag','Inventar','Y öffnet die Taschen · Trigger nimmt · auf Figur anwenden'),
   C('stickL','Hilfe','Linken Stick drücken = diese Tafel')],
   'Der Boden ist echt (Höhe 0). Wenn dir schwindelig wird: Teleport statt Gehen.'],
  pc:['🖥️ PC',[
@@ -88,6 +88,7 @@ const PAGES={
   C('mouse','Maus ziehen','Umsehen'),
   C('tap','Klick','Benutzen, nehmen, ansehen · Tür anklicken'),
   C('esc','Esc','Zurück · Ansicht oder Spiel verlassen'),
+  C('bag','Inventar','Taste I · Gegenstand anklicken = in die Hand, nochmal auf Figur = anwenden'),
   C('cine','Automaten','Pfeiltasten + Leertaste, Esc = zurück')],
   'Mit VR-Brille: Knopf „VR“ unten rechts.']
 };

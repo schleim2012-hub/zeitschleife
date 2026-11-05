@@ -1,4 +1,4 @@
-/* v17 Warteraum: Wartenummer-Quest ohne Auswahlmenü (Pete 05.11.).
+/* v22 Warteraum: Wartenummer-Quest ohne Auswahlmenü (Pete 05.11.).
    Spender → Wartenummer 42 NUR ins Inventar. Kostüm-Mann (Nr. 13) erzählt zuerst seine Geschichte und labert weiter – keine Optionsliste.
    Spieler öffnet selbst die Taschen (Taste i / B/Y), nimmt die Nummer in die Hand und wendet sie auf ihn an (klassisch Gegenstand auf Figur).
    → Nummer verbraucht, Halloween-Feuerzeug (has.feuerzeug, kein Anker) im Inventar. Sprache: ElevenLabs (assets/warteraum/audio/g_*.mp3, e_*.mp3).
@@ -49,7 +49,7 @@ function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
  const bufs={}; const G=C.nf.find(f=>f.F.n==='garfield'), gp=new T.Vector3(); G.el.object3D.getWorldPosition(gp);
  const voice=(n,pos,cb)=>{ try{ if(st.src){ st.src.onended=null; st.src.stop(); } }catch(e){} st.src=null; const ac=C.ac; if(!ac){ if(cb) setTimeout(cb,(LINES[n]||'').length*65+600); return; }
   if(ac.state==='suspended') ac.resume();
-  (bufs[n]||(bufs[n]=fetch(BASE+'audio/'+n+'.mp3?v=17').then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); }).then(b=>new Promise((res,rej)=>ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=ac.createBufferSource(); s.buffer=b; const g=ac.createGain(); g.gain.value=1.15; s.connect(g); g.connect(pos?C.pan(pos,1.2,1):ac.destination); s.onended=()=>{ if(st.src===s) st.src=null; if(cb) cb(); }; s.start(); st.src=s; window.__wrq&&(window.__wrq.last=n); })
+  (bufs[n]||(bufs[n]=fetch(BASE+'audio/'+n+'.mp3?v=22').then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); }).then(b=>new Promise((res,rej)=>ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=ac.createBufferSource(); s.buffer=b; const g=ac.createGain(); g.gain.value=1.15; s.connect(g); g.connect(pos?C.pan(pos,1.2,1):ac.destination); s.onended=()=>{ if(st.src===s) st.src=null; if(cb) cb(); }; s.start(); st.src=s; window.__wrq&&(window.__wrq.last=n); })
    .catch(()=>{ if(cb) setTimeout(cb,(LINES[n]||'').length*65+600); }); };
  const GPOS=[gp.x,1.0,gp.z];
  // Taschen
@@ -61,10 +61,11 @@ function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
  const hud=()=>{ hx.clearRect(0,0,256,64); if(st.hand){ hx.fillStyle='rgba(16,14,11,0.75)'; hx.fillRect(0,0,256,64); hx.fillStyle=ITEMS[st.hand].c; hx.fillRect(8,10,30,44); hx.fillStyle='#ece3cb'; hx.font='600 22px Georgia,serif'; hx.fillText(ITEMS[st.hand].t,48,40); } hm.visible=!!st.hand; htx.needsUpdate=true; };
  // Gespräch: erst die Sterbegeschichte, dann seine Geschichte weiter (kein Tipp, keine Optionen)
  const showLine=(k,toast)=>{ P.mode='gar'; P.title='NR. 13 · Überdosis Lasagne'; P.sub=LINES[k]; P.toast=toast||''; place(gp.clone().setY(1)); draw(); };
- const talk=()=>{ if(st.busy) return; const L=ld(), f=L.flag; if(st.hand){ return apply(st.hand); }
+ const talk=(force)=>{ if(st.busy) return; const L=ld(), f=L.flag; if(!force&&st.hand){ return apply(st.hand); }
   let k; if(f.garfield_getauscht) k='g_danach'; else if(!f.gar_erst){ f.gar_erst=1; k='g_erst'; } else if(!f.gar_versteck){ f.gar_versteck=1; k='g_versteck'; } else { f.gar_n=(f.gar_n||0)+1; k=f.gar_n%2?'g_laber':'g_versteck'; }
   sv(L); showLine(k); voice(k,GPOS); };
- const apply=k=>{ const L=ld(); if(L.flag.garfield_getauscht||k!=='wartenummer'||!L.has.wartenummer||!L.flag.gar_erst){ st.hand=null; hud(); return talk(); }
+ const apply=k=>{ const L=ld(); if(L.flag.garfield_getauscht||k!=='wartenummer'||!L.has.wartenummer){ st.hand=null; hud(); return talk(true); }
+  if(!L.flag.gar_erst){ return talk(true); /* Hand behalten – erst die Geschichte */ }
   st.busy=1; st.hand=null; hud(); showLine('g_geben'); voice('g_geben',GPOS,()=>{ const L2=ld(); delete L2.has.wartenummer; L2.trash=(L2.trash||[]).filter(x=>x!=='wartenummer'); L2.has.feuerzeug=1; L2.flag.garfield_getauscht=1; sv(L2);
    C.play&&C.play('page',GPOS,0.5); showLine('g_tausch','Erhalten: Halloween-Feuerzeug'); voice('g_tausch',GPOS,()=>{ P.toast=ERZ.rauch; draw(); voice('e_rauch',null,()=>{ st.busy=0; }); }); }); };
  const pickPanel=uv=>{ if(P.mode!=='inv'){ close(); return; } const x=uv.x*1024, y=(1-uv.y)*640; const s=P.slots.find(([sx,sy,w,h])=>x>=sx&&x<=sx+w&&y>=sy&&y<=sy+h); if(s) pickSlot(s[4]); else close(); };
@@ -82,14 +83,14 @@ function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
  // Maus/Handy
  const canvas=sc.canvas; let dn=null; canvas.addEventListener('mousedown',e=>{ dn=[e.clientX,e.clientY]; });
  const clickAt=(nx,ny)=>{ const ry=new T.Raycaster(); ry.setFromCamera(new T.Vector2(nx,ny),C.el.camera);
-  const objs=[...(pm.visible?[pm]:[]),hD.getObject3D('mesh'),hG.getObject3D('mesh')].filter(Boolean); const x=ry.intersectObjects(objs,false)[0]; if(!x||x.distance>4){ if(pm.visible&&P.mode==='inv') close(); return; }
+  const objs=[...(pm.visible?[pm]:[]),hD.getObject3D('mesh'),hG.getObject3D('mesh')].filter(Boolean); const x=ry.intersectObjects(objs,false)[0]; if(!x||x.distance>8){ if(pm.visible&&P.mode==='inv') close(); return; }
   if(x.object===pm) pickPanel(x.uv); else if(x.object===hD.getObject3D('mesh')) pull(); else if(x.object===hG.getObject3D('mesh')) talk(); };
  canvas.addEventListener('click',e=>{ if(C.el.renderer.xr.isPresenting) return; if(dn&&Math.hypot(e.clientX-dn[0],e.clientY-dn[1])>8) return; const r=canvas.getBoundingClientRect(); setTimeout(()=>clickAt((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),0); });
  const toggleInv=()=>{ if(pm.visible&&P.mode==='inv') close(); else openInv(); };
  window.addEventListener('keydown',e=>{ if(e.key==='i'||e.key==='I') toggleInv(); if(e.key==='Escape'){ close(); if(st.hand){ st.hand=null; hud(); } } });
  ['hl','hr'].forEach(id=>{ const h=document.getElementById(id); if(!h) return; ['bbuttondown','ybuttondown'].forEach(ev=>h.addEventListener(ev,toggleInv)); });
  const tick=()=>{ if(pm.visible){ const h=C.head(); if(h.distanceTo(pm.position)>1.6) close(); } if(st.tear){ st.tear+=1; const k=Math.min(1,st.tear/14); tk.position.y=DP.y-0.035-0.05*k; tk.material.opacity=1-k; tk.material.transparent=true; if(k>=1){ st.tear=0; tk.position.y=DP.y-0.035; tk.material.opacity=1; showTk(); } } requestAnimationFrame(tick); }; tick();
- showTk(); window.__wrq={openInv,talk,pull,close,ld,P,st,pickSlot,clickAt,apply};
+ showTk(); window.__wrq={openInv,talk,pull,close,toggle:toggleInv,ld,P,st,pickSlot,clickAt,apply};
 }
 function num(k,d){ const m=new RegExp('[?&]'+k+'=(-?[0-9.]+)').exec(Q); return m?parseFloat(m[1]):d; }
 reg();

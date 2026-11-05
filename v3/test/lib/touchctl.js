@@ -108,13 +108,15 @@ function back(){
 const heldNow=()=>!!(window.ZSHeld&&ZSHeld.active&&ZSHeld.active());
 function phoneOut(){ return !!(window.ZSINV&&ZSINV.where&&(ZSINV.where()==='hand'||(window.ZSX&&ZSX.active&&ZSX.cur&&ZSX.cur.obj===(document.getElementById('nokio')||{}).object3D))); }
 function toggleInv(){ const p=document.getElementById('tc-inv-p'); if(p.style.display==='block'){ p.style.display='none'; return; }
+ // Warteraum-Quest (wr_quest): 3D-Taschen – Nummer nehmen und auf Figuren anwenden
+ if(window.__wrq&&__wrq.toggle){ p.style.display='none'; walk=null; __wrq.toggle(); return; }
  if(window.ZSINV&&ZSINV.list&&ZSINV.list().length===1&&ZSINV.take){ if(phoneOut()) ZSINV.putAway(); else { walk=null; ZSINV.take(); } return; }
  let h='<b>INVENTAR</b>';
  const inv=window.ZSINV&&ZSINV.list&&ZSINV.list();
  if(inv&&inv.length){ inv.forEach(it=>{ h+=`<div class="it" data-id="${it.id||''}"><span style="font-size:22px">${it.icon||'▪'}</span><span>${it.name||it.id}</span></div>`; }); }
  else if(window.ZSINV&&ZSINV.toggle){ p.style.display='none'; ZSINV.toggle(); return; }
  else { const Sx=window.ZSA; if(Sx&&Sx.STEPS){ const n=Sx.step, tot=Sx.STEPS.length; h+=`<div class="it"><span style="font-size:22px">🗝️</span><span>Fortschritt: Raum ${Math.min(n+1,tot)} von ${tot}<br><small style="opacity:.6">${(Sx.cur()&&Sx.cur().title)||''}</small></span></div>`; }
-  h+='<div class="it" style="opacity:.6"><span style="font-size:22px">📱</span><span>Handy & Gegenstände folgen mit dem nächsten Update</span></div>'; }
+  h+='<div class="it" style="opacity:.6"><span style="font-size:22px">📱</span><span>Taschen leer</span></div>'; }
  p.innerHTML=h; p.style.display='block';
  p.querySelectorAll('.it[data-id]').forEach(e=>e.addEventListener('click',()=>{ if(window.ZSINV&&ZSINV.select) ZSINV.select(e.dataset.id); p.style.display='none'; })); }
 
