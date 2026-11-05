@@ -185,6 +185,10 @@ AFRAME.registerComponent('warteraum',{
   root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const b=BX[o.material.name]; if(!b) return; const P=o.geometry.attributes.position; let n=0;
    for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>b[0]&&x<b[1]&&y>b[2]&&y<b[3]&&z>b[4]&&z<b[5]){ P.setX(i,x+DX); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); } });
   (S.colliders||[]).forEach(c=>{ if(Math.abs(c[0]+1.951)<0.01&&Math.abs(c[2]+0.563)<0.01){ c[0]+=DX; c[1]+=DX; } }); this.tableDX=DX;
+  // v19: weicher Kontaktschatten unter dem verschobenen Couchtisch (der eingebackene Bodenschatten ist in der Lightmap kaum sichtbar und ließ sich nicht mitschieben)
+  { const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d'), gr=g.createRadialGradient(64,64,6,64,64,64); gr.addColorStop(0,'rgba(0,0,0,0.85)'); gr.addColorStop(0.55,'rgba(0,0,0,0.45)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,128,128);
+   const tx=new T.CanvasTexture(cv), sm=new T.Mesh(new T.PlaneGeometry(1.15,1.55),new T.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,opacity:num('tsh',0.7),polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+   sm.rotation.x=-Math.PI/2; sm.position.set((-1.99-1.21)/2+DX,0.002,-0.05); sm.renderOrder=1; sm.name='wr_tableshadow'; root.add(sm); }
   // v17: roter Sessel weg – an seiner Stelle sitzt die Katzenfrau im Blümchensessel
   root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const mn=o.material.name; if(mn!=='wr_vinyl'&&mn!=='wr_wood') return; const P=o.geometry.attributes.position; let n=0;
    for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>-2.92&&x<-2.05&&z>-0.97&&z<-0.13&&(mn==='wr_vinyl'?y<1.15:y<0.2)){ P.setY(i,-60); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); this._redN=(this._redN||0)+n; } });
@@ -195,7 +199,7 @@ AFRAME.registerComponent('warteraum',{
   Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ const q=sp(m.pivot); m.pivot=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; } }); const A=S.anchors.oma; if(A){ const q=sp(A); S.anchors.oma=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; }
   // Jäger: Unterseite der Tropenhelm-Krempe trug Gesichtstextur (Frontprojektion) → von unten sah man „Augen“ auf der Krempe. Diese Vertices bekommen den dunklen Krempenschatten aus dem Foto.
   const jh=this.nodes.jaeger_head; if(jh) jh.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv; if(!U||!N) return; o.updateMatrixWorld(true); const v=new T.Vector3(), nn=new T.Vector3(), nm=new T.Matrix3().getNormalMatrix(o.matrixWorld); let k=0;
-   for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); if(nn.y<-0.4&&v.y>1.045){ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
+   for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); if(nn.y<-0.4&&v.y>1.045&&Math.abs(v.z+1.64)>0.13){ /* v18: nicht im Gesichtsfeld – sonst dunkler Balken quer über Augen/Nase */ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
  },
  hasA38(){ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } },
  a38Done(){ try{ return localStorage.getItem('zs_a38_done')==='1'; }catch(e){ return false; } },
@@ -207,12 +211,12 @@ AFRAME.registerComponent('warteraum',{
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
   const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
            {n:'katze',p:[num('ktx',-2.5),0,num('ktz',-0.55)],yaw:num('kty',1.5708),sc:num('ksc',0.82)}];
-  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=18c'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=18h'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
     r.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry; if(!g.attributes.normal) g.computeVertexNormals(); const m=o.material, hw=g.attributes._headw||g.attributes._HEADW;
      if(hw){ /* v18: Kopf+Körper EIN geschlossenes Mesh (keine Naht/Zacken); Kopfdrehung im Vertex-Shader mit weichem Gewicht; Seitenflächen: Basisfarbe je Vertex + kachelbares Fell-/Stoffdetail (triplanar) statt gezogener Frontprojektion */
       g.setAttribute('hdw',hw); if(g.attributes.color){ g.setAttribute('bcol',g.attributes.color); g.deleteAttribute('color'); }
-      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=18c',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
+      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=18h',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
       const mt=o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8});
       mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs});
        sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hdw; attribute vec4 bcol; uniform mat3 uHR; uniform vec3 uNk; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
@@ -278,7 +282,7 @@ AFRAME.registerComponent('warteraum',{
   [-1,1].forEach(k=>{ const ear=new T.Mesh(new T.ConeGeometry(0.036,0.075,4),fur); ear.position.set(k*0.047,0.072,-0.005); ear.rotation.set(-0.15,Math.PI/4,k*-0.3); ear.renderOrder=1000; head.add(ear);
    head.add(E(0.019,1,1,0.6,eyeM,k*0.031,0.014,0.056,12), E(0.011,1,1.1,0.5,pup,k*0.031,0.014,0.0665,8)); });
   const tc=new T.CatmullRomCurve3([[0,0.03,-0.16],[0.08,0.01,-0.17],[0.15,0.02,-0.08],[0.16,0.03,0.04]].map(a=>new T.Vector3(...a))), tail=new T.Mesh(new T.TubeGeometry(tc,16,0.016,6),fur); tail.renderOrder=1000; body.add(tail);
-  cat.position.set(num('catx',-2.30),num('caty',0.63),num('catz',1.87)); /* v18: Schoß der größeren Oma */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(num('cats',0.92)); root.add(cat);
+  cat.position.set(num('catx',-2.33),num('caty',0.63),num('catz',1.79)); /* v18: Schoß der größeren Oma */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(num('cats',0.92)); root.add(cat);
   const hitM=new T.Mesh(new T.SphereGeometry(0.2,8,6),new T.MeshBasicMaterial({visible:false})); hitM.position.set(0,0.17,0); cat.add(hitM);
   const hit=document.createElement('a-entity'); hit.setAttribute('class','clickable'); sc.appendChild(hit); hit.setObject3D('mesh',hitM.clone()); hit.object3D.position.copy(cat.position);
   hit.addEventListener('click',()=>{ if(this.el.renderer.xr.isPresenting) this.catTap(); });
