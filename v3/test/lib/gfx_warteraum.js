@@ -16,7 +16,7 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   // v16: Raum ~10 % dunkler (gleichmäßig über Lightmap, Vertex-Licht, Hemi und Lampen → nicht matschig); Oma sitzt jetzt im roten Sessel
-  const DK=this.DK=num('dk',0.6), OMD=this.OMD=[0,0,0];
+  const DK=this.DK=num('dk',0.45), OMD=this.OMD=[0,0,0];
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
   const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035','1.710','0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
   const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
@@ -69,7 +69,7 @@ AFRAME.registerComponent('warteraum',{
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
    const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.15)*DK); // v8: etwas weniger Grundlicht (v7 0.30, flach)
    sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
-   const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32*DK,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
+   const GI=self.GI=num('gi',1.6); const green=new T.PointLight(0x8ee07a,GI,4.6,2); green.position.set(num('gx',0.75),num('gy',1.25),num('gz',1.85)); sc.object3D.add(green); // v21: grünes Licht vom Eingang/NO-EXIT-Tür fällt in den Raum (Boden + Wandstück), Reichweite begrenzt
    const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,(i?1.0:1.3)*num('dkl',0.78),3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
    self.L={hemi,green,warm:warmL};
@@ -121,7 +121,7 @@ AFRAME.registerComponent('warteraum',{
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
   const D=this.motes; if(D){ for(let i=0;i<D.N;i++){ const k=i*3, u=s*0.05+i*1.7; D.P[k]=D.S0[k]+0.12*Math.sin(u*0.9+i); D.P[k+1]=D.S0[k+1]+0.10*Math.sin(u*0.6+i*0.3)-((s*0.012+i*0.37)%1)*0.08; D.P[k+2]=D.S0[k+2]+0.12*Math.cos(u*0.7+i*2.1); } D.g.attributes.position.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
-  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.32*(this.DK||1)*f)-this.L.green.intensity)*0.3; }
+  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=(((this.GI||1.6)*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
@@ -151,6 +151,8 @@ AFRAME.registerComponent('warteraum',{
   // Garfield-Porträt statt Palmenbild (gleiche Atlas-Zelle → Licht bleibt gebacken, 0 Draws extra)
   if(M.wr_paint&&/[?&]gar=1/.test(Q)) new T.TextureLoader().load(BASE+'paintings2.webp?v=10',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; const o=M.wr_paint.map; tx.wrapS=o?o.wrapS:tx.wrapS; tx.wrapT=o?o.wrapT:tx.wrapT; M.wr_paint.map=tx; M.wr_paint.needsUpdate=true; });
   // Theke per Strahl finden (Front + Oberkante)
+  // v21: Platte über den Beinen der zersägten Frau bündig auf die Schnittkante (schwebte)
+  root.updateMatrixWorld(true); root.traverse(o=>{ if(o.name!=='S_wr_fig'||!o.isMesh) return; const pa=o.geometry.attributes.position, mw=o.matrixWorld, iv=mw.clone().invert(), v=new T.Vector3(); for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i).applyMatrix4(mw); if(v.z>1.3&&v.y>0.825&&v.y<0.85){ v.y=v.y<0.835?0.772:0.806+(v.y-0.84)*0.8; v.applyMatrix4(iv); pa.setXYZ(i,v.x,v.y,v.z); } } pa.needsUpdate=true; o.geometry.computeBoundingSphere(); });
   root.updateMatrixWorld(true); const rc=new T.Raycaster(), meshes=[]; root.traverse(o=>{ if(o.isMesh&&!/wr_fig|wr_glass/.test(o.material.name||'')) meshes.push(o); });
   rc.set(new T.Vector3(0.32,0.56,-1.6),new T.Vector3(0,0,-1)); let h=rc.intersectObjects(meshes,false)[0]; const fz=h&&h.point.z<-1.8&&h.point.z>-2.7?h.point.z:-2.02;
   rc.set(new T.Vector3(1.45,1.4,-2.25),new T.Vector3(0,-1,0)); h=rc.intersectObjects(meshes,false).find(x=>x.point.y<1.25&&x.point.y>0.85); const ty=h?h.point.y:1.05;
@@ -205,7 +207,8 @@ AFRAME.registerComponent('warteraum',{
   Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ const q=sp(m.pivot); m.pivot=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; } }); const A=S.anchors.oma; if(A){ const q=sp(A); S.anchors.oma=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; }
   // Jäger: Unterseite der Tropenhelm-Krempe trug Gesichtstextur (Frontprojektion) → von unten sah man „Augen“ auf der Krempe. Diese Vertices bekommen den dunklen Krempenschatten aus dem Foto.
   const jh=this.nodes.jaeger_head; if(jh) jh.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv; if(!U||!N) return; o.updateMatrixWorld(true); const v=new T.Vector3(), nn=new T.Vector3(), nm=new T.Matrix3().getNormalMatrix(o.matrixWorld); let k=0;
-   for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); if(nn.y<-0.4&&v.y>1.045&&Math.abs(v.z+1.64)>0.13){ /* v18: nicht im Gesichtsfeld – sonst dunkler Balken quer über Augen/Nase */ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
+   { const mi=new T.Matrix4().copy(o.matrixWorld).invert(), LH=num('jlh',0.08); for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); const t=Math.min(1,Math.max(0,(v.y-1.025)/0.025)), f=t*t*(3-2*t)*Math.min(1,Math.max(0,(v.x+2.58)/0.2)); if(f>0){ v.y+=LH*f; v.applyMatrix4(mi); P.setXYZ(i,v.x,v.y,v.z); } } P.needsUpdate=true; g.computeBoundingBox(); g.computeBoundingSphere(); } /* v21: Tropenhelm vorn hochgeschoben – die Krempe lag auf Augenhöhe, von oben sah man keine echten Augen */
+   for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); if(v.y>1.044) v.y-=0; nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); const hd=Math.hypot(v.x+2.53,v.z+1.64), brim=(v.y>1.044&&hd>0.125)||(v.y>1.03&&hd>0.2); /* v21: ganze Krempe (auch Vorderkante/Oberseite) trägt keine Gesichtsprojektion mehr – Pete: Augen am Hut */ if(brim){ U.setXY(i,0.462+0.012*((i%5)/5),0.148); k++; continue; } if(nn.y<-0.4&&v.y>1.045&&(Math.abs(v.z+1.64)>0.13||brim)){ /* v18: nicht im Gesichtsfeld – sonst dunkler Balken quer über Augen/Nase */ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
  },
  hasA38(){ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } },
  a38Done(){ try{ return localStorage.getItem('zs_a38_done')==='1'; }catch(e){ return false; } },
@@ -217,7 +220,7 @@ AFRAME.registerComponent('warteraum',{
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
   const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
            {n:'katze',p:[num('ktx',-2.5),0,num('ktz',-0.55)],yaw:num('kty',1.5708),sc:num('ksc',0.82)}];
-  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=20'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=21'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
     r.traverse(o=>{ if(!o.isMesh) return; let g=o.geometry; if(!g.attributes.normal) g.computeVertexNormals(); const m=o.material, hw=g.attributes._headw||g.attributes._HEADW;
      if(hw){ /* v18: Kopf+Körper EIN geschlossenes Mesh (keine Naht/Zacken); Kopfdrehung im Vertex-Shader mit weichem Gewicht; Seitenflächen: Basisfarbe je Vertex + kachelbares Fell-/Stoffdetail (triplanar) statt gezogener Frontprojektion */
@@ -226,14 +229,14 @@ AFRAME.registerComponent('warteraum',{
        const hx=[]; for(let k=0;k<N;k++) if(H[k]){ hr[k]=1; nh++; hx.push(Pp0.getX(k),Pp0.getY(k),Pp0.getZ(k)); }
        const R=num('hdr',0.03); for(let k=0;k<N;k++){ if(H[k]) continue; const x=Pp0.getX(k), y=Pp0.getY(k), z=Pp0.getZ(k); let dm=R*R; for(let q=0;q<hx.length;q+=3){ const dx=hx[q]-x, dy=hx[q+1]-y, dz=hx[q+2]-z, d2=dx*dx+dy*dy+dz*dz; if(d2<dm) dm=d2; } if(dm<R*R){ const u=1-Math.sqrt(dm)/R; hr[k]=u*u*(3-2*u); } } o.userData.nh=nh; }
       g.setAttribute('hdw',new T.BufferAttribute(hr,1)); if(g.attributes.color){ g.setAttribute('bcol',g.attributes.color); g.deleteAttribute('color'); }
-      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},br:{value:0},bc:{value:new T.Vector3(nk[0],nk[1]-0.3,nk[2])},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=20',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
+      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},br:{value:0},bc:{value:new T.Vector3(nk[0],nk[1]-0.3,nk[2])},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=21',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
       const mt=o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:num('nfe',0.18)*(self.DK||1),color:0xd8d0c8});
-      mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uBr:U.br,uBc2:U.bc,uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs});
+      mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uBr:U.br,uBc2:U.bc,uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs,uFz:{value:F.n==='garfield'?1:0}}); /* v21: im Gesicht des Mannes keine Fell-/Basisfarben-Mischung (lag als schiefer Schleier über Wange und Augen) */
        sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hdw; attribute vec4 bcol; uniform float uBr; uniform vec3 uBc2; uniform mat3 uHR; uniform vec3 uNk; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
         .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvON=objectNormal; objectNormal=normalize(mix(objectNormal,uHR*objectNormal,hdw));')
         .replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position; vBC=bcol; { vec3 bq=position-uBc2; transformed+=normal*uBr*exp(-dot(bq,bq)/0.03)*(1.0-hdw); } transformed=mix(transformed,uNk+uHR*(transformed-uNk),hdw);');
-       sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uFur; uniform float uFs; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
-        .replace('#include <map_fragment>','vec3 nO=normalize(vON); vec4 tx=texture2D(map,vMapUv); vec3 bw=abs(nO); bw=pow(bw,vec3(3.)); bw/=bw.x+bw.y+bw.z; float dt=(texture2D(uFur,vOP.xy*uFs).r*bw.z+texture2D(uFur,vOP.zy*uFs).r*bw.x+texture2D(uFur,vOP.xz*uFs).r*bw.y)*1.99; float sd=smoothstep(0.3,0.6,1.0-abs(nO.z)); sd=max(sd,smoothstep(0.85,0.35,vBC.a)); vec4 tC=vec4(mix(tx.rgb,vBC.rgb*mix(1.0,dt,0.85),sd),1.0);\ndiffuseColor*=tC;')
+       sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uFur; uniform float uFs; uniform float uFz; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
+        .replace('#include <map_fragment>','vec3 nO=normalize(vON); vec4 tx=texture2D(map,vMapUv); vec3 bw=abs(nO); bw=pow(bw,vec3(3.)); bw/=bw.x+bw.y+bw.z; float dt=(texture2D(uFur,vOP.xy*uFs).r*bw.z+texture2D(uFur,vOP.zy*uFs).r*bw.x+texture2D(uFur,vOP.xz*uFs).r*bw.y)*1.99; float sd=smoothstep(0.3,0.6,1.0-abs(nO.z)); sd=max(sd,smoothstep(0.85,0.35,vBC.a)); sd*=1.0-uFz*(1.0-smoothstep(0.105,0.135,abs(vOP.x)))*smoothstep(0.93,0.96,vOP.y)*(1.0-smoothstep(1.125,1.15,vOP.y))*smoothstep(0.0,0.03,vOP.z); vec4 tC=vec4(mix(tx.rgb,vBC.rgb*mix(1.0,dt,0.85),sd),1.0);\ndiffuseColor*=tC;')
         .replace('#include <emissivemap_fragment>','totalEmissiveRadiance*=tC.rgb;'); };
       body=o; o.userData.U=U; return; }
      o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:num('nfe',0.18)*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
