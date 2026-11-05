@@ -1,4 +1,4 @@
-/* v22 Warteraum: Wartenummer-Quest ohne Auswahlmenü (Pete 05.11.).
+/* v23 Warteraum: Wartenummer-Quest ohne Auswahlmenü (Pete 05.11.).
    Spender → Wartenummer 42 NUR ins Inventar. Kostüm-Mann (Nr. 13) erzählt zuerst seine Geschichte und labert weiter – keine Optionsliste.
    Spieler öffnet selbst die Taschen (Taste i / B/Y), nimmt die Nummer in die Hand und wendet sie auf ihn an (klassisch Gegenstand auf Figur).
    → Nummer verbraucht, Halloween-Feuerzeug (has.feuerzeug, kein Anker) im Inventar. Sprache: ElevenLabs (assets/warteraum/audio/g_*.mp3, e_*.mp3).
@@ -21,6 +21,9 @@ const ERZ={ rauch:'Die Nummer ist jetzt Rauch. Die Behörde würde weinen, wenn 
 const reg=()=>{ const C=window.__wr&&window.__wr.comp; if(!C||!C.nf||!C.nf.find(f=>f.F.n==='garfield')){ setTimeout(reg,400); return; } init(C); };
 function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
  const BASE=(window.WR_BASE||'../assets/warteraum/');
+ // Item-Icons (kein Canvas-Platzhalter mehr fürs Feuerzeug)
+ const icons={}; const loadIcon=(k,f)=>{ const im=new Image(); im.decoding='async'; im.src=BASE+f+'?v=23'; icons[k]=im; im.onload=()=>{ try{ if(P.mode==='inv') draw(); hud(); }catch(e){} }; };
+ loadIcon('feuerzeug','item_feuerzeug.png');
  // Tafel (Dialog/Taschen) – reine Anzeige, keine Optionsliste
  const cv=document.createElement('canvas'); cv.width=1024; cv.height=640; const cx=cv.getContext('2d'), tx=new T.CanvasTexture(cv); tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=4;
  const pm=new T.Mesh(new T.PlaneGeometry(0.64,0.4),new T.MeshBasicMaterial({map:tx,transparent:true,depthTest:false,toneMapped:false,fog:false})); pm.renderOrder=999; pm.visible=false; pm.position.set(0,-50,0); sc.object3D.add(pm);
@@ -40,7 +43,8 @@ function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
    its.forEach((k,i)=>{ const x=36+i*250, yy=100, w=220, h=300, sel=st.hand===k; P.slots.push([x,yy,w,h,k]);
     cx.fillStyle=sel?'rgba(255,220,140,0.22)':'rgba(255,240,200,0.07)'; cx.fillRect(x,yy,w,h); cx.strokeStyle=sel?'#ffd27a':'#6a5e44'; cx.lineWidth=sel?6:3; cx.strokeRect(x,yy,w,h);
     if(k==='wartenummer'){ cx.fillStyle='#b8d8a0'; cx.fillRect(x+50,yy+30,120,150); cx.fillStyle='#2a3a22'; cx.textAlign='center'; cx.font='bold 16px Georgia,serif'; cx.fillText('BÜRGERAMT',x+110,yy+56); cx.font='bold 64px "Courier New",monospace'; cx.fillText('42',x+110,yy+132); cx.textAlign='left'; }
-    else { cx.fillStyle='#3a2a18'; cx.fillRect(x+80,yy+70,60,110); cx.fillStyle='#e89a3a'; cx.fillRect(x+84,yy+74,52,102); cx.fillStyle='#222'; cx.fillRect(x+92,yy+48,36,22); const g=cx.createRadialGradient(x+110,yy+30,2,x+110,yy+30,26); g.addColorStop(0,'rgba(255,240,180,1)'); g.addColorStop(1,'rgba(255,140,40,0)'); cx.fillStyle=g; cx.fillRect(x+80,yy,60,56); cx.fillStyle='#111'; cx.beginPath(); cx.arc(x+102,yy+120,7,0,7); cx.arc(x+120,yy+120,7,0,7); cx.fill(); }
+    else if(k==='feuerzeug'&&icons.feuerzeug&&icons.feuerzeug.complete&&icons.feuerzeug.naturalWidth){ const im=icons.feuerzeug, maxW=168, maxH=196; const s=Math.min(maxW/im.naturalWidth,maxH/im.naturalHeight); const dw=im.naturalWidth*s, dh=im.naturalHeight*s; cx.drawImage(im,x+(w-dw)/2,yy+12,dw,dh); }
+    else { cx.fillStyle='#3a2a18'; cx.fillRect(x+80,yy+70,60,110); cx.fillStyle='#e89a3a'; cx.fillRect(x+84,yy+74,52,102); cx.fillStyle='#c9b08a'; cx.fillRect(x+92,yy+48,36,22); const g=cx.createRadialGradient(x+110,yy+30,2,x+110,yy+30,26); g.addColorStop(0,'rgba(255,240,180,1)'); g.addColorStop(1,'rgba(255,140,40,0)'); cx.fillStyle=g; cx.fillRect(x+80,yy,60,56); }
     cx.fillStyle=sel?'#ffd27a':'#d8cfb8'; cx.font='600 24px Georgia,serif'; wrap(ITEMS[k].t,x+14,yy+225,w-24,28); });
    if(P.toast){ cx.fillStyle='#e8c070'; cx.font='italic 30px Georgia,serif'; wrap(P.toast,36,470,W-80,38); } }
   else if(P.toast){ cx.fillStyle='#e8c070'; cx.font='600 30px Georgia,serif'; wrap(P.toast,36,Math.max(y,470),W-80,38); }
@@ -56,9 +60,9 @@ function init(C){ const T=THREE, sc=C.el, st={tear:0,hand:null,busy:0,src:null};
  const openInv=msg=>{ P.mode='inv'; P.title='TASCHEN'+(st.hand?' · in der Hand: '+ITEMS[st.hand].t:''); P.sub=''; P.toast=msg||''; place(C.head().clone().add(camDir())); draw(); };
  const pickSlot=k=>{ const L=ld(); if(!L.has[k]) return; if(st.hand===k){ st.hand=null; openInv(''); return; } st.hand=k; openInv(ITEMS[k].d); voice(ITEMS[k].a,null); hud(); setTimeout(()=>{ if(P.mode==='inv'&&st.hand===k) close(); },1600); };
  // Hand-Anzeige (kleiner Zettel/Feuerzeug unten im Blickfeld)
- const hc=document.createElement('canvas'); hc.width=256; hc.height=64; const hx=hc.getContext('2d'), htx=new T.CanvasTexture(hc); htx.colorSpace=T.SRGBColorSpace;
- const hm=new T.Mesh(new T.PlaneGeometry(0.16,0.04),new T.MeshBasicMaterial({map:htx,transparent:true,depthTest:false,toneMapped:false,fog:false})); hm.renderOrder=1000; hm.visible=false; C.el.camera.add(hm); hm.position.set(0,-0.13,-0.4);
- const hud=()=>{ hx.clearRect(0,0,256,64); if(st.hand){ hx.fillStyle='rgba(16,14,11,0.75)'; hx.fillRect(0,0,256,64); hx.fillStyle=ITEMS[st.hand].c; hx.fillRect(8,10,30,44); hx.fillStyle='#ece3cb'; hx.font='600 22px Georgia,serif'; hx.fillText(ITEMS[st.hand].t,48,40); } hm.visible=!!st.hand; htx.needsUpdate=true; };
+ const hc=document.createElement('canvas'); hc.width=320; hc.height=96; const hx=hc.getContext('2d'), htx=new T.CanvasTexture(hc); htx.colorSpace=T.SRGBColorSpace;
+ const hm=new T.Mesh(new T.PlaneGeometry(0.20,0.06),new T.MeshBasicMaterial({map:htx,transparent:true,depthTest:false,toneMapped:false,fog:false})); hm.renderOrder=1000; hm.visible=false; C.el.camera.add(hm); hm.position.set(0,-0.14,-0.4);
+ const hud=()=>{ hx.clearRect(0,0,320,96); if(st.hand){ hx.fillStyle='rgba(16,14,11,0.78)'; hx.fillRect(0,0,320,96); let tx=56; if(st.hand==='feuerzeug'&&icons.feuerzeug&&icons.feuerzeug.complete&&icons.feuerzeug.naturalWidth){ const im=icons.feuerzeug, th=84, tw=th*(im.naturalWidth/im.naturalHeight); hx.drawImage(im,10,6,tw,th); tx=Math.round(10+tw+10); } else { hx.fillStyle=ITEMS[st.hand].c; hx.fillRect(10,16,36,64); } hx.fillStyle='#ece3cb'; hx.font='600 22px Georgia,serif'; hx.fillText(ITEMS[st.hand].t,tx,56); } hm.visible=!!st.hand; htx.needsUpdate=true; };
  // Gespräch: erst die Sterbegeschichte, dann seine Geschichte weiter (kein Tipp, keine Optionen)
  const showLine=(k,toast)=>{ P.mode='gar'; P.title='NR. 13 · Überdosis Lasagne'; P.sub=LINES[k]; P.toast=toast||''; place(gp.clone().setY(1)); draw(); };
  const talk=(force)=>{ if(st.busy) return; const L=ld(), f=L.flag; if(!force&&st.hand){ return apply(st.hand); }
