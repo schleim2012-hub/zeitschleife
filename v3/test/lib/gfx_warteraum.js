@@ -271,9 +271,9 @@ AFRAME.registerComponent('warteraum',{
  catParty(){ const C=this.cat; if(!C||C.party>0) return; C.party=13.0; C.t0=performance.now()/1000; C.veil.visible=false; [...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=true);
   C.p0=C.g.position.clone(); C.s0=C.g.scale.x; C.fxg.visible=true; const keep=new Set([C.fxg,C.g,...C.spots,...C.beams,...C.fog]), sc=this.el.object3D, cam=this.el.camera; C.hid=[];
   sc.traverse(o=>{ if(!(o.isMesh||o.isPoints||o.isSprite||o.isLine)||!o.visible) return; let p=o; while(p){ if(keep.has(p)||p===cam||p.isCamera) return; p=p.parent; } o.visible=false; C.hid.push(o); });
-  C.bg=sc.background; sc.background=new THREE.Color(0); C.fg=sc.fog; sc.fog=null;
+  C.bg=sc.background; sc.background=new THREE.Color(0); C.fg=sc.fog; sc.fog=null; if(!/[?&]vid=0/.test(Q)) this.vidStart();
   if(this.ac){ const n='oiia'; (this.buf[n]||(this.buf[n]=fetch(BASE+'audio/oiia.mp3?v=2').then(r=>r.arrayBuffer()).then(b=>new Promise((res,rej)=>this.ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; const g=this.ac.createGain(); g.gain.value=1.0; s.connect(g); g.connect(this.ac.destination); s.start(); C.src=s; if(C.party>0){ C.t0=performance.now()/1000; C.party=13.0; } }).catch(()=>this.oiiaMusic()); } },
- catEnd(){ const C=this.cat; C.fxg.visible=false; if(C.p0){ C.g.position.copy(C.p0); C.g.scale.setScalar(C.s0); } (C.hid||[]).forEach(o=>o.visible=true); C.hid=[]; const sc=this.el.object3D; sc.background=C.bg||null; if(C.fg) sc.fog=C.fg; C.lvl=0; C.party=0;
+ catEnd(){ const C=this.cat; C.fxg.visible=false; if(C.vid){ C.vid.g.visible=false; C.vid.blob.visible=false; C.body.visible=true; C.ghosts.forEach(G=>G.h.visible=true); } if(C.p0){ C.g.position.copy(C.p0); C.g.scale.setScalar(C.s0); } (C.hid||[]).forEach(o=>o.visible=true); C.hid=[]; const sc=this.el.object3D; sc.background=C.bg||null; if(C.fg) sc.fog=C.fg; C.lvl=0; C.party=0;
   [C.veil,...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=false); const B=C.body; B.position.y=0; B.rotation.y=0; B.scale.set(1,1,1); C.mats.forEach(m=>m.emissiveIntensity=m===C.mats[0]?0.07:1); try{ C.src&&C.src.stop(); }catch(e){} },
  oiiaMusic(){ const ac=this.ac; if(!ac) return; const t0=ac.currentTime+0.05, out=ac.createGain(); out.gain.value=0.7; out.connect(ac.destination); const bt=60/128;
   for(let i=0;i<40;i++){ const t=t0+i*bt/2; if(i%2===0){ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25); o.connect(g); g.connect(out); o.start(t); o.stop(t+0.3); }
@@ -304,7 +304,48 @@ AFRAME.registerComponent('warteraum',{
    C.trails.forEach((G,i)=>{ G.gb.scale.copy(B.scale).multiplyScalar(cs*(1.05+0.08*i)); G.gb.position.y=B.position.y*cs; G.gb.rotation.y=B.rotation.y-0.45*(i+1); G.gm.color.setHSL((hue+0.3+i*0.12)%1,1,0.5); G.gm.opacity=k*(0.22-0.06*i)*fl; });
    C.lasers.forEach((m,i)=>{ const a=te*(0.6+lL*1.8)*(i%2?1:-1)+i*Math.PI/6; m.rotation.set(Math.PI/2-0.25-0.35*Math.sin(te*1.3+i),0,0); m.rotation.y=a; m.rotation.order='YXZ'; m.material.color.setHSL((hue+i/12)%1,1,0.55); m.material.opacity=lL*(0.35+0.4*st)*fl; });
    C.rings.forEach((m,i)=>{ const q=((beat+i/5*4)%4)/4; m.scale.setScalar(0.2+3.5*q); m.position.y=-0.25; m.material.color.setHSL((hue+q)%1,1,0.5); m.material.opacity=rL*(1-q)*0.5*fl; }); }
-  C.fog.forEach((m,i)=>{ m.position.x+=d*0.06*Math.sin(i+te*0.2); m.material.opacity=fogL*0.2*(0.6+0.4*fl); }); },
+  C.fog.forEach((m,i)=>{ m.position.x+=d*0.06*Math.sin(i+te*0.2); m.material.opacity=fogL*0.2*(0.6+0.4*fl); }); if(C.vid) this.vidTick(te,d,beat); },
+ // v15b: video-treue OIIA-Party (Notizen OIIA_VIDEO_NOTES): Katze SCHNAPPT ohne Übergang zwischen stehender Tigerkatze und dunklem, glattem Blob,
+ // der extrem schnell um seine HORIZONTALE Achse rotiert (Bewegungsunschärfe = Nachzieh-Kopien). Kamera bleibt fest; Intensität kommt von Kulissen,
+ // die auf Z zum Spieler rasen: Chroma-Grün → Galaxie → Neon-Tunnel → LED-Punkt-Tunnel → Mandala → Cyber-Gitter → Rot-Galaxie → blaue Warp-Streifen, zum Ende immer schneller gemischt.
+ // VR-Komfort: kein Vollbild-Blitz, kein Wackeln, Chroma-Versatz nur am Blob. Ende: abrupt (catEnd).
+ vidTex(){ if(this._vtx) return this._vtx; const T=THREE, mk=f=>{ const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d'); f(x,256); const t=new T.CanvasTexture(c); t.colorSpace=T.SRGBColorSpace; return t; };
+  const R=(a,b)=>a+Math.random()*(b-a);
+  const ring=(x,h,cols,n,w)=>{ for(let i=0;i<n;i++){ x.strokeStyle=cols[i%cols.length]; x.lineWidth=w; x.beginPath(); x.arc(h,h,h*(i+1)/n,0,7); x.stroke(); } };
+  this._vtx=[
+   mk((x,h)=>{ x.fillStyle='#14d420'; x.fillRect(0,0,512,512); x.fillStyle='rgba(0,90,0,0.5)'; for(let i=0;i<40;i++) x.fillRect(R(0,512),R(0,512),R(8,60),2); }),
+   mk((x,h)=>{ x.fillStyle='#05020f'; x.fillRect(0,0,512,512); for(let i=0;i<26;i++){ const g=x.createRadialGradient(R(60,450),R(60,450),0,h+R(-100,100),h+R(-100,100),R(60,220)); g.addColorStop(0,`hsla(${R(250,330)},90%,60%,0.35)`); g.addColorStop(1,'hsla(260,90%,30%,0)'); x.fillStyle=g; x.fillRect(0,0,512,512); } x.fillStyle='#fff'; for(let i=0;i<500;i++) x.fillRect(R(0,512),R(0,512),R(1,2.5),R(1,2.5)); }),
+   mk((x,h)=>{ x.fillStyle='#000'; x.fillRect(0,0,512,512); for(let i=0;i<14;i++){ x.strokeStyle=i%2?'#ff2bd6':'#2b8cff'; x.lineWidth=10; x.beginPath(); for(let a=0;a<6.3;a+=0.05){ const r=h*(i+1)/14*(1+0.08*Math.sin(a*5+i)); x.lineTo(h+r*Math.cos(a+i*0.3),h+r*Math.sin(a+i*0.3)); } x.closePath(); x.stroke(); } }),
+   mk((x,h)=>{ x.fillStyle='#000'; x.fillRect(0,0,512,512); for(let i=1;i<12;i++){ const r=h*i/11; for(let a=0;a<6.28;a+=0.6/i){ x.fillStyle=`hsl(${(i*30)%360},100%,65%)`; x.beginPath(); x.arc(h+r*Math.cos(a),h+r*Math.sin(a),3,0,7); x.fill(); } } x.strokeStyle='rgba(120,255,255,0.35)'; x.lineWidth=1; for(let a=0;a<6.28;a+=0.39){ x.beginPath(); x.moveTo(h,h); x.lineTo(h+h*1.5*Math.cos(a),h+h*1.5*Math.sin(a)); x.stroke(); } }),
+   mk((x,h)=>{ x.fillStyle='#12001c'; x.fillRect(0,0,512,512); x.translate(h,h); for(let k=0;k<12;k++){ x.rotate(Math.PI/6); for(let i=0;i<7;i++){ x.fillStyle=i%2?'rgba(170,40,255,0.75)':'rgba(60,255,120,0.7)'; x.beginPath(); x.ellipse(40+i*30,0,18+i*3,7+i,0,0,7); x.fill(); } } }),
+   mk((x,h)=>{ x.fillStyle='#0a0018'; x.fillRect(0,0,512,512); x.lineWidth=3; for(let i=0;i<=16;i++){ x.strokeStyle=i%2?'#ff3fb0':'#3fb6ff'; x.beginPath(); x.moveTo(i*32,0); x.lineTo(i*32,512); x.stroke(); x.beginPath(); x.moveTo(0,i*32); x.lineTo(512,i*32); x.stroke(); } }),
+   mk((x,h)=>{ x.fillStyle='#120000'; x.fillRect(0,0,512,512); for(let i=0;i<24;i++){ const g=x.createRadialGradient(h,h,0,h+R(-140,140),h+R(-140,140),R(80,240)); g.addColorStop(0,`hsla(${R(-10,20)},100%,55%,0.35)`); g.addColorStop(1,'hsla(0,100%,20%,0)'); x.fillStyle=g; x.fillRect(0,0,512,512); } x.fillStyle='#ffd0c0'; for(let i=0;i<400;i++) x.fillRect(R(0,512),R(0,512),1.5,1.5); }),
+   mk((x,h)=>{ x.fillStyle='#000318'; x.fillRect(0,0,512,512); for(let i=0;i<220;i++){ const a=R(0,6.28), r0=R(10,120), r1=r0+R(60,260); x.strokeStyle=`hsla(${R(190,230)},100%,${R(55,85)}%,0.8)`; x.lineWidth=R(1,3); x.beginPath(); x.moveTo(h+r0*Math.cos(a),h+r0*Math.sin(a)); x.lineTo(h+r1*Math.cos(a),h+r1*Math.sin(a)); x.stroke(); } }) ];
+  return this._vtx; },
+ vidStart(){ const C=this.cat, T=THREE, sc=this.el.object3D; if(!C) return; const tx=this.vidTex();
+  if(!C.vid){ const g=new T.Group(), L=[]; for(let i=0;i<7;i++){ const m=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:tx[0],transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,fog:false})); m.renderOrder=-5; m.frustumCulled=false; g.add(m); L.push({m,z:i/7}); }
+   const back=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:tx[0],depthWrite:false,side:T.DoubleSide,fog:false})); back.renderOrder=-6; g.add(back); sc.add(g);
+   // Blob: glatte Kapsel, Längsachse horizontal, + Unschärfe-Kopien (2 davon rot/cyan versetzt = Glitch nur am Blob)
+   const bm=new T.MeshStandardMaterial({color:0x221a18,roughness:0.18,metalness:0.6,emissive:0x000000}), blob=new T.Group(), core=new T.Mesh(new T.CapsuleGeometry(0.1,0.2,8,16),bm); core.rotation.z=Math.PI/2; core.scale.set(0.68,1,1); blob.add(core);
+   const ghosts=[0xff2040,0x20e0ff,0xffffff,0xffffff].map((c,i)=>{ const mm=new T.Mesh(core.geometry,new T.MeshBasicMaterial({color:c,transparent:true,opacity:0.25,depthWrite:false,blending:T.AdditiveBlending})); mm.rotation.z=Math.PI/2; mm.scale.set(0.68*(1.06+0.05*i),1.04+0.04*i,1.06+0.05*i); blob.add(mm); return mm; });
+   blob.position.y=0.11; blob.visible=false; C.g.add(blob); C.vid={g,L,back,blob,core,bm,ghosts,ph:-1}; }
+  const V=C.vid, cam=this.el.camera, cp=new T.Vector3(), q=new T.Quaternion(); cam.getWorldPosition(cp); cam.getWorldQuaternion(q);
+  const dir=new T.Vector3(0,0,-1).applyQuaternion(q); dir.y=0; dir.normalize(); const toCat=C.g.position.clone().sub(cp); toCat.y=0; const dc=toCat.length(); if(dc>0.3&&toCat.normalize().dot(dir)>0.3) dir.copy(toCat);
+  V.g.position.copy(cp); V.g.lookAt(cp.x+dir.x,cp.y,cp.z+dir.z); V.zEnd=Math.max(1.2,dc+0.45); V.g.visible=true; V.ph=-1; V.spin=0; },
+ vidTick(te,d,beat){ const C=this.cat, V=C.vid, T=THREE, tx=this._vtx;
+  // Phasen: Beginn-Zeiten (s), ab 10.6 s Mash: Phasenwechsel jeden halben Beat
+  const ST=[0,2.0,3.7,5.2,6.6,7.8,8.9,9.8]; let ph=0; for(let i=0;i<ST.length;i++) if(te>=ST[i]) ph=i; if(te>10.6) ph=1+((Math.floor(beat*2)*5)%7);
+  const TINT=[[0x30ff60,0.0],[0xb070ff,0.5],[0xff40d0,0.6],[0x60ffff,0.5],[0xa040ff,0.6],[0xff50c0,0.7],[0xff2020,0.6],[0x3070ff,0.7]];
+  if(ph!==V.ph){ V.ph=ph; V.back.material.map=tx[ph]; V.back.material.needsUpdate=true; V.L.forEach((l,i)=>{ l.m.material.map=tx[(ph+(i%2))%8===ph?ph:ph]; l.m.material.needsUpdate=true; }); V.bm.emissive.setHex(TINT[ph][0]); V.bm.emissiveIntensity=TINT[ph][1]*0.4; V.bm.metalness=ph>=5?0.9:0.6; }
+  const sp=0.35+0.25*ph/7+(te>10.6?0.5:0); // Rasen auf Z: Schichten von 14 m bis zEnd, skaliert mit
+  const far=14, ze=V.zEnd; V.back.position.set(0,0,far+1); V.back.scale.setScalar(far*2.6); V.back.material.color.setScalar(ph===0?1:0.55);
+  V.L.forEach((l,i)=>{ l.z=(l.z+d*sp)%1; const z=far-(far-ze)*Math.pow(l.z,1.6); l.m.position.set(0,0,z); l.m.scale.setScalar(Math.max(2,z*1.9)); l.m.rotation.z=(ph===2||ph===4?1:0.3)*te*(i%2?1:-1)*0.8; const f=Math.sin(l.z*Math.PI); l.m.material.opacity=(ph===0?0.25:0.55)*f; });
+  // Schnappen Tigerkatze ↔ Blob (kein Easing). Vor dem Drop (2 s) nur Katze; danach Muster je halber Beat, gegen Ende fast nur Blob.
+  const hb=Math.floor(beat*2), blobOn=te>2.0&&((hb%4)!==0||te>9.5)&&!(te>10.6&&hb%5===0);
+  V.blob.visible=blobOn; C.body.visible=!blobOn; C.ghosts.forEach(G=>G.h.visible=!blobOn);
+  V.spin+=d*(55+25*Math.min(1,te/12)); V.blob.rotation.x=V.spin; // ~9–13 U/s um die horizontale Achse
+  V.ghosts.forEach((m,i)=>{ m.rotation.x=-0.35*(i+1); m.position.x=i<2?(i?-1:1)*0.012*(1+Math.sin(beat*9)):0; m.material.opacity=i<2?0.2:0.12-0.03*i; if(i>=2) m.material.color.setHex(TINT[ph][0]); });
+ },
  ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; this.bellAt=this.el.time/1000; B.press=1; this.ding();
   this.talk=1; this.talkEnd=performance.now()+20000; setTimeout(()=>{ this.openPanel(); this.say(this.a38Done()?'wieder':'greet'); },650); },
  ding(){ const ac=this.ac; if(!ac) return; const p=this.pan(this.bell.top.toArray(),0.8,1.2), t=ac.currentTime;
