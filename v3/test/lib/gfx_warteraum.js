@@ -15,10 +15,12 @@ AFRAME.registerComponent('warteraum',{
   fetch(BASE+'scene.json?v=7c').then(r=>r.json()).then(S=>{ self.S=S; self.load(S); });
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
+  // v16: Raum ~10 % dunkler (gleichmäßig über Lightmap, Vertex-Licht, Hemi und Lampen → nicht matschig); Oma sitzt jetzt im roten Sessel
+  const DK=this.DK=num('dk',0.9), OMD=this.OMD=[0.10,0.0,-2.265];
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035','1.710','0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
+  const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035',(1.710-2.265).toFixed(3),'0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
   const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0), LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0); // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0)*DK, LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0)*DK; // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=11s'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
@@ -65,10 +67,10 @@ AFRAME.registerComponent('warteraum',{
    // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
    if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
-   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.21)); // v8: etwas weniger Grundlicht (v7 0.30, flach)
+   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.21)*DK); // v8: etwas weniger Grundlicht (v7 0.30, flach)
    sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
-   const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
-   const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,i?1.0:1.3,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
+   const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32*DK,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
+   const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,(i?1.0:1.3)*DK,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
    self.L={hemi,green,warm:warmL};
    // Rauchfaden (1 Draw: Points)
@@ -80,6 +82,7 @@ AFRAME.registerComponent('warteraum',{
     fragmentShader:'uniform sampler2D map; varying float va; void main(){ vec4 c=texture2D(map,gl_PointCoord); gl_FragColor=vec4(c.rgb*0.55,c.a*va*0.35); }'});
    self.smokeMat=pm; const pts=new T.Points(g,pm); pts.frustumCulled=false; sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
    // bewegliche Teile
+   self.v16layout(S,root);
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
    self.buildCols(S,root);
    self.dust(T,sc,FX,ch);
@@ -103,7 +106,7 @@ AFRAME.registerComponent('warteraum',{
   const qa=new T.Quaternion();
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
-    case 'head': { const g=(u*0.37)%14; a=0.5*Math.sin(u*0.27)+0.16*Math.sin(u*0.61+1.3)+(g<1.6?0.28*Math.sin(g*Math.PI/0.4)*Math.sin(g*Math.PI/1.6):0); } /* v11: deutlich sichtbar (bis ~38°) + gelegentliches Kopfschütteln */ if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.6*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
+    case 'head': { const g=(u*0.37)%14; a=0.27*Math.sin(u*0.27)+0.08*Math.sin(u*0.61+1.3)+(g<1.6?0.13*Math.sin(g*Math.PI/0.4)*Math.sin(g*Math.PI/1.6):0); } /* v16: halbiert (max ~25°) – Frontprojektions-Gesichter verschmieren bei starker Drehung */ if(m.n==='assi_head') a*=0.5; /* v11: deutlich sichtbar (bis ~38°) + gelegentliches Kopfschütteln */ if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.28*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
     case 'arm': { const c=(u%7)/7; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.9:m.n==='frl_arm'?0:-0.65)*(lift*lift*(3-2*lift));
        if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(this.talk) a=0; else if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
        if(m.n==='brand_arm'&&this.tw>0) a+=0.07*Math.sin(s*39)*this.tw;
@@ -118,7 +121,7 @@ AFRAME.registerComponent('warteraum',{
   const S=this.smoke; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>4) S.age[i]-=4; const k=S.age[i]/4; S.P[i*3]=S.base.x+0.04*Math.sin(k*9+i)+k*0.05; S.P[i*3+1]=S.base.y+k*0.55; S.P[i*3+2]=S.base.z+0.04*Math.cos(k*7+i); S.A[i]=Math.sin(k*Math.PI)*(1-k*0.5); } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
   const D=this.motes; if(D){ for(let i=0;i<D.N;i++){ const k=i*3, u=s*0.05+i*1.7; D.P[k]=D.S0[k]+0.12*Math.sin(u*0.9+i); D.P[k+1]=D.S0[k+1]+0.10*Math.sin(u*0.6+i*0.3)-((s*0.012+i*0.37)%1)*0.08; D.P[k+2]=D.S0[k+2]+0.12*Math.cos(u*0.7+i*2.1); } D.g.attributes.position.needsUpdate=true; }
   // Leuchtstoff-Flackern (grünes Licht), ganz leicht
-  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.32*f)-this.L.green.intensity)*0.3; }
+  if(this.L){ const f=Math.random()<0.004?0.45:1; this.L.green.intensity+=((0.32*(this.DK||1)*f)-this.L.green.intensity)*0.3; }
   // Fallblatt: alle 35–70 s eine Nummer weiter
   const F=this.flip; if(F){ if(!F.next) F.next=s+20+Math.random()*20; if(s>F.next&&!F.anim){ F.anim=s; this.sfx('flip'); }
    if(F.anim){ const k=(s-F.anim)/0.35; if(k>=1){ F.n++; this.drawFlip(F.n,F.n,1); F.anim=0; F.next=s+35+Math.random()*35; } else this.drawFlip(F.n,F.n+1,k); } }
@@ -176,19 +179,32 @@ AFRAME.registerComponent('warteraum',{
   if(/[?&]bell=1/.test(Q)) setTimeout(()=>this.ring(),4000);
   if(/[?&]a38=1/.test(Q)) try{ localStorage.setItem('zs_a38','1'); }catch(e){}
  },
+ v16layout(S,root){ const T=THREE, D=this.OMD; root.updateMatrixWorld(true);
+  // Couchtisch (gebacken: Platte+Ablage wr_vinyl, 4 Beine wr_metal, Zeitschriften wr_paper) 0.62 m zur Raummitte → man kommt rundherum. Boxen offline geprüft: nur Tisch-Teile, keine angeschnittenen Dreiecke.
+  const DX=num('tdx',0.62), BX={wr_vinyl:[-1.99,-1.21,0.15,0.51,-0.6,0.5],wr_metal:[-1.93,-1.27,-0.01,0.45,-0.53,0.44],wr_paper:[-1.94,-1.19,0.25,0.52,-0.34,0.19]};
+  root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const b=BX[o.material.name]; if(!b) return; const P=o.geometry.attributes.position; let n=0;
+   for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>b[0]&&x<b[1]&&y>b[2]&&y<b[3]&&z>b[4]&&z<b[5]){ P.setX(i,x+DX); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); } });
+  (S.colliders||[]).forEach(c=>{ if(Math.abs(c[0]+1.951)<0.01&&Math.abs(c[2]+0.563)<0.01){ c[0]+=DX; c[1]+=DX; } }); this.tableDX=DX;
+  // Oma samt Buch in den roten Sessel (ihr alter Stuhl bleibt leer stehen); Pivots/Anker mitziehen → Atmen, Kopf, Geräusche, Kollision passen
+  ['S_wr_fig_oma','oma_head','oma_page'].forEach(n=>{ const o=this.nodes[n]; if(o){ o.position.x+=D[0]; o.position.y+=D[1]; o.position.z+=D[2]; o.updateMatrixWorld(true); } });
+  Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ m.pivot=[m.pivot[0]+D[0],m.pivot[1]+D[1],m.pivot[2]+D[2]]; } }); const A=S.anchors.oma; if(A) S.anchors.oma=[A[0]+D[0],A[1]+D[1],A[2]+D[2]];
+  // Jäger: Unterseite der Tropenhelm-Krempe trug Gesichtstextur (Frontprojektion) → von unten sah man „Augen“ auf der Krempe. Diese Vertices bekommen den dunklen Krempenschatten aus dem Foto.
+  const jh=this.nodes.jaeger_head; if(jh) jh.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv; if(!U||!N) return; o.updateMatrixWorld(true); const v=new T.Vector3(), nn=new T.Vector3(), nm=new T.Matrix3().getNormalMatrix(o.matrixWorld); let k=0;
+   for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); if(nn.y<-0.4&&v.y>1.045){ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
+ },
  hasA38(){ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } },
  a38Done(){ try{ return localStorage.getItem('zs_a38_done')==='1'; }catch(e){ return false; } },
  // Kopf zum Spieler drehen, wenn er nah und vorn steht (Gewicht weich), sonst Idle
  look(m,a,d){ if(!m.f) return a; const h=this.head(); const tx=h.x-m.P.x, tz=h.z-m.P.z, dist=Math.hypot(tx,tz); let th=Math.atan2(m.f.y,m.f.x)-Math.atan2(tz,tx); th=Math.atan2(Math.sin(th),Math.cos(th));
-  const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.3:0.7; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
+  const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.3:m.n==='assi_head'?0.25:0.45; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
   return a*(1-m.w*0.85)+m.la*m.w; },
  // v15: zwei Laufzeit-Figuren (Hunyuan3D, eigene GLBs, nicht gebacken): Garfield-Kostüm-Mann mit Bong (Nr. 13 – Überdosis Lasagne) und Katzenfrau.
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
-  const D=[{n:'garfield',p:[num('gfx',-1.55),0,num('gfz',-2.0)],yaw:num('gfy',0.55),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
+  const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
            {n:'katze',p:[num('ktx',1.45),0,num('ktz',0.9)],yaw:num('kty',-2.2)}];
   D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=15'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
-    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32,color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
+    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
     const hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
     f.b0=f.body?f.body.scale.clone():null; self.nf.push(f);
     // Kollision: Ellipsoid-Kette aus Weltpunkten
@@ -211,9 +227,10 @@ AFRAME.registerComponent('warteraum',{
     S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; } }); },
  extraTick(s,d){ this.nfTick(s,d); (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph);
    // v14: Oberkörper-Wiegen (Gieren/Rollen/Nicken um die Hüfte), Gähnen/Strecken alle ~15–30 s; Empfangsdame dreht sich bei Klingel zum Spieler und nickt
-   const p=b.ph; let ya=0.14*Math.sin(s*0.21+p)+0.05*Math.sin(s*0.53+p*2), ro=0.08*Math.sin(s*0.47+p)+0.03*Math.sin(s*1.1+p*3), pi=0.06*Math.sin(s*0.33+p*1.7);
-   if(!b.yn) b.yn=s+5+Math.random()*15; if(s>b.yn){ const t=s-b.yn; if(t<3.2){ const e=Math.sin(Math.PI*t/3.2); pi-=0.24*e; ro+=0.06*e*Math.sin(t*2); } else b.yn=s+15+Math.random()*15; }
+   const p=b.ph; let ya=0.08*Math.sin(s*0.21+p)+0.03*Math.sin(s*0.53+p*2), ro=0.045*Math.sin(s*0.47+p)+0.015*Math.sin(s*1.1+p*3), pi=0.035*Math.sin(s*0.33+p*1.7); // v16: ~55 % (sichtbar, nicht cartoonhaft)
+   if(!b.yn) b.yn=s+5+Math.random()*15; if(s>b.yn){ const t=s-b.yn; if(t<3.2){ const e=Math.sin(Math.PI*t/3.2); pi-=0.13*e; ro+=0.03*e*Math.sin(t*2); } else b.yn=s+15+Math.random()*15; }
    if(b.n==='frl'){ ya*=0.25; ro*=0.4; pi*=0.4; const bt=s-(this.bellAt||-99); if(bt<5){ const H=b.U.h.value, hp=this.head(), tx=hp.x-H.x, tz=hp.z-H.z, fx=b.f.x, fz=b.f.y; const want=Math.max(-1.3,Math.min(1.3,Math.atan2(fx*tz-fz*tx,fx*tx+fz*tz))), e=Math.min(1,bt*2,(5-bt)*1.2); ya=ya*(1-e)+want*e; if(bt>0.7&&bt<2.6) pi+=0.16*Math.sin((bt-0.7)*Math.PI*2/0.95)*Math.sin((bt-0.7)*Math.PI/1.9); } }
+   if(b.n==='assi'){ ya*=0.2; ro*=0.2; pi=0.2*pi*(pi>0?1:0.2); } // v16: zersägte Frau – Oberkörper liegt auf dem Sofa-Ende, Wiegen um die Hüfte zeigte die Schnittkante
    if(this.cat&&this.cat.party>0) { ya=ro=pi=0; } b.U.s.value.set(ya,ro,pi); });
   // Brandopfer: ab und zu ein Zucken (0.4 s), dazu dauernd Glimm-Rauch
   this.twNext-=d; if(this.twNext<=0){ this.tw=1; this.twNext=5+Math.random()*9; } this.tw=Math.max(0,this.tw-d*2.5);
@@ -243,7 +260,7 @@ AFRAME.registerComponent('warteraum',{
   [-1,1].forEach(k=>{ const ear=new T.Mesh(new T.ConeGeometry(0.036,0.075,4),fur); ear.position.set(k*0.047,0.072,-0.005); ear.rotation.set(-0.15,Math.PI/4,k*-0.3); ear.renderOrder=1000; head.add(ear);
    head.add(E(0.019,1,1,0.6,eyeM,k*0.031,0.014,0.056,12), E(0.011,1,1.1,0.5,pup,k*0.031,0.014,0.0665,8)); });
   const tc=new T.CatmullRomCurve3([[0,0.03,-0.16],[0.08,0.01,-0.17],[0.15,0.02,-0.08],[0.16,0.03,0.04]].map(a=>new T.Vector3(...a))), tail=new T.Mesh(new T.TubeGeometry(tc,16,0.016,6),fur); tail.renderOrder=1000; body.add(tail);
-  cat.position.set(num('catx',-2.27),num('caty',0.55),num('catz',1.85)); cat.rotation.y=Math.PI/2; cat.scale.setScalar(0.85); root.add(cat);
+  cat.position.set(num('catx',-2.27+0.10),num('caty',0.55),num('catz',1.85-2.265)); /* v16: Oma sitzt im roten Sessel → Katze auf ihrem Schoß mit */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(0.85); root.add(cat);
   const hitM=new T.Mesh(new T.SphereGeometry(0.2,8,6),new T.MeshBasicMaterial({visible:false})); hitM.position.set(0,0.17,0); cat.add(hitM);
   const hit=document.createElement('a-entity'); hit.setAttribute('class','clickable'); sc.appendChild(hit); hit.setObject3D('mesh',hitM.clone()); hit.object3D.position.copy(cat.position);
   hit.addEventListener('click',()=>{ if(this.el.renderer.xr.isPresenting) this.catTap(); });
@@ -395,6 +412,7 @@ AFRAME.registerComponent('warteraum',{
   ((S&&S.colliders)||[]).forEach(([a0,a1,b0,b1])=>{ const door=b0>2.3&&a0>0&&a1<1.5; const ar=(a1-a0)*(b1-b0);
    if(!door&&Object.values(fb).some(f=>{ const ox=Math.max(0,Math.min(a1,f[1])-Math.max(a0,f[0])), oz=Math.max(0,Math.min(b1,f[3])-Math.max(b0,f[2])); return ox*oz>0.6*ar; })) return; // Figurenkörper → Hülle
    const m=door?DOOR_M:FURN_M; cols.push([a0-m,a1+m,b0-m,b1+m,door?'tuer':'moebel']); });
+  cols.push([-2.85-0.03,-2.11+0.03,-0.89-0.03,-0.2+0.03,'moebel']); // v16: roter Sessel (jetzt mit Oma) bleibt fest, kleiner Rand → Gesicht bleibt erreichbar
   this.cols=cols; this.hulls=hulls;
   // v9 (Ecstatica-Skelett): unsichtbare Ellipsoid-Kette je Figur samt Stuhl (Scheiben à 14 cm, je Teil eine gedrehte Ellipse, 75 % Überlappung in der Höhe) statt Grundriss-Hülle.
   // Kopf = Kugel 0.12 m gegen das Skelett in 3-D, Körper (Säule unter dem Kopf) mit Lehn-Spielraum → man kommt Gesichtern auf ~12 cm nahe, läuft aber nie durch Beine/Stuhl. ?ell=0 = alte Hüllen.
