@@ -17,8 +17,7 @@ const NOTES={
  notiz_2:{kind:'typed',title:'Protokoll 12.03.1984',head:['PROJEKT MÖBIUS · VERSUCHSPROTOKOLL','Sitzung 41 · 12.03.1984 · maschinell'],body:[
   'Probandin M-1: berichtet von hypnagogen Bildern.','Wiederkehrend: Gang, Neonlicht, „ein Kind älter als','möglich“. Puls erhöht, Orientierung erhalten.','',
   'Proband M-2: folgt Anweisungen ohne Nachfragen.','Keine Bilder. Schlaf unauffällig.','',
-  'Weitere Gaben gemäß Plan ████. Abbruch durch die','Probanden angefragt – abgelehnt (Ltg. ██████).','',
-  'Randvermerk: Sonderblätter wie üblich in Wärmetinte.']},
+  'Weitere Gaben gemäß Plan ████. Abbruch durch die','Probanden angefragt – abgelehnt (Ltg. ██████).']},
  notiz_3:{kind:'hand',title:'Zettel, 1984',head:['Irene –'],body:[
   'wir hören auf. Egal was die sagen.','Der graue Wagen steht wieder auf dem Parkplatz,','dritter Tag. Zwei Männer, die nie aussteigen.','',
   'Mir hat keiner gesagt, dass unsere Kleine in','der Akte landet. Ich hab sie gesehen, ihr Name','auf einem Reiter, wie ein Versuchstier.','',

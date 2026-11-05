@@ -16,9 +16,9 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   // v16: Raum ~10 % dunkler (gleichmäßig über Lightmap, Vertex-Licht, Hemi und Lampen → nicht matschig); Oma sitzt jetzt im roten Sessel
-  const DK=this.DK=num('dk',0.9), OMD=this.OMD=[0.10,0.0,-2.265];
+  const DK=this.DK=num('dk',0.855), OMD=this.OMD=[0,0,0];
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
-  const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035',(1.710-2.265).toFixed(3),'0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
+  const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035','1.710','0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
   const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
   const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0)*DK, LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0)*DK; // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=11s'); sc.appendChild(el);
@@ -80,7 +80,7 @@ AFRAME.registerComponent('warteraum',{
    const pm=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:new T.CanvasTexture(c2)},sz:{value:900}},
     vertexShader:'attribute float alpha; varying float va; uniform float sz; void main(){ va=alpha; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_PointSize=sz*(0.03+0.05*(1.0-alpha))/-mv.z; gl_Position=projectionMatrix*mv; }',
     fragmentShader:'uniform sampler2D map; varying float va; void main(){ vec4 c=texture2D(map,gl_PointCoord); gl_FragColor=vec4(c.rgb*0.55,c.a*va*0.35); }'});
-   self.smokeMat=pm; const pts=new T.Points(g,pm); pts.frustumCulled=false; sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
+   self.smokeMat=pm; const pts=new T.Points(g,pm); pts.frustumCulled=false; if(!/[?&]smoke1=1/.test(Q)) pts.visible=false; /* v17: Rauchfaden-Anker lag frei schwebend in der Raummitte ("Nebel") */ sc.object3D.add(pts); self.smoke={g,P,A,N,base:new T.Vector3(...sm),age:new Float32Array(N).map((_,i)=>i/N*4)};
    // bewegliche Teile
    self.v16layout(S,root);
    self.mov=Object.entries(S.movers).map(([n,d],i)=>{ const o=self.nodes[n]; if(!o) return null; return {n,o,ax:new T.Vector3(...d.axis).normalize(),kind:d.kind,ph:Math.random()*100,sp:0.8+Math.random()*0.4,q0:o.quaternion.clone()}; }).filter(Boolean);
@@ -185,7 +185,10 @@ AFRAME.registerComponent('warteraum',{
   root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const b=BX[o.material.name]; if(!b) return; const P=o.geometry.attributes.position; let n=0;
    for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>b[0]&&x<b[1]&&y>b[2]&&y<b[3]&&z>b[4]&&z<b[5]){ P.setX(i,x+DX); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); } });
   (S.colliders||[]).forEach(c=>{ if(Math.abs(c[0]+1.951)<0.01&&Math.abs(c[2]+0.563)<0.01){ c[0]+=DX; c[1]+=DX; } }); this.tableDX=DX;
-  // Oma samt Buch in den roten Sessel (ihr alter Stuhl bleibt leer stehen); Pivots/Anker mitziehen → Atmen, Kopf, Geräusche, Kollision passen
+  // v17: roter Sessel weg – an seiner Stelle sitzt die Katzenfrau im Blümchensessel
+  root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const mn=o.material.name; if(mn!=='wr_vinyl'&&mn!=='wr_wood') return; const P=o.geometry.attributes.position; let n=0;
+   for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>-2.92&&x<-2.05&&z>-0.97&&z<-0.13&&(mn==='wr_vinyl'?y<1.15:y<0.2)){ P.setY(i,-60); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); this._redN=(this._redN||0)+n; } });
+  // (v16-Altlast) Oma-Versatz, jetzt 0 (ihr alter Stuhl bleibt leer stehen); Pivots/Anker mitziehen → Atmen, Kopf, Geräusche, Kollision passen
   ['S_wr_fig_oma','oma_head','oma_page'].forEach(n=>{ const o=this.nodes[n]; if(o){ o.position.x+=D[0]; o.position.y+=D[1]; o.position.z+=D[2]; o.updateMatrixWorld(true); } });
   Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ m.pivot=[m.pivot[0]+D[0],m.pivot[1]+D[1],m.pivot[2]+D[2]]; } }); const A=S.anchors.oma; if(A) S.anchors.oma=[A[0]+D[0],A[1]+D[1],A[2]+D[2]];
   // Jäger: Unterseite der Tropenhelm-Krempe trug Gesichtstextur (Frontprojektion) → von unten sah man „Augen“ auf der Krempe. Diese Vertices bekommen den dunklen Krempenschatten aus dem Foto.
@@ -201,10 +204,10 @@ AFRAME.registerComponent('warteraum',{
  // v15: zwei Laufzeit-Figuren (Hunyuan3D, eigene GLBs, nicht gebacken): Garfield-Kostüm-Mann mit Bong (Nr. 13 – Überdosis Lasagne) und Katzenfrau.
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
   const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
-           {n:'katze',p:[num('ktx',1.45),0,num('ktz',0.9)],yaw:num('kty',-2.2)}];
-  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=15'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; sc.appendChild(el);
+           {n:'katze',p:[num('ktx',-2.5),0,num('ktz',-0.55)],yaw:num('kty',1.5708),sc:num('ksc',0.82)}];
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=17'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
-    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
+    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); /* v17: Seitenflächen der Frontprojektion nicht als Streifen verschmieren → dort weich gefilterte Farbe aus der Mip-Kette */ o.material.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vSide;').replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvSide=abs(normalize(objectNormal).x);'); sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSide;').replace('#include <map_fragment>','vec4 tC=mix(texture2D(map,vMapUv),texture2D(map,vMapUv,4.5),smoothstep(0.55,0.92,vSide));\ndiffuseColor*=tC;').replace('#include <emissivemap_fragment>','totalEmissiveRadiance*=tC.rgb;'); }; if(/head/.test(o.name)) head=o; else body=o; });
     const hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
     f.b0=f.body?f.body.scale.clone():null; self.nf.push(f);
     // Kollision: Ellipsoid-Kette aus Weltpunkten
@@ -260,7 +263,7 @@ AFRAME.registerComponent('warteraum',{
   [-1,1].forEach(k=>{ const ear=new T.Mesh(new T.ConeGeometry(0.036,0.075,4),fur); ear.position.set(k*0.047,0.072,-0.005); ear.rotation.set(-0.15,Math.PI/4,k*-0.3); ear.renderOrder=1000; head.add(ear);
    head.add(E(0.019,1,1,0.6,eyeM,k*0.031,0.014,0.056,12), E(0.011,1,1.1,0.5,pup,k*0.031,0.014,0.0665,8)); });
   const tc=new T.CatmullRomCurve3([[0,0.03,-0.16],[0.08,0.01,-0.17],[0.15,0.02,-0.08],[0.16,0.03,0.04]].map(a=>new T.Vector3(...a))), tail=new T.Mesh(new T.TubeGeometry(tc,16,0.016,6),fur); tail.renderOrder=1000; body.add(tail);
-  cat.position.set(num('catx',-2.27+0.10),num('caty',0.55),num('catz',1.85-2.265)); /* v16: Oma sitzt im roten Sessel → Katze auf ihrem Schoß mit */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(0.85); root.add(cat);
+  cat.position.set(num('catx',-2.27),num('caty',0.55),num('catz',1.85)); /* v17: Oma wieder auf ihrem Platz */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(0.85); root.add(cat);
   const hitM=new T.Mesh(new T.SphereGeometry(0.2,8,6),new T.MeshBasicMaterial({visible:false})); hitM.position.set(0,0.17,0); cat.add(hitM);
   const hit=document.createElement('a-entity'); hit.setAttribute('class','clickable'); sc.appendChild(hit); hit.setObject3D('mesh',hitM.clone()); hit.object3D.position.copy(cat.position);
   hit.addEventListener('click',()=>{ if(this.el.renderer.xr.isPresenting) this.catTap(); });
@@ -409,10 +412,9 @@ AFRAME.registerComponent('warteraum',{
   // Getrennte Teile (z. B. zersägte Frau: Oberkörper und Beine an den Sofa-Enden) → eigene Hüllen, sonst sperrt die Hülle die Lücke davor
   const split=A=>{ for(const k of [0,1]){ const S=A.slice().sort((a,b)=>a[k]-b[k]); for(let i=1;i<S.length;i++) if(S[i][k]-S[i-1][k]>0.15) return [...split(S.slice(0,i)),...split(S.slice(i))]; } return [A]; };
   const fb={}; Object.entries(pts).forEach(([n,A])=>{ const parts=split(A); let bb=[9,-9,9,-9]; parts.forEach(P=>{ if(P.length<3) return; const H=hull(P); hulls.push({n,H,m:FIG_M}); H.forEach(h=>{ bb=[Math.min(bb[0],h[0]),Math.max(bb[1],h[0]),Math.min(bb[2],h[1]),Math.max(bb[3],h[1])]; }); }); fb[n]=bb; });
-  ((S&&S.colliders)||[]).forEach(([a0,a1,b0,b1])=>{ const door=b0>2.3&&a0>0&&a1<1.5; const ar=(a1-a0)*(b1-b0);
+  ((S&&S.colliders)||[]).forEach(([a0,a1,b0,b1])=>{ if(Math.abs((a0+a1)/2)<0.4&&Math.abs((b0+b1)/2)<0.25&&a1-a0<0.5) return; /* v17: Geister-Collider ohne Objekt in der Raummitte (Nebel-Barriere) */ if(a0<-2.0&&a1<-2.0&&b0>-0.95&&b1<-0.1&&b0<-0.8) return; /* v17: roter Sessel entfernt → Katzenfrau-Ellipsen */ const door=b0>2.3&&a0>0&&a1<1.5; const ar=(a1-a0)*(b1-b0);
    if(!door&&Object.values(fb).some(f=>{ const ox=Math.max(0,Math.min(a1,f[1])-Math.max(a0,f[0])), oz=Math.max(0,Math.min(b1,f[3])-Math.max(b0,f[2])); return ox*oz>0.6*ar; })) return; // Figurenkörper → Hülle
    const m=door?DOOR_M:FURN_M; cols.push([a0-m,a1+m,b0-m,b1+m,door?'tuer':'moebel']); });
-  cols.push([-2.85-0.03,-2.11+0.03,-0.89-0.03,-0.2+0.03,'moebel']); // v16: roter Sessel (jetzt mit Oma) bleibt fest, kleiner Rand → Gesicht bleibt erreichbar
   this.cols=cols; this.hulls=hulls;
   // v9 (Ecstatica-Skelett): unsichtbare Ellipsoid-Kette je Figur samt Stuhl (Scheiben à 14 cm, je Teil eine gedrehte Ellipse, 75 % Überlappung in der Höhe) statt Grundriss-Hülle.
   // Kopf = Kugel 0.12 m gegen das Skelett in 3-D, Körper (Säule unter dem Kopf) mit Lehn-Spielraum → man kommt Gesichtern auf ~12 cm nahe, läuft aber nie durch Beine/Stuhl. ?ell=0 = alte Hüllen.
