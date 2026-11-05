@@ -221,7 +221,13 @@ AFRAME.registerComponent('warteraum',{
   const beams=cols.slice(0,4).map((c,i)=>{ const m=new T.Mesh(new T.ConeGeometry(0.35,2.6,16,1,true),new T.MeshBasicMaterial({color:c,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false})); m.geometry.translate(0,-1.3,0); m.position.set(cat.position.x+0.6*Math.cos(i*1.57),2.75,cat.position.z+0.6*Math.sin(i*1.57)); m.renderOrder=1001; m.visible=false; root.add(m); return m; });
   const spot=new T.Mesh(new T.ConeGeometry(0.42,2.4,24,1,true),new T.MeshBasicMaterial({color:0xfff4dd,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false})); spot.geometry.translate(0,-1.2,0); spot.position.set(cat.position.x,2.75,cat.position.z); spot.renderOrder=1001; spot.visible=false; root.add(spot); beams.push(spot);
   const fog=[]; for(let i=0;i<14;i++){ const m=new T.Sprite(new T.SpriteMaterial({map:btx,color:0x9a9aa8,transparent:true,opacity:0,depthWrite:false,fog:false})); m.position.set(cat.position.x-1.3+Math.random()*2.8,0.2+Math.random()*0.3,cat.position.z-1.5+Math.random()*2.6); m.scale.set(1.6,0.9,1); m.renderOrder=1002; m.visible=false; root.add(m); fog.push(m); }
-  this.cat={g:cat,body,head,hitM,veil,spots,beams,fog,spot,mats:[fur,wht,eyeM],taps:[],party:0,lvl:0,purr:0};
+  // v14 Psychedelik: Geister-Katzen-Ring (Kaleidoskop), Laser, Puls-Ringe – alle additiv, nur Lichter flackern, nie der Bildschirm
+  const fxg=new T.Group(); fxg.position.copy(cat.position); fxg.visible=false; root.add(fxg); const add=o=>{ o.renderOrder=1003; return o; };
+  const ghosts=[]; for(let i=0;i<6;i++){ const gm=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,fog:false}); const gb=body.clone(true); gb.traverse(o=>{ if(o.isMesh){ o.material=gm; o.renderOrder=1003; } }); const h=new T.Group(); h.add(gb); fxg.add(h); ghosts.push({h,gb,gm}); }
+  const trails=[]; for(let i=0;i<3;i++){ const gm=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,fog:false}); const gb=body.clone(true); gb.traverse(o=>{ if(o.isMesh){ o.material=gm; o.renderOrder=1003; } }); fxg.add(gb); trails.push({gb,gm}); }
+  const lasers=[]; for(let i=0;i<12;i++){ const g=new T.CylinderGeometry(0.008,0.008,7,5,1,true); g.translate(0,3.5,0); const m=add(new T.Mesh(g,new T.MeshBasicMaterial({color:0xff00ff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,fog:false}))); fxg.add(m); lasers.push(m); }
+  const rings=[]; for(let i=0;i<5;i++){ const m=add(new T.Mesh(new T.TorusGeometry(1,0.02,6,64),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false,fog:false}))); m.rotation.x=Math.PI/2; fxg.add(m); rings.push(m); }
+  this.cat={fxg,ghosts,trails,lasers,rings,g:cat,body,head,hitM,veil,spots,beams,fog,spot,mats:[fur,wht,eyeM],taps:[],party:0,lvl:0,purr:0};
   if(/[?&]oiia=1/.test(Q)) setTimeout(()=>this.catParty(),1500);
  },
  catTap(){ const C=this.cat; if(!C) return; const n=performance.now(); C.taps=C.taps.filter(t=>n-t<3000); C.taps.push(n);
@@ -230,11 +236,11 @@ AFRAME.registerComponent('warteraum',{
   for(let i=0;i<N;i++){ const ph=i/ac.sampleRate, am=0.5+0.5*Math.sin(ph*2*Math.PI*26), br=0.6+0.4*Math.sin(ph*2*Math.PI*0.9); d[i]=(Math.random()*2-1)*am*am*br*Math.min(1,ph*4,(2.2-ph)*3); }
   const s=ac.createBufferSource(); s.buffer=b; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=260; const gg=ac.createGain(); gg.gain.value=0.9; s.connect(f); f.connect(gg); gg.connect(this.pan(this.cat.g.position.toArray(),0.6,1.4)); s.start(t); },
  catParty(){ const C=this.cat; if(!C||C.party>0) return; C.party=13.0; C.t0=performance.now()/1000; C.veil.visible=false; [...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=true);
-  const keep=new Set([C.g,...C.spots,...C.beams,...C.fog]), sc=this.el.object3D, cam=this.el.camera; C.hid=[];
+  C.p0=C.g.position.clone(); C.s0=C.g.scale.x; C.fxg.visible=true; const keep=new Set([C.fxg,C.g,...C.spots,...C.beams,...C.fog]), sc=this.el.object3D, cam=this.el.camera; C.hid=[];
   sc.traverse(o=>{ if(!(o.isMesh||o.isPoints||o.isSprite||o.isLine)||!o.visible) return; let p=o; while(p){ if(keep.has(p)||p===cam||p.isCamera) return; p=p.parent; } o.visible=false; C.hid.push(o); });
   C.bg=sc.background; sc.background=new THREE.Color(0); C.fg=sc.fog; sc.fog=null;
   if(this.ac){ const n='oiia'; (this.buf[n]||(this.buf[n]=fetch(BASE+'audio/oiia.mp3?v=2').then(r=>r.arrayBuffer()).then(b=>new Promise((res,rej)=>this.ac.decodeAudioData(b,res,rej))))).then(b=>{ const s=this.ac.createBufferSource(); s.buffer=b; const g=this.ac.createGain(); g.gain.value=1.0; s.connect(g); g.connect(this.ac.destination); s.start(); C.src=s; if(C.party>0){ C.t0=performance.now()/1000; C.party=13.0; } }).catch(()=>this.oiiaMusic()); } },
- catEnd(){ const C=this.cat; (C.hid||[]).forEach(o=>o.visible=true); C.hid=[]; const sc=this.el.object3D; sc.background=C.bg||null; if(C.fg) sc.fog=C.fg; C.lvl=0; C.party=0;
+ catEnd(){ const C=this.cat; C.fxg.visible=false; if(C.p0){ C.g.position.copy(C.p0); C.g.scale.setScalar(C.s0); } (C.hid||[]).forEach(o=>o.visible=true); C.hid=[]; const sc=this.el.object3D; sc.background=C.bg||null; if(C.fg) sc.fog=C.fg; C.lvl=0; C.party=0;
   [C.veil,...C.spots,...C.beams,...C.fog].forEach(o=>o.visible=false); const B=C.body; B.position.y=0; B.rotation.y=0; B.scale.set(1,1,1); C.mats.forEach(m=>m.emissiveIntensity=m===C.mats[0]?0.07:1); try{ C.src&&C.src.stop(); }catch(e){} },
  oiiaMusic(){ const ac=this.ac; if(!ac) return; const t0=ac.currentTime+0.05, out=ac.createGain(); out.gain.value=0.7; out.connect(ac.destination); const bt=60/128;
   for(let i=0;i<40;i++){ const t=t0+i*bt/2; if(i%2===0){ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25); o.connect(g); g.connect(out); o.start(t); o.stop(t+0.3); }
@@ -249,15 +255,22 @@ AFRAME.registerComponent('warteraum',{
   if(this.el.renderer.xr.isPresenting&&!(C.party>0)){ C.hc=(C.hc||0)-d; if(C.hc<=0) for(const id of ['hl','hr']){ const c=document.getElementById(id); if(!c) continue; const v=new THREE.Vector3(); c.object3D.getWorldPosition(v); if(v.distanceTo(C.g.position)<0.22&&v.y<C.g.position.y+0.4){ C.hc=0.45; this.catTap(); break; } } }
   if(!(C.party>0)){ B.scale.y=1+0.015*Math.sin(now*1.6); return; }
   C.party-=d; if(C.party<=0){ this.catEnd(); return; }            // abruptes Ende: alles sofort zurück
-  const te=now-C.t0, beat=(te+98)*128/60, ph=beat%1, sm=(a,b)=>Math.min(1,Math.max(0,(te-a)/(b-a)));
+  const te=now-C.t0, beat=(te+98)/0.4, ph=beat%1, sm=(a,b)=>Math.min(1,Math.max(0,(te-a)/(b-a)));
   const k=sm(0,0.4), fogL=sm(0.3,2.2), colL=sm(1.9,2.4), strL=sm(6.5,12.5)*0.55;   // Aufbau synchron zum Clip: Spot+Drehung → Nebel → Drop bei 2.0 s: Farben → Strobe steigt bis Ende
-  B.position.y=k*(0.14+0.06*Math.abs(Math.sin(beat*Math.PI))); B.rotation.y=(B.rotation.y+d*k*(13+5*sm(5,10)))%(2*Math.PI);
+  B.position.y=k*(0.14+0.06*Math.abs(Math.sin(beat*Math.PI))); B.rotation.y=(B.rotation.y+d*k*(15+14*sm(2,12)))%(2*Math.PI);
   const sq=1+0.14*k*Math.cos(beat*2*Math.PI); B.scale.set(1/Math.sqrt(sq),sq,1/Math.sqrt(sq));
   const st=strL>0&&(beat*2)%1<0.22?1:0, fl=1-strL*(1-st);      // Strobe: moderat, nur Katze+Lichter, nie Vollbild
   C.mats[0].emissiveIntensity=(0.35+0.35*st*strL*2)*fl; C.mats[1].emissiveIntensity=(1.0+0.8*st*strL*2)*fl;
   C.spot.material.opacity=0.22*k*fl;
   C.spots.forEach((m,i)=>{ const a=te*(0.7+colL)+i*1.047, cx=C.g.position.x, cz=C.g.position.z; m.position.set(cx+1.3*Math.cos(a),0.02,cz+1.3*Math.sin(a*1.1)); m.material.opacity=colL*(0.5+0.3*Math.pow(1-ph,2))*fl; });
   C.beams.forEach((m,i)=>{ if(m===C.spot) return; m.rotation.set(0.5*Math.sin(te*(0.9+colL)+i*1.6),0,0.5*Math.cos(te*0.8+i*1.6)); m.material.opacity=colL*0.11*fl; });
+  { const P=C.p0, cs=C.s0*(1+0.9*k); C.g.position.set(P.x,P.y+0.3*k,P.z); C.g.scale.setScalar(cs*(1+0.06*Math.pow(1-ph,4)*colL));
+   const hue=te*0.35, gL=sm(2,3.5), lL=sm(4,6), rL=sm(2,2.3), C2=new THREE.Color(); C.fxg.position.set(P.x,P.y+0.3*k,P.z);
+   C.spots.forEach((m,i)=>m.material.color.setHSL((hue+i/6)%1,1,0.55)); C.beams.forEach((m,i)=>{ if(m!==C.spot) m.material.color.setHSL((hue+0.5+i/4)%1,1,0.5); });
+   C.ghosts.forEach((G,i)=>{ const a=te*(0.8+gL*1.6)+i*Math.PI/3, r=0.55+0.35*gL+0.1*Math.sin(beat*Math.PI); G.h.position.set(r*Math.cos(a),0.05*Math.sin(beat*Math.PI+i),r*Math.sin(a)); G.h.scale.setScalar(cs*0.6); G.gb.position.y=B.position.y; G.gb.rotation.y=-B.rotation.y*1.3+i; G.gm.color.setHSL((hue+i/6)%1,1,0.5); G.gm.opacity=gL*0.25*fl; });
+   C.trails.forEach((G,i)=>{ G.gb.scale.copy(B.scale).multiplyScalar(cs*(1.05+0.08*i)); G.gb.position.y=B.position.y*cs; G.gb.rotation.y=B.rotation.y-0.45*(i+1); G.gm.color.setHSL((hue+0.3+i*0.12)%1,1,0.5); G.gm.opacity=k*(0.22-0.06*i)*fl; });
+   C.lasers.forEach((m,i)=>{ const a=te*(0.6+lL*1.8)*(i%2?1:-1)+i*Math.PI/6; m.rotation.set(Math.PI/2-0.25-0.35*Math.sin(te*1.3+i),0,0); m.rotation.y=a; m.rotation.order='YXZ'; m.material.color.setHSL((hue+i/12)%1,1,0.55); m.material.opacity=lL*(0.35+0.4*st)*fl; });
+   C.rings.forEach((m,i)=>{ const q=((beat+i/5*4)%4)/4; m.scale.setScalar(0.2+3.5*q); m.position.y=-0.25; m.material.color.setHSL((hue+q)%1,1,0.5); m.material.opacity=rL*(1-q)*0.5*fl; }); }
   C.fog.forEach((m,i)=>{ m.position.x+=d*0.06*Math.sin(i+te*0.2); m.material.opacity=fogL*0.2*(0.6+0.4*fl); }); },
  ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; B.press=1; this.ding();
   this.talk=1; this.talkEnd=performance.now()+20000; setTimeout(()=>{ this.openPanel(); this.say(this.a38Done()?'wieder':'greet'); },650); },
