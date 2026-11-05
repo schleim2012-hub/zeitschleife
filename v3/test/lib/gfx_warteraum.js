@@ -16,11 +16,11 @@ AFRAME.registerComponent('warteraum',{
   this.loco(); this.audioArm(); },
  load(S){ const T=THREE, sc=this.el, self=this, R=sc.renderer;
   // v16: Raum ~10 % dunkler (gleichmäßig über Lightmap, Vertex-Licht, Hemi und Lampen → nicht matschig); Oma sitzt jetzt im roten Sessel
-  const DK=this.DK=num('dk',0.855), OMD=this.OMD=[0,0,0];
+  const DK=this.DK=num('dk',0.6), OMD=this.OMD=[0,0,0];
   const lm=new T.TextureLoader().load(BASE+'lm.jpg?v=7c'); lm.flipY=false; lm.channel=1; lm.colorSpace=T.SRGBColorSpace;
   const SEAM={wr_fig_assi:['0.600','0.760','0.034,0.035,0.018','-0.115','0.090'],wr_fig_oma:['0.930','1.010','0.040,0.039,0.035','1.710','0.160']}; // [y0,y1,Farbe,zMitte,zHalb] // v8: Rückseiten im Hals-Band = Hautton (Kerben im Ausschnitt/Kragen)
   const POOLD=num('poold',0.74), PL=[...(S.lamps||[]).map(q=>[q[0],q[2],1.25]),...(S.sconces||[]).map(q=>[q[0],q[2],0.75]),...((S.red||[]).slice(0,1).map(q=>[q[0],q[2],0.9]))], POOLS='float pl=0.0; '+PL.map(q=>'pl=max(pl,exp(-(pow(p.x-('+q[0].toFixed(3)+'),2.0)+pow(p.z-('+q[1].toFixed(3)+'),2.0))/'+q[2].toFixed(3)+'));').join(' ');
-  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0)*DK, LIFT=num('lift',0.012), LMC=num('lmc',1.45), LMB=num('lmb',1.18), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0)*DK; // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
+  const LMI=Math.PI*(S.lmScale||1)*num('lmg',1.0)*DK, LIFT=num('lift',0.012), LMC=num('lmc',1.75), LMB=num('lmb',1.3), VIG=num('vig',0.42), CEILD=num('ceild',0.45), VLN=new Set(S.vl||[]), VLG=(S.vlScale||1)*num('vlg',1.0)*DK; // v4 (Beetle): keine Neonröhren mehr – Licht kommt aus warmen Stehlampen, Sternleuchten, roter Pendel-Traube (alles gebacken)
   const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'warteraum.glb?v=11s'); sc.appendChild(el);
   el.addEventListener('model-loaded',()=>{ const root=el.getObject3D('mesh'); self.root=root; const mats=new Set(), M={}; self.nodes={};
    root.traverse(o=>{ if(o.name) self.nodes[o.name]=o; if(o.isMesh){ mats.add(o.material); o.frustumCulled=true; } });
@@ -67,10 +67,10 @@ AFRAME.registerComponent('warteraum',{
    // assets/warteraum/pinups_adult.jpg geladen – fehlt die Datei, bleibt die Standard-Fassung. Gleiche Zellen-Aufteilung (2 × 512×683 oben links/rechts, 1024²).
    if(M.wr_pinup){ M.wr_pinup.emissive=new T.Color(0x000000); if(window.ZS_ADULT){ new T.TextureLoader().load(BASE+'pinups_adult.jpg?v=1',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; M.wr_pinup.map=tx; M.wr_pinup.needsUpdate=true; },undefined,()=>{}); } }
    // Lichter (max 4): Hemi + grünes Fenster + 2 warme Stehlampen (Film: keine Deckenröhren; Rest der Lichtinseln steckt in der Lightmap)
-   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.21)*DK); // v8: etwas weniger Grundlicht (v7 0.30, flach)
+   const hemi=new T.HemisphereLight(0x6a5a46,0x16120e,num('hemi',0.15)*DK); // v8: etwas weniger Grundlicht (v7 0.30, flach)
    sc.object3D.add(hemi); // v7: wärmer (Film); v7b: Zeile war auskommentiert
    const gw=S.window; const green=new T.PointLight(0x9ee08a,0.32*DK,3.2,2); green.position.set(gw[0],gw[1]+0.25,gw[2]+0.35); // v7: schwächer, weniger gesättigt, vor der Scheibe (kein grüner Schleier über ihr) sc.object3D.add(green);
-   const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,(i?1.0:1.3)*DK,3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
+   const LP=S.lamps||[]; const warmL=[LP[0],null].map((p,i)=>{ const l=new T.PointLight(0xffb070,(i?1.0:1.3)*num('dkl',0.78),3.8,2); if(p) l.position.set(p[0],p[1]-0.12,p[2]); else { const A=S.anchors.assi; l.position.set(A[0]-1.1,1.55,A[2]); } sc.object3D.add(l); return l; }); // 2. Licht: warmes Raumlicht vor dem Sofa (Gesicht der Assistentin)
    const FX=LP.slice(0,2).map(p=>[p[0],p[2]]); const ch=()=>2.6;
    self.L={hemi,green,warm:warmL};
    // Rauchfaden (1 Draw: Points)
@@ -134,10 +134,16 @@ AFRAME.registerComponent('warteraum',{
   const fwdOf=(n,P)=>n==='frl'?new T.Vector2(0,1):P.x<-2.1?new T.Vector2(1,0):P.x>2.1?new T.Vector2(-1,0):new T.Vector2(0.3-P.x,-P.z).normalize();
   Object.entries(heads).forEach(([n,m])=>{ const P=new T.Vector3(...S.movers[m.n].pivot), f=fwdOf(n,P); m.P=P; m.f=f;
    const wq=new T.Quaternion(); m.o.parent.getWorldQuaternion(wq); wq.multiply(m.q0); m.sg=Math.sign(m.ax.clone().applyQuaternion(wq).y)||1; m.w=0; m.la=0;
-   const mat=M['wr_fig_'+n]; if(!mat||mat.__br) return; mat.__br=1; const U={c:{value:new T.Vector3(P.x+f.x*0.07,P.y-0.3,P.z+f.y*0.07)},a:{value:0},h:{value:new T.Vector3(P.x-f.x*0.05,P.y-(n==='frl'?0.5:0.55),P.z-f.y*0.05)},s:{value:new T.Vector3()},f:{value:new T.Vector2(f.x,f.y)}};
-   const ob=mat.onBeforeCompile, pk=mat.customProgramCacheKey; mat.onBeforeCompile=(sh,r)=>{ ob&&ob.call(mat,sh,r); sh.uniforms.uBc=U.c; sh.uniforms.uBa=U.a; sh.uniforms.uSh=U.h; sh.uniforms.uSs=U.s; sh.uniforms.uSf=U.f;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform vec3 uBc; uniform float uBa; uniform vec3 uSh; uniform vec3 uSs; uniform vec2 uSf;').replace('#include <begin_vertex>','#include <begin_vertex>\n{ vec3 bq=(modelMatrix*vec4(transformed,1.0)).xyz-uBc; transformed+=objectNormal*uBa*exp(-dot(bq,bq)/0.032); }\n{ vec3 q=(modelMatrix*vec4(transformed,1.0)).xyz-uSh; float w=smoothstep(0.02,0.4,q.y), ya=uSs.x*w; vec3 n=vec3(q.x*cos(ya)-q.z*sin(ya),q.y,q.x*sin(ya)+q.z*cos(ya)); vec3 F=vec3(uSf.x,0.,uSf.y), Sd=vec3(uSf.y,0.,-uSf.x); n+=cross(F*uSs.y*w+Sd*uSs.z*w,n); transformed+=inverse(mat3(modelMatrix))*(n-q); }'); };
-   mat.customProgramCacheKey=()=>(pk?pk.call(mat):'')+'br2'; mat.needsUpdate=true; this.breath.push({U,n,P,f,ph:Math.random()*6.3,f:0.2+Math.random()*0.07,amp:n==='frl'?0.004:0.006}); });
+   const mat=M['wr_fig_'+n]; if(!mat||mat.__br) return; mat.__br=1;
+   /* v20: starres Kopf-Skelett – alle Körper-Vertices über dem Hals (Hinterkopf, Haare, Hut, Kapuze) bekommen Gewicht 1.0 am Kopf-Knochen (3 cm Übergang am Hals), sonst 0.0 */
+   root.updateMatrixWorld(true); const hq0=new T.Quaternion(); m.o.getWorldQuaternion(hq0); m.hq0i=hq0.clone().invert(); const HP=new T.Vector3(); m.o.getWorldPosition(HP); const hbx=new T.Box3().setFromObject(m.o).expandByScalar(0.035);
+   const own=new Set(); m.o.traverse(o=>own.add(o)); const vv=new T.Vector3(); let nh=0; root.traverse(o=>{ if(!o.isMesh||own.has(o)||o.material!==mat) return; const A=o.geometry.attributes.position, hb=new Float32Array(A.count);
+    for(let i=0;i<A.count;i++){ vv.fromBufferAttribute(A,i).applyMatrix4(o.matrixWorld); if(vv.x<hbx.min.x||vv.x>hbx.max.x||vv.z<hbx.min.z||vv.z>hbx.max.z||vv.y>hbx.max.y+0.1) continue; const t=Math.min(1,Math.max(0,(vv.y-(HP.y-0.015))/0.03)); hb[i]=t*t*(3-2*t); if(hb[i]>0) nh++; }
+    o.geometry.setAttribute('hb',new T.BufferAttribute(hb,1)); }); m.nh=nh;
+   const U={hq:{value:new T.Matrix3()},hp:{value:HP},c:{value:new T.Vector3(P.x+f.x*0.07,P.y-0.3,P.z+f.y*0.07)},a:{value:0},h:{value:new T.Vector3(P.x-f.x*0.05,P.y-(n==='frl'?0.5:0.55),P.z-f.y*0.05)},s:{value:new T.Vector3()},f:{value:new T.Vector2(f.x,f.y)}};
+   const ob=mat.onBeforeCompile, pk=mat.customProgramCacheKey; mat.onBeforeCompile=(sh,r)=>{ ob&&ob.call(mat,sh,r); sh.uniforms.uBc=U.c; sh.uniforms.uBa=U.a; sh.uniforms.uSh=U.h; sh.uniforms.uSs=U.s; sh.uniforms.uSf=U.f; sh.uniforms.uHq=U.hq; sh.uniforms.uHp=U.hp;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hb; uniform mat3 uHq; uniform vec3 uHp; uniform vec3 uBc; uniform float uBa; uniform vec3 uSh; uniform vec3 uSs; uniform vec2 uSf;').replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nif(hb>0.0) objectNormal=normalize(mix(objectNormal,inverse(mat3(modelMatrix))*(uHq*(mat3(modelMatrix)*objectNormal)),hb));').replace('#include <begin_vertex>','#include <begin_vertex>\nif(hb>0.0){ vec3 wp=(modelMatrix*vec4(transformed,1.0)).xyz; vec3 rp=uHp+uHq*(wp-uHp); transformed=mix(transformed,(inverse(modelMatrix)*vec4(rp,1.0)).xyz,hb); }\n{ vec3 bq=(modelMatrix*vec4(transformed,1.0)).xyz-uBc; transformed+=objectNormal*uBa*exp(-dot(bq,bq)/0.032)*(1.0-hb); }\n{ vec3 q=(modelMatrix*vec4(transformed,1.0)).xyz-uSh; float w=smoothstep(0.02,0.4,q.y), ya=uSs.x*w; vec3 n=vec3(q.x*cos(ya)-q.z*sin(ya),q.y,q.x*sin(ya)+q.z*cos(ya)); vec3 F=vec3(uSf.x,0.,uSf.y), Sd=vec3(uSf.y,0.,-uSf.x); n+=cross(F*uSs.y*w+Sd*uSs.z*w,n); transformed+=inverse(mat3(modelMatrix))*(n-q); }'); };
+   mat.customProgramCacheKey=()=>(pk?pk.call(mat):'')+'br3'; mat.needsUpdate=true; this.breath.push({U,m,n,P,f,ph:Math.random()*6.3,f:0.2+Math.random()*0.07,amp:n==='frl'?0.004:0.006}); });
   // Glimmen am Brandopfer: zweiter, dünner Rauch von den Schultern
   const bh=heads.brand; if(bh&&this.smoke){ const N=10, g=new T.BufferGeometry(), P=new Float32Array(N*3), Aa=new Float32Array(N); g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(Aa,1));
    const pts=new T.Points(g,this.smokeMat); pts.frustumCulled=false; sc.object3D.add(pts); this.smoke2={g,P,A:Aa,N,base:new T.Vector3(bh.P.x+0.03,bh.P.y-0.2,bh.P.z),age:new Float32Array(N).map((_,i)=>i/N*5),off:new Float32Array(N*2).map(()=>(Math.random()-0.5)*0.22)}; }
@@ -211,22 +217,26 @@ AFRAME.registerComponent('warteraum',{
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
   const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
            {n:'katze',p:[num('ktx',-2.5),0,num('ktz',-0.55)],yaw:num('kty',1.5708),sc:num('ksc',0.82)}];
-  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=18h'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=20'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
-    r.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry; if(!g.attributes.normal) g.computeVertexNormals(); const m=o.material, hw=g.attributes._headw||g.attributes._HEADW;
+    r.traverse(o=>{ if(!o.isMesh) return; let g=o.geometry; if(!g.attributes.normal) g.computeVertexNormals(); const m=o.material, hw=g.attributes._headw||g.attributes._HEADW;
      if(hw){ /* v18: Kopf+Körper EIN geschlossenes Mesh (keine Naht/Zacken); Kopfdrehung im Vertex-Shader mit weichem Gewicht; Seitenflächen: Basisfarbe je Vertex + kachelbares Fell-/Stoffdetail (triplanar) statt gezogener Frontprojektion */
-      g.setAttribute('hdw',hw); if(g.attributes.color){ g.setAttribute('bcol',g.attributes.color); g.deleteAttribute('color'); }
-      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=18h',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
-      const mt=o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8});
-      mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs});
-       sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hdw; attribute vec4 bcol; uniform mat3 uHR; uniform vec3 uNk; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
+      const nk0=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0], Pp0=g.attributes.position; { /* v20: starrer Kopf – Dreiecke des Kopfs (inkl. Gesicht des Mannes in der Kapuzenöffnung) Gewicht 1.0, Körper 0.0; nur ein 3-cm-Übergang direkt an der Naht */ const th=num('hdt',0.5), ix=g.index, N=Pp0.count, n=ix?ix.count:N, H=new Uint8Array(N); var hr=new Float32Array(N), Pp=Pp0; let nh=0;
+       for(let t=0;t<n;t+=3){ const a=ix?ix.getX(t):t, b=ix?ix.getX(t+1):t+1, c=ix?ix.getX(t+2):t+2; const fz=F.n==='garfield'&&[a,b,c].every(k=>Math.abs(Pp0.getX(k))<0.16&&Pp0.getY(k)>0.87&&Pp0.getZ(k)>0.02); if(fz||(hw.getX(a)+hw.getX(b)+hw.getX(c))/3>th) H[a]=H[b]=H[c]=1; }
+       const hx=[]; for(let k=0;k<N;k++) if(H[k]){ hr[k]=1; nh++; hx.push(Pp0.getX(k),Pp0.getY(k),Pp0.getZ(k)); }
+       const R=num('hdr',0.03); for(let k=0;k<N;k++){ if(H[k]) continue; const x=Pp0.getX(k), y=Pp0.getY(k), z=Pp0.getZ(k); let dm=R*R; for(let q=0;q<hx.length;q+=3){ const dx=hx[q]-x, dy=hx[q+1]-y, dz=hx[q+2]-z, d2=dx*dx+dy*dy+dz*dz; if(d2<dm) dm=d2; } if(dm<R*R){ const u=1-Math.sqrt(dm)/R; hr[k]=u*u*(3-2*u); } } o.userData.nh=nh; }
+      g.setAttribute('hdw',new T.BufferAttribute(hr,1)); if(g.attributes.color){ g.setAttribute('bcol',g.attributes.color); g.deleteAttribute('color'); }
+      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},br:{value:0},bc:{value:new T.Vector3(nk[0],nk[1]-0.3,nk[2])},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=20',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
+      const mt=o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:num('nfe',0.18)*(self.DK||1),color:0xd8d0c8});
+      mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uBr:U.br,uBc2:U.bc,uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs});
+       sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hdw; attribute vec4 bcol; uniform float uBr; uniform vec3 uBc2; uniform mat3 uHR; uniform vec3 uNk; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
         .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvON=objectNormal; objectNormal=normalize(mix(objectNormal,uHR*objectNormal,hdw));')
-        .replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position; vBC=bcol; transformed=mix(transformed,uNk+uHR*(transformed-uNk),hdw);');
+        .replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position; vBC=bcol; { vec3 bq=position-uBc2; transformed+=normal*uBr*exp(-dot(bq,bq)/0.03)*(1.0-hdw); } transformed=mix(transformed,uNk+uHR*(transformed-uNk),hdw);');
        sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uFur; uniform float uFs; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
         .replace('#include <map_fragment>','vec3 nO=normalize(vON); vec4 tx=texture2D(map,vMapUv); vec3 bw=abs(nO); bw=pow(bw,vec3(3.)); bw/=bw.x+bw.y+bw.z; float dt=(texture2D(uFur,vOP.xy*uFs).r*bw.z+texture2D(uFur,vOP.zy*uFs).r*bw.x+texture2D(uFur,vOP.xz*uFs).r*bw.y)*1.99; float sd=smoothstep(0.3,0.6,1.0-abs(nO.z)); sd=max(sd,smoothstep(0.85,0.35,vBC.a)); vec4 tC=vec4(mix(tx.rgb,vBC.rgb*mix(1.0,dt,0.85),sd),1.0);\ndiffuseColor*=tC;')
         .replace('#include <emissivemap_fragment>','totalEmissiveRadiance*=tC.rgb;'); };
       body=o; o.userData.U=U; return; }
-     o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
+     o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:num('nfe',0.18)*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
     let hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); if(!hp&&body&&body.userData.U){ hp=new T.Object3D(); hp.position.copy(body.userData.U.nk.value); body.parent.add(hp); hp.userData.U=body.userData.U; } const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
     f.b0=f.body?f.body.scale.clone():null; self.nf.push(f);
     // Kollision: Ellipsoid-Kette aus Weltpunkten
@@ -236,8 +246,8 @@ AFRAME.registerComponent('warteraum',{
      const pts2=new T.Points(g,self.smokeMat); pts2.frustumCulled=false; sc.object3D.add(pts2); f.sm={g,P,A,N,age:new Float32Array(N).fill(9),off:new Float32Array(N*3).map(()=>Math.random()-0.5),last:-5}; }
    }); }); },
  nfTick(s,d){ const cam=this.el.camera; if(!this.nf||!cam) return; const T=THREE, cp=new T.Vector3(); cam.getWorldPosition(cp);
-  this.nf.forEach(f=>{ const br=Math.sin(s*1.45+f.ph); if(f.body&&f.b0){ f.body.scale.set(f.b0.x*(1+0.006*br),f.b0.y*(1+0.004*br),f.b0.z*(1+0.012*br)); }
-   const o=f.el.object3D; let want=0; if(f.head){ const lp=o.worldToLocal(cp.clone()); const hp=f.head.position; const dx=lp.x-hp.x, dz=lp.z-hp.z, dist=Math.hypot(dx,dz); if(dist<4.5&&dz>-0.2) want=Math.max(-0.75,Math.min(0.75,Math.atan2(dx,dz)));
+  this.nf.forEach(f=>{ const br=Math.sin(s*1.45+f.ph); if(f.body&&f.body.userData.U) f.body.userData.U.br.value=0.007*br; /* v20: Atmen nur Brust (Shader), keine Skalierung des ganzen Meshes */
+   const o=f.el.object3D; let want=0; if(f.head){ const lp=o.worldToLocal(cp.clone()); const hp=f.head.position; const dx=lp.x-hp.x, dz=lp.z-hp.z, dist=Math.hypot(dx,dz); if(dist<4.5&&dz>-0.2) want=Math.max(-0.45,Math.min(0.45,Math.atan2(dx,dz)));
     // Bong-Zug: alle 10 s Kopf zur Bong (nach rechts unten), dann ausatmen
     let hit=0, pitch=0; if(f.sm){ const c=(s+f.ph)%10; if(c<1.6){ hit=1; want=-0.35; pitch=0.28; } if(c>1.6&&f.sm.last!==Math.floor((s+f.ph)/10)){ f.sm.last=Math.floor((s+f.ph)/10); f.sm.age.fill(0); } }
     f.yaw+=(want-f.yaw)*Math.min(1,d*3); f.pi=(f.pi||0)+(pitch-(f.pi||0))*Math.min(1,d*4);
@@ -253,7 +263,7 @@ AFRAME.registerComponent('warteraum',{
    if(!b.yn) b.yn=s+5+Math.random()*15; if(s>b.yn){ const t=s-b.yn; if(t<3.2){ const e=Math.sin(Math.PI*t/3.2); pi-=0.13*e; ro+=0.03*e*Math.sin(t*2); } else b.yn=s+15+Math.random()*15; }
    if(b.n==='frl'){ ya*=0.25; ro*=0.4; pi*=0.4; const bt=s-(this.bellAt||-99); if(bt<5){ const H=b.U.h.value, hp=this.head(), tx=hp.x-H.x, tz=hp.z-H.z, fx=b.f.x, fz=b.f.y; const want=Math.max(-1.3,Math.min(1.3,Math.atan2(fx*tz-fz*tx,fx*tx+fz*tz))), e=Math.min(1,bt*2,(5-bt)*1.2); ya=ya*(1-e)+want*e; if(bt>0.7&&bt<2.6) pi+=0.16*Math.sin((bt-0.7)*Math.PI*2/0.95)*Math.sin((bt-0.7)*Math.PI/1.9); } }
    if(b.n==='assi'){ ya*=0.2; ro*=0.2; pi=0.2*pi*(pi>0?1:0.2); } // v16: zersägte Frau – Oberkörper liegt auf dem Sofa-Ende, Wiegen um die Hüfte zeigte die Schnittkante
-   if(this.cat&&this.cat.party>0) { ya=ro=pi=0; } b.U.s.value.set(ya,ro,pi); });
+   if(this.cat&&this.cat.party>0) { ya=ro=pi=0; } b.U.s.value.set(ya,ro,pi); if(b.m&&b.m.hq0i){ const q=b.m.o.getWorldQuaternion(new THREE.Quaternion()).multiply(b.m.hq0i); b.U.hq.value.setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q)); } });
   // Brandopfer: ab und zu ein Zucken (0.4 s), dazu dauernd Glimm-Rauch
   this.twNext-=d; if(this.twNext<=0){ this.tw=1; this.twNext=5+Math.random()*9; } this.tw=Math.max(0,this.tw-d*2.5);
   const S=this.smoke2; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>5) S.age[i]-=5; const k=S.age[i]/5; S.P[i*3]=S.base.x+S.off[i*2]*0.6+0.03*Math.sin(k*6+i); S.P[i*3+1]=S.base.y+k*0.45; S.P[i*3+2]=S.base.z+S.off[i*2+1]+0.03*Math.cos(k*5+i); S.A[i]=Math.sin(k*Math.PI)*0.5; } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
