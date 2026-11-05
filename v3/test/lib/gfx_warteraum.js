@@ -125,7 +125,7 @@ AFRAME.registerComponent('warteraum',{
   this.extraTick(s,d);
   this.touchFix(); this.clamp(); this.locoTick(d); this.audioTick(s); },
  // ---------------- v10: Atmen, Hinschauen, Klingel + Empfangsdame, Passierschein A38, Poster, Garfield ----------------
- extras(S,root,M){ const T=THREE, sc=this.el, self=this, A=S.anchors;
+ extras(S,root,M){ const T=THREE, sc=this.el, self=this, A=S.anchors; if(!/[?&]nofig=1/.test(Q)) this.nfigs();
   // Atmen: Vertex-Verschiebung entlang der Normalen, Gauß-Gewicht um die Brust (≤6 mm, bleibt weit in den 0.11-m-Rändern des Skeletts)
   this.breath=[]; const heads={}; this.mov.forEach(m=>{ if(m.kind==='head') heads[m.n.replace(/_head$/,'')]=m; });
   const fwdOf=(n,P)=>n==='frl'?new T.Vector2(0,1):P.x<-2.1?new T.Vector2(1,0):P.x>2.1?new T.Vector2(-1,0):new T.Vector2(0.3-P.x,-P.z).normalize();
@@ -140,7 +140,7 @@ AFRAME.registerComponent('warteraum',{
    const pts=new T.Points(g,this.smokeMat); pts.frustumCulled=false; sc.object3D.add(pts); this.smoke2={g,P,A:Aa,N,base:new T.Vector3(bh.P.x+0.03,bh.P.y-0.2,bh.P.z),age:new Float32Array(N).map((_,i)=>i/N*5),off:new Float32Array(N*2).map(()=>(Math.random()-0.5)*0.22)}; }
   this.tw=0; this.twNext=6;
   // Garfield-Porträt statt Palmenbild (gleiche Atlas-Zelle → Licht bleibt gebacken, 0 Draws extra)
-  if(M.wr_paint&&!/[?&]nogar=1/.test(Q)) new T.TextureLoader().load(BASE+'paintings2.webp?v=10',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; const o=M.wr_paint.map; tx.wrapS=o?o.wrapS:tx.wrapS; tx.wrapT=o?o.wrapT:tx.wrapT; M.wr_paint.map=tx; M.wr_paint.needsUpdate=true; });
+  if(M.wr_paint&&/[?&]gar=1/.test(Q)) new T.TextureLoader().load(BASE+'paintings2.webp?v=10',tx=>{ tx.flipY=false; tx.colorSpace=T.SRGBColorSpace; tx.anisotropy=8; const o=M.wr_paint.map; tx.wrapS=o?o.wrapS:tx.wrapS; tx.wrapT=o?o.wrapT:tx.wrapT; M.wr_paint.map=tx; M.wr_paint.needsUpdate=true; });
   // Theke per Strahl finden (Front + Oberkante)
   root.updateMatrixWorld(true); const rc=new T.Raycaster(), meshes=[]; root.traverse(o=>{ if(o.isMesh&&!/wr_fig|wr_glass/.test(o.material.name||'')) meshes.push(o); });
   rc.set(new T.Vector3(0.32,0.56,-1.6),new T.Vector3(0,0,-1)); let h=rc.intersectObjects(meshes,false)[0]; const fz=h&&h.point.z<-1.8&&h.point.z>-2.7?h.point.z:-2.02;
@@ -182,7 +182,34 @@ AFRAME.registerComponent('warteraum',{
  look(m,a,d){ if(!m.f) return a; const h=this.head(); const tx=h.x-m.P.x, tz=h.z-m.P.z, dist=Math.hypot(tx,tz); let th=Math.atan2(m.f.y,m.f.x)-Math.atan2(tz,tx); th=Math.atan2(Math.sin(th),Math.cos(th));
   const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.3:0.7; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
   return a*(1-m.w*0.85)+m.la*m.w; },
- extraTick(s,d){ (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph);
+ // v15: zwei Laufzeit-Figuren (Hunyuan3D, eigene GLBs, nicht gebacken): Garfield-Kostüm-Mann mit Bong (Nr. 13 – Überdosis Lasagne) und Katzenfrau.
+ nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
+  const D=[{n:'garfield',p:[num('gfx',-1.55),0,num('gfz',-2.0)],yaw:num('gfy',0.55),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
+           {n:'katze',p:[num('ktx',1.45),0,num('ktz',0.9)],yaw:num('kty',-2.2)}];
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=15'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; sc.appendChild(el);
+   el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
+    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32,color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
+    const hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
+    f.b0=f.body?f.body.scale.clone():null; self.nf.push(f);
+    // Kollision: Ellipsoid-Kette aus Weltpunkten
+    r.updateMatrixWorld(true); const pts=[], v=new T.Vector3(); r.traverse(o=>{ if(!o.isMesh) return; const P=o.geometry.attributes.position; for(let i=0;i<P.count;i+=3){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); pts.push([v.x,v.y,v.z]); } });
+    const E=self.fitEll(F.n,pts); (self.nfEll=self.nfEll||[]).push(...E); if(self.ells) self.ells.push(...E);
+    if(F.mouth&&self.smokeMat){ const N=26, g=new T.BufferGeometry(), P=new Float32Array(N*3), A=new Float32Array(N); g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(A,1));
+     const pts2=new T.Points(g,self.smokeMat); pts2.frustumCulled=false; sc.object3D.add(pts2); f.sm={g,P,A,N,age:new Float32Array(N).fill(9),off:new Float32Array(N*3).map(()=>Math.random()-0.5),last:-5}; }
+   }); }); },
+ nfTick(s,d){ const cam=this.el.camera; if(!this.nf||!cam) return; const T=THREE, cp=new T.Vector3(); cam.getWorldPosition(cp);
+  this.nf.forEach(f=>{ const br=Math.sin(s*1.45+f.ph); if(f.body&&f.b0){ f.body.scale.set(f.b0.x*(1+0.006*br),f.b0.y*(1+0.004*br),f.b0.z*(1+0.012*br)); }
+   const o=f.el.object3D; let want=0; if(f.head){ const lp=o.worldToLocal(cp.clone()); const hp=f.head.position; const dx=lp.x-hp.x, dz=lp.z-hp.z, dist=Math.hypot(dx,dz); if(dist<4.5&&dz>-0.2) want=Math.max(-0.75,Math.min(0.75,Math.atan2(dx,dz)));
+    // Bong-Zug: alle 10 s Kopf zur Bong (nach rechts unten), dann ausatmen
+    let hit=0, pitch=0; if(f.sm){ const c=(s+f.ph)%10; if(c<1.6){ hit=1; want=-0.35; pitch=0.28; } if(c>1.6&&f.sm.last!==Math.floor((s+f.ph)/10)){ f.sm.last=Math.floor((s+f.ph)/10); f.sm.age.fill(0); } }
+    f.yaw+=(want-f.yaw)*Math.min(1,d*3); f.pi=(f.pi||0)+(pitch-(f.pi||0))*Math.min(1,d*4);
+    const q=new T.Quaternion().setFromEuler(new T.Euler(f.pi,f.yaw,0.04*Math.sin(s*0.7+f.ph),'YXZ')); f.head.quaternion.copy(f.q0).multiply(q);
+    // Blinzeln (Kopf-Nicken-Mikro-Zucken als Ersatz, Textur hat kein Lid)
+   }
+   const S=f.sm; if(S){ const m=new T.Vector3(...f.F.mouth); o.localToWorld(m); for(let i=0;i<S.N;i++){ S.age[i]+=d*(0.8+0.4*(i%3)/2); const k=S.age[i]/3.2; if(k>1){ S.A[i]=0; S.P[i*3+1]=-9; continue; } const del=Math.min(1,Math.max(0,k*3.2-i*0.03));
+     const fw=new T.Vector3(Math.sin(o.rotation.y),0,Math.cos(o.rotation.y)); S.P[i*3]=m.x+fw.x*del*0.35+S.off[i*3]*k*0.5; S.P[i*3+1]=m.y+k*0.6+S.off[i*3+1]*0.1; S.P[i*3+2]=m.z+fw.z*del*0.35+S.off[i*3+2]*k*0.5; S.A[i]=del>0?Math.sin(Math.min(1,k)*Math.PI)*0.75:0; }
+    S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; } }); },
+ extraTick(s,d){ this.nfTick(s,d); (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph);
    // v14: Oberkörper-Wiegen (Gieren/Rollen/Nicken um die Hüfte), Gähnen/Strecken alle ~15–30 s; Empfangsdame dreht sich bei Klingel zum Spieler und nickt
    const p=b.ph; let ya=0.14*Math.sin(s*0.21+p)+0.05*Math.sin(s*0.53+p*2), ro=0.08*Math.sin(s*0.47+p)+0.03*Math.sin(s*1.1+p*3), pi=0.06*Math.sin(s*0.33+p*1.7);
    if(!b.yn) b.yn=s+5+Math.random()*15; if(s>b.yn){ const t=s-b.yn; if(t<3.2){ const e=Math.sin(Math.PI*t/3.2); pi-=0.24*e; ro+=0.06*e*Math.sin(t*2); } else b.yn=s+15+Math.random()*15; }
@@ -330,7 +357,7 @@ AFRAME.registerComponent('warteraum',{
   this.cols=cols; this.hulls=hulls;
   // v9 (Ecstatica-Skelett): unsichtbare Ellipsoid-Kette je Figur samt Stuhl (Scheiben à 14 cm, je Teil eine gedrehte Ellipse, 75 % Überlappung in der Höhe) statt Grundriss-Hülle.
   // Kopf = Kugel 0.12 m gegen das Skelett in 3-D, Körper (Säule unter dem Kopf) mit Lehn-Spielraum → man kommt Gesichtern auf ~12 cm nahe, läuft aber nie durch Beine/Stuhl. ?ell=0 = alte Hüllen.
-  this.ells=[]; if(!/[?&]ell=0/.test(Q)){ this.hulls=[]; Object.entries(pts3).forEach(([n,A])=>this.ells.push(...this.fitEll(n,A))); }
+  this.ells=[]; if(!/[?&]ell=0/.test(Q)){ this.hulls=[]; Object.entries(pts3).forEach(([n,A])=>this.ells.push(...this.fitEll(n,A))); this.ells.push(...(this.nfEll||[])); }
   if(/[?&]cols=1/.test(Q)){ const g=new T.Group(); cols.forEach(([a0,a1,b0,b1,n])=>{ const me=new T.Mesh(new T.BoxGeometry(a1-a0,0.04,b1-b0),new T.MeshBasicMaterial({color:n==='tuer'?0x30a0ff:0xffa020,transparent:true,opacity:0.35,depthWrite:false})); me.position.set((a0+a1)/2,0.03,(b0+b1)/2); g.add(me); });
    hulls.forEach(({H})=>{ const sh=new T.Shape(H.map(h=>new T.Vector2(h[0],-h[1]))); const me=new T.Mesh(new T.ShapeGeometry(sh),new T.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:0.45,depthWrite:false,side:T.DoubleSide})); me.rotation.x=-Math.PI/2; me.position.y=0.035; g.add(me); }); (this.ells||[]).forEach(e=>{ const me=new T.Mesh(new T.SphereGeometry(1,12,8),new T.MeshBasicMaterial({color:0x40ff80,wireframe:true,transparent:true,opacity:0.5})); me.scale.set(e.r[0],e.r[1],e.r[2]); me.position.set(e.c[0],e.c[1],e.c[2]); me.rotation.y=-e.a; g.add(me); }); this.el.object3D.add(g); } },
  fitEll(n,A){ const SL=0.14, out=[], EF=num('eef',1.0); const split=(B,gap)=>{ for(const k of [0,1]){ const S=B.slice().sort((a,b)=>a[k]-b[k]); for(let i=1;i<S.length;i++) if(S[i][k]-S[i-1][k]>gap) return [...split(S.slice(0,i),gap),...split(S.slice(i),gap)]; } return [B]; };
