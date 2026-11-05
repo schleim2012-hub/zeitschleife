@@ -104,11 +104,11 @@ AFRAME.registerComponent('warteraum',{
   this.mov.forEach(m=>{ const u=s*m.sp+m.ph; let a=0;
    switch(m.kind){
     case 'head': { const g=(u*0.37)%14; a=0.5*Math.sin(u*0.27)+0.16*Math.sin(u*0.61+1.3)+(g<1.6?0.28*Math.sin(g*Math.PI/0.4)*Math.sin(g*Math.PI/1.6):0); } /* v11: deutlich sichtbar (bis ~38°) + gelegentliches Kopfschütteln */ if(m.n==='frl_head') a*=0.18; /* v7: Königin schaut nach vorn (Pete 02), kaum Drehung → keine Doppelkontur aus der Frontprojektion */ if(m.n==='brand_head') a+=0.05*(Math.sin(u*7.1)>0.97?1:0); if(m.n==='jaeger_head') a=0.6*Math.sin(u*0.35); if(m.n==='brand_head'&&this.tw>0) a+=0.09*Math.sin(s*47)*this.tw; a=this.look(m,a,d); break;
-    case 'arm': { const c=(u%7)/7; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.8:m.n==='frl_arm'?0:-0.3)*(lift*lift*(3-2*lift));
+    case 'arm': { const c=(u%7)/7; const lift=c<0.12?c/0.12:c<0.45?1:c<0.6?1-(c-0.45)/0.15:0; a=(m.n==='brand_arm'?-0.9:m.n==='frl_arm'?0:-0.65)*(lift*lift*(3-2*lift));
        if(m.n==='frl_arm'){ const p=(u%4.3)/4.3; a=p<0.06?-0.45*p/0.06:p<0.12?-0.45*(1-(p-0.06)/0.06):0; if(this.talk) a=0; else if(p>=0.06&&m.last<0.06) this.sfx('stamp'); m.last=p; }
        if(m.n==='brand_arm'&&this.tw>0) a+=0.07*Math.sin(s*39)*this.tw;
-       if(m.n==='gruen_arm') a=-0.12*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
-    case 'foot': { const burst=Math.sin(u*0.13)>-0.2; a=burst?0.32*Math.max(0,Math.sin(u*2*Math.PI*1.9)):0; if(m.n==='taucher_foot') a=0.25*Math.sin(u*1.4)*Math.max(0,Math.sin(u*0.3)); break; }
+       if(m.n==='gruen_arm') a=-0.3*Math.max(0,Math.sin(u*0.4))*Math.sin(u*3); break; }
+    case 'foot': { const burst=Math.sin(u*0.13)>-0.2; a=burst?0.42*Math.max(0,Math.sin(u*2*Math.PI*1.9)):0; if(m.n==='taucher_foot') a=0.25*Math.sin(u*1.4)*Math.max(0,Math.sin(u*0.3)); break; }
     case 'page': { const p=(u%6)/6; a=p<0.1?Math.PI*0.97*(p/0.1)*(p/0.1)*(3-2*p/0.1):0; if(p<0.1&&!m.on){ m.on=1; this.sfx('page'); } if(p>=0.1) m.on=0; break; }
     case 'clock': { const now=new Date(), sec=now.getSeconds()+now.getMilliseconds()/1000, mi=now.getMinutes()+sec/60, hr=(now.getHours()%12)+mi/60;
        a=m.n==='clk_s'?Math.floor(sec)/60*2*Math.PI:m.n==='clk_m'?mi/60*2*Math.PI:hr/12*2*Math.PI; break; } // Achse = Wandnormale → läuft linksherum (Jenseits)
@@ -131,10 +131,10 @@ AFRAME.registerComponent('warteraum',{
   const fwdOf=(n,P)=>n==='frl'?new T.Vector2(0,1):P.x<-2.1?new T.Vector2(1,0):P.x>2.1?new T.Vector2(-1,0):new T.Vector2(0.3-P.x,-P.z).normalize();
   Object.entries(heads).forEach(([n,m])=>{ const P=new T.Vector3(...S.movers[m.n].pivot), f=fwdOf(n,P); m.P=P; m.f=f;
    const wq=new T.Quaternion(); m.o.parent.getWorldQuaternion(wq); wq.multiply(m.q0); m.sg=Math.sign(m.ax.clone().applyQuaternion(wq).y)||1; m.w=0; m.la=0;
-   const mat=M['wr_fig_'+n]; if(!mat||mat.__br) return; mat.__br=1; const U={c:{value:new T.Vector3(P.x+f.x*0.07,P.y-0.3,P.z+f.y*0.07)},a:{value:0}};
-   const ob=mat.onBeforeCompile, pk=mat.customProgramCacheKey; mat.onBeforeCompile=(sh,r)=>{ ob&&ob.call(mat,sh,r); sh.uniforms.uBc=U.c; sh.uniforms.uBa=U.a;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform vec3 uBc; uniform float uBa;').replace('#include <begin_vertex>','#include <begin_vertex>\n{ vec3 bq=(modelMatrix*vec4(transformed,1.0)).xyz-uBc; transformed+=objectNormal*uBa*exp(-dot(bq,bq)/0.032); }'); };
-   mat.customProgramCacheKey=()=>(pk?pk.call(mat):'')+'br'; mat.needsUpdate=true; this.breath.push({U,ph:Math.random()*6.3,f:0.2+Math.random()*0.07,amp:n==='frl'?0.004:0.006}); });
+   const mat=M['wr_fig_'+n]; if(!mat||mat.__br) return; mat.__br=1; const U={c:{value:new T.Vector3(P.x+f.x*0.07,P.y-0.3,P.z+f.y*0.07)},a:{value:0},h:{value:new T.Vector3(P.x-f.x*0.05,P.y-(n==='frl'?0.5:0.55),P.z-f.y*0.05)},s:{value:new T.Vector3()},f:{value:new T.Vector2(f.x,f.y)}};
+   const ob=mat.onBeforeCompile, pk=mat.customProgramCacheKey; mat.onBeforeCompile=(sh,r)=>{ ob&&ob.call(mat,sh,r); sh.uniforms.uBc=U.c; sh.uniforms.uBa=U.a; sh.uniforms.uSh=U.h; sh.uniforms.uSs=U.s; sh.uniforms.uSf=U.f;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform vec3 uBc; uniform float uBa; uniform vec3 uSh; uniform vec3 uSs; uniform vec2 uSf;').replace('#include <begin_vertex>','#include <begin_vertex>\n{ vec3 bq=(modelMatrix*vec4(transformed,1.0)).xyz-uBc; transformed+=objectNormal*uBa*exp(-dot(bq,bq)/0.032); }\n{ vec3 q=(modelMatrix*vec4(transformed,1.0)).xyz-uSh; float w=smoothstep(0.02,0.4,q.y), ya=uSs.x*w; vec3 n=vec3(q.x*cos(ya)-q.z*sin(ya),q.y,q.x*sin(ya)+q.z*cos(ya)); vec3 F=vec3(uSf.x,0.,uSf.y), Sd=vec3(uSf.y,0.,-uSf.x); n+=cross(F*uSs.y*w+Sd*uSs.z*w,n); transformed+=inverse(mat3(modelMatrix))*(n-q); }'); };
+   mat.customProgramCacheKey=()=>(pk?pk.call(mat):'')+'br2'; mat.needsUpdate=true; this.breath.push({U,n,P,f,ph:Math.random()*6.3,f:0.2+Math.random()*0.07,amp:n==='frl'?0.004:0.006}); });
   // Glimmen am Brandopfer: zweiter, dünner Rauch von den Schultern
   const bh=heads.brand; if(bh&&this.smoke){ const N=10, g=new T.BufferGeometry(), P=new Float32Array(N*3), Aa=new Float32Array(N); g.setAttribute('position',new T.BufferAttribute(P,3)); g.setAttribute('alpha',new T.BufferAttribute(Aa,1));
    const pts=new T.Points(g,this.smokeMat); pts.frustumCulled=false; sc.object3D.add(pts); this.smoke2={g,P,A:Aa,N,base:new T.Vector3(bh.P.x+0.03,bh.P.y-0.2,bh.P.z),age:new Float32Array(N).map((_,i)=>i/N*5),off:new Float32Array(N*2).map(()=>(Math.random()-0.5)*0.22)}; }
@@ -173,6 +173,7 @@ AFRAME.registerComponent('warteraum',{
    dauer:'Aktuelle Wartezeit: 125 Jahre. Mit dem rosa Passierschein A38 nur 124.',nummer:'Schön für Sie. Aufgerufen wird erst mit dem rosa Passierschein A38. Fragen Sie beim FBI, die verlegen ständig Akten.',
    nichts:'Grundloses Klingeln kostet hundert Jahre extra. Ich hab’s notiert.',a38:'Der rosa Passierschein A38! Den hat seit dem Mittelalter keiner mehr gesehen. Gestempelt. Bitte nehmen Sie Platz, Wartezeit nun 124 Jahre.',wieder:'Sie schon wieder. Gestempelt ist gestempelt. Setzen Sie sich.'};
   this.oiia(); /* v12: OIIA-Katze */
+  if(/[?&]bell=1/.test(Q)) setTimeout(()=>this.ring(),4000);
   if(/[?&]a38=1/.test(Q)) try{ localStorage.setItem('zs_a38','1'); }catch(e){}
  },
  hasA38(){ try{ return localStorage.getItem('zs_a38')==='1'; }catch(e){ return false; } },
@@ -181,7 +182,12 @@ AFRAME.registerComponent('warteraum',{
  look(m,a,d){ if(!m.f) return a; const h=this.head(); const tx=h.x-m.P.x, tz=h.z-m.P.z, dist=Math.hypot(tx,tz); let th=Math.atan2(m.f.y,m.f.x)-Math.atan2(tz,tx); th=Math.atan2(Math.sin(th),Math.cos(th));
   const frl=m.n==='frl_head', want=(frl&&this.talk)||(dist<1.9&&Math.abs(th)<1.35)?1:0, lim=frl?0.3:0.7; m.w+=(want-m.w)*Math.min(1,d*(want?1.6:0.8)); m.la+=(Math.max(-lim,Math.min(lim,th))*m.sg-m.la)*Math.min(1,d*3);
   return a*(1-m.w*0.85)+m.la*m.w; },
- extraTick(s,d){ (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph); });
+ extraTick(s,d){ (this.breath||[]).forEach(b=>{ b.U.a.value=b.amp*Math.sin(s*b.f*6.2832+b.ph);
+   // v14: Oberkörper-Wiegen (Gieren/Rollen/Nicken um die Hüfte), Gähnen/Strecken alle ~15–30 s; Empfangsdame dreht sich bei Klingel zum Spieler und nickt
+   const p=b.ph; let ya=0.14*Math.sin(s*0.21+p)+0.05*Math.sin(s*0.53+p*2), ro=0.08*Math.sin(s*0.47+p)+0.03*Math.sin(s*1.1+p*3), pi=0.06*Math.sin(s*0.33+p*1.7);
+   if(!b.yn) b.yn=s+5+Math.random()*15; if(s>b.yn){ const t=s-b.yn; if(t<3.2){ const e=Math.sin(Math.PI*t/3.2); pi-=0.24*e; ro+=0.06*e*Math.sin(t*2); } else b.yn=s+15+Math.random()*15; }
+   if(b.n==='frl'){ ya*=0.25; ro*=0.4; pi*=0.4; const bt=s-(this.bellAt||-99); if(bt<5){ const H=b.U.h.value, hp=this.head(), tx=hp.x-H.x, tz=hp.z-H.z, fx=b.f.x, fz=b.f.y; const want=Math.max(-1.3,Math.min(1.3,Math.atan2(fx*tz-fz*tx,fx*tx+fz*tz))), e=Math.min(1,bt*2,(5-bt)*1.2); ya=ya*(1-e)+want*e; if(bt>0.7&&bt<2.6) pi+=0.16*Math.sin((bt-0.7)*Math.PI*2/0.95)*Math.sin((bt-0.7)*Math.PI/1.9); } }
+   if(this.cat&&this.cat.party>0) { ya=ro=pi=0; } b.U.s.value.set(ya,ro,pi); });
   // Brandopfer: ab und zu ein Zucken (0.4 s), dazu dauernd Glimm-Rauch
   this.twNext-=d; if(this.twNext<=0){ this.tw=1; this.twNext=5+Math.random()*9; } this.tw=Math.max(0,this.tw-d*2.5);
   const S=this.smoke2; if(S){ for(let i=0;i<S.N;i++){ S.age[i]+=d; if(S.age[i]>5) S.age[i]-=5; const k=S.age[i]/5; S.P[i*3]=S.base.x+S.off[i*2]*0.6+0.03*Math.sin(k*6+i); S.P[i*3+1]=S.base.y+k*0.45; S.P[i*3+2]=S.base.z+S.off[i*2+1]+0.03*Math.cos(k*5+i); S.A[i]=Math.sin(k*Math.PI)*0.5; } S.g.attributes.position.needsUpdate=true; S.g.attributes.alpha.needsUpdate=true; }
@@ -272,7 +278,7 @@ AFRAME.registerComponent('warteraum',{
    C.lasers.forEach((m,i)=>{ const a=te*(0.6+lL*1.8)*(i%2?1:-1)+i*Math.PI/6; m.rotation.set(Math.PI/2-0.25-0.35*Math.sin(te*1.3+i),0,0); m.rotation.y=a; m.rotation.order='YXZ'; m.material.color.setHSL((hue+i/12)%1,1,0.55); m.material.opacity=lL*(0.35+0.4*st)*fl; });
    C.rings.forEach((m,i)=>{ const q=((beat+i/5*4)%4)/4; m.scale.setScalar(0.2+3.5*q); m.position.y=-0.25; m.material.color.setHSL((hue+q)%1,1,0.5); m.material.opacity=rL*(1-q)*0.5*fl; }); }
   C.fog.forEach((m,i)=>{ m.position.x+=d*0.06*Math.sin(i+te*0.2); m.material.opacity=fogL*0.2*(0.6+0.4*fl); }); },
- ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; B.press=1; this.ding();
+ ring(){ const B=this.bell; if(!B||B.cool>0) return; B.cool=1.2; this.bellAt=this.el.time/1000; B.press=1; this.ding();
   this.talk=1; this.talkEnd=performance.now()+20000; setTimeout(()=>{ this.openPanel(); this.say(this.a38Done()?'wieder':'greet'); },650); },
  ding(){ const ac=this.ac; if(!ac) return; const p=this.pan(this.bell.top.toArray(),0.8,1.2), t=ac.currentTime;
   [[2350,0.5,1.6],[5640,0.18,0.7],[2353.5,0.3,1.4],[7120,0.06,0.35]].forEach(([f,v,dur])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v*0.5,t+0.004); g.gain.exponentialRampToValueAtTime(0.0005,t+dur); o.connect(g); g.connect(p); o.start(t); o.stop(t+dur+0.05); }); },
