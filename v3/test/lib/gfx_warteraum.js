@@ -189,8 +189,10 @@ AFRAME.registerComponent('warteraum',{
   root.traverse(o=>{ if(!o.isMesh||!o.material||!/^S_/.test(o.name)) return; const mn=o.material.name; if(mn!=='wr_vinyl'&&mn!=='wr_wood') return; const P=o.geometry.attributes.position; let n=0;
    for(let i=0;i<P.count;i++){ const x=P.getX(i), y=P.getY(i), z=P.getZ(i); if(x>-2.92&&x<-2.05&&z>-0.97&&z<-0.13&&(mn==='wr_vinyl'?y<1.15:y<0.2)){ P.setY(i,-60); n++; } } if(n){ P.needsUpdate=true; o.geometry.computeBoundingSphere(); o.geometry.computeBoundingBox(); this._redN=(this._redN||0)+n; } });
   // (v16-Altlast) Oma-Versatz, jetzt 0 (ihr alter Stuhl bleibt leer stehen); Pivots/Anker mitziehen → Atmen, Kopf, Geräusche, Kollision passen
-  ['S_wr_fig_oma','oma_head','oma_page'].forEach(n=>{ const o=this.nodes[n]; if(o){ o.position.x+=D[0]; o.position.y+=D[1]; o.position.z+=D[2]; o.updateMatrixWorld(true); } });
-  Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ m.pivot=[m.pivot[0]+D[0],m.pivot[1]+D[1],m.pivot[2]+D[2]]; } }); const A=S.anchors.oma; if(A) S.anchors.oma=[A[0]+D[0],A[1]+D[1],A[2]+D[2]];
+  // v18: Oma samt Stuhl größer (Pete: wirkte neben dem grünen Mann wie eine Miniatur). Skaliert um den Boden-Punkt an der Stuhl-Rückseite → Füße bleiben auf y=0, Lehne bleibt an der Wand. Pivots/Anker mitskaliert → Atmen, Kopf, Geräusche, Kollision passen.
+  const OS=this.OMS=num('oms',1.14), O=this.OMO=[-2.92,0,1.72], sp=(p)=>[O[0]+(p[0]-O[0])*OS,O[1]+(p[1]-O[1])*OS,O[2]+(p[2]-O[2])*OS];
+  ['S_wr_fig_oma','oma_head','oma_page'].forEach(n=>{ const o=this.nodes[n]; if(o){ const q=sp([o.position.x,o.position.y,o.position.z]); o.position.set(q[0]+D[0],q[1]+D[1],q[2]+D[2]); o.scale.multiplyScalar(OS); o.updateMatrixWorld(true); } });
+  Object.entries(S.movers).forEach(([n,m])=>{ if(/^oma_/.test(n)){ const q=sp(m.pivot); m.pivot=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; } }); const A=S.anchors.oma; if(A){ const q=sp(A); S.anchors.oma=[q[0]+D[0],q[1]+D[1],q[2]+D[2]]; }
   // Jäger: Unterseite der Tropenhelm-Krempe trug Gesichtstextur (Frontprojektion) → von unten sah man „Augen“ auf der Krempe. Diese Vertices bekommen den dunklen Krempenschatten aus dem Foto.
   const jh=this.nodes.jaeger_head; if(jh) jh.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry, P=g.attributes.position, N=g.attributes.normal, U=g.attributes.uv; if(!U||!N) return; o.updateMatrixWorld(true); const v=new T.Vector3(), nn=new T.Vector3(), nm=new T.Matrix3().getNormalMatrix(o.matrixWorld); let k=0;
    for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); nn.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); if(nn.y<-0.4&&v.y>1.045){ U.setXY(i,0.385+0.02*((i%5)/5),0.197); k++; } } if(k) U.needsUpdate=true; this._brim=k; });
@@ -205,10 +207,23 @@ AFRAME.registerComponent('warteraum',{
  nfigs(){ const T=THREE, self=this, sc=this.el; this.nf=[];
   const D=[{n:'garfield',p:[num('gfx',-1.62),0,num('gfz',-2.07)],yaw:num('gfy',0.12),mouth:[0,1.02,0.2],bong:[-0.15,0.86,0.2]},
            {n:'katze',p:[num('ktx',-2.5),0,num('ktz',-0.55)],yaw:num('kty',1.5708),sc:num('ksc',0.82)}];
-  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=17'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
+  D.forEach(F=>{ const el=document.createElement('a-entity'); el.setAttribute('gltf-model',BASE+'fig_'+F.n+'.glb?v=18c'); el.object3D.position.set(...F.p); el.object3D.rotation.y=F.yaw; if(F.sc) el.object3D.scale.setScalar(F.sc); sc.appendChild(el);
    el.addEventListener('model-loaded',()=>{ const r=el.getObject3D('mesh'); let body=null, head=null;
-    r.traverse(o=>{ if(!o.isMesh) return; if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); const m=o.material; o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); /* v17: Seitenflächen der Frontprojektion nicht als Streifen verschmieren → dort weich gefilterte Farbe aus der Mip-Kette */ o.material.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vSide;').replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvSide=abs(normalize(objectNormal).x);'); sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vSide;').replace('#include <map_fragment>','vec4 tC=mix(texture2D(map,vMapUv),texture2D(map,vMapUv,4.5),smoothstep(0.55,0.92,vSide));\ndiffuseColor*=tC;').replace('#include <emissivemap_fragment>','totalEmissiveRadiance*=tC.rgb;'); }; if(/head/.test(o.name)) head=o; else body=o; });
-    const hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
+    r.traverse(o=>{ if(!o.isMesh) return; const g=o.geometry; if(!g.attributes.normal) g.computeVertexNormals(); const m=o.material, hw=g.attributes._headw||g.attributes._HEADW;
+     if(hw){ /* v18: Kopf+Körper EIN geschlossenes Mesh (keine Naht/Zacken); Kopfdrehung im Vertex-Shader mit weichem Gewicht; Seitenflächen: Basisfarbe je Vertex + kachelbares Fell-/Stoffdetail (triplanar) statt gezogener Frontprojektion */
+      g.setAttribute('hdw',hw); if(g.attributes.color){ g.setAttribute('bcol',g.attributes.color); g.deleteAttribute('color'); }
+      const nk=(o.userData&&o.userData.neck)||(r.userData&&r.userData.neck)||[0,1.06,0]; const U={hr:{value:new T.Matrix3()},nk:{value:new T.Vector3(...nk)},fur:{value:new T.TextureLoader().load(BASE+'fig_'+F.n+'_fur.jpg?v=18c',t=>{ t.wrapS=t.wrapT=T.RepeatWrapping; t.needsUpdate=true; })},fs:{value:3.8}};
+      const mt=o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8});
+      mt.onBeforeCompile=sh=>{ Object.assign(sh.uniforms,{uHR:U.hr,uNk:U.nk,uFur:U.fur,uFs:U.fs});
+       sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float hdw; attribute vec4 bcol; uniform mat3 uHR; uniform vec3 uNk; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
+        .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvON=objectNormal; objectNormal=normalize(mix(objectNormal,uHR*objectNormal,hdw));')
+        .replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position; vBC=bcol; transformed=mix(transformed,uNk+uHR*(transformed-uNk),hdw);');
+       sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D uFur; uniform float uFs; varying vec3 vON; varying vec3 vOP; varying vec4 vBC;')
+        .replace('#include <map_fragment>','vec3 nO=normalize(vON); vec4 tx=texture2D(map,vMapUv); vec3 bw=abs(nO); bw=pow(bw,vec3(3.)); bw/=bw.x+bw.y+bw.z; float dt=(texture2D(uFur,vOP.xy*uFs).r*bw.z+texture2D(uFur,vOP.zy*uFs).r*bw.x+texture2D(uFur,vOP.xz*uFs).r*bw.y)*1.99; float sd=smoothstep(0.3,0.6,1.0-abs(nO.z)); sd=max(sd,smoothstep(0.85,0.35,vBC.a)); vec4 tC=vec4(mix(tx.rgb,vBC.rgb*mix(1.0,dt,0.85),sd),1.0);\ndiffuseColor*=tC;')
+        .replace('#include <emissivemap_fragment>','totalEmissiveRadiance*=tC.rgb;'); };
+      body=o; o.userData.U=U; return; }
+     o.material=new T.MeshLambertMaterial({map:m.map,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.32*(self.DK||1),color:0xd8d0c8}); if(/head/.test(o.name)) head=o; else body=o; });
+    let hp=r.getObjectByName(F.n+'_head')||(head&&head.parent!==r?head.parent:head); if(!hp&&body&&body.userData.U){ hp=new T.Object3D(); hp.position.copy(body.userData.U.nk.value); body.parent.add(hp); hp.userData.U=body.userData.U; } const f={F,el,r,body:r.getObjectByName(F.n+'_body')||body,head:hp,q0:hp?hp.quaternion.clone():null,yaw:0,ph:Math.random()*6};
     f.b0=f.body?f.body.scale.clone():null; self.nf.push(f);
     // Kollision: Ellipsoid-Kette aus Weltpunkten
     r.updateMatrixWorld(true); const pts=[], v=new T.Vector3(); r.traverse(o=>{ if(!o.isMesh) return; const P=o.geometry.attributes.position; for(let i=0;i<P.count;i+=3){ v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld); pts.push([v.x,v.y,v.z]); } });
@@ -222,7 +237,7 @@ AFRAME.registerComponent('warteraum',{
     // Bong-Zug: alle 10 s Kopf zur Bong (nach rechts unten), dann ausatmen
     let hit=0, pitch=0; if(f.sm){ const c=(s+f.ph)%10; if(c<1.6){ hit=1; want=-0.35; pitch=0.28; } if(c>1.6&&f.sm.last!==Math.floor((s+f.ph)/10)){ f.sm.last=Math.floor((s+f.ph)/10); f.sm.age.fill(0); } }
     f.yaw+=(want-f.yaw)*Math.min(1,d*3); f.pi=(f.pi||0)+(pitch-(f.pi||0))*Math.min(1,d*4);
-    const q=new T.Quaternion().setFromEuler(new T.Euler(f.pi,f.yaw,0.04*Math.sin(s*0.7+f.ph),'YXZ')); f.head.quaternion.copy(f.q0).multiply(q);
+    const q=new T.Quaternion().setFromEuler(new T.Euler(f.pi,f.yaw,0.04*Math.sin(s*0.7+f.ph),'YXZ')); f.head.quaternion.copy(f.q0).multiply(q); if(f.head.userData.U) f.head.userData.U.hr.value.setFromMatrix4(new T.Matrix4().makeRotationFromQuaternion(f.head.quaternion));
     // Blinzeln (Kopf-Nicken-Mikro-Zucken als Ersatz, Textur hat kein Lid)
    }
    const S=f.sm; if(S){ const m=new T.Vector3(...f.F.mouth); o.localToWorld(m); for(let i=0;i<S.N;i++){ S.age[i]+=d*(0.8+0.4*(i%3)/2); const k=S.age[i]/3.2; if(k>1){ S.A[i]=0; S.P[i*3+1]=-9; continue; } const del=Math.min(1,Math.max(0,k*3.2-i*0.03));
@@ -263,7 +278,7 @@ AFRAME.registerComponent('warteraum',{
   [-1,1].forEach(k=>{ const ear=new T.Mesh(new T.ConeGeometry(0.036,0.075,4),fur); ear.position.set(k*0.047,0.072,-0.005); ear.rotation.set(-0.15,Math.PI/4,k*-0.3); ear.renderOrder=1000; head.add(ear);
    head.add(E(0.019,1,1,0.6,eyeM,k*0.031,0.014,0.056,12), E(0.011,1,1.1,0.5,pup,k*0.031,0.014,0.0665,8)); });
   const tc=new T.CatmullRomCurve3([[0,0.03,-0.16],[0.08,0.01,-0.17],[0.15,0.02,-0.08],[0.16,0.03,0.04]].map(a=>new T.Vector3(...a))), tail=new T.Mesh(new T.TubeGeometry(tc,16,0.016,6),fur); tail.renderOrder=1000; body.add(tail);
-  cat.position.set(num('catx',-2.27),num('caty',0.55),num('catz',1.85)); /* v17: Oma wieder auf ihrem Platz */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(0.85); root.add(cat);
+  cat.position.set(num('catx',-2.30),num('caty',0.63),num('catz',1.87)); /* v18: Schoß der größeren Oma */ cat.rotation.y=Math.PI/2; cat.scale.setScalar(num('cats',0.92)); root.add(cat);
   const hitM=new T.Mesh(new T.SphereGeometry(0.2,8,6),new T.MeshBasicMaterial({visible:false})); hitM.position.set(0,0.17,0); cat.add(hitM);
   const hit=document.createElement('a-entity'); hit.setAttribute('class','clickable'); sc.appendChild(hit); hit.setObject3D('mesh',hitM.clone()); hit.object3D.position.copy(cat.position);
   hit.addEventListener('click',()=>{ if(this.el.renderer.xr.isPresenting) this.catTap(); });
