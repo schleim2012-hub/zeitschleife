@@ -88,8 +88,17 @@ AFRAME.registerComponent('warteraum',{
    self.dust(T,sc,FX,ch);
    self.extras(S,root,M);
    window.__wr={ready:true,nodes:Object.keys(self.nodes).length,mov:self.mov.length,S,cols:self.cols,hulls:self.hulls,ells:self.ells,comp:self};
-   // v24: beim Betreten setzt sich der Raum aus türkisen Datenblöcken zusammen (fx/zs_reality.js), danach leichte Rest-Unruhe. ?noreal=1 aus
-   if(window.ZSR){ self.reality=ZSR.assemble(sc.object3D,{duration:3.2,cell:0.15,radial:0.62}); window.__wr.reality=self.reality; }
+   // v27: Growth statt Reveal – Mara erinnert sich – harte Rang-Phasen, Volumenblöcke, Restlöcher – Rang 1 Boden → 2 Große Formen → 3 Wichtiges → 4 Licht/Kleinkram; Licht wächst mit. ?noreal=1 aus
+   if(self.poster){ self.poster.userData.zsrMem=4; if(self.poster.material) self.poster.material.userData.zsrMem=4; }
+   if(self.flip&&self.flip.tex){ /* Fallblatt = interaktiv */ }
+   root.traverse(o=>{ if(!o.isMesh) return; const n=(o.material&&o.material.name)||o.name||'';
+    let r=0; if(/floor|boden/i.test(n)||n==='wr_floor') r=1;
+    else if(/^wr_fig|fig_/i.test(n)||/flip|klingel|bell|sofa|vinyl|fabric|metal|glass/i.test(n)) r=3;
+    else if(/pinup|poster|sign|paper|paint|shade|emit|noexit|crackle|redglass/i.test(n)) r=4;
+    else if(/wall|ceil|corr|wood/i.test(n)) r=2;
+    if(r){ o.userData.zsrMem=r; for(const m of (Array.isArray(o.material)?o.material:[o.material])) if(m) m.userData.zsrMem=r; if(/flip|bell|klingel|noexit|door|tuer|tür|ticket|nummern|bong/i.test(n)) o.userData.zsrNoHole=1; } });
+   if(window.ZSR){ self.reality=ZSR.assemble(sc.object3D,{duration:4.0,cell:0.17,radial:0.55,blocks:1600,lights:()=>self.L}); window.__wr.reality=self.reality;
+    /* Raumklang möglichst früh (nur wenn AudioContext schon läuft – sonst nach Geste) */ try{ if(self.ac&&self.ac.state==='running'&&self.S&&self.S.anchors) self.play('creak',self.S.anchors.office||[0,1.5,-2],0.25); }catch(e){} }
   });
  },
  drawFlip(a,b,k){ const {cx}=this.flip, W=512, H=148; cx.fillStyle='#16181a'; cx.fillRect(0,0,W,H); cx.fillStyle='#8a8e86'; cx.font='600 26px "Barlow Condensed",Arial Narrow,sans-serif'; cx.textAlign='center'; cx.fillText('JETZT BEDIENT',W/2,30);

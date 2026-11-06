@@ -7,6 +7,8 @@
 // Untersuchen + versteckte Schlüssel (lib/zsx.js) – synchron mitladen
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSMARA&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'mara.js?v=1022z5')+'"><\/script>'); }
 { const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSX&&document.readyState==='loading') document.write('<script src="'+me.replace(/alpha\.js.*$/,'zsx.js?v=m1525')+'"><\/script><script src="'+me.replace(/alpha\.js.*$/,'nokio.js?v=1022z3')+'"><\/script>'); }
+// Reality (Pete 05.11.: ganzes Spiel, nicht nur der Warteraum): fx/zs_reality.js (v30-Sprache) + fx/zsr_rooms.js (Raum-Hook) synchron mitladen. Warteraum lädt selbst.
+{ const me=document.currentScript&&document.currentScript.src; if(me&&!window.ZSR&&!/era_warteraum/.test(location.pathname)&&document.readyState==='loading'){ const fx=me.replace(/test\/lib\/alpha\.js.*$/,'fx/'); document.write('<script src="'+fx+'zs_reality.js?v=1106r1"><\/script><script src="'+fx+'zsr_rooms.js?v=1106r1"><\/script>'); } }
 // Keine automatischen Steuerungs-Tafeln (Pete, 22.10.): die festen #hud-Kästen der Räume ausblenden; Hilfe nur über ☰ › Steuerung
 { const st=document.createElement('style'); st.textContent='#hud{display:none!important}'; (document.head||document.documentElement).appendChild(st); }
 const STEPS=[ // Reihenfolge verbindlich laut zeitschleife_verzweigung.md 0.2 (Story-Bot)

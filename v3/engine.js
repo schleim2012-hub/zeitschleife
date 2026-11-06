@@ -350,16 +350,34 @@ function syncRoom(now){ if(skyFF) skyFF.uT.value=now/1000; for(const k in props)
   if(g.userData.flicker){ const f=0.75+0.12*Math.sin(now/900)+0.08*Math.sin(now/337+1.3); g.userData.flicker.opacity=f; } } }
 // ---------- Navigation: Raum wechseln (weiche Blende, Raum wird auf den Blick ausgerichtet)
 let fadeA=0;
-async function go(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode='trans'; sfx('step'); await fade(1,220); await buildRoom(id,eyeYaw()); S.node=id; await fade(0,260); mode='play'; music(); saveGame(); await enter(); }
+async function go(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode='trans'; sfx('step'); await fade(1,220); await buildRoom(id,eyeYaw()); realityIn(id); S.node=id; await fade(0,260); mode='play'; music(); saveGame(); await enter(); }
 function fade(to,ms){ return new Promise(r=>{ const f=fadeA,t0=performance.now(); const st=()=>{ const p=Math.min(1,(performance.now()-t0)/ms); fadeA=f+(to-f)*p; if(p<1) setTimeout(st,16); else r(); }; st(); }); }
 async function enter(){ const n=G.nodes[S.node]; sceneT=0; S.visited[n.epoch]=1; S.sceneVisits[S.node]=(S.sceneVisits[S.node]||0)+1; if(n.enter) await run(n.enter); if(!MEM.seen['first'+S.node]){ MEM.seen['first'+S.node]=1; saveMem(); setTimeout(()=>bark('first'+S.node,true),700); } }
 // ---------- Epochenwechsel: Vortex auf die aktuelle Blickrichtung zentriert
-// v24: Realität entsteht – nach jedem Raumaufbau setzt sich die Welt (Photosphäre, Proxy, Props) aus Datenblöcken zusammen (fx/zs_reality.js). Glitch AUS = ohne.
-function realityIn(){ if(!window.ZSR) return; try{ if(!SET.glitch){ ZSR.stop(); return; } ZSR.assemble(roomG,{duration:SET.glitch<1?2.2:2.8,origin:eyePos(),cell:0.16,radial:0.45,blocks:1800}); }catch(e){ console.warn('ZSR',e); } }
+// v30r: Realität entsteht – nach JEDEM Raumaufbau (auch go/Raumwechsel) setzt sich die Welt aus Datenblöcken zusammen (fx/zs_reality.js, v30-Sprache).
+// Photosphäre ≠ fertiges Bild unter Würfeln: Proxy-Räume (Hub) assemblieren ihre Proxy-Geometrie, der 30-m-Himmel bleibt solange aus;
+// Räume ohne Proxy (1989) bekommen für die Dauer eine Raumschale (ZSR.photoShell: Bild vom Aufnahmepunkt identisch, Boden/Wände als Geometrie).
+// Boden Frame 1 (floorAny), Ränge: Schale/Proxy 2 · Props per autoRank · Still-Platte 4 (Detail zuletzt) · keine Restlöcher an Hotspots. Glitch AUS = ohne.
+let zsrRestore=[], zsrTimer=0, zsrTok=0;
+function zsrUnshell(){ if(zsrTimer){ clearInterval(zsrTimer); zsrTimer=0; } const r=zsrRestore; zsrRestore=[]; for(const f of r){ try{ f(); }catch(e){} } }
+function realityIn(id){ if(!window.ZSR) return; try{ const tok=++zsrTok; zsrUnshell(); if(!SET.glitch){ ZSR.stop(); return; }
+ const n=G.nodes[id!=null?id:(S&&S.node)]||{}; clipPlate.userData.zsrSkip=1; hitG.userData.zsrSkip=1;
+ const mark=(o,r,d)=>{ if(!o) return; o.userData.zsrMem=r; o.userData.zsrDelay=d||0; };
+ // Schale knapp HINTER der Proxy-Fläche (k 1.05), damit Wand-Props (fitPos) davor bleiben; ohne Proxy: Wand hinter dem fernsten Prop
+ let pMax=0; for(const c of propG.children){ pMax=Math.max(pMax,Math.hypot(c.position.x,c.position.z)); }
+ const pr=n.proxy||null, shp=pr?{floor:pr.floor!=null?pr.floor:-EYE,wall:6,ceil:pr.ceil||2.35,dist:proxyDist||null,k:1.05}:{floor:-EYE,wall:Math.max(7,pMax+0.8),ceil:5};
+ zsrRestore.push(ZSR.photoShell(skyEl,shp)); mark(skyEl,2); skyEl.material.userData.zsrPhoto=1; if(proxyM) proxyM.material.userData.zsrPhoto=1; plate.material.userData.zsrPhoto=1; if(proxyM) mark(proxyM,2);
+ // Still-Platte (gleiches Motiv, schärfer): während des Aufbaus aus, danach weich drüber – Detail-Schärfung, kein Raum-Reveal
+ if(plate.visible){ plate.visible=false; mark(plate,4); const pm=plate.material, op=pm.opacity; zsrRestore.push(()=>{ if(tok!==zsrTok) return; plate.visible=true; pm.opacity=0; const t0=performance.now(); const st=()=>{ const k=Math.min(1,(performance.now()-t0)/900); pm.opacity=op*k*k*(3-2*k); if(k<1) setTimeout(st,16); }; st(); }); }
+ propG.traverse(o=>{ if(o.isMesh){ delete o.userData.zsrMem; delete o.userData.zsrDelay; } }); ZSR.autoRank(propG);
+ const avoid=[], w=new (T3().Vector3)(); roomG.updateMatrixWorld(true); for(const m of hitMeshes){ m.getWorldPosition(w); avoid.push([w.x,w.y,w.z,0.8]); }
+ ZSR.assemble(roomG,{duration:4.0,origin:eyePos(),cell:0.17,radial:0.55,blocks:2200,floorAny:true,avoid});
+ zsrTimer=setInterval(()=>{ const st=ZSR.state; if(!st.active||(st.tAbs>st.tEnd&&!st.holes)) zsrUnshell(); },500);
+ }catch(e){ console.warn('ZSR',e); } }
 async function epochJump(id){ if(!G.nodes[id]) return toast('Knoten fehlt: '+id); mode='vortex'; S.sel=null; const ep=G.nodes[id].epoch; sfx('whoosh');
  const yaw=eyeYaw(); lastVortexYaw=yaw; roomG.visible=false; const DUR=2.8;
  try{ await ZSFX.hyperspace(sceneEl,{duration:DUR,yaw,video:$('vortexvid')}); }catch(e){ console.warn(e); await sleep(DUR*1000); }
- await buildRoom(id,eyeYaw()); roomG.visible=true; realityIn(); S.node=id; vhsT=1; vhsRW=true; rewindSnd(); mode='play'; music(); saveGame();
+ await buildRoom(id,eyeYaw()); roomG.visible=true; realityIn(id); S.node=id; vhsT=1; vhsRW=true; rewindSnd(); mode='play'; music(); saveGame();
  // Glitch-Stufen je Rückkehr: Ton, Sprüche, Zeit (Bild nur dezentes VHS)
  if(ep!=='hub'){ const v=S.visits[ep]=(S.visits[ep]||0)+1; const gl=(G.glitch[ep]||{}), lvl=Math.min(5,v);
   if(v===1&&S.loop>=2&&MEM.seen['era_'+ep]&&G.glitch.remember[ep]) await act(G.glitch.remember[ep]);
@@ -564,13 +582,13 @@ function drawTitle(now){ if(!vrMode){ if(titleImg&&titleImg.complete&&titleImg.n
  button([X,Y+136,bw,54],'OPTIONEN',()=>{titleOpt=true;},{s:23,rad:14}); button([X,Y+204,bw,54],'CREDITS',()=>showCredits(false),{s:23,rad:14});
  if(!audioPlaying()) text('🔇 Tippen für Ton',W-30,40,{s:22,w:600,a:'right',c:'#ffd27a'}); drawToasts(now,40); }
 function toTitle(){ pauseOpen=false; wm.open=false; msg=null; dlg=null; stopVoice(); S=null; mode='title'; titleOpt=false; roomG.visible=false; $('titlesky').object3D.visible=vrMode; music(); }
-async function startAt(node){ await buildRoom(node,eyeYaw()); roomG.visible=true; realityIn(); S.node=node; vhsT=1; mode='play'; music(); await enter(); }
+async function startAt(node){ await buildRoom(node,eyeYaw()); roomG.visible=true; realityIn(node); S.node=node; vhsT=1; mode='play'; music(); await enter(); }
 async function newGame(){ localStorage.removeItem('zs3_save'); MEM.bonusKeys={}; saveMem(); S=fresh(); S.notes=[]; mode='intro'; music(); $('titlesky').object3D.visible=false;
  { const e=eyePos(); roomG.position.set(e.x,EYE,e.z); roomG.rotation.set(0,eyeYaw(),0); skyEl.visible=false; propG.visible=false; hitG.visible=false; plate.visible=false; roomG.visible=true; }
  if(!/[?&]nointro=1/.test(Q)) await playClip('intro_komplett'); skyEl.visible=true; propG.visible=true; hitG.visible=true; await startAt(S.node); }
 async function continueGame(){ let d; try{ d=JSON.parse(localStorage.zs3_save); }catch(e){} if(!d) return; S=Object.assign(fresh(),d.S); $('titlesky').object3D.visible=false; await startAt(S.node); }
 async function newLoop(){ MEM.loops++; saveMem(); msg=null; dlg=null; stopVoice(); wm.open=false; const notes=S.notes; S=fresh(); S.notes=notes; { const bk=MEM.bonusKeys||{}; let b=0; for(const k in bk){ S.pen['b_'+k]=1; b+=bk[k]; } b=Math.min(b,TM.maxBonus); S.bonus=b; S.time+=b; } mode='play';
- await act(G.config.lines.newLoop); if(MEM.loops===2) setTimeout(()=>bark('loop2',true),2500); if(MEM.loops===3) setTimeout(()=>bark('loop3',true),2500); await buildRoom(S.node,eyeYaw()); realityIn(); vhsT=1; await enter(); }
+ await act(G.config.lines.newLoop); if(MEM.loops===2) setTimeout(()=>bark('loop2',true),2500); if(MEM.loops===3) setTimeout(()=>bark('loop3',true),2500); await buildRoom(S.node,eyeYaw()); realityIn(S.node); vhsT=1; await enter(); }
 // ---------- Frame
 let lastStepT=0;
 function frame(now,noRaf){ lastStepT=performance.now(); const dt=Math.min(0.1,(now-last)/1000); last=now; ui=[];

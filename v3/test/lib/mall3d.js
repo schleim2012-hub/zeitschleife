@@ -160,8 +160,10 @@ const Lu=new T.PointLight(0xd8e8ff,BK?1.6:0,4.5,1.8); Lu.position.set(-4.0,YG-0.
   if(Math.random()<0.04) flk=Math.random()<0.5?0.08:1; flM.color.setRGB(0.85*flk,0.9*flk,flk); Lu.intensity=BK?1.6*flk:0; if(fx&&fx.setFlu&&flk!==fx.k){ fx.k=flk; fx.setFlu(flk); }
   signs.forEach(g=>{ if(!g.flick) return; if(Math.random()<0.015){ g.base=Math.random()<0.3?0.25:1; setSign(g,g.base); } });
   Lf.intensity=1.3+0.2*Math.sin(s*3.1)*Math.sin(s*1.7); fig.scale.set(1,1+0.004*Math.sin(s*1.3),1); };
- AFRAME.registerComponent('m84-tick',{tick(t){ update(t); }}); sc.setAttribute('m84-tick','');
- const circ=[[0,FZ,2.65]]; const collide=(x,z)=>{ for(const [cx,cz,r] of circ){ const dx=x-cx,dz=z-cz,d=Math.hypot(dx,dz); if(d<r) return [dx/d*(r-d),dz/d*(r-d)]; } return null; };
+ let PX=null; /* 06.11.: Bonbonautomat + tanzendes Skelett (lib/m84_props.js) */
+ AFRAME.registerComponent('m84-tick',{tick(t){ update(t); if(PX) PX.update(t); }}); sc.setAttribute('m84-tick','');
+ const circ=[[0,FZ,2.65]]; const collide=(x,z)=>{ for(const [cx,cz,r] of circ){ const dx=x-cx,dz=z-cz,d=Math.hypot(dx,dz); if(d<r) return [dx/d*(r-d),dz/d*(r-d)]; } return PX?PX.collide(x,z):null; };
+ if(window.M84Props){ try{ PX=M84Props.build(sc,{cv,env}); }catch(e){ console.error('m84_props',e); } }
  // Abstecher „Sonnen-Oase“ (Massage-Minispiel): Holztür links am Brunnenplatz mit Leuchtschild darüber; nur im Spiel-Ablauf
  /* 22.10. Pete: Sonnen-Oase vorerst in Reserve (nicht öffentlich) – Tür nur mit window.ZS_OASE_PUBLIC=true */
  if(window.ZS_OASE_PUBLIC&&window.ZSA&&ZSA.on&&ZSA.SIDES&&ZSA.SIDES.sonnenoase&&window.zsaDoor){ const DX=-2.95, DZ=1.5;

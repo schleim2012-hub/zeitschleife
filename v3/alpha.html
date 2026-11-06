@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8"><title>Rewind V3 · Alpha</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1022z3"></script><script src="test/lib/helpmenu.js?v=1022z2"></script><script src="test/lib/alpha.js?v=1022z3"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script><script src="test/lib/touchctl.js?v=1022z3"></script><script src="test/lib/helpmenu.js?v=1022z2"></script><script src="test/lib/alpha.js?v=1106r1"></script><script src="test/lib/dust.js?v=m1552"></script><script src="test/lib/bake_rt.js?v=2"></script><script src="test/lib/mmk.js?v=m1552"></script><script src="test/lib/br3d.js?v=m1546"></script>
 <style>@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-SemiBold.ttf);font-weight:600;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Medium.ttf);font-weight:500;font-display:swap}@font-face{font-family:ZSRaj;src:url(fonts/Rajdhani-Bold.ttf);font-weight:700;font-display:swap}
 body{margin:0;background:#000;font-family:sans-serif}
 #start{position:fixed;inset:0;z-index:40;overflow:hidden;background:#15130e url(stills/title_bg.jpg) center/cover;color:#dccfb2;cursor:pointer;font-family:ZSRaj,"DejaVu Sans Condensed",sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
@@ -125,7 +125,7 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
   // Neonröhren-Brummen (bleibt leise)
   const hum=ac.createGain(); hum.gain.setValueAtTime(0.0001,t+1.5); hum.gain.exponentialRampToValueAtTime(0.02,t+5); hum.connect(ac.destination); [100,200,300].forEach((f,i)=>{ const o=ac.createOscillator(); o.type=i?'sine':'triangle'; o.frequency.value=f; const g=ac.createGain(); g.gain.value=[1,0.35,0.15][i]; o.connect(g); g.connect(hum); o.start(t+1.5); });
   return out; };
- function wake(){ return new Promise(res=>{ br.group.visible=true; setWorld(0); const fog=sc.object3D.fog, fd0=fog?fog.density:0.085; startAmbience(); const y0=-1.25; rig.position.y=y0; let snd=null; try{ snd=wakeSnd(); }catch(e){}
+ function wake(){ return new Promise(res=>{ br.group.visible=true; setWorld(0); window.ZSRooms&&ZSRooms.run({root:br.group}); const fog=sc.object3D.fog, fd0=fog?fog.density:0.085; startAmbience(); const y0=-1.25; rig.position.y=y0; let snd=null; try{ snd=wakeSnd(); }catch(e){}
   const t0=performance.now(), D=5200; let skip=false; const sk=()=>{ skip=true; }; [0,1].forEach(i=>sc.renderer.xr.getController(i).addEventListener('selectstart',sk,{once:true})); sc.canvas.addEventListener('click',sk,{once:true}); window.__skipWake=sk;
   // Helligkeit: drei Lidschläge (Welt dimmt rhythmisch), dann offen
   const B=[[0,0],[0.10,0.28],[0.2,0.02],[0.34,0.5],[0.44,0.12],[0.6,0.8],[0.68,0.45],[0.85,1],[1,1]];
@@ -143,8 +143,8 @@ sc.addEventListener('loaded',()=>{ const T=THREE, S=sc.object3D;
     await wake(); backrooms(true); };
    v.onended=done; v.onerror=()=>setTimeout(done,800); window.__skipIntro=done;
    [0,1].forEach(i=>sc.renderer.xr.getController(i).addEventListener('selectstart',()=>{ if(screen.visible&&v.currentTime>2) done(); }));
-  } else if(mode==='end'){ br.group.visible=true; startAmbience(); setWorld(0.55); mkDoor(()=>{ ZSA.reset(); ZSA.goStep(0); }); setTimeout(()=>voice('alpha_end.mp3','Mara','„Das Band ist zu Ende. Oder fängt es gerade erst an?“'),800); }
-  else { br.group.visible=true; startAmbience(); tween(900,k=>setWorld(k)); backrooms(false); } }
+  } else if(mode==='end'){ br.group.visible=true; window.ZSRooms&&ZSRooms.run({root:br.group}); startAmbience(); setWorld(0.55); mkDoor(()=>{ ZSA.reset(); ZSA.goStep(0); }); setTimeout(()=>voice('alpha_end.mp3','Mara','„Das Band ist zu Ende. Oder fängt es gerade erst an?“'),800); }
+  else { br.group.visible=true; window.ZSRooms&&ZSRooms.run({root:br.group}); startAmbience(); tween(900,k=>setWorld(k)); backrooms(false); } }
  // ---------- Start: sauber in VR (Klick = Nutzergeste: Ton + Video freischalten, dann Session; Intro erst, wenn die Session läuft)
  const st=document.getElementById('start'), goVR=document.getElementById('govr'), goFlat=document.getElementById('go');
  const unlock=()=>{ try{ AC().resume(); }catch(e){} if(mode==='intro'){ try{ const pr=v.play(); pr&&pr.then(()=>{ if(!started) v.pause(); }).catch(()=>{}); }catch(e){} } };
